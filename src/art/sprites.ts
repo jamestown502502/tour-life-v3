@@ -117,14 +117,19 @@ export function ensureScrimTexture(scene: Phaser.Scene): string {
   const key = 'ui_scrim';
   const steps = 40;
   withGraphics(scene, W, H, (g) => {
-    const bandH = H / steps;
     for (let i = 0; i < steps; i++) {
       const t = i / (steps - 1);              // 0 at top, 1 at bottom
       const middleness = 1 - Math.abs(t - 0.5) * 2; // 1 mid-screen, 0 at both edges
       const alpha = 0.5 * (1 - middleness) ** 1.5;  // eased so the falloff isn't a hard wedge
       if (alpha <= 0.001) continue;
+      // Integer band edges derived from the index: exactly contiguous, never overlapping.
+      // A fractional height with a `+1` fudge (the obvious way to avoid seams) makes adjacent
+      // bands share a row — and because these fills are semi-transparent, a shared row gets
+      // composited twice and shows up as a visible darker line every few pixels.
+      const y0 = Math.round((H * i) / steps);
+      const y1 = Math.round((H * (i + 1)) / steps);
       g.fillStyle(PALETTE.night, alpha);
-      g.fillRect(0, bandH * i, W, bandH + 1);
+      g.fillRect(0, y0, W, y1 - y0);
     }
   }, key);
   return key;
