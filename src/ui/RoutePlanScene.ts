@@ -9,6 +9,9 @@ import { generateRoute, MID_TOUR_COMPLICATIONS } from '../game/route';
 import { drawScenePoolFlags } from '../game/scenePool';
 import { saveRun } from '../core/save';
 import { textStyle } from './textStyles';
+import { DialogueBox } from './DialogueBox';
+
+const ONBOARD_FLAG = 'onboard_routeplan_seen';
 
 const COMPLICATION_LABELS: Record<string, string> = {
   van_breakdown: 'The van has been making a noise none of you want to name.',
@@ -25,6 +28,20 @@ export class RoutePlanScene extends Phaser.Scene {
   create(): void {
     fadeIn(this);
     this.add.rectangle(0, 0, W, this.cameras.main.height, 0x2b3a55, 1).setOrigin(0, 0);
+
+    if (!State.hasFlag(ONBOARD_FLAG)) {
+      const box = new DialogueBox(this);
+      box.show(
+        { id: 'onboard_routeplan', speaker: 'sol', text: "Pick the cities that feel right. You can't play them all — that's the point." },
+        () => { State.addFlag(ONBOARD_FLAG); box.destroy(); this.renderRoutePlan(); },
+        () => {},
+      );
+      return;
+    }
+    this.renderRoutePlan();
+  }
+
+  private renderRoutePlan(): void {
     const possessive = State.data.band.name.endsWith('s') ? `${State.data.band.name}'` : `${State.data.band.name}'s`;
     this.add.text(W / 2, 80, `${possessive} Route`, textStyle('h1')).setOrigin(0.5);
     this.add.text(W / 2, 130, `Seed: ${State.data.seed}`, textStyle('small')).setOrigin(0.5);

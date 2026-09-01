@@ -9,6 +9,7 @@ import { getCity } from '../game/content';
 import { generateEnding } from '../game/endings';
 import { clearSave } from '../core/save';
 import { textStyle } from './textStyles';
+import { addHelpButton } from './HelpButton';
 
 export class ScrapbookScene extends Phaser.Scene {
   constructor() { super('Scrapbook'); }
@@ -31,6 +32,7 @@ export class ScrapbookScene extends Phaser.Scene {
     fadeIn(this);
     this.add.rectangle(0, 0, W, this.cameras.main.height, 0x2b3a55, 1).setOrigin(0, 0);
     spawnConfetti(this);
+    addHelpButton(this, 'This is your Tour Scrapbook — a record of the run you just played. Start a new tour any time.');
 
     const cardKey = ensureScrapbookCard(this);
     this.add.image(40, 90, cardKey).setOrigin(0, 0);

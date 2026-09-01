@@ -15,7 +15,10 @@ import { generateEnding } from '../game/endings';
 import { completeRun } from '../game/meta';
 import type { StatKey } from '../../content/schema';
 import { textStyle } from './textStyles';
+import { DialogueBox } from './DialogueBox';
+import { addHelpButton } from './HelpButton';
 
+const ONBOARD_FLAG = 'onboard_hub_seen';
 const STAT_LABELS: Record<StatKey, string> = { energy: 'Energy', harmony: 'Harmony', inspiration: 'Inspiration', funds: 'Funds' };
 const STAT_COLORS: Record<StatKey, number> = { energy: PALETTE.gold, harmony: PALETTE.teal, inspiration: PALETTE.terracotta, funds: PALETTE.sky };
 const CORKBOARD_X = W - 190;
@@ -35,6 +38,20 @@ export class HubScene extends Phaser.Scene {
     this.fireflies = spawnFireflies(this, PALETTE.gold, 10);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.fireflies?.stop());
 
+    if (!State.hasFlag(ONBOARD_FLAG)) {
+      const box = new DialogueBox(this);
+      box.show(
+        { id: 'onboard_hub', speaker: 'sol', text: "This bus is home between shows. Check in on the band, then hit the road when you're ready." },
+        () => { State.addFlag(ONBOARD_FLAG); box.destroy(); this.renderHubContent(bgKey); },
+        () => {},
+      );
+      return;
+    }
+    this.renderHubContent(bgKey);
+  }
+
+  private renderHubContent(bgKey: string): void {
+    addHelpButton(this, 'This is home base between cities. Check your stats, see what you\'ve collected, then travel to the next show.');
     const stop = State.data.route[State.data.currentCityIndex];
     // The tinted window pane exists to show the next city's color through the bus window — but
     // it's positioned against the code-drawn background's window frame. Painted bus art has its
@@ -58,6 +75,10 @@ export class HubScene extends Phaser.Scene {
         saveRun(State.data);
         goTo(this, 'City', { cityId: city.id });
       }, { fillColor: 0x3e7c7b });
+      // Left-anchored (not centered) and clipped short of the corkboard's x-range (CORKBOARD_X
+      // starts at W-190) so this can't visually collide with the souvenir chips beside it.
+      this.add.text(40, 892, `Tonight: soundcheck, then whatever ${city.collaborator.npcName} has waiting.`,
+        textStyle('small', { fontSize: '14px', wordWrap: { width: 460 } }));
     } else {
       this.add.text(W / 2, 780, 'The last show is behind you.', textStyle('body', { fontSize: '22px' })).setOrigin(0.5);
       createButton(this, W / 2 - 160, 820, 320, 60, 'Wrap the tour', () => this.wrapTour(), { fillColor: 0xd9a441 });

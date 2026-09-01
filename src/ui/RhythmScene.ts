@@ -15,6 +15,13 @@ import type { ChartCue, ChartNote, ChoiceCueType } from '../../content/schema';
 import { saveRun } from '../core/save';
 import { textStyle } from './textStyles';
 import { parseChordProgression } from '../core/musicTheory';
+import { addHelpButton } from './HelpButton';
+import {
+  hasSeenRhythmTutorial, markRhythmTutorialSeen, hasEverOpenedSettings,
+  hasSeenHoldHint, markHoldHintSeen, hasSeenCueHint, markCueHintSeen,
+} from '../core/onboarding';
+import type { RhythmMode } from '../core/state';
+import type { CityDef, SongDef } from '../../content/schema';
 
 const HIT_LINE_Y = 1100;
 const SPAWN_Y = 160;
@@ -52,12 +59,17 @@ export class RhythmScene extends Phaser.Scene {
   private startTime = 0;
   private scoreText!: Phaser.GameObjects.Text;
   private comboText!: Phaser.GameObjects.Text;
+  private cityLabel!: Phaser.GameObjects.Text;
   private crowdFigures: Phaser.GameObjects.Image[] = [];
   private crowd = 40;
   private finished = false;
   private metronomeEvent: Phaser.Time.TimerEvent | null = null;
   private ctx!: PerformanceContext;
   private activeHolds = new Map<number, NoteState>();
+  private tutorialActive = false;
+  private forceRelaxedFirstSong = false;
+  private holdHintShown = false;
+  private cueHintShown = false;
 
   init(data: { cityId: string }): void {
     this.cityId = data.cityId;
@@ -71,6 +83,10 @@ export class RhythmScene extends Phaser.Scene {
     this.crowd = Math.round(State.data.stats.harmony * 0.4 + 20);
     this.finished = false;
     this.activeHolds = new Map();
+    this.tutorialActive = false;
+    this.forceRelaxedFirstSong = false;
+    this.holdHintShown = false;
+    this.cueHintShown = false;
     // Phaser reuses this scene instance across visits — images from the last visit are
     // destroyed on shutdown but the array itself isn't cleared automatically, so a stale
     // reference here would crash the next updateCrowdFigures() call.
@@ -81,13 +97,6 @@ export class RhythmScene extends Phaser.Scene {
     fadeIn(this);
     const city = getCity(this.cityId);
     const song = getSong(city.songId);
-    const arrangement = pickArrangement(song, State.data.flags);
-    audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm, song.waveform);
-    this.ctx = {
-      cityId: city.id, songId: song.id, arrangement,
-      bandHarmony: State.data.stats.harmony, energy: State.data.stats.energy,
-      audienceMood: State.data.stats.harmony, storyFlags: State.data.flags,
-    };
 
     this.add.rectangle(0, 0, W, H, PALETTE.night, 1).setOrigin(0, 0);
     const tex = ensureLaneTextures(this);
@@ -97,12 +106,10 @@ export class RhythmScene extends Phaser.Scene {
     const hitLineKey = ensureHitLineGlow(this, LANE_W * song.lanes);
     this.add.image(LANE_X_START, HIT_LINE_Y - 14, hitLineKey).setOrigin(0, 0);
 
-    this.notes = arrangement.notes.map((note) => ({ note, judged: false }));
-    this.cues = arrangement.cues.map((cue) => ({ cue, handled: false }));
-
     this.scoreText = this.add.text(24, 24, 'Score: 0', textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.cream }));
     this.comboText = this.add.text(24, 56, '', textStyle('h2', { fontSize: '20px' }));
-    this.add.text(W - 200, 24, `${city.name} — ${arrangement.label}`, textStyle('small'));
+    this.cityLabel = this.add.text(W - 200, 24, '', textStyle('small'));
+    addHelpButton(this, 'Tap notes as they reach the gold line. Hold notes: press and hold. Choice cues: tap the banner. Score never blocks the story.');
 
     this.add.text(W - 220, 40, 'Crowd', textStyle('small', { fontSize: '13px' }));
     const downKey = ensureCrowdFigure(this, false);
@@ -127,11 +134,106 @@ export class RhythmScene extends Phaser.Scene {
     // Scene-level pointerup so a hold releases even if the finger drifts off its lane zone.
     this.input.on('pointerup', () => this.releaseAllHolds());
 
-    if (State.data.accessibility.audioAssist) this.startMetronome(song.bpm);
-
-    this.startTime = this.time.now + 1200;
-
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.metronomeEvent?.destroy());
+
+    // The very first rhythm scene the player ever reaches gets a short, unscored, un-skippable-
+    // but-unpunishing practice pass before the real song. `this.finished = true` here is load-
+    // bearing: update() no-ops entirely while it's true, so with this.notes/this.cues still
+    // empty (set in init()) there is nothing for it to prematurely judge or finish() over.
+    this.tutorialActive = !hasSeenRhythmTutorial();
+    if (this.tutorialActive) {
+      this.finished = true;
+      this.runPracticePass(() => this.beginRealSong(city, song));
+    } else {
+      this.beginRealSong(city, song);
+    }
+  }
+
+  /** Builds and starts the actual playable song — split out from create() so the one-time
+   *  practice pass can run first without duplicating any of the scoring/finish machinery. */
+  private beginRealSong(city: CityDef, song: SongDef): void {
+    const arrangement = pickArrangement(song, State.data.flags);
+    // Wide windows for a first-timer's first real song, but only if they've never touched
+    // Settings — a returning player's own configured rhythmMode always wins.
+    this.forceRelaxedFirstSong = this.tutorialActive && !hasEverOpenedSettings();
+    audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm, song.waveform);
+    this.ctx = {
+      cityId: city.id, songId: song.id, arrangement,
+      bandHarmony: State.data.stats.harmony, energy: State.data.stats.energy,
+      audienceMood: State.data.stats.harmony, storyFlags: State.data.flags,
+    };
+    this.notes = arrangement.notes.map((note) => ({ note, judged: false }));
+    this.cues = arrangement.cues.map((cue) => ({ cue, handled: false }));
+    this.cityLabel.setText(`${city.name} — ${arrangement.label}`);
+
+    if (this.tutorialActive) {
+      this.add.text(W / 2, 100, 'TAP = touch the note   HOLD = press & hold   CUE = tap the banner',
+        textStyle('small', { fontSize: '14px', color: PALETTE_HEX.gold, wordWrap: { width: W - 80 }, align: 'center' })).setOrigin(0.5);
+      markRhythmTutorialSeen();
+    }
+
+    if (State.data.accessibility.audioAssist) this.startMetronome(song.bpm);
+    this.startTime = this.time.now + 1200;
+    this.finished = false;
+  }
+
+  private laneCenterX(l: number): number {
+    return LANE_X_START + l * LANE_W + LANE_W / 2;
+  }
+
+  /** The player's own saved rhythmMode, except for their very first-ever song when they've
+   *  never opened Settings — then it's overridden to 'relaxed' for this song only. Never
+   *  mutates or saves State.data.accessibility.rhythmMode, so a real preference set in a later
+   *  run is never silently clobbered by this one-time nudge. */
+  private currentRhythmMode(): RhythmMode {
+    return this.forceRelaxedFirstSong ? 'relaxed' : State.data.accessibility.rhythmMode;
+  }
+
+  /** Non-interactive, tween-driven demo of the three note types — deliberately decoupled from
+   *  the real note/scoring pipeline (this.notes/this.cues stay empty throughout) so it cannot
+   *  affect score, combo, or crowd, and cannot be "failed". A stray tap during it is a harmless
+   *  no-op: attemptHit() only matches against this.notes, which is empty until beginRealSong(). */
+  private runPracticePass(onDone: () => void): void {
+    const label = this.add.text(W / 2, 260, 'Tap when the note touches the line!', textStyle('h2', {
+      fontSize: '20px', color: PALETTE_HEX.gold, wordWrap: { width: W - 100 }, align: 'center',
+    })).setOrigin(0.5).setAlpha(0).setDepth(60);
+    this.tweens.add({ targets: label, alpha: 1, duration: 250 });
+
+    const tex = ensureLaneTextures(this);
+    const tapNote = this.add.image(this.laneCenterX(0), SPAWN_Y, tex.noteTap).setDepth(60);
+    this.tweens.add({
+      targets: tapNote, y: HIT_LINE_Y, duration: 1400, ease: 'Linear',
+      onComplete: () => {
+        spawnPerfectSpark(this, this.laneCenterX(0), HIT_LINE_Y);
+        tapNote.destroy();
+        this.time.delayedCall(250, () => this.runPracticeHold(label, onDone));
+      },
+    });
+  }
+
+  private runPracticeHold(label: Phaser.GameObjects.Text, onDone: () => void): void {
+    label.setText('Hold notes: press and hold until they end.');
+    const railKey = ensureHoldRail(this, 220);
+    const rail = this.add.image(this.laneCenterX(1), SPAWN_Y, railKey).setOrigin(0.5, 1).setDepth(60);
+    this.tweens.add({
+      targets: rail, y: HIT_LINE_Y, duration: 1400, ease: 'Linear',
+      onComplete: () => { rail.destroy(); this.time.delayedCall(250, () => this.runPracticeCue(label, onDone)); },
+    });
+  }
+
+  private runPracticeCue(label: Phaser.GameObjects.Text, onDone: () => void): void {
+    label.setText('Choice cues: tap the banner when it appears.');
+    const w = 420, h = 64;
+    const banner = createButton(this, W / 2 - w / 2, 500, w, h, '  Like this', () => {},
+      { fillColor: PALETTE.terracotta, fontSize: '18px' });
+    banner.setDepth(60);
+    this.time.delayedCall(1500, () => {
+      banner.destroy();
+      this.tweens.add({
+        targets: label, alpha: 0, duration: 250,
+        onComplete: () => { label.destroy(); onDone(); },
+      });
+    });
   }
 
   private startMetronome(bpm: number): void {
@@ -147,7 +249,7 @@ export class RhythmScene extends Phaser.Scene {
     if (this.finished) return;
     const now = this.time.now;
     const t = (now - this.startTime) / 1000;
-    const windows = effectiveWindows(State.data.accessibility.rhythmMode, State.data.accessibility.wiggleRoom);
+    const windows = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
 
     for (const ns of this.notes) {
       const hitMs = this.startTime + ns.note.t * 1000;
@@ -161,8 +263,10 @@ export class RhythmScene extends Phaser.Scene {
       if (ns.note.type === 'hold') {
         const railHeight = (ns.note.dur ?? 0.2) * 1000 * PX_PER_MS;
         const railKey = ensureHoldRail(this, railHeight);
-        if (!ns.sprite) ns.sprite = this.add.image(lane, y, railKey).setOrigin(0.5, 1);
-        else ns.sprite.setPosition(lane, y);
+        if (!ns.sprite) {
+          ns.sprite = this.add.image(lane, y, railKey).setOrigin(0.5, 1);
+          this.maybeShowHoldHint(lane);
+        } else ns.sprite.setPosition(lane, y);
       } else {
         const texKey = ensureLaneTextures(this)[ns.note.type === 'tap' ? 'noteTap' : 'noteChoice'];
         if (!ns.sprite) ns.sprite = this.add.image(lane, y, texKey);
@@ -211,7 +315,7 @@ export class RhythmScene extends Phaser.Scene {
 
   private attemptHit(lane: number): void {
     const now = this.time.now;
-    const windows = effectiveWindows(State.data.accessibility.rhythmMode, State.data.accessibility.wiggleRoom);
+    const windows = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
     let best: NoteState | null = null;
     let bestDelta = Infinity;
     for (const ns of this.notes) {
@@ -242,7 +346,7 @@ export class RhythmScene extends Phaser.Scene {
 
   private finalizeHold(ns: NoteState, releaseAt: number): void {
     if (ns.judged) return;
-    const windows = effectiveWindows(State.data.accessibility.rhythmMode, State.data.accessibility.wiggleRoom);
+    const windows = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
     const dur = (ns.note.dur ?? 0.2) * 1000;
     const heldMs = releaseAt - (ns.holdStartAt ?? releaseAt);
     const completion = Phaser.Math.Clamp(dur > 0 ? heldMs / dur : 1, 0, 1);
@@ -255,7 +359,7 @@ export class RhythmScene extends Phaser.Scene {
 
   private judgeNote(ns: NoteState, deltaMs: number): void {
     ns.judged = true;
-    const windows = effectiveWindows(State.data.accessibility.rhythmMode, State.data.accessibility.wiggleRoom);
+    const windows = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
     const judgement = judgeHit(deltaMs, windows);
     this.applyJudgement(judgement);
     ns.sprite?.destroy();
@@ -322,7 +426,31 @@ export class RhythmScene extends Phaser.Scene {
       () => this.resolveCue(cs), { fillColor: PALETTE.terracotta, fontSize: '18px', tapSfx: 'choiceConfirm' });
     const iconKey = ensureCueIcon(this, cs.cue.type);
     container.add(this.add.image(34, h / 2, iconKey));
+    this.maybeShowCueHint();
     return container;
+  }
+
+  /** First hold note / first choice cue this player has ever seen gets a one-line hint,
+   *  the first time each appears — a persistent (not run-scoped) flag, since a returning
+   *  player doesn't need this repeated on their second tour. */
+  private maybeShowHoldHint(nearX: number): void {
+    if (this.holdHintShown || hasSeenHoldHint()) return;
+    this.holdHintShown = true;
+    markHoldHintSeen();
+    const hint = this.add.text(nearX, SPAWN_Y - 30, 'Press and hold…', textStyle('small', {
+      fontSize: '14px', color: PALETTE_HEX.gold,
+    })).setOrigin(0.5).setDepth(70);
+    this.tweens.add({ targets: hint, alpha: 0, delay: 1600, duration: 400, onComplete: () => hint.destroy() });
+  }
+
+  private maybeShowCueHint(): void {
+    if (this.cueHintShown || hasSeenCueHint()) return;
+    this.cueHintShown = true;
+    markCueHintSeen();
+    const hint = this.add.text(W / 2, 470, 'Tap the banner to pick the moment\'s direction', textStyle('small', {
+      fontSize: '14px', color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center',
+    })).setOrigin(0.5).setDepth(70);
+    this.tweens.add({ targets: hint, alpha: 0, delay: 1600, duration: 400, onComplete: () => hint.destroy() });
   }
 
   private resolveCue(cs: CueState): void {

@@ -18,6 +18,7 @@ import { availabilityFlag } from '../game/scenePool';
 import { arrangementFlag } from '../game/rhythm';
 import type { CityDef, DialogueNode, LocationDef } from '../../content/schema';
 import { textStyle } from './textStyles';
+import { addHelpButton } from './HelpButton';
 
 export type CityPhase = 'arrival' | 'locations' | 'relationship' | 'preshow' | 'afterShow' | 'journal';
 const VALID_PHASES: CityPhase[] = ['arrival', 'locations', 'relationship', 'preshow', 'afterShow', 'journal'];
@@ -58,6 +59,7 @@ export class CityScene extends Phaser.Scene {
     }
 
     this.add.text(W / 2, 40, this.city.name, textStyle('h1', { fontSize: '26px' })).setOrigin(0.5).setDepth(50);
+    addHelpButton(this, 'Read the story and tap to continue. Choices shape your stats and your relationships with the band — there\'s no wrong one.');
 
     this.dialogueBox = new DialogueBox(this);
 
