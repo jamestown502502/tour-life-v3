@@ -12,23 +12,29 @@ building toward.
 
 ## 0. TL;DR
 
-A cozy rhythm-adventure browser game. Vite + TypeScript + Phaser 3, zero external art/audio
-assets (all code-drawn Graphics, all Web Audio synthesis) except two self-hosted webfonts. One
-complete, **polished** vertical slice exists: Title → Band Creator → seeded Route → Hub → two
-fully playable cities (Lisbon, Tokyo) each with dialogue, exploration, a relationship scene, a
-real rhythm performance (including real hold-note scoring), and an after-show → Scrapbook with
-a generated ending. Save/resume, 8 accessibility settings, seeded RNG, meta-progression, real
-typography, a depth/shadow UI system, full character-bust portraits, atmospheric layered
-backgrounds, and actually-playing ambient music all work. 37/37 tests pass, typecheck is clean,
-and it's deployed and publicly live.
+A cozy rhythm-adventure browser game. Vite + TypeScript + Phaser 3. **Art is now real painted
+Gemini assets** (4 backgrounds + 16 character portraits) with the original code-drawn Graphics
+kept as an automatic fallback; all audio is still Web Audio synthesis. One complete, **polished**
+vertical slice exists: Title → Band Creator → seeded Route → Hub → two fully playable cities
+(Lisbon, Tokyo) each with dialogue, exploration, a relationship scene, a real rhythm performance
+(including real hold-note scoring), and an after-show → Scrapbook with a generated ending.
+Save/resume, 8 accessibility settings, seeded RNG, meta-progression, real typography, a
+depth/shadow UI system, atmospheric backgrounds, and actually-playing ambient music all work.
+37/37 tests pass, typecheck is clean, and it's deployed and publicly live.
 
-**What changed since the last handoff:** an 8-phase polish pass (typography → UI depth →
-characters → backgrounds/atmosphere → rhythm feel → audio → [asset swap-in, skipped] → mobile
-verification) took the game from "functional but flat/prototype-looking" to actually looking
-and sounding like a finished cozy game. Along the way, **seven more real bugs were found and
-fixed** — including one that meant every gradient background in the game had been silently
-invisible since it was written, and one that meant no music had ever actually played anywhere
-in the game despite the audio system being fully built. See §9 and §12 for the full story.
+**What changed since the last handoff:** the real-asset pass (Phase G) — see §G below. Painted
+soft-gouache backgrounds and 16 character portraits now load over the code-drawn originals
+through the existing texture-key seam. Before that, an 8-phase polish pass (typography → UI
+depth → characters → backgrounds/atmosphere → rhythm feel → audio → mobile verification) took
+the game from "functional but flat" to looking and sounding finished; that pass found seven real
+bugs including one where every gradient background had been silently invisible since it was
+written, and one where no music had ever actually played despite the audio system being complete.
+See §9 and §12 for those. Phase G found four more (§6, bugs 13–16).
+
+**Art direction rule, deliberately chosen: painted world, code-drawn UI.** Backgrounds and
+character portraits are real assets; panels, buttons, notes, lanes and the rhythm HUD stay
+code-drawn. Crisp vector chrome over painted art reads as intentional design — replacing
+everything with generated art produces a mushier, less coherent look. Keep this split.
 
 **What it is still NOT:** the 3-4 hour "every run unique" promise from the blueprint. Content
 depth is unchanged from the last handoff — this polish pass was entirely look/feel/audio, by
@@ -622,6 +628,76 @@ single complete reference):*
     through). **If you add a new scene that creates a `DialogueBox`, give that scene's own
     shutdown handler the same unconditional un-duck** — don't assume the box's own
     `setVisible`/`destroy` calls will always run first.
+
+*From the real-asset pass (Phase G):*
+
+13. **`preBoot` runs before the WebGL renderer exists.** Registering a real texture there with
+    `game.textures.addImage()` creates a Texture with no GL texture behind it, and the first
+    render throws `Cannot read properties of null (reading 'webGLTexture')`. Hit on the first
+    attempt at wiring the asset loader. Fixed by loading assets from a dedicated `BootScene`
+    using `this.load.image()` — Phaser then creates and uploads normally, and the scene can't
+    advance early, so there's no race with any other scene's `create()`.
+14. **The chroma-key verify gate cannot detect the key eating the SUBJECT.** Its heuristic asks
+    "did the background key out?" — high transparent%, low partial%. When `colorkey` eats
+    subject pixels, transparent% goes *up*, which reads as healthier. A neutral light-gray
+    background sat chromatically next to the whites of the eyes and Rowan's pale sky-blue shirt;
+    every portrait shipped with see-through eyes and all four Rowans had holes in the shirt, and
+    **15 of 16 passed verification**. Caught only by compositing over magenta and looking.
+    Decisive confirmation trick: composite the same file over two different colors — if the
+    suspect region changes color with the background, it's transparency, not paint. Fixed by
+    regenerating against a vivid pure-green background; the contact-sheet composite is now a
+    scripted step in `scripts/generate-portraits.sh`. **A metric passing is not the same as
+    having looked at the output.**
+15. **One stray artifact silently shrank a portrait by ~40%.** `fit-portrait.mjs`'s alpha
+    bounding box counted any pixel over the threshold, so a single pale artifact near an edge
+    inflated the box and the subject was scaled to fit *that* instead of itself. Only the four
+    text-to-image base portraits had such artifacts, so the four "happy" portraits came out
+    visibly smaller than their image-to-image siblings. Fixed with a minimum-run threshold —
+    a row/column needs ≥3 opaque pixels to count as content.
+16. **The legibility scrim drew visible banding lines.** Its 40 bands used a `+1px` height fudge
+    to avoid seams, but because the bands are semi-transparent the shared row composited twice
+    and showed as a darker line every few pixels across every painted background (obvious at
+    mobile width). Fixed with exact integer band edges derived from the index. Note the same
+    `+1` exists in `fillVerticalGradient` and is *harmless there* — those fills are opaque, so
+    overlapping just overwrites rather than accumulating.
+
+---
+
+## §G. The real-asset pass — how to add or regenerate art
+
+**The seam:** every `ensureX()` in `src/art/sprites.ts` goes through `withGraphics()`, which
+early-returns if `scene.textures.exists(key)`. Register a real image under the same key and it
+wins; leave it out and the code-drawn version draws. That's the whole mechanism — there is no
+"asset mode" flag and no parallel rendering branch.
+
+**Wiring:** `public/assets/manifest.json` is a flat `[{key, file}]` list. `src/ui/BootScene.ts`
+loads every entry through Phaser's loader then starts Title; a missing or corrupt file logs a
+warning and falls back. `hasRealAsset(key)` (in `src/core/assets.ts`) lets a scene ask which it
+got — needed because some code-drawn art is composed against its own background (the hub bakes a
+window frame and corkboard into `bg_hub` and overlays a tinted pane and souvenir chips at those
+exact spots; painted bus art puts its windows elsewhere, so the pane is skipped and the corkboard
+gets a standalone backing).
+
+**Backgrounds** — `scripts/process-bg.sh <raw.png>`. Generation via
+`generate_image.py --resolution 2K`. Three non-obvious things it handles, all measured:
+Gemini renders a painterly white border no matter how emphatically the prompt forbids it (6%
+inset crop removes it); output aspect is close to but not exactly 9:16 (normalized here so the
+runtime cover-fit is a safety net, not doing real work); and a raw 2K PNG is ~6.3MB, which WebP
+q82 at 1440×2560 takes to ~60–340KB with no visible loss.
+
+**Portraits** — `scripts/generate-portraits.sh` (idempotent; skips existing files). It's the
+executable form of `docs/character-sheets.md` — **keep those two in sync**, the identity blocks
+must be reused verbatim or characters drift. Consistency comes from generating one base per
+character text-to-image then deriving the other three moods image-to-image from it. Two hard
+requirements: the background must be **vivid green** (see bug 14), and you must **open
+`docs/portrait-contact-sheet.png` and look** before believing the run succeeded.
+
+**To add a city's background:** generate → `process-bg.sh` → add `{key: "bg_city_<id>", file:
+"img/bg_city_<id>.webp"}` to the manifest. No code changes.
+
+**Audio was deliberately NOT swapped to real files.** The procedural ambience is chord-driven,
+crossfading and duckable; static tracks would lose per-city chord identity and crossfade for a
+much larger payload. Only a single generated title theme would plausibly be worth adding.
 
 ---
 
