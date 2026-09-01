@@ -17,8 +17,21 @@ import type { StatKey } from '../../content/schema';
 import { textStyle } from './textStyles';
 import { DialogueBox } from './DialogueBox';
 import { addHelpButton } from './HelpButton';
+import { COMPLICATION_LABELS } from './RoutePlanScene';
 
 const ONBOARD_FLAG = 'onboard_hub_seen';
+const COMPLICATION_APPLIED_FLAG = 'mid_tour_complication_applied';
+// Route.ts draws one of these for flavor at RoutePlan (see COMPLICATION_LABELS there) but
+// nothing ever read it back — purely cosmetic. This gives it the one small mechanical
+// consequence the close-out plan asked for, applied once, at the route's midpoint Hub visit.
+const COMPLICATION_EFFECTS: Record<string, Partial<Record<StatKey, number>>> = {
+  van_breakdown: { energy: -5, funds: -20 },
+  lost_gear: { funds: -15, inspiration: -3 },
+  booking_conflict: { harmony: -3, funds: 10 },
+  bandmate_gets_sick: { energy: -8 },
+  venue_falls_through: { harmony: -2, funds: -10 },
+  unexpected_press: { inspiration: 5, funds: 15 },
+};
 const STAT_LABELS: Record<StatKey, string> = { energy: 'Energy', harmony: 'Harmony', inspiration: 'Inspiration', funds: 'Funds' };
 const STAT_COLORS: Record<StatKey, number> = { energy: PALETTE.gold, harmony: PALETTE.teal, inspiration: PALETTE.terracotta, funds: PALETTE.sky };
 const CORKBOARD_X = W - 190;
@@ -52,6 +65,7 @@ export class HubScene extends Phaser.Scene {
 
   private renderHubContent(bgKey: string): void {
     addHelpButton(this, 'This is home base between cities. Check your stats, see what you\'ve collected, then travel to the next show.');
+    const complicationNote = this.applyMidTourComplicationIfDue();
     const stop = State.data.route[State.data.currentCityIndex];
     // The tinted window pane exists to show the next city's color through the bus window — but
     // it's positioned against the code-drawn background's window frame. Painted bus art has its
@@ -63,6 +77,11 @@ export class HubScene extends Phaser.Scene {
     }
 
     this.add.text(W / 2, 60, State.data.band.name, textStyle('h1')).setOrigin(0.5);
+    if (complicationNote) {
+      this.add.text(W / 2, 92, complicationNote, textStyle('small', {
+        fontSize: '13px', color: PALETTE_HEX.terracotta, wordWrap: { width: W - 140 }, align: 'center',
+      })).setOrigin(0.5);
+    }
 
     this.renderStats();
     this.renderCorkboard(hasRealAsset(bgKey));
@@ -145,6 +164,22 @@ export class HubScene extends Phaser.Scene {
       this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 40 + 4 * 34, `+${State.data.inventory.length - 4} more`,
         textStyle('small', { fontSize: '11px' })).setOrigin(0.5);
     }
+  }
+
+  /** Fires once, the first Hub visit at or past the route's midpoint — gives the mid-tour
+   *  complication (drawn at RoutePlan, previously flavor-only) its one real mechanical
+   *  consequence. Returns the line to display, or null if it already fired or there's nothing
+   *  to apply (e.g. a 1-city route has no meaningful midpoint). */
+  private applyMidTourComplicationIfDue(): string | null {
+    const midpoint = Math.floor(State.data.route.length / 2);
+    if (State.data.route.length < 2 || State.data.currentCityIndex < midpoint) return null;
+    if (State.hasFlag(COMPLICATION_APPLIED_FLAG)) return null;
+    State.addFlag(COMPLICATION_APPLIED_FLAG);
+    const effects = COMPLICATION_EFFECTS[State.data.midTourComplication];
+    if (!effects) return null;
+    State.applyStatDeltas(effects);
+    saveRun(State.data);
+    return COMPLICATION_LABELS[State.data.midTourComplication] ?? null;
   }
 
   private wrapTour(): void {

@@ -9,14 +9,17 @@
     { "id": "neon_arcade", "name": "A cramped neon arcade", "sound": "chiptune_blips", "sceneId": "tok_loc_arcade" },
     { "id": "late_night_ramen", "name": "A steam-fogged ramen counter", "sound": "broth_simmer", "sceneId": "tok_loc_ramen" },
     { "id": "shrine_garden", "name": "A shrine garden off the main street", "sound": "bell_and_gravel", "sceneId": "tok_loc_shrine" },
-    { "id": "karaoke_box", "name": "A tiny karaoke box", "sound": "muffled_bass", "sceneId": "tok_loc_karaoke" }
+    { "id": "karaoke_box", "name": "A tiny karaoke box", "sound": "muffled_bass", "sceneId": "tok_loc_karaoke" },
+    { "id": "pachinko_parlor", "name": "A rain-slicked pachinko parlor", "sound": "bell_cascade", "sceneId": "tok_loc_pachinko" }
   ],
   "arrivalSceneId": "tok_arrival",
   "preShowSceneId": "tok_preshow",
   "relationshipScenePool": [
     { "id": "rowan_unseen", "bandmate": "rowan", "sceneId": "tok_rel_rowan" },
     { "id": "mira_after_the_encore", "bandmate": "mira", "sceneId": "tok_rel_mira" },
-    { "id": "jun_gear_swap", "bandmate": "jun", "sceneId": "tok_rel_jun" }
+    { "id": "jun_gear_swap", "bandmate": "jun", "sceneId": "tok_rel_jun" },
+    { "id": "theo_the_only_quiet_room", "bandmate": "theo", "sceneId": "tok_rel_theo" },
+    { "id": "mira_running_on_empty", "bandmate": "mira", "sceneId": "tok_rel_mira2" }
   ],
   "collaborator": { "npcName": "Kenji", "role": "session drummer", "gift": "a mixtape labeled only 'city sounds, vol. 4'" },
   "preShowChoices": [
@@ -87,6 +90,17 @@
     "tok_loc_karaoke_sing": { "id": "tok_loc_karaoke_sing", "speaker": "narrator", "text": "It's terrible. It's perfect. Nobody films it, which somehow makes it better." },
     "tok_loc_karaoke_dj": { "id": "tok_loc_karaoke_dj", "speaker": "jun", "portrait": "happy", "text": "Jun's setlist makes no sense and works completely." },
 
+    "tok_loc_pachinko": {
+      "id": "tok_loc_pachinko", "speaker": "narrator",
+      "text": "A wall of chrome balls and chiming lights, and one grandmother playing three machines at once like she owns the building.",
+      "choices": [
+        { "id": "try_luck", "label": "Feed a machine a few coins", "next": "tok_loc_pachinko_try", "effects": { "funds": -8, "harmony": 2 } },
+        { "id": "watch_gran", "label": "Just watch the grandmother work", "next": "tok_loc_pachinko_watch", "effects": { "inspiration": 2 } }
+      ]
+    },
+    "tok_loc_pachinko_try": { "id": "tok_loc_pachinko_try", "speaker": "narrator", "text": "You lose every coin in under a minute and somehow leave grinning." },
+    "tok_loc_pachinko_watch": { "id": "tok_loc_pachinko_watch", "speaker": "narrator", "text": "She never once looks at the balls. Forty years of muscle memory, still ringing." },
+
     "tok_rel_rowan": {
       "id": "tok_rel_rowan", "speaker": "rowan", "portrait": "worried",
       "text": "\"Nobody requests the bass solo,\" Rowan says. \"I've counted.\"",
@@ -119,6 +133,28 @@
     },
     "tok_rel_jun_a": { "id": "tok_rel_jun_a", "speaker": "jun", "portrait": "happy", "text": "Jun is already rewiring the pedalboard by soundcheck." },
     "tok_rel_jun_b": { "id": "tok_rel_jun_b", "speaker": "jun", "portrait": "inspired", "text": "Jun writes the model number down anyway. For later." },
+
+    "tok_rel_theo": {
+      "id": "tok_rel_theo", "speaker": "theo", "portrait": "tense",
+      "text": "\"I found one quiet room in this whole city,\" Theo says. \"It was the stairwell. I sat in the stairwell for an hour.\"",
+      "choices": [
+        { "id": "join_stairwell", "label": "Find a stairwell of my own, sit with you", "next": "tok_rel_theo_a", "relationshipEffects": { "theo": 6 } },
+        { "id": "cut_something", "label": "We're cutting something from the set tonight. Your call.", "next": "tok_rel_theo_b", "relationshipEffects": { "theo": 4 }, "effects": { "harmony": 1 } }
+      ]
+    },
+    "tok_rel_theo_a": { "id": "tok_rel_theo_a", "speaker": "theo", "portrait": "happy", "text": "Neither of you says much. The stairwell holds long enough." },
+    "tok_rel_theo_b": { "id": "tok_rel_theo_b", "speaker": "theo", "portrait": "inspired", "text": "Theo picks the bridge nobody would miss. First real decision he's made all week." },
+
+    "tok_rel_mira2": {
+      "id": "tok_rel_mira2", "speaker": "mira", "portrait": "tense",
+      "text": "\"They want an encore every night now,\" Mira says. \"I don't know how many more I have in me.\"",
+      "choices": [
+        { "id": "give_less", "label": "Then give them less. They'll still show up.", "next": "tok_rel_mira2_a", "relationshipEffects": { "mira": 5 } },
+        { "id": "one_more", "label": "One more push. I'll help you find it.", "next": "tok_rel_mira2_b", "relationshipEffects": { "mira": 3 }, "effects": { "energy": -3, "inspiration": 2 } }
+      ]
+    },
+    "tok_rel_mira2_a": { "id": "tok_rel_mira2_a", "speaker": "mira", "portrait": "happy", "text": "\"Less,\" Mira repeats, like she's allowed to. Her shoulders actually drop." },
+    "tok_rel_mira2_b": { "id": "tok_rel_mira2_b", "speaker": "mira", "portrait": "inspired", "text": "She finds it. Voice cracking on purpose this time — the room loves it more." },
 
     "tok_preshow": {
       "id": "tok_preshow", "speaker": "narrator",

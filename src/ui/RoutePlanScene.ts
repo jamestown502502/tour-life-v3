@@ -13,7 +13,7 @@ import { DialogueBox } from './DialogueBox';
 
 const ONBOARD_FLAG = 'onboard_routeplan_seen';
 
-const COMPLICATION_LABELS: Record<string, string> = {
+export const COMPLICATION_LABELS: Record<string, string> = {
   van_breakdown: 'The van has been making a noise none of you want to name.',
   lost_gear: 'A pedal went missing somewhere between cities. Nobody\'s owning up.',
   booking_conflict: 'Two venues both think they booked you the same night.',

@@ -1,0 +1,190 @@
+{
+  "id": "mexico_city",
+  "name": "Mexico City",
+  "tone": "community_and_percussion",
+  "weather": ["afternoon_sun", "evening_thunderstorm"],
+  "tempo": 104,
+  "tint": "citrus_bloom",
+  "locations": [
+    { "id": "taqueria", "name": "A family-run taquería", "sound": "griddle_sizzle", "sceneId": "mex_loc_taqueria" },
+    { "id": "plaza", "name": "A plaza where mariachi are warming up", "sound": "brass_and_chatter", "sceneId": "mex_loc_plaza" },
+    { "id": "lucha", "name": "A lucha libre gym down a side street", "sound": "crowd_roar", "sceneId": "mex_loc_lucha" },
+    { "id": "terraza", "name": "A rooftop terraza overlooking the Zócalo", "sound": "distant_bells", "sceneId": "mex_loc_terraza" },
+    { "id": "mercado", "name": "A sprawling mercado selling everything at once", "sound": "vendor_calls", "sceneId": "mex_loc_mercado" }
+  ],
+  "arrivalSceneId": "mex_arrival",
+  "preShowSceneId": "mex_preshow",
+  "relationshipScenePool": [
+    { "id": "mira_unknown_and_dancing", "bandmate": "mira", "sceneId": "mex_rel_mira" },
+    { "id": "theo_the_citys_backbeat", "bandmate": "theo", "sceneId": "mex_rel_theo" },
+    { "id": "jun_mic_everything", "bandmate": "jun", "sceneId": "mex_rel_jun" },
+    { "id": "rowan_ximena_asked_for_me", "bandmate": "rowan", "sceneId": "mex_rel_rowan" },
+    { "id": "rowan_the_lesson", "bandmate": "rowan", "sceneId": "mex_rel_rowan2" }
+  ],
+  "collaborator": { "npcName": "Ximena", "role": "street percussionist", "gift": "a cascabel anklet, still warm from her ankle" },
+  "preShowChoices": [
+    { "id": "rehearsed_set", "label": "Play it exactly as rehearsed", "description": "Every cue where it should be. No surprises tonight.", "arrangementId": "rehearsed", "effects": { "harmony": 1 } },
+    { "id": "open_the_floor", "label": "Open the floor for the crowd to answer", "description": "Let the room talk back for once.", "arrangementId": "call_and_response", "effects": { "inspiration": 3 } },
+    { "id": "spotlight_ximena", "label": "Bring Ximena up to trade rhythms", "description": "Hand her half the song, no rehearsal at all.", "arrangementId": "duet_percussion", "effects": { "inspiration": 4 }, "condition": "stat.harmony>=35" }
+  ],
+  "songId": "callejon_groove",
+  "storyGate": { "condition": "stat.harmony>=35", "unlock": "duet_percussion" },
+  "afterShowSceneId": "mex_aftershow",
+  "journalSceneId": "mex_journal",
+  "scenes": {
+    "mex_arrival": {
+      "id": "mex_arrival",
+      "speaker": "narrator",
+      "text": "The bus climbs out of a haze of smog into afternoon gold, volcano-shadowed and loud with a hundred radios playing a hundred different songs at once. Someone's already selling roasted corn and paletas at the edge of the lot.",
+      "choices": [
+        { "id": "view", "label": "Take in the skyline", "next": "mex_arrival_view", "effects": { "inspiration": 2 } },
+        { "id": "gear", "label": "Get the gear off the bus", "next": "mex_arrival_gear", "effects": { "energy": -3 } },
+        { "id": "jun", "label": "Check on Jun, already recording street sounds", "next": "mex_arrival_jun", "relationshipEffects": { "jun": 3 } }
+      ]
+    },
+    "mex_arrival_view": { "id": "mex_arrival_view", "speaker": "narrator", "text": "Ash-grey volcano on the horizon, cathedral bells layered under six lanes of traffic. The city doesn't quiet down for anyone passing through, and somehow that's exactly the relief you needed." },
+    "mex_arrival_gear": { "id": "mex_arrival_gear", "speaker": "narrator", "text": "The amp case squeals on one wheel now, louder with every city you drag it through. Someone will fix that eventually — probably not today, probably not this whole tour." },
+    "mex_arrival_jun": { "id": "mex_arrival_jun", "speaker": "jun", "portrait": "inspired", "text": "\"Listen to this,\" Jun says, phone held out toward a sound truck blasting cumbia through one busted, overdriven speaker. \"That distortion right there — that's the whole song, honestly.\"" },
+
+    "mex_loc_taqueria": {
+      "id": "mex_loc_taqueria", "speaker": "narrator",
+      "text": "Onions hit hot metal and the whole block turns to look before going back to its business. The woman running the grill has clearly done this ten thousand times before today, without once looking bored.",
+      "choices": [
+        { "id": "order_everything", "label": "Order one of everything on the menu", "next": "mex_loc_taqueria_order", "effects": { "funds": -15, "harmony": 2 } },
+        { "id": "watch_grill", "label": "Watch her work the grill in silence", "next": "mex_loc_taqueria_watch", "effects": { "inspiration": 2 } },
+        { "id": "ask_recipe", "label": "Ask what makes hers different", "next": "mex_loc_taqueria_ask", "effects": { "harmony": 1 } }
+      ]
+    },
+    "mex_loc_taqueria_order": { "id": "mex_loc_taqueria_order", "speaker": "narrator", "text": "Five tacos in, someone at the table finally admits defeat and pushes their plate away. It wasn't you, and you're quietly, unreasonably proud of that fact." },
+    "mex_loc_taqueria_watch": { "id": "mex_loc_taqueria_watch", "speaker": "narrator", "text": "No wasted motion anywhere — hands, tongs, the flick of salsa, the exact half-turn of the wrist. You could set a metronome to the rhythm of her hands and never once lose the beat." },
+    "mex_loc_taqueria_ask": { "id": "mex_loc_taqueria_ask", "speaker": "narrator", "text": "\"Thirty years of practice,\" she says, not even glancing up from the grill. \"Also, don't tell anyone, but it's the onions.\" She winks like it's a secret worth actually keeping." },
+
+    "mex_loc_plaza": {
+      "id": "mex_loc_plaza", "speaker": "narrator",
+      "text": "Trumpets tune against each other in a loose, happy argument that somehow resolves itself every few bars. A mariachi in silver braid winks at you and keeps right on playing, unbothered by the audience.",
+      "choices": [
+        { "id": "tip_them", "label": "Tip them for a song", "next": "mex_loc_plaza_tip", "effects": { "funds": -10, "harmony": 3 } },
+        { "id": "learn_a_riff", "label": "Ask to learn a riff", "next": "mex_loc_plaza_learn", "effects": { "inspiration": 3 } },
+        { "id": "just_listen", "label": "Sit on the curb and just listen", "next": "mex_loc_plaza_listen", "effects": { "energy": 2 } }
+      ]
+    },
+    "mex_loc_plaza_tip": { "id": "mex_loc_plaza_tip", "speaker": "narrator", "text": "They play the whole song again, just for you this time, a little louder and considerably showier than before. Worth every peso, and then some." },
+    "mex_loc_plaza_learn": { "id": "mex_loc_plaza_learn", "speaker": "narrator", "text": "Your fingers won't cooperate no matter how slowly he plays it. The trumpeter laughs, not unkindly, and shows you the fingering one more patient time." },
+    "mex_loc_plaza_listen": { "id": "mex_loc_plaza_listen", "speaker": "narrator", "text": "Nobody asks you to move along. You stay long enough to learn the shape of the song without ever meaning to memorize a single note of it." },
+
+    "mex_loc_lucha": {
+      "id": "mex_loc_lucha", "speaker": "narrator",
+      "text": "A masked luchador vaults clean over the ropes as the crowd roars in one throat, like a single enormous animal waking up. Someone presses a foam finger shaped like a fist into your hand.",
+      "choices": [
+        { "id": "cheer_loud", "label": "Cheer until your throat gives out", "next": "mex_loc_lucha_cheer", "effects": { "harmony": 3, "energy": -2 } },
+        { "id": "study_crowd", "label": "Study how the crowd moves as one", "next": "mex_loc_lucha_study", "effects": { "inspiration": 3 } },
+        { "id": "buy_mask", "label": "Buy a cheap replica mask at the door", "next": "mex_loc_lucha_mask", "effects": { "funds": -8, "harmony": 1 } }
+      ]
+    },
+    "mex_loc_lucha_cheer": { "id": "mex_loc_lucha_cheer", "speaker": "narrator", "text": "You lose your voice a full day before soundcheck, hoarse and grinning anyway, throat raw for the rest of the week. Worth it, probably — you'll find out for certain tomorrow." },
+    "mex_loc_lucha_study": { "id": "mex_loc_lucha_study", "speaker": "narrator", "text": "Two thousand strangers, breathing on exactly the same beat without ever once being asked to or rehearsing it. You want that sound onstage tonight, whatever it costs you." },
+    "mex_loc_lucha_mask": { "id": "mex_loc_lucha_mask", "speaker": "narrator", "text": "The mask smells like plastic and somebody else's cologne. You wear it for the rest of the walk home anyway, unreasonably pleased with the whole purchase." },
+
+    "mex_loc_terraza": {
+      "id": "mex_loc_terraza", "speaker": "narrator",
+      "text": "The Zócalo spreads out below, flag snapping hard in the wind, cathedral lit gold against a bruised purple sky. Thunderheads are already stacking up fast over the hills to the west.",
+      "choices": [
+        { "id": "stay_for_storm", "label": "Stay and watch the storm roll in", "next": "mex_loc_terraza_storm", "effects": { "inspiration": 3 } },
+        { "id": "go_in", "label": "Head inside before it breaks", "next": "mex_loc_terraza_in", "effects": { "energy": 3 } },
+        { "id": "call_home", "label": "Call home before the signal drops", "next": "mex_loc_terraza_call", "effects": { "harmony": 2 } }
+      ]
+    },
+    "mex_loc_terraza_storm": { "id": "mex_loc_terraza_storm", "speaker": "narrator", "text": "Lightning finds the cathedral spire twice in under a minute. You count the seconds after each strike, out of an old childhood habit you never quite dropped." },
+    "mex_loc_terraza_in": { "id": "mex_loc_terraza_in", "speaker": "narrator", "text": "You make it inside one drop ahead of the downpour. Below, the entire street breaks into a run for cover, laughing, all at once." },
+    "mex_loc_terraza_call": { "id": "mex_loc_terraza_call", "speaker": "narrator", "text": "The call drops twice before it finally connects. \"We're fine,\" you say, over a crack of thunder. \"Better than fine, actually. Really good, even.\"" },
+
+    "mex_loc_mercado": {
+      "id": "mex_loc_mercado", "speaker": "narrator",
+      "text": "Vendors call out prices over each other in a rhythm the block took generations to perfect and never once wrote down. Rowan is already three stalls deep, completely and happily gone.",
+      "choices": [
+        { "id": "haggle", "label": "Haggle over a hand drum", "next": "mex_loc_mercado_haggle", "effects": { "funds": -12 }, "flags": ["found_hand_drum"] },
+        { "id": "find_rowan", "label": "Go find Rowan", "next": "mex_loc_mercado_rowan", "relationshipEffects": { "rowan": 4 } },
+        { "id": "get_lost", "label": "Get pleasantly, deliberately lost", "next": "mex_loc_mercado_lost", "effects": { "inspiration": 2 } }
+      ]
+    },
+    "mex_loc_mercado_haggle": { "id": "mex_loc_mercado_haggle", "speaker": "narrator", "text": "You get it for half price and a promise to come back tomorrow with the whole band in tow. You will not, in fact, come back tomorrow." },
+    "mex_loc_mercado_rowan": { "id": "mex_loc_mercado_rowan", "speaker": "rowan", "portrait": "happy", "text": "\"Every single stall has a different beat,\" Rowan says, delighted, tapping along on an overturned bucket someone's using as a stool, completely lost to it." },
+    "mex_loc_mercado_lost": { "id": "mex_loc_mercado_lost", "speaker": "narrator", "text": "You take four wrong turns on purpose and find a courtyard nobody mentioned in any guidebook you've ever read, on any tour, in any city." },
+
+    "mex_rel_mira": {
+      "id": "mex_rel_mira", "speaker": "mira", "portrait": "happy",
+      "text": "\"Nobody here knows who we are, and they're dancing anyway,\" Mira says, delighted, almost disbelieving. \"I don't think I knew how much I needed exactly that.\"",
+      "choices": [
+        { "id": "lean_into_it", "label": "Then let's stay unknown a little longer", "next": "mex_rel_mira_a", "relationshipEffects": { "mira": 5 }, "effects": { "harmony": 2 } },
+        { "id": "they_will", "label": "They'll know soon. Enjoy it while it lasts.", "next": "mex_rel_mira_b", "relationshipEffects": { "mira": 3 } }
+      ]
+    },
+    "mex_rel_mira_a": { "id": "mex_rel_mira_a", "speaker": "mira", "portrait": "inspired", "text": "\"Deal,\" she says, and clearly means it — for once not performing a single thing for anybody, including herself, including you." },
+    "mex_rel_mira_b": { "id": "mex_rel_mira_b", "speaker": "mira", "portrait": "tense", "text": "Her smile flickers, just slightly, before she catches it and buries it back in the noise of the street, out of long habit." },
+
+    "mex_rel_theo": {
+      "id": "mex_rel_theo", "speaker": "theo", "portrait": "tense",
+      "text": "\"Even the city has a backbeat here,\" Theo says, wiping sweat off his neck, \"and it never once stops long enough to actually breathe.\"",
+      "choices": [
+        { "id": "find_shade", "label": "Find shade and sit with him a while", "next": "mex_rel_theo_a", "relationshipEffects": { "theo": 6 }, "effects": { "energy": 2 } },
+        { "id": "match_it", "label": "Then match it. Don't fight the pace.", "next": "mex_rel_theo_b", "relationshipEffects": { "theo": 3 }, "effects": { "inspiration": 2 } }
+      ]
+    },
+    "mex_rel_theo_a": { "id": "mex_rel_theo_a", "speaker": "theo", "portrait": "happy", "text": "The shade helps. So does not talking for a while. Theo's shoulders finally, visibly drop for the first time all week, maybe all tour." },
+    "mex_rel_theo_b": { "id": "mex_rel_theo_b", "speaker": "theo", "portrait": "inspired", "text": "He tries it, hesitant at first, then less so. Something in his playing loosens that hasn't loosened in weeks of tour, maybe longer than that." },
+
+    "mex_rel_jun": {
+      "id": "mex_rel_jun", "speaker": "jun", "portrait": "inspired",
+      "text": "\"I want to mic literally everything in this city,\" Jun says, already unspooling cable across the sidewalk. \"The buses, the vendors, the church bells. All of it, layered.\"",
+      "choices": [
+        { "id": "help_record", "label": "Help them chase every sound on the block", "next": "mex_rel_jun_a", "relationshipEffects": { "jun": 6 }, "effects": { "funds": -10 } },
+        { "id": "pick_one", "label": "Pick one sound and commit to it", "next": "mex_rel_jun_b", "relationshipEffects": { "jun": 3 } }
+      ]
+    },
+    "mex_rel_jun_a": { "id": "mex_rel_jun_a", "speaker": "jun", "portrait": "happy", "text": "Two hours later you have forty minutes of horns, bells, and one deeply confused stray dog barking directly into the microphone at close range." },
+    "mex_rel_jun_b": { "id": "mex_rel_jun_b", "speaker": "jun", "portrait": "tense", "text": "Jun picks the cathedral bells, reluctantly, already mourning every single sound they didn't get the chance to record, notebook full of what-ifs." },
+
+    "mex_rel_rowan": {
+      "id": "mex_rel_rowan", "speaker": "rowan", "portrait": "worried",
+      "text": "\"Ximena asked ME to sit in on percussion tonight,\" Rowan says, stunned, saying it twice like it won't stick otherwise. \"Not the band. Me, specifically.\"",
+      "choices": [
+        { "id": "go_for_it", "label": "Then go. This is your moment.", "next": "mex_rel_rowan_a", "relationshipEffects": { "rowan": 6 }, "effects": { "inspiration": 2 } },
+        { "id": "nervous_together", "label": "Be nervous about it together first", "next": "mex_rel_rowan_b", "relationshipEffects": { "rowan": 4 } }
+      ]
+    },
+    "mex_rel_rowan_a": { "id": "mex_rel_rowan_a", "speaker": "rowan", "portrait": "inspired", "text": "Rowan's already gone, jogging back toward the plaza before you've even finished the sentence out loud, bass case still half-open and forgotten by the curb." },
+    "mex_rel_rowan_b": { "id": "mex_rel_rowan_b", "speaker": "rowan", "portrait": "happy", "text": "\"Okay,\" Rowan says, steadier now, squaring their shoulders like it helps. \"Okay. I can actually do this. I think I can actually do this.\"" },
+
+    "mex_rel_rowan2": {
+      "id": "mex_rel_rowan2", "speaker": "rowan", "portrait": "inspired",
+      "text": "Rowan comes back from the lesson with Ximena buzzing, hands still moving through a pattern they won't quite stop repeating. \"She said I have good hands,\" Rowan says. \"Good hands.\"",
+      "choices": [
+        { "id": "ask_to_see", "label": "Ask them to show you the pattern", "next": "mex_rel_rowan2_a", "relationshipEffects": { "rowan": 5 }, "effects": { "harmony": 1 } },
+        { "id": "let_it_be", "label": "Let them have this one, unshared", "next": "mex_rel_rowan2_b", "relationshipEffects": { "rowan": 5 } }
+      ]
+    },
+    "mex_rel_rowan2_a": { "id": "mex_rel_rowan2_a", "speaker": "rowan", "portrait": "happy", "text": "Rowan teaches you three bars badly and patiently, correcting your hands twice, clearly enjoying being the one who knows something for once, for a change." },
+    "mex_rel_rowan2_b": { "id": "mex_rel_rowan2_b", "speaker": "rowan", "portrait": "inspired", "text": "Rowan just nods, grateful, and keeps tapping the pattern out quietly for the rest of the walk back to the bus, not needing an audience for it." },
+
+    "mex_preshow": {
+      "id": "mex_preshow", "speaker": "narrator",
+      "text": "Ximena's already warming up just outside, cascabels jingling softly against the doorframe with every shift of her weight. The whole block seems to be finding its way toward the venue tonight, unhurried."
+    },
+
+    "mex_aftershow": {
+      "id": "mex_aftershow", "speaker": "narrator",
+      "text": "The last drumbeat doesn't really end so much as get absorbed straight into the street outside, which is still going, and shows absolutely no sign of stopping any time soon.",
+      "choices": [
+        { "id": "join_street", "label": "Follow the rhythm out into the street", "next": "mex_aftershow_a", "relationshipEffects": { "mira": 2, "theo": 2, "jun": 2, "rowan": 2 } },
+        { "id": "stay_venue", "label": "Stay and help Ximena pack up", "next": "mex_aftershow_b", "relationshipEffects": { "rowan": 3 }, "effects": { "harmony": 2 } }
+      ]
+    },
+    "mex_aftershow_a": { "id": "mex_aftershow_a", "speaker": "narrator", "text": "You end up three blocks away, still playing, strangers keeping time on car hoods and folding chairs and each other's shoulders, nobody counting the beat out loud." },
+    "mex_aftershow_b": { "id": "mex_aftershow_b", "speaker": "narrator", "text": "Ximena presses the anklet into your hands before you can even think to argue about it. \"For the road,\" she says simply, like that settles it." },
+
+    "mex_journal": {
+      "id": "mex_journal", "speaker": "narrator",
+      "text": "You write: Mexico City never once stopped moving, not for a single second, and somehow that was the most restful place we've played all tour."
+    }
+  }
+}

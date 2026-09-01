@@ -9,14 +9,17 @@
     { "id": "fado_house", "name": "A small fado house", "sound": "acoustic_guitar", "sceneId": "lis_loc_fado" },
     { "id": "record_shop", "name": "A dusty record shop", "sound": "vinyl_crackle", "sceneId": "lis_loc_records" },
     { "id": "miradouro", "name": "The rooftop miradouro", "sound": "wind_and_trams", "sceneId": "lis_loc_miradouro" },
-    { "id": "night_market", "name": "The night market", "sound": "crowd_and_bells", "sceneId": "lis_loc_market" }
+    { "id": "night_market", "name": "The night market", "sound": "crowd_and_bells", "sceneId": "lis_loc_market" },
+    { "id": "riverside_docks", "name": "The riverside docks at dusk", "sound": "water_lapping", "sceneId": "lis_loc_docks" }
   ],
   "arrivalSceneId": "lis_arrival",
   "preShowSceneId": "lis_preshow",
   "relationshipScenePool": [
     { "id": "mira_low_confidence", "bandmate": "mira", "sceneId": "lis_rel_mira" },
     { "id": "theo_rest_day", "bandmate": "theo", "sceneId": "lis_rel_theo" },
-    { "id": "jun_new_sound", "bandmate": "jun", "sceneId": "lis_rel_jun" }
+    { "id": "jun_new_sound", "bandmate": "jun", "sceneId": "lis_rel_jun" },
+    { "id": "rowan_watching_the_room", "bandmate": "rowan", "sceneId": "lis_rel_rowan" },
+    { "id": "jun_old_and_new", "bandmate": "jun", "sceneId": "lis_rel_jun2" }
   ],
   "collaborator": { "npcName": "Inês", "role": "fado singer", "gift": "a scrap of a fado phrase, hummed onto a napkin" },
   "preShowChoices": [
@@ -119,6 +122,39 @@
     },
     "lis_rel_jun_a": { "id": "lis_rel_jun_a", "speaker": "jun", "portrait": "inspired", "text": "\"Tonight, then,\" Jun says, already humming the gap." },
     "lis_rel_jun_b": { "id": "lis_rel_jun_b", "speaker": "jun", "portrait": "happy", "text": "Jun shrugs, unbothered. There will be other rooms." },
+
+    "lis_loc_docks": {
+      "id": "lis_loc_docks", "speaker": "narrator",
+      "text": "Fishing boats rock against worn pilings. The water holds the last orange light long after the sky's given it up.",
+      "choices": [
+        { "id": "watch_boats", "label": "Watch the boats come in", "next": "lis_loc_docks_watch", "effects": { "energy": 3 } },
+        { "id": "write", "label": "Write a line in your notebook", "next": "lis_loc_docks_write", "effects": { "inspiration": 3 } }
+      ]
+    },
+    "lis_loc_docks_watch": { "id": "lis_loc_docks_watch", "speaker": "narrator", "text": "A fisherman nods at you like you've always been here. You nod back like it's true." },
+    "lis_loc_docks_write": { "id": "lis_loc_docks_write", "speaker": "narrator", "text": "One line becomes four. You cross out two and keep the rest." },
+
+    "lis_rel_rowan": {
+      "id": "lis_rel_rowan", "speaker": "rowan", "portrait": "worried",
+      "text": "\"Nobody looks at the bass player in a room this pretty,\" Rowan says, watching the water instead of you.",
+      "choices": [
+        { "id": "tell_truth", "label": "I look. I always look.", "next": "lis_rel_rowan_a", "relationshipEffects": { "rowan": 6 } },
+        { "id": "redirect", "label": "Then make them.", "next": "lis_rel_rowan_b", "relationshipEffects": { "rowan": 3 }, "effects": { "inspiration": 2 } }
+      ]
+    },
+    "lis_rel_rowan_a": { "id": "lis_rel_rowan_a", "speaker": "rowan", "portrait": "happy", "text": "Rowan doesn't answer. Just leans a little closer to the rail, and to you." },
+    "lis_rel_rowan_b": { "id": "lis_rel_rowan_b", "speaker": "rowan", "portrait": "inspired", "text": "\"Make them,\" Rowan repeats, testing the shape of it. \"Yeah. Okay.\"" },
+
+    "lis_rel_jun2": {
+      "id": "lis_rel_jun2", "speaker": "jun", "portrait": "tense",
+      "text": "\"Everything here already sounds finished,\" Jun says, frustrated. \"How do you innovate on top of a thousand years?\"",
+      "choices": [
+        { "id": "you_dont_have_to", "label": "You don't have to top it. Just answer it.", "next": "lis_rel_jun2_a", "relationshipEffects": { "jun": 6 }, "effects": { "inspiration": 2 } },
+        { "id": "steal_from_it", "label": "Steal from it shamelessly, then.", "next": "lis_rel_jun2_b", "relationshipEffects": { "jun": 3 } }
+      ]
+    },
+    "lis_rel_jun2_a": { "id": "lis_rel_jun2_a", "speaker": "jun", "portrait": "inspired", "text": "Jun goes quiet, turning that over. \"Answer it,\" they repeat, like a key turning." },
+    "lis_rel_jun2_b": { "id": "lis_rel_jun2_b", "speaker": "jun", "portrait": "happy", "text": "Jun grins, already humming a fado melody bent sideways into something new." },
 
     "lis_preshow": {
       "id": "lis_preshow", "speaker": "narrator",

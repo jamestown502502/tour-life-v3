@@ -12,36 +12,41 @@ building toward.
 
 ## 0. TL;DR
 
-A cozy rhythm-adventure browser game. Vite + TypeScript + Phaser 3. **Art is now real painted
-Gemini assets** (4 backgrounds + 16 character portraits) with the original code-drawn Graphics
+A cozy rhythm-adventure browser game. Vite + TypeScript + Phaser 3. **Art is real painted
+Gemini assets** (5 backgrounds + 16 character portraits) with the original code-drawn Graphics
 kept as an automatic fallback; all audio is still Web Audio synthesis. One complete, **polished**
-vertical slice exists: Title → Band Creator → seeded Route → Hub → two fully playable cities
-(Lisbon, Tokyo) each with dialogue, exploration, a relationship scene, a real rhythm performance
-(including real hold-note scoring), and an after-show → Scrapbook with a generated ending.
-Save/resume, 8 accessibility settings, seeded RNG, meta-progression, real typography, a
-depth/shadow UI system, atmospheric backgrounds, and actually-playing ambient music all work.
-37/37 tests pass, typecheck is clean, and it's deployed and publicly live.
+vertical slice exists: Title → Band Creator → seeded Route → Hub → three fully playable cities
+(Lisbon, Tokyo, Mexico City) each with dialogue, exploration, a relationship scene, a real
+rhythm performance (including real hold-note scoring), and an after-show → Scrapbook with a
+generated ending. First-time players get real onboarding (§H). Save/resume, 8 accessibility
+settings, seeded RNG, meta-progression, real typography, a depth/shadow UI system, atmospheric
+backgrounds, and actually-playing ambient music all work. 39/39 tests pass, typecheck is clean,
+and it's deployed and publicly live.
 
-**What changed since the last handoff:** the real-asset pass (Phase G) — see §G below. Painted
-soft-gouache backgrounds and 16 character portraits now load over the code-drawn originals
-through the existing texture-key seam. Before that, an 8-phase polish pass (typography → UI
-depth → characters → backgrounds/atmosphere → rhythm feel → audio → mobile verification) took
-the game from "functional but flat" to looking and sounding finished; that pass found seven real
-bugs including one where every gradient background had been silently invisible since it was
-written, and one where no music had ever actually played despite the audio system being complete.
-See §9 and §12 for those. Phase G found four more (§6, bugs 13–16).
+**What changed since the last handoff:** two passes. Phase G (real-asset pass, §G) put painted
+soft-gouache backgrounds and 16 character portraits over the code-drawn originals through the
+existing texture-key seam. Then this pass (§H) added onboarding/dummy-proofing, a third full
+city (Mexico City), deepened Lisbon and Tokyo, and gave the previously-cosmetic mid-tour
+complication one real mechanical effect. Before Phase G, an 8-phase polish pass took the game
+from "functional but flat" to looking and sounding finished. See §9/§12 for the polish-pass bug
+ledger and §6 for Phase G's (bugs 13–16) and this pass's (bugs 17–18).
 
 **Art direction rule, deliberately chosen: painted world, code-drawn UI.** Backgrounds and
 character portraits are real assets; panels, buttons, notes, lanes and the rhythm HUD stay
 code-drawn. Crisp vector chrome over painted art reads as intentional design — replacing
 everything with generated art produces a mushier, less coherent look. Keep this split.
 
-**What it is still NOT:** the 3-4 hour "every run unique" promise from the blueprint. Content
-depth is unchanged from the last handoff — this polish pass was entirely look/feel/audio, by
-explicit user instruction, and deliberately did not touch `/content`. The two cities are still
-~460 words of prose each, versus the blueprint's ~3,200-word-per-city target (see §8). There
-are still 2 cities, not 12-16. The "reality layer" (Part 3 of the blueprint) still does not
-exist in code at all — still deferred, still the user's call to greenlight.
+**What it is still NOT, and why — both are the owner's explicit calls, not gaps:** the 3-4 hour
+"every run unique" promise from the blueprint (12-16 cities). Asked directly on 2026-09-01
+whether to add a 4th/5th city before closing out this pass, the owner chose to ship with 3
+(Lisbon ~513 words, Tokyo ~498, Mexico City ~1,210 — see §8). The "reality layer" (Part 3 of the
+blueprint: Wellbeing/Groundedness/Vices/Return Home) still does not exist in code. Asked the
+same day whether to build a version of it calibrated to read as dark/mature while still passing
+Google Play's content-rating review as something milder, that specific framing was declined —
+content designed to misrepresent itself to a platform's rating review isn't something to build,
+full stop — and offered an honestly-rated alternative instead; the owner chose to skip the
+reality layer entirely rather than pursue that either. It remains fully deferred — no code, no
+content, no schema fields.
 
 **Live:** https://tour-life-v3.vercel.app
 **Repo:** https://github.com/jamestown502502/tour-life-v3 (private, owner `jamestown502502`)
@@ -519,14 +524,16 @@ this session, but nothing in the polish pass should have touched these)
   generator, and the save/load system are all **unchanged**. Re-read the original handoff's
   §4-§6 (now folded into this file's history — see the git log for `f0a1723` if you want the
   original text verbatim) for the full mechanics of each; nothing here needed updating.
-- Content authoring pipeline (how to add city #3) — unchanged, still content-JSON-only, no
-  engine changes required for a new city.
-- Content depth numbers — unchanged. Still ~460 words/city, ~15% of the blueprint's target. The
-  polish pass explicitly did not touch `/content` at all (confirmed: `git log --stat` on every
-  polish commit shows zero changes under `content/`).
-- The Part 3 "reality layer" — still fully deferred, still not started, same rationale as
-  before (content carries real store-policy weight, needs its own scoped decision on tone/
-  rating posture before any of it gets written).
+- Content authoring pipeline (how to add city #4) — unchanged, still content-JSON-only, no
+  engine changes required for a new city (proven again by Mexico City in this pass — see §H).
+- Content depth numbers — updated this pass. Lisbon 513 words / 5 locations / 5 relationship
+  pool entries (was ~460/4/3). Tokyo 498 words / 5 / 5 (was ~460/4/3). Mexico City, new: 1,210
+  words / 5 locations / 4 relationship pool entries / 3 preShowChoices / its own song. Still
+  well under the blueprint's ~3,200-word-per-city target — see §H for the honest framing.
+- The Part 3 "reality layer" — still fully deferred, still not started. Raised explicitly this
+  pass (owner asked for a version calibrated to pass Google Play's content rating while reading
+  as dark/mature) and declined on those terms — see TL;DR. Still needs its own scoped decision
+  on tone/rating posture, on honest terms, before any of it gets written.
 
 ---
 
@@ -661,6 +668,19 @@ single complete reference):*
     `+1` exists in `fillVerticalGradient` and is *harmless there* — those fills are opaque, so
     overlapping just overwrites rather than accumulating.
 
+*From this pass (onboarding + content depth):*
+
+17. **Title's seed-entry field floated on top of every modal launched over it.** It's a real DOM
+    `<input>` (`position:fixed`, `z-index:1000` — see `src/ui/htmlOverlay.ts`), entirely outside
+    Phaser's canvas/scene stacking. `scene.pause()` only halts Title's own update/input loop; it
+    does nothing to a DOM element sitting above the whole canvas. This was already true for
+    SettingsScene before this pass (unnoticed — nothing in Settings' layout happened to collide
+    with where the input sits) and became visible the moment HowToPlayScene added a second thing
+    launched over Title. Fixed by hiding/showing the input in lockstep with Title's own
+    `PAUSE`/`RESUME` events, registered immediately after the input is created — not by
+    repositioning new UI around a magic Y offset, which breaks again the next time anything is
+    added near that row.
+
 ---
 
 ## §G. The real-asset pass — how to add or regenerate art
@@ -698,6 +718,59 @@ requirements: the background must be **vivid green** (see bug 14), and you must 
 **Audio was deliberately NOT swapped to real files.** The procedural ambience is chord-driven,
 crossfading and duckable; static tracks would lose per-city chord identity and crossfade for a
 much larger payload. Only a single generated title theme would plausibly be worth adding.
+
+---
+
+## §H. Onboarding, dummy-proofing, and Mexico City — this pass
+
+**Onboarding** (`src/ui/HowToPlayScene.ts`, `src/ui/HelpButton.ts`, `src/core/onboarding.ts`):
+a 3-page How to Play screen (auto-opens once ever on a fresh player, reachable any time from
+Title), a one-line diegetic "Sol" intro the first time RoutePlan/Hub appear each run, a
+non-interactive tween-driven demo of TAP/HOLD/CUE before a player's first-ever real song (never
+touches the real note/scoring pipeline — see bug-class notes on `RhythmScene.runPracticePass`),
+and a "?" help button on Hub/City/Rhythm/Scrapbook. Two flag systems, deliberately separate:
+`State.data.flags` (run-scoped, wiped by `State.newRun()` — used for the RoutePlan/Hub intros,
+which are meant to repeat gently each new tour) vs. `src/core/onboarding.ts`'s localStorage
+flags (persistent across every run — used for "has this player EVER seen X", e.g. the How to
+Play auto-open and the rhythm tutorial).
+
+**Dummy-proofing:** New Run now confirms before overwriting an existing save. Hub gained a
+one-line "tonight's goal" teaser, deliberately left-anchored and width-capped so it can't
+collide with the corkboard beside it. Settings' volume +/- pair and BandCreator's genre/why-tour
+grids were re-sized to clear a real 44 CSS-px touch target at the measured 390px-width scale
+factor (0.5417) — the residual gap the previous handoff flagged.
+
+**Mexico City** (`content/cities/mexico_city.json`, `content/songs/callejon_groove.json`,
+`public/assets/img/bg_city_mexico_city.webp`): third full city, `citrus_bloom` tint,
+community/percussion tone. Built to the same template as Lisbon/Tokyo — 5 locations, 4
+relationship-pool entries, 3 preShowChoices (the third, "duet with Ximena", gated on
+`stat.harmony>=35` same pattern as Lisbon's duet/Tokyo's bass_forward), collaborator NPC +
+gift, storyGate. 1,210 words, every node under the enforced 40-word cap. Its song was built by
+`scripts/generate-chart.mjs` — a small deterministic chart generator (motif-based note
+placement, holds substituted periodically, cues at ~1/3 and ~2/3) rather than hand-typing ~300
+note objects; run once, not wired into the build. Background generated via the same
+`generate_image.py` → `process-bg.sh` → manifest pipeline as §G, first try, no border-crop
+surprises this time.
+
+**Mid-tour complication given a real effect** (`HubScene.applyMidTourComplicationIfDue`):
+previously drawn at RoutePlan and displayed once as flavor text, never read again. Now applies
+a small one-time stat delta (`COMPLICATION_EFFECTS` in `HubScene.ts`) the first Hub visit at or
+past the route's midpoint, and surfaces which one fired as a line under the band name. Purely
+additive — `State.data.midTourComplication` already existed, this is a new consumer of it, not
+a new field.
+
+**Two explicit no's, both the owner's call, not gaps:** a 4th/5th city, and a version of the
+Part 3 reality layer calibrated to pass Google Play's content-rating review while reading as
+dark/mature — see TL;DR for why the second one specifically was declined rather than attempted
+in some watered-down form.
+
+typecheck clean, 39/39 tests (2 new — `onboarding.test.ts` covers the persistent-flag module's
+get/set roundtrip and its broken-localStorage fallback; `headless_playtest.test.ts` needed no
+changes and passing with 3 cities is itself a proof point that adding a city took zero engine
+changes). Verified live: full onboarding walkthrough, New Run confirm, Settings/BandCreator
+spacing at 390×844, a complete Lisbon-adjacent path through the new Tokyo pachinko-parlor
+location and Mexico City's arrival/locations/relationship/portraits, the mid-tour complication
+firing exactly at the midpoint Hub visit — zero console errors throughout every check.
 
 ---
 
