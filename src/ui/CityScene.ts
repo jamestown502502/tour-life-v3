@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { PALETTE, W } from '../const';
 import { ensureCityBackground } from '../art/sprites';
 import { applyVignette, spawnFireflies, spawnRain, type WeatherHandle } from '../art/effects';
+import { addCoverBackground } from '../art/background';
 import { CITY_TINTS, NIGHT_TINTS } from '../art/palette';
 import { createButton } from './Button';
 import { DialogueBox } from './DialogueBox';
@@ -44,7 +45,7 @@ export class CityScene extends Phaser.Scene {
   create(): void {
     fadeIn(this);
     const bgKey = ensureCityBackground(this, this.city.id, this.city.tint);
-    const bg = this.add.image(0, 0, bgKey).setOrigin(0, 0);
+    const bg = addCoverBackground(this, bgKey);
     applyVignette(bg);
     const song = getSong(this.city.songId);
     audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm * 0.5, song.waveform);

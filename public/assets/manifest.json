@@ -1,0 +1,6 @@
+[
+  { "key": "bg_title", "file": "img/bg_title.webp" },
+  { "key": "bg_city_lisbon", "file": "img/bg_city_lisbon.webp" },
+  { "key": "bg_city_tokyo", "file": "img/bg_city_tokyo.webp" },
+  { "key": "bg_hub", "file": "img/bg_hub.webp" }
+]

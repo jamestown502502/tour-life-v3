@@ -105,6 +105,31 @@ export function ensureButtonTexture(scene: Phaser.Scene, w: number, h: number, f
   return key;
 }
 
+/** A full-screen darkening scrim: strongest at the top and bottom edges, fully clear through
+ *  the middle. Painted backgrounds are far busier than the flat code-drawn fills they replace,
+ *  and loose UI text (the city name at the top, the location-picker header, Hub stat labels)
+ *  sits directly on them with no panel behind it. This keeps that text readable without
+ *  flattening the artwork where nothing overlaps it.
+ *
+ *  Built from banded solid fills with per-band alpha, NOT fillGradientStyle — see the comment
+ *  on fillVerticalGradient above for why that function is unusable inside generateTexture(). */
+export function ensureScrimTexture(scene: Phaser.Scene): string {
+  const key = 'ui_scrim';
+  const steps = 40;
+  withGraphics(scene, W, H, (g) => {
+    const bandH = H / steps;
+    for (let i = 0; i < steps; i++) {
+      const t = i / (steps - 1);              // 0 at top, 1 at bottom
+      const middleness = 1 - Math.abs(t - 0.5) * 2; // 1 mid-screen, 0 at both edges
+      const alpha = 0.5 * (1 - middleness) ** 1.5;  // eased so the falloff isn't a hard wedge
+      if (alpha <= 0.001) continue;
+      g.fillStyle(PALETTE.night, alpha);
+      g.fillRect(0, bandH * i, W, bandH + 1);
+    }
+  }, key);
+  return key;
+}
+
 export function ensureTitleBackground(scene: Phaser.Scene): string {
   const key = 'bg_title';
   withGraphics(scene, W, H, (g) => {

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { PALETTE_HEX, W } from '../const';
 import { ensureTitleBackground } from '../art/sprites';
 import { applyVignette, spawnFireflies, type WeatherHandle } from '../art/effects';
+import { addCoverBackground } from '../art/background';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { audio } from '../core/audio';
@@ -28,7 +29,7 @@ export class TitleScene extends Phaser.Scene {
     fadeIn(this);
 
     const bgKey = ensureTitleBackground(this);
-    const bg = this.add.image(0, 0, bgKey).setOrigin(0, 0);
+    const bg = addCoverBackground(this, bgKey);
     applyVignette(bg);
     this.fireflies = spawnFireflies(this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.fireflies?.stop());

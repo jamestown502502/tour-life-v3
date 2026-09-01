@@ -54,10 +54,14 @@ export function flash(scene: Phaser.Scene, color = 0xffffff): void {
 /** Soft radial darkening at the screen edges via Phaser's built-in Post FX pipeline (WebGL
  *  only — no-ops harmlessly under the Canvas renderer, which this game doesn't target but
  *  shouldn't crash under either). Apply once per full-screen background image. */
-export function applyVignette(image: Phaser.GameObjects.Image, strength = 0.35): void {
+export function applyVignette(image: Phaser.GameObjects.Image, strength = 0.3): void {
   try {
+    // Radius 0.9, not 0.6: at 0.6 the falloff starts early enough that the darkened corners
+    // read as a hard oval mask over painted backgrounds (it was unobtrusive over the old flat
+    // code-drawn fills, which is why it went unnoticed until real art landed). A wide radius
+    // keeps the edge-darkening as an atmospheric hint rather than a visible shape.
     (image as unknown as { postFX?: { addVignette: (x: number, y: number, radius: number, strength: number) => void } })
-      .postFX?.addVignette(0.5, 0.5, 0.6, strength);
+      .postFX?.addVignette(0.5, 0.5, 0.9, strength);
   } catch {
     // Canvas renderer or an unsupported context — the vignette is purely decorative, skip it
   }

@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { PALETTE, PALETTE_HEX, W } from '../const';
 import { ensureBusHubBackground, ensureHubWindowPane } from '../art/sprites';
 import { applyVignette, spawnFireflies, type WeatherHandle } from '../art/effects';
+import { addCoverBackground } from '../art/background';
+import { hasRealAsset } from '../core/assets';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
@@ -28,20 +30,25 @@ export class HubScene extends Phaser.Scene {
     fadeIn(this);
     audio.playAmbience(DEFAULT_AMBIENCE_CHORDS, DEFAULT_AMBIENCE_BPM);
     const bgKey = ensureBusHubBackground(this);
-    const bg = this.add.image(0, 0, bgKey).setOrigin(0, 0);
+    const bg = addCoverBackground(this, bgKey);
     applyVignette(bg);
     this.fireflies = spawnFireflies(this, PALETTE.gold, 10);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.fireflies?.stop());
 
     const stop = State.data.route[State.data.currentCityIndex];
-    const windowTint = stop ? getCity(stop.cityId).tint : 'midnight_indigo';
-    const windowKey = ensureHubWindowPane(this, windowTint);
-    this.add.image(90, 170, windowKey).setOrigin(0, 0);
+    // The tinted window pane exists to show the next city's color through the bus window — but
+    // it's positioned against the code-drawn background's window frame. Painted bus art has its
+    // windows wherever the generator put them (and conveys "night outside" on its own), so the
+    // pane is skipped there rather than being pasted over unrelated pixels.
+    if (!hasRealAsset(bgKey)) {
+      const windowTint = stop ? getCity(stop.cityId).tint : 'midnight_indigo';
+      this.add.image(90, 170, ensureHubWindowPane(this, windowTint)).setOrigin(0, 0);
+    }
 
     this.add.text(W / 2, 60, State.data.band.name, textStyle('h1')).setOrigin(0.5);
 
     this.renderStats();
-    this.renderCorkboard();
+    this.renderCorkboard(hasRealAsset(bgKey));
 
     if (stop) {
       const city = getCity(stop.cityId);
@@ -90,7 +97,13 @@ export class HubScene extends Phaser.Scene {
 
   /** Small pinned chips inside the corkboard frame drawn in ensureBusHubBackground — ties the
    *  hub's decoration to actual run state rather than being purely decorative. */
-  private renderCorkboard(): void {
+  private renderCorkboard(paintedBackground: boolean): void {
+    // The code-drawn background bakes a corkboard frame behind these chips; painted art
+    // doesn't, so draw a standalone board there instead or the chips float on nothing.
+    if (paintedBackground) {
+      const board = this.add.rectangle(CORKBOARD_X, CORKBOARD_Y, 150, 190, 0x8a6a4a, 0.92).setOrigin(0, 0);
+      board.setStrokeStyle(6, 0x6b4a2f, 1);
+    }
     this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 14, 'Souvenirs', textStyle('stat', { fontSize: '13px', color: '#F5EBDD' })).setOrigin(0.5);
     const items = State.data.inventory.slice(0, 4);
     if (items.length === 0) {
