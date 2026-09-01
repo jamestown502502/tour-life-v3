@@ -692,6 +692,40 @@ session) are the right tool for actual UI/render regression testing, not Vitest+
   to be set locally in this repo before the first commit would succeed. If you're bootstrapping
   a fresh clone, you may hit the same issue.
 
+- **`window.__audio` is exposed in dev builds** alongside `window.__game` (same DEV-gated,
+  prod-stripped pattern, added in main.ts during the audio polish pass) — e.g.
+  `window.__audio.isUnlocked()`, `window.__audio['musicGain'].gain.value` (reading the private
+  gain nodes directly is how a real audio-ducking bug got caught and confirmed fixed this
+  session — see the Phase F polish commit). Useful any time you need to verify the audio graph
+  is actually doing what the code claims, since you can't "hear" a Playwright session.
+
+- **Vercel CLI deploys can silently pile up in a `BLOCKED` state with the local process just
+  hanging on "Building…" forever, if the git commit author's email isn't a verified email on
+  the GitHub account connected to the Vercel Hobby team.** This is NOT a build failure — the
+  build never even starts (`get_deployment_build_logs` returns zero events), and the CLI gives
+  no useful error; it just hangs past any reasonable timeout. The actual cause only shows up if
+  you fetch the deployment's raw JSON directly (CLI's own `status`/`inspect` output just says
+  `UNKNOWN`): `readyStateReason: "The Deployment was blocked because there was no git user
+  associated with the commit."` Root cause here specifically: the repo's git commits were
+  authored as `Jameson Bennett <jmbenn02@icloud.com>` (matching the user's stated real
+  identity), but the Vercel Hobby team is owned by an account tied to a *different* email
+  (`jmbenn02@gmail.com` / GitHub `jamestown502502`) — per Vercel's own docs
+  (vercel.com/docs/deployments/troubleshoot-project-collaboration#account-configuration), a
+  Hobby team requires the commit author to match the team owner's connected git identity, no
+  exceptions, and there's no project setting to disable this check. Fixed by setting this
+  repo's *local* git config (not global — don't change authorship for other projects) to a
+  GitHub-verified noreply address tied to the connected account:
+  `git config user.email "<github-user-id>+<github-username>@users.noreply.github.com"` (get
+  the numeric id via `gh api user --jq .id`) — that address is guaranteed verified for that
+  exact GitHub account by construction, sidestepping any ambiguity about which of the user's
+  several real email addresses GitHub or Vercel actually has on file. If this bites again:
+  check `get_deployment_build_logs` first (zero events = never started, not a real build
+  failure), then fetch the deployment's raw JSON via `GET /v13/deployments/{id}` for
+  `readyStateReason` rather than trusting the CLI's summary output, which hides it entirely.
+  The four deployments this produced while diagnosing are permanently stuck `BLOCKED` — the
+  Cancel Deployment API refuses them (`400`, they're apparently not in a cancelable state) —
+  harmless clutter in the deployment list, but expect them to still be there.
+
 ---
 
 ## 13. Prioritized next steps
