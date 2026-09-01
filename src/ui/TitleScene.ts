@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PALETTE_HEX, W } from '../const';
 import { ensureTitleBackground } from '../art/sprites';
+import { applyVignette, spawnFireflies, type WeatherHandle } from '../art/effects';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { audio } from '../core/audio';
@@ -16,13 +17,17 @@ export class TitleScene extends Phaser.Scene {
   private currentSeed = generateSeed();
   private galleryOpen = false;
   private seedInput: FloatingInput | null = null;
+  private fireflies: WeatherHandle | null = null;
 
   create(): void {
     this.input.once('pointerdown', () => audio.unlock());
     fadeIn(this);
 
     const bgKey = ensureTitleBackground(this);
-    this.add.image(0, 0, bgKey).setOrigin(0, 0);
+    const bg = this.add.image(0, 0, bgKey).setOrigin(0, 0);
+    applyVignette(bg);
+    this.fireflies = spawnFireflies(this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.fireflies?.stop());
 
     this.add.text(W / 2, 260, 'Tour Life', textStyle('title')).setOrigin(0.5);
     this.add.text(W / 2, 320, 'International Dates', textStyle('h2', { color: PALETTE_HEX.gold })).setOrigin(0.5);

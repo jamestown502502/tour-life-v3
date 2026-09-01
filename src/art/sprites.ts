@@ -1,7 +1,7 @@
 // All visuals are code-drawn: Phaser Graphics + generateTexture(). No image files.
 import Phaser from 'phaser';
 import { H, PALETTE, UI_RADIUS, W } from '../const';
-import { CITY_TINTS } from './palette';
+import { CITY_TINTS, NIGHT_TINTS } from './palette';
 import type { BandmateId } from '../../content/schema';
 
 function withGraphics(scene: Phaser.Scene, w: number, h: number, draw: (g: Phaser.GameObjects.Graphics) => void, key: string): void {
@@ -10,6 +10,70 @@ function withGraphics(scene: Phaser.Scene, w: number, h: number, draw: (g: Phase
   draw(g);
   g.generateTexture(key, w, h);
   g.destroy();
+}
+
+/** A tiny xorshift-ish deterministic PRNG local to art generation — not the game's seeded RNG
+ *  (src/core/rng.ts), just enough to make repeated fillRect calls look organic without state. */
+function nextSeed(seed: number): number {
+  return (seed * 9301 + 49297) % 233280;
+}
+
+function lerpColor(c1: number, c2: number, t: number): number {
+  const r1 = (c1 >> 16) & 0xff, g1 = (c1 >> 8) & 0xff, b1 = c1 & 0xff;
+  const r2 = (c2 >> 16) & 0xff, g2 = (c2 >> 8) & 0xff, b2 = c2 & 0xff;
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  return (r << 16) | (g << 8) | b;
+}
+
+/** Vertical gradient as banded solid fills. NOT Graphics.fillGradientStyle — confirmed by
+ *  direct pixel readback that fillGradientStyle bakes as fully transparent through
+ *  generateTexture() in this Phaser/WebGL setup (solid fillStyle bakes correctly; the gradient
+ *  shader path apparently isn't captured by the RenderTexture snapshot). Every background that
+ *  used to call fillGradientStyle was silently invisible — masked only because PALETTE.night
+ *  happens to match the page's own background color. Don't reintroduce fillGradientStyle inside
+ *  a withGraphics()/generateTexture() callback without re-verifying this is fixed upstream. */
+function fillVerticalGradient(
+  g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number,
+  colorTop: number, colorBottom: number, alpha = 1, steps = 24,
+): void {
+  const stepH = h / steps;
+  for (let i = 0; i < steps; i++) {
+    const t = steps === 1 ? 0 : i / (steps - 1);
+    g.fillStyle(lerpColor(colorTop, colorBottom, t), alpha);
+    g.fillRect(x, y + i * stepH, w, stepH + 1);
+  }
+}
+
+/** One row of silhouette buildings, optionally with lit windows scattered inside them —
+ *  shared by the title screen and city backgrounds so both use the same depth language. */
+function drawBuildingRow(
+  g: Phaser.GameObjects.Graphics, startSeed: number, baseY: number, color: number, alpha: number,
+  minH: number, maxH: number, minW: number, maxW: number, gap: number, startX: number,
+  windowColor?: number, windowAlpha = 0.55,
+): void {
+  let seed = startSeed;
+  let x = startX;
+  while (x < W) {
+    seed = nextSeed(seed);
+    const bw = minW + (seed % (maxW - minW));
+    seed = nextSeed(seed);
+    const bh = minH + (seed % (maxH - minH));
+    const top = baseY - bh;
+    g.fillStyle(color, alpha);
+    g.fillRect(x, top, bw, bh);
+    if (windowColor !== undefined) {
+      g.fillStyle(windowColor, windowAlpha);
+      for (let wy = top + 12; wy < baseY - 10; wy += 20) {
+        for (let wx = x + 6; wx < x + bw - 6; wx += 15) {
+          seed = nextSeed(seed);
+          if (seed % 3 === 0) g.fillRect(wx, wy, 6, 8);
+        }
+      }
+    }
+    x += bw + gap;
+  }
 }
 
 // Shared UI-chrome shapes. A plain white rounded rect (for shadows/glows via .setTint()) plus
@@ -44,40 +108,29 @@ export function ensureButtonTexture(scene: Phaser.Scene, w: number, h: number, f
 export function ensureTitleBackground(scene: Phaser.Scene): string {
   const key = 'bg_title';
   withGraphics(scene, W, H, (g) => {
-    g.fillGradientStyle(PALETTE.night, PALETTE.night, PALETTE.plum, PALETTE.plum, 1);
-    g.fillRect(0, 0, W, H);
-    // Skyline silhouette
-    g.fillStyle(PALETTE.plum, 0.9);
-    let x = 0;
-    let seed = 7;
-    while (x < W) {
-      seed = (seed * 9301 + 49297) % 233280;
-      const bw = 40 + (seed % 60);
-      const bh = 120 + (seed % 260);
-      g.fillRect(x, H - bh, bw, bh);
-      x += bw + 6;
-    }
-    // Soft moon
+    fillVerticalGradient(g, 0, 0, W, H, PALETTE.night, PALETTE.plum);
+    // Soft moon, behind the skyline
     g.fillStyle(PALETTE.gold, 0.85);
     g.fillCircle(W - 120, 160, 46);
+    // Far layer: smaller silhouettes with lit windows
+    drawBuildingRow(g, 7, H - 60, PALETTE.plum, 0.7, 100, 240, 36, 90, 8, 0, PALETTE.gold);
+    // Near layer: larger, darker, unlit — foreground depth
+    drawBuildingRow(g, 91, H, PALETTE.night, 0.9, 70, 190, 56, 130, 10, -20);
   }, key);
   return key;
 }
 
-export function ensureCityBackground(scene: Phaser.Scene, cityId: string, tint: 'warm_amber' | 'teal_pink'): string {
+export function ensureCityBackground(scene: Phaser.Scene, cityId: string, tint: string): string {
   const key = `bg_city_${cityId}`;
   withGraphics(scene, W, H, (g) => {
-    const tintColor = CITY_TINTS[tint];
-    g.fillGradientStyle(PALETTE.sky, PALETTE.sky, tintColor, tintColor, 1);
-    g.fillRect(0, 0, W, H);
-    g.fillStyle(PALETTE.cream, 0.25);
-    for (let i = 0; i < 6; i++) {
-      const bw = 90 + i * 14;
-      const bh = 200 + (i % 3) * 90;
-      g.fillRect(i * 130 - 40, H - bh, bw, bh);
-    }
-    g.fillStyle(tintColor, 0.15);
-    g.fillRect(0, H - 380, W, 380);
+    const tintColor = CITY_TINTS[tint] ?? CITY_TINTS.warm_amber;
+    const isNight = NIGHT_TINTS.has(tint);
+    fillVerticalGradient(g, 0, 0, W, H, PALETTE.sky, tintColor);
+    // Far layer: distant buildings, windows lit gold at night / soft cream glass by day
+    drawBuildingRow(g, 13, H - 340, PALETTE.cream, 0.22, 160, 340, 70, 130, 12, -30,
+      isNight ? PALETTE.gold : PALETTE.cream, isNight ? 0.6 : 0.3);
+    // Near layer: closer foreground silhouette in the city's own tint
+    drawBuildingRow(g, 61, H, tintColor, 0.28, 120, 260, 90, 170, 14, -30);
   }, key);
   return key;
 }
@@ -85,16 +138,49 @@ export function ensureCityBackground(scene: Phaser.Scene, cityId: string, tint: 
 export function ensureBusHubBackground(scene: Phaser.Scene): string {
   const key = 'bg_hub';
   withGraphics(scene, W, H, (g) => {
-    g.fillStyle(PALETTE.plum, 1);
-    g.fillRect(0, 0, W, H);
-    // window
+    fillVerticalGradient(g, 0, 0, W, H, PALETTE.plum, PALETTE.night);
+    // window frame (pane fill drawn dynamically per-scene so it can reflect the next city's weather)
     g.fillStyle(PALETTE.night, 1);
     g.fillRoundedRect(80, 160, W - 160, 340, 24);
-    g.fillStyle(PALETTE.sky, 0.35);
-    g.fillRoundedRect(90, 170, W - 180, 320, 20);
+    // string lights along the ceiling
+    g.fillStyle(PALETTE.gold, 0.9);
+    for (let x = 40; x < W - 40; x += 34) {
+      const sag = Math.sin((x / W) * Math.PI) * 14;
+      g.fillCircle(x, 60 + sag, 4);
+    }
+    g.lineStyle(1.5, PALETTE.gold, 0.35);
+    g.beginPath();
+    for (let x = 40; x < W - 40; x += 6) {
+      const sag = Math.sin((x / W) * Math.PI) * 14;
+      if (x === 40) g.moveTo(x, 60 + sag); else g.lineTo(x, 60 + sag);
+    }
+    g.strokePath();
+    // bunks along the lower-left wall
+    g.fillStyle(PALETTE.terracotta, 0.55);
+    g.fillRoundedRect(40, 560, 180, 60, 12);
+    g.fillRoundedRect(40, 630, 180, 60, 12);
     // seats
     g.fillStyle(PALETTE.terracotta, 0.9);
     g.fillRoundedRect(100, 620, W - 200, 160, 18);
+    g.lineStyle(2, 0xffffff, 0.12);
+    g.beginPath(); g.moveTo(118, 622); g.lineTo(W - 118, 622); g.strokePath();
+    // corkboard frame (souvenir pins/labels drawn dynamically in HubScene, on top)
+    g.fillStyle(0x8a6a4a, 0.9);
+    g.fillRoundedRect(W - 190, 860, 150, 190, 10);
+    g.lineStyle(6, 0x6b4a2f, 1);
+    g.strokeRoundedRect(W - 190, 860, 150, 190, 10);
+  }, key);
+  return key;
+}
+
+/** Window-pane fill, colored by the given tint — drawn separately from the cached hub
+ *  background so it can change with whichever city is coming up next without invalidating
+ *  the (much larger, static) background texture. */
+export function ensureHubWindowPane(scene: Phaser.Scene, tint: string): string {
+  const key = `hub_window_${tint}`;
+  const tintColor = CITY_TINTS[tint] ?? PALETTE.night;
+  withGraphics(scene, W - 180, 320, (g) => {
+    fillVerticalGradient(g, 0, 0, W - 180, 320, PALETTE.sky, tintColor, 0.45);
   }, key);
   return key;
 }

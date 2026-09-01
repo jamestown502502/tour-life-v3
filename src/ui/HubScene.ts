@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { PALETTE, W } from '../const';
-import { ensureBusHubBackground } from '../art/sprites';
+import { PALETTE, PALETTE_HEX, W } from '../const';
+import { ensureBusHubBackground, ensureHubWindowPane } from '../art/sprites';
+import { applyVignette, spawnFireflies, type WeatherHandle } from '../art/effects';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
@@ -13,20 +14,32 @@ import { textStyle } from './textStyles';
 
 const STAT_LABELS: Record<StatKey, string> = { energy: 'Energy', harmony: 'Harmony', inspiration: 'Inspiration', funds: 'Funds' };
 const STAT_COLORS: Record<StatKey, number> = { energy: PALETTE.gold, harmony: PALETTE.teal, inspiration: PALETTE.terracotta, funds: PALETTE.sky };
+const CORKBOARD_X = W - 190;
+const CORKBOARD_Y = 860;
 
 export class HubScene extends Phaser.Scene {
   constructor() { super('Hub'); }
 
+  private fireflies: WeatherHandle | null = null;
+
   create(): void {
     fadeIn(this);
     const bgKey = ensureBusHubBackground(this);
-    this.add.image(0, 0, bgKey).setOrigin(0, 0);
+    const bg = this.add.image(0, 0, bgKey).setOrigin(0, 0);
+    applyVignette(bg);
+    this.fireflies = spawnFireflies(this, PALETTE.gold, 10);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.fireflies?.stop());
+
+    const stop = State.data.route[State.data.currentCityIndex];
+    const windowTint = stop ? getCity(stop.cityId).tint : 'midnight_indigo';
+    const windowKey = ensureHubWindowPane(this, windowTint);
+    this.add.image(90, 170, windowKey).setOrigin(0, 0);
 
     this.add.text(W / 2, 60, State.data.band.name, textStyle('h1')).setOrigin(0.5);
 
     this.renderStats();
+    this.renderCorkboard();
 
-    const stop = State.data.route[State.data.currentCityIndex];
     if (stop) {
       const city = getCity(stop.cityId);
       this.add.text(W / 2, 780, `Next stop: ${city.name}`, textStyle('body', { fontSize: '22px' })).setOrigin(0.5);
@@ -70,6 +83,31 @@ export class HubScene extends Phaser.Scene {
       });
       this.add.text(220 + barW + 12, y, key === 'funds' ? `$${value}` : `${Math.round(value)}`, textStyle('stat'));
     });
+  }
+
+  /** Small pinned chips inside the corkboard frame drawn in ensureBusHubBackground — ties the
+   *  hub's decoration to actual run state rather than being purely decorative. */
+  private renderCorkboard(): void {
+    this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 14, 'Souvenirs', textStyle('stat', { fontSize: '13px', color: '#F5EBDD' })).setOrigin(0.5);
+    const items = State.data.inventory.slice(0, 4);
+    if (items.length === 0) {
+      this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 60, 'Nothing yet', textStyle('small', { fontSize: '12px' })).setOrigin(0.5);
+      return;
+    }
+    items.forEach((item, i) => {
+      const y = CORKBOARD_Y + 40 + i * 34;
+      const angle = (i % 2 === 0 ? -1 : 1) * 3;
+      const chip = this.add.rectangle(CORKBOARD_X + 75, y, 128, 26, PALETTE.cream, 0.95).setAngle(angle);
+      chip.setStrokeStyle(1, PALETTE.plum, 0.3);
+      this.add.text(CORKBOARD_X + 75, y, item.name.length > 20 ? `${item.name.slice(0, 18)}…` : item.name,
+        textStyle('small', { fontSize: '11px', color: PALETTE_HEX.plum })).setOrigin(0.5).setAngle(angle);
+      // pin
+      this.add.circle(CORKBOARD_X + 20, y - 10, 3, PALETTE.terracotta, 1);
+    });
+    if (State.data.inventory.length > 4) {
+      this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 40 + 4 * 34, `+${State.data.inventory.length - 4} more`,
+        textStyle('small', { fontSize: '11px' })).setOrigin(0.5);
+    }
   }
 
   private wrapTour(): void {

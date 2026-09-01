@@ -42,8 +42,41 @@ export function flash(scene: Phaser.Scene, color = 0xffffff): void {
   scene.cameras.main.flash(150, (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
 }
 
+/** Soft radial darkening at the screen edges via Phaser's built-in Post FX pipeline (WebGL
+ *  only — no-ops harmlessly under the Canvas renderer, which this game doesn't target but
+ *  shouldn't crash under either). Apply once per full-screen background image. */
+export function applyVignette(image: Phaser.GameObjects.Image, strength = 0.35): void {
+  try {
+    (image as unknown as { postFX?: { addVignette: (x: number, y: number, radius: number, strength: number) => void } })
+      .postFX?.addVignette(0.5, 0.5, 0.6, strength);
+  } catch {
+    // Canvas renderer or an unsupported context — the vignette is purely decorative, skip it
+  }
+}
+
 export interface WeatherHandle {
   stop(): void;
+}
+
+/** Slow, glowing ambient motes (fireflies at night, dust in a warm room) — low count, gentle
+ *  upward drift. Reused across the bus hub and city scenes for a "the room is alive" feel. */
+export function spawnFireflies(scene: Phaser.Scene, color: number = PALETTE.gold, count: number = 16): WeatherHandle {
+  if (State.data.accessibility.reducedMotion) return { stop() {} };
+  const key = ensurePixelTexture(scene, `fx_firefly_${color}`, color);
+  const emitter = scene.add.particles(0, 0, key, {
+    x: { min: 0, max: W },
+    y: { min: H * 0.3, max: H },
+    speedY: { min: -14, max: -4 },
+    speedX: { min: -6, max: 6 },
+    scale: { start: 0.9, end: 0.2 },
+    alpha: { start: 0, end: 0.7, ease: 'Sine.easeInOut' },
+    lifespan: { min: 3500, max: 6000 },
+    frequency: 400,
+    quantity: 1,
+    blendMode: 'ADD',
+    maxParticles: count,
+  });
+  return { stop: () => emitter.destroy() };
 }
 
 export function spawnRain(scene: Phaser.Scene, opacity = 0.3): WeatherHandle {

@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
-import { W } from '../const';
+import { PALETTE, W } from '../const';
 import { ensureCityBackground } from '../art/sprites';
-import { spawnRain, type WeatherHandle } from '../art/effects';
+import { applyVignette, spawnFireflies, spawnRain, type WeatherHandle } from '../art/effects';
+import { CITY_TINTS, NIGHT_TINTS } from '../art/palette';
 import { createButton } from './Button';
 import { DialogueBox } from './DialogueBox';
 import { goTo, fadeIn } from './transition';
@@ -28,6 +29,7 @@ export class CityScene extends Phaser.Scene {
   private pickerContainer: Phaser.GameObjects.Container | null = null;
   private locationsVisited = new Set<string>();
   private rain: WeatherHandle | null = null;
+  private fireflies: WeatherHandle | null = null;
 
   init(data: { cityId: string; phase?: string }): void {
     this.city = getCity(data.cityId);
@@ -40,9 +42,15 @@ export class CityScene extends Phaser.Scene {
   create(): void {
     fadeIn(this);
     const bgKey = ensureCityBackground(this, this.city.id, this.city.tint);
-    this.add.image(0, 0, bgKey).setOrigin(0, 0);
+    const bg = this.add.image(0, 0, bgKey).setOrigin(0, 0);
+    applyVignette(bg);
     const stop = State.data.route.find((s) => s.cityId === this.city.id);
-    if (stop?.weather && /rain|drizzle/.test(stop.weather)) this.rain = spawnRain(this, 0.3);
+    if (stop?.weather && /rain|drizzle/.test(stop.weather)) {
+      this.rain = spawnRain(this, 0.3);
+    } else {
+      const fireflyColor = NIGHT_TINTS.has(this.city.tint) ? CITY_TINTS[this.city.tint] : PALETTE.cream;
+      this.fireflies = spawnFireflies(this, fireflyColor);
+    }
 
     this.add.text(W / 2, 40, this.city.name, textStyle('h1', { fontSize: '26px' })).setOrigin(0.5).setDepth(50);
 
@@ -60,7 +68,7 @@ export class CityScene extends Phaser.Scene {
       case 'journal': this.startJournal(); break;
     }
 
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.rain?.stop());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.rain?.stop(); this.fireflies?.stop(); });
   }
 
   private walk(nodeId: string, onDone: () => void): void {

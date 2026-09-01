@@ -80,7 +80,7 @@ export interface CityDef {
   tone: string;
   weather: string[];
   tempo: number;
-  tint: 'warm_amber' | 'teal_pink';
+  tint: 'warm_amber' | 'teal_pink' | 'lavender_dusk' | 'rose_gold' | 'forest_moss' | 'desert_clay' | 'midnight_indigo' | 'citrus_bloom';
   locations: LocationDef[];
   arrivalSceneId: string;
   preShowSceneId: string;
