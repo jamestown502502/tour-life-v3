@@ -8,6 +8,7 @@ import { CITIES, getCity } from '../game/content';
 import { generateRoute, MID_TOUR_COMPLICATIONS } from '../game/route';
 import { drawScenePoolFlags } from '../game/scenePool';
 import { saveRun } from '../core/save';
+import { textStyle } from './textStyles';
 
 const COMPLICATION_LABELS: Record<string, string> = {
   van_breakdown: 'The van has been making a noise none of you want to name.',
@@ -25,12 +26,8 @@ export class RoutePlanScene extends Phaser.Scene {
     fadeIn(this);
     this.add.rectangle(0, 0, W, this.cameras.main.height, 0x2b3a55, 1).setOrigin(0, 0);
     const possessive = State.data.band.name.endsWith('s') ? `${State.data.band.name}'` : `${State.data.band.name}'s`;
-    this.add.text(W / 2, 80, `${possessive} Route`, {
-      fontFamily: 'Georgia, serif', fontSize: '30px', color: PALETTE_HEX.gold,
-    }).setOrigin(0.5);
-    this.add.text(W / 2, 130, `Seed: ${State.data.seed}`, {
-      fontFamily: 'Georgia, serif', fontSize: '16px', color: PALETTE_HEX.sky,
-    }).setOrigin(0.5);
+    this.add.text(W / 2, 80, `${possessive} Route`, textStyle('h1')).setOrigin(0.5);
+    this.add.text(W / 2, 130, `Seed: ${State.data.seed}`, textStyle('small')).setOrigin(0.5);
 
     const rng = makeRng(`${State.data.seed}:route`);
     const generated = generateRoute(rng, CITIES);
@@ -38,16 +35,13 @@ export class RoutePlanScene extends Phaser.Scene {
     generated.stops.forEach((stop, i) => {
       const city = getCity(stop.cityId);
       stop.weather = generated.weatherByCity[stop.cityId];
-      this.add.text(W / 2, 200 + i * 60, `${i + 1}. ${city.name} — ${stop.weather?.replace(/_/g, ' ')}`, {
-        fontFamily: 'Georgia, serif', fontSize: '22px', color: PALETTE_HEX.cream,
-      }).setOrigin(0.5);
+      this.add.text(W / 2, 200 + i * 60, `${i + 1}. ${city.name} — ${stop.weather?.replace(/_/g, ' ')}`,
+        textStyle('body', { fontSize: '22px' })).setOrigin(0.5);
     });
 
     const complicationY = 200 + generated.stops.length * 60 + 30;
-    this.add.text(W / 2, complicationY, COMPLICATION_LABELS[generated.midTourComplication] ?? '', {
-      fontFamily: 'Georgia, serif', fontSize: '16px', color: PALETTE_HEX.terracotta,
-      wordWrap: { width: W - 120 }, align: 'center',
-    }).setOrigin(0.5);
+    this.add.text(W / 2, complicationY, COMPLICATION_LABELS[generated.midTourComplication] ?? '',
+      textStyle('small', { color: PALETTE_HEX.terracotta, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);
 
     createButton(this, W / 2 - 150, complicationY + 80, 300, 56, 'Confirm route', () => {
       State.data.route = generated.stops;

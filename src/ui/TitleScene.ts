@@ -8,6 +8,7 @@ import { generateSeed } from '../core/rng';
 import { State, type Progress } from '../core/state';
 import { hasSave, loadRun } from '../core/save';
 import { createFloatingInput, type FloatingInput } from './htmlOverlay';
+import { textStyle } from './textStyles';
 
 export class TitleScene extends Phaser.Scene {
   constructor() { super('Title'); }
@@ -23,16 +24,10 @@ export class TitleScene extends Phaser.Scene {
     const bgKey = ensureTitleBackground(this);
     this.add.image(0, 0, bgKey).setOrigin(0, 0);
 
-    this.add.text(W / 2, 260, 'Tour Life', {
-      fontFamily: 'Georgia, serif', fontSize: '56px', color: PALETTE_HEX.cream, fontStyle: 'bold',
-    }).setOrigin(0.5);
-    this.add.text(W / 2, 320, 'International Dates', {
-      fontFamily: 'Georgia, serif', fontSize: '26px', color: PALETTE_HEX.gold,
-    }).setOrigin(0.5);
+    this.add.text(W / 2, 260, 'Tour Life', textStyle('title')).setOrigin(0.5);
+    this.add.text(W / 2, 320, 'International Dates', textStyle('h2', { color: PALETTE_HEX.gold })).setOrigin(0.5);
 
-    const seedLabel = this.add.text(W / 2, 420, `Today's tour: ${this.currentSeed}`, {
-      fontFamily: 'Georgia, serif', fontSize: '20px', color: PALETTE_HEX.sky,
-    }).setOrigin(0.5);
+    const seedLabel = this.add.text(W / 2, 420, `Today's tour: ${this.currentSeed}`, textStyle('small')).setOrigin(0.5);
 
     createButton(this, W / 2 - 160, 480, 320, 56, 'New Run', () => {
       State.newRun(this.currentSeed);
@@ -90,17 +85,14 @@ export class TitleScene extends Phaser.Scene {
     const bg = this.add.rectangle(60, 200, W - 120, 700, 0x2b3a55, 0.96).setOrigin(0, 0);
     panel.add(bg);
     const history = State.data.meta.runHistory;
-    const title = this.add.text(W / 2, 230, `${State.data.meta.completedRuns} tours completed`, {
-      fontFamily: 'Georgia, serif', fontSize: '22px', color: PALETTE_HEX.gold,
-    }).setOrigin(0.5);
+    const title = this.add.text(W / 2, 230, `${State.data.meta.completedRuns} tours completed`, textStyle('h2', { color: PALETTE_HEX.gold })).setOrigin(0.5);
     panel.add(title);
     if (history.length === 0) {
-      panel.add(this.add.text(W / 2, 300, 'No completed tours yet.', { fontFamily: 'Georgia, serif', fontSize: '18px', color: PALETTE_HEX.cream }).setOrigin(0.5));
+      panel.add(this.add.text(W / 2, 300, 'No completed tours yet.', textStyle('body')).setOrigin(0.5));
     } else {
       history.slice(-8).reverse().forEach((entry, i) => {
-        const t = this.add.text(90, 280 + i * 60, `${entry.bandName} — ${entry.endingId.replace(/_/g, ' ')}\n${entry.tags.join(', ')}`, {
-          fontFamily: 'Georgia, serif', fontSize: '16px', color: PALETTE_HEX.cream, lineSpacing: 4,
-        });
+        const t = this.add.text(90, 280 + i * 60, `${entry.bandName} — ${entry.endingId.replace(/_/g, ' ')}\n${entry.tags.join(', ')}`,
+          textStyle('body', { fontSize: '16px', lineSpacing: 4 }));
         panel.add(t);
       });
     }

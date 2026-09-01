@@ -10,17 +10,37 @@ import { ResultsScene } from './ui/ResultsScene';
 import { ScrapbookScene } from './ui/ScrapbookScene';
 import { SettingsScene } from './ui/SettingsScene';
 
-const game = new Phaser.Game({
-  type: Phaser.AUTO,
-  parent: 'app',
-  backgroundColor: PALETTE_HEX.night,
-  scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: W,
-    height: H,
-  },
-  scene: [TitleScene, BandCreatorScene, RoutePlanScene, HubScene, CityScene, RhythmScene, ResultsScene, ScrapbookScene, SettingsScene],
-});
+// Wait for the self-hosted webfonts before booting: Phaser Text drawn before a font finishes
+// loading silently falls back to the browser default and never re-renders once the font
+// arrives, so gating the whole boot on font-load avoids a flash of unstyled text entirely.
+async function waitForFonts(): Promise<void> {
+  try {
+    await Promise.all([
+      document.fonts.load('800 32px "Baloo 2"'),
+      document.fonts.load('700 16px "Nunito"'),
+    ]);
+  } catch {
+    // font loading API unavailable or fonts failed to load — boot anyway with fallback fonts
+  }
+}
 
-if (import.meta.env.DEV) (window as any).__game = game;
+async function boot(): Promise<void> {
+  await waitForFonts();
+
+  const game = new Phaser.Game({
+    type: Phaser.AUTO,
+    parent: 'app',
+    backgroundColor: PALETTE_HEX.night,
+    scale: {
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+      width: W,
+      height: H,
+    },
+    scene: [TitleScene, BandCreatorScene, RoutePlanScene, HubScene, CityScene, RhythmScene, ResultsScene, ScrapbookScene, SettingsScene],
+  });
+
+  if (import.meta.env.DEV) (window as any).__game = game;
+}
+
+boot();

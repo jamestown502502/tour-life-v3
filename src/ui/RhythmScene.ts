@@ -13,6 +13,7 @@ import {
 } from '../game/rhythm';
 import type { ChartCue, ChartNote, ChoiceCueType } from '../../content/schema';
 import { saveRun } from '../core/save';
+import { textStyle } from './textStyles';
 
 const HIT_LINE_Y = 1100;
 const SPAWN_Y = 160;
@@ -78,18 +79,16 @@ export class RhythmScene extends Phaser.Scene {
     this.notes = arrangement.notes.map((note) => ({ note, judged: false }));
     this.cues = arrangement.cues.map((cue) => ({ cue, handled: false }));
 
-    this.scoreText = this.add.text(24, 24, 'Score: 0', { fontFamily: 'Georgia, serif', fontSize: '22px', color: PALETTE_HEX.cream });
-    this.comboText = this.add.text(24, 56, '', { fontFamily: 'Georgia, serif', fontSize: '20px', color: PALETTE_HEX.gold });
-    this.add.text(W - 200, 24, `${city.name} — ${arrangement.label}`, { fontFamily: 'Georgia, serif', fontSize: '16px', color: PALETTE_HEX.sky });
+    this.scoreText = this.add.text(24, 24, 'Score: 0', textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.cream }));
+    this.comboText = this.add.text(24, 56, '', textStyle('h2', { fontSize: '20px' }));
+    this.add.text(W - 200, 24, `${city.name} — ${arrangement.label}`, textStyle('small'));
 
     this.add.rectangle(W - 220, 60, 180, 14, 0x000000, 0.3).setOrigin(0, 0);
     this.crowdBar = this.add.rectangle(W - 220, 60, 0, 14, PALETTE.terracotta, 1).setOrigin(0, 0);
-    this.add.text(W - 220, 40, 'Crowd', { fontFamily: 'Georgia, serif', fontSize: '13px', color: PALETTE_HEX.sky });
+    this.add.text(W - 220, 40, 'Crowd', textStyle('small', { fontSize: '13px' }));
 
     if (State.data.accessibility.visualAssist) {
-      this.add.text(LANE_X_START, HIT_LINE_Y + 20, 'Tap here as notes cross the line', {
-        fontFamily: 'Georgia, serif', fontSize: '13px', color: PALETTE_HEX.gold,
-      });
+      this.add.text(LANE_X_START, HIT_LINE_Y + 20, 'Tap here as notes cross the line', textStyle('small', { fontSize: '13px' }));
     }
 
     for (let l = 0; l < song.lanes; l++) {
@@ -222,7 +221,7 @@ export class RhythmScene extends Phaser.Scene {
     const container = this.add.container(0, 400).setDepth(90);
     const bg = this.add.rectangle(W / 2, 0, 460, 70, PALETTE.terracotta, 0.95).setOrigin(0.5);
     bg.setStrokeStyle(3, PALETTE.gold, 0.9);
-    const label = this.add.text(W / 2, 0, `Tap: ${CUE_LABELS[cs.cue.type]}`, { fontFamily: 'Georgia, serif', fontSize: '20px', color: '#F5EBDD' }).setOrigin(0.5);
+    const label = this.add.text(W / 2, 0, `Tap: ${CUE_LABELS[cs.cue.type]}`, textStyle('button', { fontSize: '20px' })).setOrigin(0.5);
     bg.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.resolveCue(cs));
     container.add([bg, label]);
     return container;

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PALETTE_HEX, W } from '../const';
+import { W } from '../const';
 import { ensureCityBackground } from '../art/sprites';
 import { spawnRain, type WeatherHandle } from '../art/effects';
 import { createButton } from './Button';
@@ -13,6 +13,7 @@ import { evaluateCondition } from '../game/condition';
 import { availabilityFlag } from '../game/scenePool';
 import { arrangementFlag } from '../game/rhythm';
 import type { CityDef, DialogueNode, LocationDef } from '../../content/schema';
+import { textStyle } from './textStyles';
 
 export type CityPhase = 'arrival' | 'locations' | 'relationship' | 'preshow' | 'afterShow' | 'journal';
 const VALID_PHASES: CityPhase[] = ['arrival', 'locations', 'relationship', 'preshow', 'afterShow', 'journal'];
@@ -43,9 +44,7 @@ export class CityScene extends Phaser.Scene {
     const stop = State.data.route.find((s) => s.cityId === this.city.id);
     if (stop?.weather && /rain|drizzle/.test(stop.weather)) this.rain = spawnRain(this, 0.3);
 
-    this.add.text(W / 2, 40, this.city.name, {
-      fontFamily: 'Georgia, serif', fontSize: '26px', color: PALETTE_HEX.gold,
-    }).setOrigin(0.5).setDepth(50);
+    this.add.text(W / 2, 40, this.city.name, textStyle('h1', { fontSize: '26px' })).setOrigin(0.5).setDepth(50);
 
     this.dialogueBox = new DialogueBox(this);
 
@@ -92,9 +91,8 @@ export class CityScene extends Phaser.Scene {
     this.pickerContainer?.destroy();
     this.pickerContainer = this.add.container(0, 0).setDepth(80);
     const remaining = this.city.locations.filter((l) => !this.locationsVisited.has(l.id));
-    const header = this.add.text(W / 2, 620, `Where to, before the show? (${LOCATIONS_TO_VISIT - this.locationsVisited.size} left)`, {
-      fontFamily: 'Georgia, serif', fontSize: '18px', color: PALETTE_HEX.cream,
-    }).setOrigin(0.5);
+    const header = this.add.text(W / 2, 620, `Where to, before the show? (${LOCATIONS_TO_VISIT - this.locationsVisited.size} left)`,
+      textStyle('body', { fontSize: '18px' })).setOrigin(0.5);
     this.pickerContainer.add(header);
     remaining.forEach((loc, i) => {
       const btn = createButton(this, W / 2 - 300 + (i % 2) * 310, 660 + Math.floor(i / 2) * 60, 290, 50, loc.name, () => this.visitLocation(loc), { fontSize: '16px' });
@@ -146,9 +144,7 @@ export class CityScene extends Phaser.Scene {
         goTo(this, 'Rhythm', { cityId: this.city.id });
       }, { fontSize: '18px' });
       container.add(btn);
-      container.add(this.add.text(W / 2 - 280, 960 + i * 70 + 62, opt.description, {
-        fontFamily: 'Georgia, serif', fontSize: '13px', color: PALETTE_HEX.sky,
-      }));
+      container.add(this.add.text(W / 2 - 280, 960 + i * 70 + 62, opt.description, textStyle('small', { fontSize: '13px' })));
     });
   }
 

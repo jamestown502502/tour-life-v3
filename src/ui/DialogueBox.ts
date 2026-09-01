@@ -7,6 +7,7 @@ import { PALETTE, TYPEWRITER_CHARS_PER_SEC, W } from '../const';
 import { ensureDialoguePanel, ensurePortrait } from '../art/sprites';
 import type { BandmateId } from '../../content/schema';
 import { audio } from '../core/audio';
+import { textStyle } from './textStyles';
 
 // Panel sits low on the 720x1280 canvas but leaves room below for up to 4 choice buttons
 // (54px each) before running off the bottom edge.
@@ -31,13 +32,10 @@ export class DialogueBox {
     const panelKey = ensureDialoguePanel(scene);
     this.container = scene.add.container(0, 0).setDepth(100);
     this.panel = scene.add.image(PANEL_X, PANEL_Y, panelKey).setOrigin(0, 0);
-    this.speakerText = scene.add.text(PANEL_X + 26, PANEL_Y + 18, '', {
-      fontFamily: 'Georgia, serif', fontSize: '22px', color: '#4A2C40', fontStyle: 'bold',
-    });
-    this.bodyText = scene.add.text(PANEL_X + 26, PANEL_Y + 54, '', {
-      fontFamily: 'Georgia, serif', fontSize: '24px', color: '#2B3A55',
+    this.speakerText = scene.add.text(PANEL_X + 26, PANEL_Y + 18, '', textStyle('speaker'));
+    this.bodyText = scene.add.text(PANEL_X + 26, PANEL_Y + 54, '', textStyle('dialogue', {
       wordWrap: { width: W - PANEL_X * 2 - 52 }, lineSpacing: 6,
-    });
+    }));
     this.skipZone = scene.add.zone(PANEL_X, PANEL_Y, W - PANEL_X * 2, 300).setOrigin(0, 0).setInteractive();
     this.skipZone.on('pointerdown', () => this.handleTap());
     this.container.add([this.panel, this.speakerText, this.bodyText, this.skipZone]);
@@ -105,7 +103,7 @@ export class DialogueBox {
       const btn = this.scene.add.container(PANEL_X, y);
       const bg = this.scene.add.rectangle(0, 0, W - PANEL_X * 2, 46, PALETTE.terracotta, 0.92).setOrigin(0, 0);
       bg.setStrokeStyle(2, PALETTE.gold, 0.6);
-      const label = this.scene.add.text(16, 11, choice.label, { fontFamily: 'Georgia, serif', fontSize: '20px', color: '#F5EBDD' });
+      const label = this.scene.add.text(16, 11, choice.label, textStyle('button', { fontSize: '20px' }));
       bg.setInteractive({ useHandCursor: true });
       bg.on('pointerover', () => { bg.setFillStyle(PALETTE.gold, 0.95); audio.playSfx('menuHover'); });
       bg.on('pointerout', () => bg.setFillStyle(PALETTE.terracotta, 0.92));

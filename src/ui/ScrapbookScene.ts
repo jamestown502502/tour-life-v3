@@ -8,6 +8,7 @@ import { State } from '../core/state';
 import { getCity } from '../game/content';
 import { generateEnding } from '../game/endings';
 import { clearSave } from '../core/save';
+import { textStyle } from './textStyles';
 
 export class ScrapbookScene extends Phaser.Scene {
   constructor() { super('Scrapbook'); }
@@ -34,30 +35,23 @@ export class ScrapbookScene extends Phaser.Scene {
     const cardKey = ensureScrapbookCard(this);
     this.add.image(40, 90, cardKey).setOrigin(0, 0);
 
-    this.add.text(W / 2, 130, this.endingId.replace(/_/g, ' '), {
-      fontFamily: 'Georgia, serif', fontSize: '30px', color: PALETTE_HEX.terracotta, fontStyle: 'bold',
-    }).setOrigin(0.5);
-    this.add.text(W / 2, 175, this.tags.join(' · '), {
-      fontFamily: 'Georgia, serif', fontSize: '18px', color: PALETTE_HEX.plum,
-    }).setOrigin(0.5);
+    this.add.text(W / 2, 130, this.endingId.replace(/_/g, ' '),
+      textStyle('title', { fontSize: '30px', color: PALETTE_HEX.terracotta, shadow: undefined })).setOrigin(0.5);
+    this.add.text(W / 2, 175, this.tags.join(' · '), textStyle('dialogue', { fontSize: '18px', shadow: undefined })).setOrigin(0.5);
 
     const route = State.data.route.map((s) => getCity(s.cityId).name).join(' → ');
-    this.add.text(W / 2, 240, `Route: ${route}`, {
-      fontFamily: 'Georgia, serif', fontSize: '16px', color: PALETTE_HEX.plum, wordWrap: { width: W - 180 }, align: 'center',
-    }).setOrigin(0.5);
+    this.add.text(W / 2, 240, `Route: ${route}`,
+      textStyle('dialogue', { fontSize: '16px', shadow: undefined, wordWrap: { width: W - 180 }, align: 'center' })).setOrigin(0.5);
 
     const setlist = Array.from(new Set(State.data.route.map((s) => getCity(s.cityId).songId))).join(', ');
-    this.add.text(W / 2, 290, `Setlist: ${setlist}`, { fontFamily: 'Georgia, serif', fontSize: '15px', color: PALETTE_HEX.plum }).setOrigin(0.5);
+    this.add.text(W / 2, 290, `Setlist: ${setlist}`, textStyle('dialogue', { fontSize: '15px', shadow: undefined })).setOrigin(0.5);
 
     const souvenirs = State.data.inventory.map((i) => i.name).join(' · ') || 'none collected';
-    this.add.text(W / 2, 340, `Souvenirs: ${souvenirs}`, {
-      fontFamily: 'Georgia, serif', fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 180 }, align: 'center',
-    }).setOrigin(0.5);
+    this.add.text(W / 2, 340, `Souvenirs: ${souvenirs}`,
+      textStyle('dialogue', { fontSize: '14px', shadow: undefined, wordWrap: { width: W - 180 }, align: 'center' })).setOrigin(0.5);
 
     const rel = Object.entries(State.data.relationships).map(([id, v]) => `${id} ${Math.round(v)}`).join('  ');
-    this.add.text(W / 2, 420, `Where the band landed: ${rel}`, {
-      fontFamily: 'Georgia, serif', fontSize: '14px', color: PALETTE_HEX.plum,
-    }).setOrigin(0.5);
+    this.add.text(W / 2, 420, `Where the band landed: ${rel}`, textStyle('dialogue', { fontSize: '14px', shadow: undefined })).setOrigin(0.5);
 
     createButton(this, W / 2 - 150, 900, 300, 56, 'Start a new tour', async () => {
       await clearSave();
