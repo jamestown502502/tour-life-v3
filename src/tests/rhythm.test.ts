@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildPerformanceResult, combineHoldJudgement, comboMultiplier, effectiveWindows, judgeHit,
-  pickArrangement, scoreForHit,
+  letterGrade, pickArrangement, scoreForHit,
 } from '../game/rhythm';
 import type { SongDef } from '../../content/schema';
 
@@ -98,5 +98,18 @@ describe('buildPerformanceResult', () => {
     expect(perfectResult.timingScore).toBeGreaterThan(missResult.timingScore);
     expect(perfectResult.grade).toBe('perfect');
     expect(missResult.grade).toBe('miss');
+    expect(perfectResult.ratio).toBeCloseTo(1);
+    expect(missResult.ratio).toBe(0);
+  });
+});
+
+describe('letter grade (Results plate)', () => {
+  it('maps the timing ratio to S/A/B/C with C as the no-fail floor', () => {
+    expect(letterGrade(1)).toBe('S');
+    expect(letterGrade(0.95)).toBe('S');
+    expect(letterGrade(0.9)).toBe('A');
+    expect(letterGrade(0.7)).toBe('B');
+    expect(letterGrade(0.3)).toBe('C');
+    expect(letterGrade(0)).toBe('C');
   });
 });

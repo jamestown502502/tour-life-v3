@@ -408,34 +408,38 @@ export function ensurePortrait(scene: Phaser.Scene, id: BandmateId, mood: string
   return key;
 }
 
-export function ensureLaneTextures(scene: Phaser.Scene): { lane: string; noteTap: string; noteChoice: string } {
-  const laneKey = 'rhythm_lane';
-  withGraphics(scene, 140, H, (g) => {
+/** Lane + note faces, sized to the lane width the caller is laying out with (keys include the
+ *  width, so two scenes with different lane widths don't collide in the texture cache). Notes
+ *  fill most of the lane — bigger targets read better on a phone. */
+export function ensureLaneTextures(scene: Phaser.Scene, laneW = 140): { lane: string; noteTap: string; noteChoice: string } {
+  const laneKey = `rhythm_lane_${laneW}`;
+  withGraphics(scene, laneW, H, (g) => {
     g.fillStyle(PALETTE.teal, 0.18);
-    g.fillRect(0, 0, 140, H);
+    g.fillRect(0, 0, laneW, H);
     g.lineStyle(2, PALETTE.teal, 0.5);
-    g.strokeRect(0, 0, 140, H);
+    g.strokeRect(0, 0, laneW, H);
   }, laneKey);
 
-  const noteTap = 'note_tap';
-  withGraphics(scene, 116, 46, (g) => {
+  const noteW = laneW - 30;
+  const noteTap = `note_tap_${noteW}`;
+  withGraphics(scene, noteW + 6, 46, (g) => {
     // plum drop shadow, offset behind the note face
     g.fillStyle(PALETTE.plum, 0.35);
-    g.fillRoundedRect(6, 9, 110, 40, 12);
+    g.fillRoundedRect(6, 9, noteW, 40, 12);
     g.fillStyle(0xffffff, 1);
-    g.fillRoundedRect(0, 0, 110, 40, 12);
+    g.fillRoundedRect(0, 0, noteW, 40, 12);
     g.lineStyle(3, PALETTE.gold, 1);
-    g.strokeRoundedRect(0, 0, 110, 40, 12);
+    g.strokeRoundedRect(0, 0, noteW, 40, 12);
   }, noteTap);
 
-  const noteChoice = 'note_choice';
-  withGraphics(scene, 116, 66, (g) => {
+  const noteChoice = `note_choice_${noteW}`;
+  withGraphics(scene, noteW + 6, 66, (g) => {
     g.fillStyle(PALETTE.plum, 0.35);
-    g.fillRoundedRect(6, 9, 110, 60, 16);
+    g.fillRoundedRect(6, 9, noteW, 60, 16);
     g.fillStyle(PALETTE.terracotta, 1);
-    g.fillRoundedRect(0, 0, 110, 60, 16);
+    g.fillRoundedRect(0, 0, noteW, 60, 16);
     g.lineStyle(3, 0xffffff, 0.9);
-    g.strokeRoundedRect(0, 0, 110, 60, 16);
+    g.strokeRoundedRect(0, 0, noteW, 60, 16);
   }, noteChoice);
 
   return { lane: laneKey, noteTap, noteChoice };
@@ -443,10 +447,9 @@ export function ensureLaneTextures(scene: Phaser.Scene): { lane: string; noteTap
 
 /** A hold-note "rail": a vertical bar fading from a solid gold head to a translucent tail,
  *  bucketed to the nearest 10px so a whole song doesn't generate one texture per note. */
-export function ensureHoldRail(scene: Phaser.Scene, heightPx: number): string {
+export function ensureHoldRail(scene: Phaser.Scene, heightPx: number, w = 70): string {
   const h = Math.max(20, Math.round(heightPx / 10) * 10);
-  const key = `note_hold_rail_${h}`;
-  const w = 70;
+  const key = `note_hold_rail_${w}_${h}`;
   withGraphics(scene, w, h, (g) => {
     const steps = Math.max(4, Math.round(h / 12));
     for (let i = 0; i < steps; i++) {

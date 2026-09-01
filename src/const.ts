@@ -40,6 +40,26 @@ export const RHYTHM_DIFFICULTY_SCALE = {
   expert: 0.7,
 } as const;
 
+// How long a note is visible on its way to the hit line, per difficulty. Longer lead = slower
+// fall = more time to read the chart; expert players shouldn't be fighting a slow scroll.
+export const RHYTHM_LEAD_MS = {
+  relaxed: 1800,
+  standard: 1600,
+  expert: 1400,
+} as const;
+
+// Rhythm playfield geometry. Hit line sits well above the bottom edge: on a phone the canvas
+// scales to ~0.54x, and anything below ~1230 game px lands under the iOS home-indicator
+// gesture zone (viewport-fit=cover) — the old 1100 line put the tap zones' bottom at 1180,
+// right in thumb-stretch territory. 4 lanes x 165 = 660 wide, centered in the 720 canvas.
+export const RHYTHM_HIT_LINE_Y = 980;
+export const RHYTHM_SPAWN_Y = 160;
+export const RHYTHM_LANE_W = 165;
+export const RHYTHM_LANE_X_START = 30;
+
+// Bottom edge of the "safe" interactive region (game px). Nothing tappable below this line.
+export const SAFE_BOTTOM_Y = 1230;
+
 export const TYPEWRITER_CHARS_PER_SEC = 45;
 export const SCREEN_FADE_MS = 250;
 

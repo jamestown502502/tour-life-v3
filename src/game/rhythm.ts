@@ -78,10 +78,23 @@ export interface PerformanceContext {
 
 export interface PerformanceResult {
   timingScore: number;
+  /** timingScore / the true achievable max for this many hits, 0..1. */
+  ratio: number;
   grade: HitJudgement;
   expressionChoices: ChoiceCueType[];
   crowdConnection: number;
   unlockedFlags: string[];
+}
+
+export type LetterGrade = 'S' | 'A' | 'B' | 'C';
+
+/** Results-screen letter from the timing ratio. Purely presentational — like `grade`, it never
+ *  gates anything. 'C' is the floor: a no-input run still gets a letter, not a blank. */
+export function letterGrade(ratio: number): LetterGrade {
+  if (ratio >= 0.95) return 'S';
+  if (ratio >= 0.85) return 'A';
+  if (ratio >= 0.7) return 'B';
+  return 'C';
 }
 
 /** Aggregates a played-through song's hits + chosen cues into the result handed back to the
@@ -107,5 +120,5 @@ export function buildPerformanceResult(
   if (grade === 'perfect') unlockedFlags.push(`show_${ctx.cityId}_triumphant`);
   if (expressionChoices.includes('invite_crowd')) unlockedFlags.push(`show_${ctx.cityId}_crowd_moment`);
 
-  return { timingScore, grade, expressionChoices, crowdConnection, unlockedFlags };
+  return { timingScore, ratio, grade, expressionChoices, crowdConnection, unlockedFlags };
 }

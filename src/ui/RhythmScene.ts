@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
-import { H, PALETTE, PALETTE_HEX, W } from '../const';
+import {
+  H, PALETTE, PALETTE_HEX, W, RHYTHM_LEAD_MS, RHYTHM_HIT_LINE_Y, RHYTHM_SPAWN_Y, RHYTHM_LANE_W, RHYTHM_LANE_X_START,
+} from '../const';
 import { ensureCueIcon, ensureCrowdFigure, ensureHitLineGlow, ensureHoldRail, ensureLaneTextures } from '../art/sprites';
 import { spawnPerfectSpark, comboPop, hitstop, shake, spawnRingPulse } from '../art/effects';
 import { goTo, fadeIn } from './transition';
@@ -8,7 +10,7 @@ import { State } from '../core/state';
 import { audio } from '../core/audio';
 import { getCity, getSong } from '../game/content';
 import {
-  buildPerformanceResult, combineHoldJudgement, comboMultiplier, effectiveWindows, judgeHit,
+  buildPerformanceResult, combineHoldJudgement, effectiveWindows, judgeHit,
   pickArrangement, scoreForHit, type HitJudgement, type PerformanceContext,
 } from '../game/rhythm';
 import type { ChartCue, ChartNote, ChoiceCueType } from '../../content/schema';
@@ -23,17 +25,23 @@ import {
 import type { RhythmMode } from '../core/state';
 import type { CityDef, SongDef } from '../../content/schema';
 
-const HIT_LINE_Y = 1100;
-const SPAWN_Y = 160;
-const LEAD_MS = 1600;
-const LANE_X_START = 90;
-const LANE_W = 140;
-const PX_PER_MS = (HIT_LINE_Y - SPAWN_Y) / LEAD_MS;
+const HIT_LINE_Y = RHYTHM_HIT_LINE_Y;
+const SPAWN_Y = RHYTHM_SPAWN_Y;
+const LANE_X_START = RHYTHM_LANE_X_START;
+const LANE_W = RHYTHM_LANE_W;
+const HOLD_RAIL_W = 82;
 const CUE_LABELS: Record<ChoiceCueType, string> = {
   pull_back: 'Pull back', build: 'Build', invite_crowd: 'Invite the crowd', improvise: 'Improvise', spotlight_bandmate: 'Spotlight a bandmate',
 };
 const COMBO_MILESTONES = [10, 25, 50];
 const COMBO_STAMPS: Record<number, string> = { 10: 'Warming up!', 25: 'Lit up!', 50: 'On fire!' };
+const JUDGEMENT_LABEL: Record<HitJudgement, string> = { perfect: 'Perfect!', good: 'Good', ok: 'OK', miss: 'Miss' };
+const JUDGEMENT_COLOR: Record<HitJudgement, number> = {
+  perfect: PALETTE.gold, good: PALETTE.cream, ok: PALETTE.sky, miss: PALETTE.softRed,
+};
+const JUDGEMENT_HEX: Record<HitJudgement, string> = {
+  perfect: PALETTE_HEX.gold, good: PALETTE_HEX.cream, ok: PALETTE_HEX.sky, miss: PALETTE_HEX.softRed,
+};
 
 interface NoteState {
   note: ChartNote;
@@ -57,10 +65,13 @@ export class RhythmScene extends Phaser.Scene {
   private comboMilestonesShown = new Set<number>();
   private score = 0;
   private startTime = 0;
+  private leadMs: number = RHYTHM_LEAD_MS.standard;
+  private pxPerMs = (HIT_LINE_Y - SPAWN_Y) / RHYTHM_LEAD_MS.standard;
   private scoreText!: Phaser.GameObjects.Text;
   private comboText!: Phaser.GameObjects.Text;
   private cityLabel!: Phaser.GameObjects.Text;
   private crowdFigures: Phaser.GameObjects.Image[] = [];
+  private laneFlashes: Phaser.GameObjects.Rectangle[] = [];
   private crowd = 40;
   private finished = false;
   private metronomeEvent: Phaser.Time.TimerEvent | null = null;
@@ -88,9 +99,10 @@ export class RhythmScene extends Phaser.Scene {
     this.holdHintShown = false;
     this.cueHintShown = false;
     // Phaser reuses this scene instance across visits — images from the last visit are
-    // destroyed on shutdown but the array itself isn't cleared automatically, so a stale
-    // reference here would crash the next updateCrowdFigures() call.
+    // destroyed on shutdown but the arrays themselves aren't cleared automatically, so a stale
+    // reference here would crash the next updateCrowdFigures()/lane-flash call.
     this.crowdFigures = [];
+    this.laneFlashes = [];
   }
 
   create(): void {
@@ -98,32 +110,50 @@ export class RhythmScene extends Phaser.Scene {
     const city = getCity(this.cityId);
     const song = getSong(city.songId);
 
+    // Decide the tutorial + timing mode up front: lead time (and so fall speed) depends on it.
+    this.tutorialActive = !hasSeenRhythmTutorial();
+    // Wide windows + slow fall for a first-timer's first real song, but only if they've never
+    // touched Settings — a returning player's own configured rhythmMode always wins.
+    this.forceRelaxedFirstSong = this.tutorialActive && !hasEverOpenedSettings();
+    this.leadMs = RHYTHM_LEAD_MS[this.currentRhythmMode()];
+    this.pxPerMs = (HIT_LINE_Y - SPAWN_Y) / this.leadMs;
+
     this.add.rectangle(0, 0, W, H, PALETTE.night, 1).setOrigin(0, 0);
-    const tex = ensureLaneTextures(this);
+    const tex = ensureLaneTextures(this, LANE_W);
     for (let l = 0; l < song.lanes; l++) {
       this.add.image(LANE_X_START + l * LANE_W, 0, tex.lane).setOrigin(0, 0);
+      // One flash overlay per lane, kept invisible until a hit lands in that lane.
+      const flash = this.add.rectangle(LANE_X_START + l * LANE_W, 0, LANE_W, H, PALETTE.gold, 1)
+        .setOrigin(0, 0).setAlpha(0).setDepth(5);
+      this.laneFlashes.push(flash);
     }
     const hitLineKey = ensureHitLineGlow(this, LANE_W * song.lanes);
-    this.add.image(LANE_X_START, HIT_LINE_Y - 14, hitLineKey).setOrigin(0, 0);
+    this.add.image(LANE_X_START, HIT_LINE_Y - 14, hitLineKey).setOrigin(0, 0).setDepth(6);
 
-    this.scoreText = this.add.text(24, 24, 'Score: 0', textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.cream }));
-    this.comboText = this.add.text(24, 56, '', textStyle('h2', { fontSize: '20px' }));
-    this.cityLabel = this.add.text(W - 200, 24, '', textStyle('small'));
+    this.scoreText = this.add.text(24, 24, 'Score: 0', textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.cream })).setDepth(50);
+    this.comboText = this.add.text(24, 56, '', textStyle('h2', { fontSize: '20px' })).setDepth(50);
+    // Top-right cluster: city/arrangement label, then the crowd meter, both kept left of the
+    // "?" help button (which occupies the last ~100px of the top edge).
+    this.cityLabel = this.add.text(W - 110, 24, '', textStyle('small')).setOrigin(1, 0).setDepth(50);
     addHelpButton(this, 'Tap notes as they reach the gold line. Hold notes: press and hold. Choice cues: tap the banner. Score never blocks the story.');
 
-    this.add.text(W - 220, 40, 'Crowd', textStyle('small', { fontSize: '13px' }));
+    this.add.text(W - 110, 50, 'Crowd', textStyle('small', { fontSize: '13px' })).setOrigin(1, 0).setDepth(50);
     const downKey = ensureCrowdFigure(this, false);
     for (let i = 0; i < 5; i++) {
-      this.crowdFigures.push(this.add.image(W - 216 + i * 26, 70, downKey).setOrigin(0, 0).setScale(0.7));
+      this.crowdFigures.push(this.add.image(W - 240 + i * 26, 72, downKey).setOrigin(0, 0).setScale(0.7).setDepth(50));
     }
     this.updateCrowdFigures();
 
     if (State.data.accessibility.visualAssist) {
-      this.add.text(LANE_X_START, HIT_LINE_Y + 20, 'Tap here as notes cross the line', textStyle('small', { fontSize: '13px' }));
+      this.add.text(W / 2, HIT_LINE_Y + 30, 'Tap a lane as its note crosses the line', textStyle('small', { fontSize: '14px' }))
+        .setOrigin(0.5).setDepth(50);
     }
 
     for (let l = 0; l < song.lanes; l++) {
-      const zone = this.add.zone(LANE_X_START + l * LANE_W, HIT_LINE_Y - 40, LANE_W, 120).setOrigin(0, 0).setInteractive();
+      // Tap zone: the whole lane below the spawn area, so a thumb resting anywhere in the lane's
+      // lower half registers — not just a thin band at the line. Timing is judged by the clock,
+      // never by where in the zone the finger landed.
+      const zone = this.add.zone(LANE_X_START + l * LANE_W, HIT_LINE_Y - 160, LANE_W, 300).setOrigin(0, 0).setInteractive();
       zone.on('pointerdown', () => this.attemptHit(l));
       const keyMap = ['D', 'F', 'J', 'K'];
       if (keyMap[l]) {
@@ -140,10 +170,9 @@ export class RhythmScene extends Phaser.Scene {
     // but-unpunishing practice pass before the real song. `this.finished = true` here is load-
     // bearing: update() no-ops entirely while it's true, so with this.notes/this.cues still
     // empty (set in init()) there is nothing for it to prematurely judge or finish() over.
-    this.tutorialActive = !hasSeenRhythmTutorial();
     if (this.tutorialActive) {
       this.finished = true;
-      this.runPracticePass(() => this.beginRealSong(city, song));
+      this.runPracticePass(song, () => this.beginRealSong(city, song));
     } else {
       this.beginRealSong(city, song);
     }
@@ -153,9 +182,6 @@ export class RhythmScene extends Phaser.Scene {
    *  practice pass can run first without duplicating any of the scoring/finish machinery. */
   private beginRealSong(city: CityDef, song: SongDef): void {
     const arrangement = pickArrangement(song, State.data.flags);
-    // Wide windows for a first-timer's first real song, but only if they've never touched
-    // Settings — a returning player's own configured rhythmMode always wins.
-    this.forceRelaxedFirstSong = this.tutorialActive && !hasEverOpenedSettings();
     audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm, song.waveform);
     this.ctx = {
       cityId: city.id, songId: song.id, arrangement,
@@ -167,8 +193,8 @@ export class RhythmScene extends Phaser.Scene {
     this.cityLabel.setText(`${city.name} — ${arrangement.label}`);
 
     if (this.tutorialActive) {
-      this.add.text(W / 2, 100, 'TAP = touch the note   HOLD = press & hold   CUE = tap the banner',
-        textStyle('small', { fontSize: '14px', color: PALETTE_HEX.gold, wordWrap: { width: W - 80 }, align: 'center' })).setOrigin(0.5);
+      this.add.text(W / 2, 140, 'TAP = touch the note   HOLD = press & hold   CUE = tap the banner',
+        textStyle('small', { fontSize: '14px', color: PALETTE_HEX.gold, wordWrap: { width: W - 80 }, align: 'center' })).setOrigin(0.5).setDepth(50);
       markRhythmTutorialSeen();
     }
 
@@ -189,46 +215,63 @@ export class RhythmScene extends Phaser.Scene {
     return this.forceRelaxedFirstSong ? 'relaxed' : State.data.accessibility.rhythmMode;
   }
 
-  /** Non-interactive, tween-driven demo of the three note types — deliberately decoupled from
-   *  the real note/scoring pipeline (this.notes/this.cues stay empty throughout) so it cannot
-   *  affect score, combo, or crowd, and cannot be "failed". A stray tap during it is a harmless
-   *  no-op: attemptHit() only matches against this.notes, which is empty until beginRealSong(). */
-  private runPracticePass(onDone: () => void): void {
+  /** Non-interactive demo of the three note types, on the song's actual beat grid: a soft
+   *  metronome ticks every beat and each demo note is timed to LAND on a beat (spawned
+   *  `leadMs` before it), so the player absorbs the timing feel — not just the gesture.
+   *  Deliberately decoupled from the real note/scoring pipeline (this.notes/this.cues stay
+   *  empty throughout) so it cannot affect score, combo, or crowd, and cannot be "failed". A
+   *  stray tap during it is a harmless no-op: attemptHit() only matches against this.notes. */
+  private runPracticePass(song: SongDef, onDone: () => void): void {
+    const beatMs = 60000 / song.bpm;
+    const at = (beat: number, fn: () => void) => this.time.delayedCall(Math.max(0, beat * beatMs), fn);
     const label = this.add.text(W / 2, 260, 'Tap when the note touches the line!', textStyle('h2', {
       fontSize: '20px', color: PALETTE_HEX.gold, wordWrap: { width: W - 100 }, align: 'center',
     })).setOrigin(0.5).setAlpha(0).setDepth(60);
     this.tweens.add({ targets: label, alpha: 1, duration: 250 });
 
-    const tex = ensureLaneTextures(this);
-    const tapNote = this.add.image(this.laneCenterX(0), SPAWN_Y, tex.noteTap).setDepth(60);
-    this.tweens.add({
-      targets: tapNote, y: HIT_LINE_Y, duration: 1400, ease: 'Linear',
-      onComplete: () => {
-        spawnPerfectSpark(this, this.laneCenterX(0), HIT_LINE_Y);
-        tapNote.destroy();
-        this.time.delayedCall(250, () => this.runPracticeHold(label, onDone));
-      },
-    });
-  }
+    const totalBeats = 14;
+    for (let b = 0; b < totalBeats; b++) {
+      at(b, () => audio.playSfx(b % 4 === 0 ? 'metronomeAccent' : 'metronome'));
+    }
 
-  private runPracticeHold(label: Phaser.GameObjects.Text, onDone: () => void): void {
-    label.setText('Hold notes: press and hold until they end.');
-    const railKey = ensureHoldRail(this, 220);
-    const rail = this.add.image(this.laneCenterX(1), SPAWN_Y, railKey).setOrigin(0.5, 1).setDepth(60);
-    this.tweens.add({
-      targets: rail, y: HIT_LINE_Y, duration: 1400, ease: 'Linear',
-      onComplete: () => { rail.destroy(); this.time.delayedCall(250, () => this.runPracticeCue(label, onDone)); },
-    });
-  }
+    const tex = ensureLaneTextures(this, LANE_W);
+    const leadBeats = this.leadMs / beatMs;
 
-  private runPracticeCue(label: Phaser.GameObjects.Text, onDone: () => void): void {
-    label.setText('Choice cues: tap the banner when it appears.');
-    const w = 420, h = 64;
-    const banner = createButton(this, W / 2 - w / 2, 500, w, h, '  Like this', () => {},
-      { fillColor: PALETTE.terracotta, fontSize: '18px' });
-    banner.setDepth(60);
-    this.time.delayedCall(1500, () => {
-      banner.destroy();
+    // TAP lands on beat 4.
+    at(4 - leadBeats, () => {
+      const tapNote = this.add.image(this.laneCenterX(0), SPAWN_Y, tex.noteTap).setDepth(60);
+      this.tweens.add({
+        targets: tapNote, y: HIT_LINE_Y, duration: this.leadMs, ease: 'Linear',
+        onComplete: () => {
+          spawnPerfectSpark(this, this.laneCenterX(0), HIT_LINE_Y);
+          this.flashLane(0, 'perfect');
+          tapNote.destroy();
+        },
+      });
+    });
+
+    // HOLD lands on beat 8.
+    at(8 - leadBeats, () => {
+      label.setText('Hold notes: press and hold until they end.');
+      const railKey = ensureHoldRail(this, 220, HOLD_RAIL_W);
+      const rail = this.add.image(this.laneCenterX(2), SPAWN_Y, railKey).setOrigin(0.5, 1).setDepth(60);
+      this.tweens.add({
+        targets: rail, y: HIT_LINE_Y, duration: this.leadMs, ease: 'Linear',
+        onComplete: () => { this.flashLane(2, 'good'); rail.destroy(); },
+      });
+    });
+
+    // CUE banner on beat 10, gone by beat 13.
+    at(10, () => {
+      label.setText('Choice cues: tap the banner when it appears.');
+      const w = 420, h = 64;
+      const banner = createButton(this, W / 2 - w / 2, 500, w, h, '  Like this', () => {},
+        { fillColor: PALETTE.terracotta, fontSize: '18px' });
+      banner.setDepth(60);
+      at(3, () => banner.destroy());
+    });
+
+    at(totalBeats, () => {
       this.tweens.add({
         targets: label, alpha: 0, duration: 250,
         onComplete: () => { label.destroy(); onDone(); },
@@ -253,23 +296,23 @@ export class RhythmScene extends Phaser.Scene {
 
     for (const ns of this.notes) {
       const hitMs = this.startTime + ns.note.t * 1000;
-      const progress = 1 - (hitMs - now) / LEAD_MS;
+      const progress = 1 - (hitMs - now) / this.leadMs;
       if (progress < -0.15 || progress > 1.3) {
         if (!ns.judged && !ns.holding && progress > 1.3) this.judgeMiss(ns);
         continue;
       }
       const y = Phaser.Math.Linear(SPAWN_Y, HIT_LINE_Y, Phaser.Math.Clamp(progress, 0, 1));
-      const lane = LANE_X_START + ns.note.l * LANE_W + LANE_W / 2;
+      const lane = this.laneCenterX(ns.note.l);
       if (ns.note.type === 'hold') {
-        const railHeight = (ns.note.dur ?? 0.2) * 1000 * PX_PER_MS;
-        const railKey = ensureHoldRail(this, railHeight);
+        const railHeight = (ns.note.dur ?? 0.2) * 1000 * this.pxPerMs;
+        const railKey = ensureHoldRail(this, railHeight, HOLD_RAIL_W);
         if (!ns.sprite) {
-          ns.sprite = this.add.image(lane, y, railKey).setOrigin(0.5, 1);
+          ns.sprite = this.add.image(lane, y, railKey).setOrigin(0.5, 1).setDepth(10);
           this.maybeShowHoldHint(lane);
         } else ns.sprite.setPosition(lane, y);
       } else {
-        const texKey = ensureLaneTextures(this)[ns.note.type === 'tap' ? 'noteTap' : 'noteChoice'];
-        if (!ns.sprite) ns.sprite = this.add.image(lane, y, texKey);
+        const texKey = ensureLaneTextures(this, LANE_W)[ns.note.type === 'tap' ? 'noteTap' : 'noteChoice'];
+        if (!ns.sprite) ns.sprite = this.add.image(lane, y, texKey).setDepth(10);
         else ns.sprite.setPosition(lane, y);
       }
       if (State.data.accessibility.autoplay && !ns.judged && !ns.holding && now >= hitMs) {
@@ -353,7 +396,7 @@ export class RhythmScene extends Phaser.Scene {
     const startJudgement = judgeHit(ns.holdStartDelta ?? 0, windows);
     const finalJudgement = combineHoldJudgement(startJudgement, completion);
     ns.judged = true;
-    this.applyJudgement(finalJudgement);
+    this.applyJudgement(finalJudgement, ns.note.l);
     ns.sprite?.destroy();
   }
 
@@ -361,28 +404,34 @@ export class RhythmScene extends Phaser.Scene {
     ns.judged = true;
     const windows = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
     const judgement = judgeHit(deltaMs, windows);
-    this.applyJudgement(judgement);
+    this.applyJudgement(judgement, ns.note.l);
     ns.sprite?.destroy();
   }
 
   private judgeMiss(ns: NoteState): void {
     ns.judged = true;
-    this.applyJudgement('miss');
+    this.applyJudgement('miss', ns.note.l);
     ns.sprite?.destroy();
   }
 
-  private applyJudgement(judgement: HitJudgement): void {
+  private applyJudgement(judgement: HitJudgement, lane: number): void {
     this.judgements.push(judgement);
     this.combo = judgement === 'miss' ? 0 : this.combo + 1;
     if (this.combo === 0) this.comboMilestonesShown.clear();
-    this.score += scoreForHit(judgement, this.combo, State.data.accessibility.easyScoring);
+    const points = scoreForHit(judgement, this.combo, State.data.accessibility.easyScoring);
+    this.score += points;
     this.scoreText.setText(`Score: ${this.score}`);
     this.comboText.setText(this.combo > 1 ? `Combo x${this.combo}` : '');
     comboPop(this, this.comboText);
     this.maybeShowComboStamp();
     this.crowd = Phaser.Math.Clamp(this.crowd + (judgement === 'perfect' ? 3 : judgement === 'good' ? 1 : judgement === 'miss' ? -2 : 0), 0, 100);
     this.updateCrowdFigures();
-    const hitX = LANE_X_START + LANE_W / 2;
+
+    // Feedback lands in the lane that was actually hit — previously every spark fired at a
+    // fixed lane-0 x, which read as "the game didn't see my tap" on lanes 1-3.
+    const hitX = this.laneCenterX(lane);
+    this.flashLane(lane, judgement);
+    this.showJudgementText(hitX, judgement, points);
     if (judgement === 'perfect') {
       audio.playSfx('perfect');
       spawnPerfectSpark(this, hitX, HIT_LINE_Y);
@@ -390,6 +439,7 @@ export class RhythmScene extends Phaser.Scene {
       hitstop(this, 30);
     } else if (judgement === 'good') {
       audio.playSfx('good');
+      spawnRingPulse(this, hitX, HIT_LINE_Y, PALETTE.cream);
     } else if (judgement === 'ok') {
       audio.playSfx('ok');
     } else {
@@ -398,11 +448,39 @@ export class RhythmScene extends Phaser.Scene {
     }
   }
 
+  /** Brief tint over the whole lane on a hit. It's a static alpha fade, not motion, so it's
+   *  kept under reducedMotion — but skipped under noFlash, which is the setting it's about. */
+  private flashLane(lane: number, judgement: HitJudgement): void {
+    if (State.data.accessibility.noFlash) return;
+    const flash = this.laneFlashes[lane];
+    if (!flash) return;
+    flash.setFillStyle(JUDGEMENT_COLOR[judgement], 1);
+    flash.setAlpha(judgement === 'miss' ? 0.12 : 0.22);
+    this.tweens.killTweensOf(flash);
+    this.tweens.add({ targets: flash, alpha: 0, duration: judgement === 'miss' ? 220 : 160, ease: 'Quad.easeOut' });
+  }
+
+  /** Floating "Perfect! +100" at the hit line, rising and fading. Under reducedMotion it fades
+   *  in place — the information still shows, only the travel is dropped. */
+  private showJudgementText(x: number, judgement: HitJudgement, points: number): void {
+    const label = judgement === 'miss' ? JUDGEMENT_LABEL.miss : `${JUDGEMENT_LABEL[judgement]} +${points}`;
+    const text = this.add.text(x, HIT_LINE_Y - 56, label, textStyle('button', {
+      fontSize: judgement === 'perfect' ? '24px' : '20px', color: JUDGEMENT_HEX[judgement],
+    })).setOrigin(0.5).setDepth(90);
+    const rise = State.data.accessibility.reducedMotion ? 0 : 44;
+    this.tweens.add({
+      targets: text, y: text.y - rise, alpha: 0, duration: 600, ease: 'Quad.easeOut',
+      onComplete: () => text.destroy(),
+    });
+  }
+
   private maybeShowComboStamp(): void {
     const milestone = COMBO_MILESTONES.find((m) => this.combo >= m && !this.comboMilestonesShown.has(m));
     if (!milestone) return;
     this.comboMilestonesShown.add(milestone);
-    const stamp = this.add.text(W / 2, H / 2 - 100, COMBO_STAMPS[milestone], textStyle('title', { fontSize: '40px' })).setOrigin(0.5).setAlpha(0).setScale(0.7).setDepth(120);
+    const stamp = this.add.text(W / 2, H / 2 - 100, `Combo x${milestone}\n${COMBO_STAMPS[milestone]}`, textStyle('title', {
+      fontSize: '40px', align: 'center', lineSpacing: 4,
+    })).setOrigin(0.5).setAlpha(0).setScale(0.7).setDepth(120);
     this.tweens.add({
       targets: stamp, alpha: 1, scale: 1, duration: 200, ease: 'Back.easeOut',
       onComplete: () => {
@@ -424,6 +502,7 @@ export class RhythmScene extends Phaser.Scene {
     const w = 460, h = 64;
     const container = createButton(this, W / 2 - w / 2, 400, w, h, `  ${CUE_LABELS[cs.cue.type]}`,
       () => this.resolveCue(cs), { fillColor: PALETTE.terracotta, fontSize: '18px', tapSfx: 'choiceConfirm' });
+    container.setDepth(95);
     const iconKey = ensureCueIcon(this, cs.cue.type);
     container.add(this.add.image(34, h / 2, iconKey));
     this.maybeShowCueHint();

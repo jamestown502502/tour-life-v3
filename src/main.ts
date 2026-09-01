@@ -34,6 +34,10 @@ async function boot(): Promise<void> {
     type: Phaser.AUTO,
     parent: 'app',
     backgroundColor: PALETTE_HEX.night,
+    // Phaser tracks ONE touch pointer by default — a second simultaneous finger is silently
+    // dropped, which made two-lane chords in the rhythm charts unplayable on a phone. One
+    // pointer per lane.
+    input: { activePointers: 4 },
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
