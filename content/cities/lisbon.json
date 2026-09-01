@@ -1,0 +1,144 @@
+{
+  "id": "lisbon",
+  "name": "Lisbon",
+  "tone": "nostalgia_and_wandering",
+  "weather": ["soft_rain", "golden_hour"],
+  "tempo": 92,
+  "tint": "warm_amber",
+  "locations": [
+    { "id": "fado_house", "name": "A small fado house", "sound": "acoustic_guitar", "sceneId": "lis_loc_fado" },
+    { "id": "record_shop", "name": "A dusty record shop", "sound": "vinyl_crackle", "sceneId": "lis_loc_records" },
+    { "id": "miradouro", "name": "The rooftop miradouro", "sound": "wind_and_trams", "sceneId": "lis_loc_miradouro" },
+    { "id": "night_market", "name": "The night market", "sound": "crowd_and_bells", "sceneId": "lis_loc_market" }
+  ],
+  "arrivalSceneId": "lis_arrival",
+  "preShowSceneId": "lis_preshow",
+  "relationshipScenePool": [
+    { "id": "mira_low_confidence", "bandmate": "mira", "sceneId": "lis_rel_mira" },
+    { "id": "theo_rest_day", "bandmate": "theo", "sceneId": "lis_rel_theo" },
+    { "id": "jun_new_sound", "bandmate": "jun", "sceneId": "lis_rel_jun" }
+  ],
+  "collaborator": { "npcName": "Inês", "role": "fado singer", "gift": "a scrap of a fado phrase, hummed onto a napkin" },
+  "preShowChoices": [
+    { "id": "acoustic_set", "label": "Play it acoustic", "description": "Strip it back. Let the room breathe.", "arrangementId": "acoustic", "effects": { "energy": 2 } },
+    { "id": "crowd_pleaser", "label": "Give them the full band", "description": "Loud, warm, generous.", "arrangementId": "full_band", "effects": { "harmony": 1 } },
+    { "id": "duet_with_ines", "label": "Invite Inês up for a duet", "description": "One song, two voices, no rehearsal.", "arrangementId": "duet", "effects": { "inspiration": 4 }, "condition": "stat.harmony>=30" }
+  ],
+  "songId": "sailor_lullaby",
+  "storyGate": { "condition": "stat.harmony>=30", "unlock": "duet" },
+  "afterShowSceneId": "lis_aftershow",
+  "journalSceneId": "lis_journal",
+  "scenes": {
+    "lis_arrival": {
+      "id": "lis_arrival",
+      "speaker": "narrator",
+      "text": "The train smelled like rain and rust. Lisbon waited, unbothered, terracotta roofs going gold in the last light.",
+      "choices": [
+        { "id": "view", "label": "Take in the view", "next": "lis_arrival_view", "effects": { "inspiration": 2 } },
+        { "id": "gear", "label": "Get the gear off the train", "next": "lis_arrival_gear", "effects": { "energy": -3 } },
+        { "id": "mira", "label": "Check on Mira", "next": "lis_arrival_mira", "relationshipEffects": { "mira": 3 }, "flags": ["mira_confides"] }
+      ]
+    },
+    "lis_arrival_view": { "id": "lis_arrival_view", "speaker": "narrator", "text": "A river the color of tin. Someone nearby hums the venue's name like it's a secret worth keeping." },
+    "lis_arrival_gear": { "id": "lis_arrival_gear", "speaker": "narrator", "text": "The amp case is heavier every city. You don't say that out loud anymore." },
+    "lis_arrival_mira": { "id": "lis_arrival_mira", "speaker": "mira", "portrait": "worried", "text": "\"I keep forgetting we're allowed to just... be here,\" Mira says, not quite a joke." },
+
+    "lis_loc_fado": {
+      "id": "lis_loc_fado", "speaker": "narrator",
+      "text": "A voice cracks mid-note and holds anyway. The singer — Inês — catches your eye between verses.",
+      "choices": [
+        { "id": "listen", "label": "Listen quietly", "next": "lis_loc_fado_listen", "effects": { "inspiration": 3 } },
+        { "id": "buy_round", "label": "Buy the house a round", "next": "lis_loc_fado_round", "effects": { "funds": -20, "harmony": 2 } }
+      ]
+    },
+    "lis_loc_fado_listen": { "id": "lis_loc_fado_listen", "speaker": "narrator", "text": "You leave humming a melody that isn't yours yet." },
+    "lis_loc_fado_round": { "id": "lis_loc_fado_round", "speaker": "narrator", "text": "The bartender remembers your face now. Small victories." },
+
+    "lis_loc_records": {
+      "id": "lis_loc_records", "speaker": "narrator",
+      "text": "Crates of vinyl, dust like snow. Jun is already elbow-deep in the Brazilian section, grinning.",
+      "choices": [
+        { "id": "dig", "label": "Dig through crates with Jun", "next": "lis_loc_records_dig", "relationshipEffects": { "jun": 4 } },
+        { "id": "wander", "label": "Wander off alone", "next": "lis_loc_records_wander", "effects": { "inspiration": 2 } }
+      ]
+    },
+    "lis_loc_records_dig": { "id": "lis_loc_records_dig", "speaker": "jun", "portrait": "happy", "text": "\"Listen to this bassline,\" Jun says, for the fourth record in a row." },
+    "lis_loc_records_wander": { "id": "lis_loc_records_wander", "speaker": "narrator", "text": "You find a 7-inch with no label at all and buy it on principle." },
+
+    "lis_loc_miradouro": {
+      "id": "lis_loc_miradouro", "speaker": "narrator",
+      "text": "Wind, trams, a view that makes the whole trip feel smaller and bigger at once.",
+      "choices": [
+        { "id": "breathe", "label": "Sit and breathe", "next": "lis_loc_miradouro_breathe", "effects": { "energy": 4 } },
+        { "id": "sketch", "label": "Sketch the skyline", "next": "lis_loc_miradouro_sketch", "effects": { "inspiration": 3 } }
+      ]
+    },
+    "lis_loc_miradouro_breathe": { "id": "lis_loc_miradouro_breathe", "speaker": "narrator", "text": "For five minutes, nothing is due and no one needs you." },
+    "lis_loc_miradouro_sketch": { "id": "lis_loc_miradouro_sketch", "speaker": "narrator", "text": "The lines come out crooked. You keep the page anyway." },
+
+    "lis_loc_market": {
+      "id": "lis_loc_market", "speaker": "narrator",
+      "text": "Bells, frying dough, a stranger selling cassette tapes of a band nobody's heard of.",
+      "choices": [
+        { "id": "haggle", "label": "Haggle for a tape", "next": "lis_loc_market_tape", "effects": { "funds": -10 }, "flags": ["found_cassette"] },
+        { "id": "watch", "label": "Just watch the crowd", "next": "lis_loc_market_watch", "effects": { "harmony": 2 } }
+      ]
+    },
+    "lis_loc_market_tape": { "id": "lis_loc_market_tape", "speaker": "narrator", "text": "The tape is warped and wonderful. You'll never find out who they were." },
+    "lis_loc_market_watch": { "id": "lis_loc_market_watch", "speaker": "narrator", "text": "A hundred small lives happening at once, none of them checking a set time." },
+
+    "lis_rel_mira": {
+      "id": "lis_rel_mira", "speaker": "mira", "portrait": "worried",
+      "text": "\"What if they came for someone else's band?\" Mira asks the window, not you.",
+      "choices": [
+        { "id": "reassure", "label": "She's wrong, and you know it", "next": "lis_rel_mira_a", "relationshipEffects": { "mira": 5 }, "effects": { "harmony": 2 } },
+        { "id": "sit_with", "label": "Let her sit with it a moment", "next": "lis_rel_mira_b", "relationshipEffects": { "mira": 2 } }
+      ]
+    },
+    "lis_rel_mira_a": { "id": "lis_rel_mira_a", "speaker": "mira", "portrait": "happy", "text": "She doesn't argue back this time. That's new." },
+    "lis_rel_mira_b": { "id": "lis_rel_mira_b", "speaker": "mira", "portrait": "worried", "text": "\"Okay,\" she says, eventually. Not fixed. Heard." },
+
+    "lis_rel_theo": {
+      "id": "lis_rel_theo", "speaker": "theo", "portrait": "tense",
+      "text": "\"I could sleep for a year,\" Theo says, \"and still be tired when I woke up.\"",
+      "choices": [
+        { "id": "rest", "label": "Take the afternoon off", "next": "lis_rel_theo_a", "effects": { "energy": 5 }, "relationshipEffects": { "theo": 4 } },
+        { "id": "push", "label": "One more pass at the bridge, then rest", "next": "lis_rel_theo_b", "effects": { "inspiration": 3, "energy": -4 } }
+      ]
+    },
+    "lis_rel_theo_a": { "id": "lis_rel_theo_a", "speaker": "theo", "portrait": "happy", "text": "He actually naps. You stand guard over the silence like it's precious." },
+    "lis_rel_theo_b": { "id": "lis_rel_theo_b", "speaker": "theo", "portrait": "tense", "text": "The bridge is tighter now. Theo looks a little more hollow for it." },
+
+    "lis_rel_jun": {
+      "id": "lis_rel_jun", "speaker": "jun", "portrait": "inspired",
+      "text": "\"What if the chorus just... stopped,\" Jun says, \"and let the room fill it in?\"",
+      "choices": [
+        { "id": "try_it", "label": "Try it tonight", "next": "lis_rel_jun_a", "effects": { "harmony": 6 }, "relationshipEffects": { "jun": 5 } },
+        { "id": "save_it", "label": "Save it for the album", "next": "lis_rel_jun_b", "effects": { "funds": 5 } }
+      ]
+    },
+    "lis_rel_jun_a": { "id": "lis_rel_jun_a", "speaker": "jun", "portrait": "inspired", "text": "\"Tonight, then,\" Jun says, already humming the gap." },
+    "lis_rel_jun_b": { "id": "lis_rel_jun_b", "speaker": "jun", "portrait": "happy", "text": "Jun shrugs, unbothered. There will be other rooms." },
+
+    "lis_preshow": {
+      "id": "lis_preshow", "speaker": "narrator",
+      "text": "Soundcheck's done. The room is filling. Tonight's shape is still yours to choose."
+    },
+
+    "lis_aftershow": {
+      "id": "lis_aftershow", "speaker": "narrator",
+      "text": "The last chord fades into applause that doesn't want to stop.",
+      "choices": [
+        { "id": "celebrate", "label": "Celebrate with the crowd", "next": "lis_aftershow_a", "relationshipEffects": { "mira": 2, "theo": 2, "jun": 2, "rowan": 2 } },
+        { "id": "early_bus", "label": "Head back to the bus early", "next": "lis_aftershow_b", "effects": { "energy": 5 } }
+      ]
+    },
+    "lis_aftershow_a": { "id": "lis_aftershow_a", "speaker": "narrator", "text": "Someone buys the band a round they can't really afford. Worth it." },
+    "lis_aftershow_b": { "id": "lis_aftershow_b", "speaker": "narrator", "text": "The bus is quiet and dark and exactly what you needed." },
+
+    "lis_journal": {
+      "id": "lis_journal", "speaker": "narrator",
+      "text": "You write: Lisbon smelled like rain and someone else's song. Onward."
+    }
+  }
+}

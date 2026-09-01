@@ -1,0 +1,144 @@
+{
+  "id": "tokyo",
+  "name": "Tokyo",
+  "tone": "precision_and_neon",
+  "weather": ["neon_drizzle", "clear_electric"],
+  "tempo": 118,
+  "tint": "teal_pink",
+  "locations": [
+    { "id": "neon_arcade", "name": "A cramped neon arcade", "sound": "chiptune_blips", "sceneId": "tok_loc_arcade" },
+    { "id": "late_night_ramen", "name": "A steam-fogged ramen counter", "sound": "broth_simmer", "sceneId": "tok_loc_ramen" },
+    { "id": "shrine_garden", "name": "A shrine garden off the main street", "sound": "bell_and_gravel", "sceneId": "tok_loc_shrine" },
+    { "id": "karaoke_box", "name": "A tiny karaoke box", "sound": "muffled_bass", "sceneId": "tok_loc_karaoke" }
+  ],
+  "arrivalSceneId": "tok_arrival",
+  "preShowSceneId": "tok_preshow",
+  "relationshipScenePool": [
+    { "id": "rowan_unseen", "bandmate": "rowan", "sceneId": "tok_rel_rowan" },
+    { "id": "mira_after_the_encore", "bandmate": "mira", "sceneId": "tok_rel_mira" },
+    { "id": "jun_gear_swap", "bandmate": "jun", "sceneId": "tok_rel_jun" }
+  ],
+  "collaborator": { "npcName": "Kenji", "role": "session drummer", "gift": "a mixtape labeled only 'city sounds, vol. 4'" },
+  "preShowChoices": [
+    { "id": "precision_set", "label": "Play it tight and precise", "description": "Every hit exactly where it should be.", "arrangementId": "tight", "effects": { "harmony": 1 } },
+    { "id": "improvised_night", "label": "Let it breathe and improvise", "description": "Loosen the click track. See what happens.", "arrangementId": "loose", "effects": { "inspiration": 3 } },
+    { "id": "spotlight_rowan", "label": "Build the whole set around Rowan's bassline", "description": "Hand the room over to the one who's earned it.", "arrangementId": "bass_forward", "effects": { "inspiration": 2 }, "condition": "relationship.rowan>=30" }
+  ],
+  "songId": "neon_rain",
+  "storyGate": { "condition": "relationship.rowan>=30", "unlock": "bass_forward" },
+  "afterShowSceneId": "tok_aftershow",
+  "journalSceneId": "tok_journal",
+  "scenes": {
+    "tok_arrival": {
+      "id": "tok_arrival",
+      "speaker": "narrator",
+      "text": "Tokyo hits like static — signs stacked on signs, a hundred conversations you don't understand and don't need to.",
+      "choices": [
+        { "id": "explore", "label": "Walk it off before soundcheck", "next": "tok_arrival_walk", "effects": { "inspiration": 2 } },
+        { "id": "rest", "label": "Find the hotel and actually rest", "next": "tok_arrival_rest", "effects": { "energy": 4 } },
+        { "id": "rowan", "label": "Check on Rowan, who's gone quiet", "next": "tok_arrival_rowan", "relationshipEffects": { "rowan": 3 } }
+      ]
+    },
+    "tok_arrival_walk": { "id": "tok_arrival_walk", "speaker": "narrator", "text": "Every block sounds like a different song. You steal a rhythm from a crosswalk chime." },
+    "tok_arrival_rest": { "id": "tok_arrival_rest", "speaker": "narrator", "text": "The room is the size of the bus bunk, and somehow that's a comfort." },
+    "tok_arrival_rowan": { "id": "tok_arrival_rowan", "speaker": "rowan", "portrait": "worried", "text": "\"I'm fine,\" Rowan says, in the tone that means the opposite." },
+
+    "tok_loc_arcade": {
+      "id": "tok_loc_arcade", "speaker": "narrator",
+      "text": "Rhythm cabinets flash in perfect sync. A local rests a challenge coin on the machine, grinning.",
+      "choices": [
+        { "id": "accept", "label": "Accept the challenge", "next": "tok_loc_arcade_win", "effects": { "funds": -5, "inspiration": 3 } },
+        { "id": "watch", "label": "Just watch the pros play", "next": "tok_loc_arcade_watch", "effects": { "inspiration": 2 } }
+      ]
+    },
+    "tok_loc_arcade_win": { "id": "tok_loc_arcade_win", "speaker": "narrator", "text": "You lose badly and learn something about timing anyway." },
+    "tok_loc_arcade_watch": { "id": "tok_loc_arcade_watch", "speaker": "narrator", "text": "Their hands move faster than the notes should allow." },
+
+    "tok_loc_ramen": {
+      "id": "tok_loc_ramen", "speaker": "narrator",
+      "text": "Steam fogs the window. The owner slides four bowls across without being asked twice.",
+      "choices": [
+        { "id": "toast", "label": "Toast to the tour, loudly", "next": "tok_loc_ramen_toast", "effects": { "harmony": 3 } },
+        { "id": "quiet", "label": "Eat in comfortable silence", "next": "tok_loc_ramen_quiet", "effects": { "energy": 3 } }
+      ]
+    },
+    "tok_loc_ramen_toast": { "id": "tok_loc_ramen_toast", "speaker": "narrator", "text": "The owner laughs and refuses to let you pay full price." },
+    "tok_loc_ramen_quiet": { "id": "tok_loc_ramen_quiet", "speaker": "narrator", "text": "Nobody needs to fill the air. That's its own kind of closeness." },
+
+    "tok_loc_shrine": {
+      "id": "tok_loc_shrine", "speaker": "narrator",
+      "text": "Gravel crunches underfoot. The city noise drops to almost nothing here, like a held breath.",
+      "choices": [
+        { "id": "ritual", "label": "Follow the ritual, unsure but sincere", "next": "tok_loc_shrine_ritual", "effects": { "harmony": 2 } },
+        { "id": "sit", "label": "Just sit with the quiet", "next": "tok_loc_shrine_sit", "effects": { "energy": 3 } }
+      ]
+    },
+    "tok_loc_shrine_ritual": { "id": "tok_loc_shrine_ritual", "speaker": "narrator", "text": "You don't know if you did it right. It felt right anyway." },
+    "tok_loc_shrine_sit": { "id": "tok_loc_shrine_sit", "speaker": "narrator", "text": "For once, nobody's phone buzzes. Nobody checks." },
+
+    "tok_loc_karaoke": {
+      "id": "tok_loc_karaoke", "speaker": "narrator",
+      "text": "A tiny room, a too-big screen, and a song list none of you can read.",
+      "choices": [
+        { "id": "sing", "label": "Pick something at random and commit", "next": "tok_loc_karaoke_sing", "relationshipEffects": { "mira": 3, "theo": 3, "jun": 3, "rowan": 3 } },
+        { "id": "dj", "label": "Let Jun DJ the whole session", "next": "tok_loc_karaoke_dj", "relationshipEffects": { "jun": 4 } }
+      ]
+    },
+    "tok_loc_karaoke_sing": { "id": "tok_loc_karaoke_sing", "speaker": "narrator", "text": "It's terrible. It's perfect. Nobody films it, which somehow makes it better." },
+    "tok_loc_karaoke_dj": { "id": "tok_loc_karaoke_dj", "speaker": "jun", "portrait": "happy", "text": "Jun's setlist makes no sense and works completely." },
+
+    "tok_rel_rowan": {
+      "id": "tok_rel_rowan", "speaker": "rowan", "portrait": "worried",
+      "text": "\"Nobody requests the bass solo,\" Rowan says. \"I've counted.\"",
+      "choices": [
+        { "id": "promise", "label": "Promise tonight's different", "next": "tok_rel_rowan_a", "relationshipEffects": { "rowan": 6 } },
+        { "id": "listen", "label": "Just listen, don't fix it", "next": "tok_rel_rowan_b", "relationshipEffects": { "rowan": 3 } }
+      ]
+    },
+    "tok_rel_rowan_a": { "id": "tok_rel_rowan_a", "speaker": "rowan", "portrait": "inspired", "text": "Rowan doesn't quite smile, but the bass case opens a little more eagerly." },
+    "tok_rel_rowan_b": { "id": "tok_rel_rowan_b", "speaker": "rowan", "portrait": "worried", "text": "\"Thanks for not saying it'll be fine,\" Rowan says." },
+
+    "tok_rel_mira": {
+      "id": "tok_rel_mira", "speaker": "mira", "portrait": "tense",
+      "text": "\"My voice cracked in Lisbon and everyone clapped louder,\" Mira says. \"I don't get it.\"",
+      "choices": [
+        { "id": "explain", "label": "That crack was the realest thing all night", "next": "tok_rel_mira_a", "relationshipEffects": { "mira": 5 }, "effects": { "inspiration": 2 } },
+        { "id": "shrug", "label": "Maybe stop counting the cracks", "next": "tok_rel_mira_b", "relationshipEffects": { "mira": 2 } }
+      ]
+    },
+    "tok_rel_mira_a": { "id": "tok_rel_mira_a", "speaker": "mira", "portrait": "happy", "text": "\"Huh,\" Mira says, like the idea is new and heavy and good." },
+    "tok_rel_mira_b": { "id": "tok_rel_mira_b", "speaker": "mira", "portrait": "tense", "text": "She laughs, short and surprised. Progress, maybe." },
+
+    "tok_rel_jun": {
+      "id": "tok_rel_jun", "speaker": "jun", "portrait": "inspired",
+      "text": "\"Found a pedal at a shop that does something I can't explain,\" Jun says. \"Can we afford it?\"",
+      "choices": [
+        { "id": "splurge", "label": "Buy it. Figure out the budget later", "next": "tok_rel_jun_a", "effects": { "funds": -40, "inspiration": 4 }, "relationshipEffects": { "jun": 5 } },
+        { "id": "pass", "label": "Not this tour", "next": "tok_rel_jun_b", "effects": { "funds": 10 } }
+      ]
+    },
+    "tok_rel_jun_a": { "id": "tok_rel_jun_a", "speaker": "jun", "portrait": "happy", "text": "Jun is already rewiring the pedalboard by soundcheck." },
+    "tok_rel_jun_b": { "id": "tok_rel_jun_b", "speaker": "jun", "portrait": "inspired", "text": "Jun writes the model number down anyway. For later." },
+
+    "tok_preshow": {
+      "id": "tok_preshow", "speaker": "narrator",
+      "text": "The venue's LEDs sync to your soundcheck without being asked. Tokyo is already listening."
+    },
+
+    "tok_aftershow": {
+      "id": "tok_aftershow", "speaker": "narrator",
+      "text": "The crowd files out into neon and rain, already talking about tonight.",
+      "choices": [
+        { "id": "afterparty", "label": "Say yes to the afterparty", "next": "tok_aftershow_a", "relationshipEffects": { "jun": 2, "rowan": 2 }, "effects": { "energy": -3 } },
+        { "id": "wind_down", "label": "Wind down quietly with the band", "next": "tok_aftershow_b", "effects": { "harmony": 3 } }
+      ]
+    },
+    "tok_aftershow_a": { "id": "tok_aftershow_a", "speaker": "narrator", "text": "You don't remember half the conversations. You remember feeling wanted." },
+    "tok_aftershow_b": { "id": "tok_aftershow_b", "speaker": "narrator", "text": "Four people, one van, the city's hum fading outside the windows." },
+
+    "tok_journal": {
+      "id": "tok_journal", "speaker": "narrator",
+      "text": "You write: Tokyo never once slowed down for us. We kept up anyway."
+    }
+  }
+}
