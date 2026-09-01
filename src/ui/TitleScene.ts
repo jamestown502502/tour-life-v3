@@ -5,6 +5,7 @@ import { applyVignette, spawnFireflies, type WeatherHandle } from '../art/effect
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { audio } from '../core/audio';
+import { DEFAULT_AMBIENCE_BPM, DEFAULT_AMBIENCE_CHORDS } from '../core/musicTheory';
 import { generateSeed } from '../core/rng';
 import { State, type Progress } from '../core/state';
 import { hasSave, loadRun } from '../core/save';
@@ -20,7 +21,10 @@ export class TitleScene extends Phaser.Scene {
   private fireflies: WeatherHandle | null = null;
 
   create(): void {
-    this.input.once('pointerdown', () => audio.unlock());
+    this.input.once('pointerdown', () => {
+      audio.unlock();
+      audio.playAmbience(DEFAULT_AMBIENCE_CHORDS, DEFAULT_AMBIENCE_BPM);
+    });
     fadeIn(this);
 
     const bgKey = ensureTitleBackground(this);

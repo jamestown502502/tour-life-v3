@@ -9,6 +9,7 @@ import { RhythmScene } from './ui/RhythmScene';
 import { ResultsScene } from './ui/ResultsScene';
 import { ScrapbookScene } from './ui/ScrapbookScene';
 import { SettingsScene } from './ui/SettingsScene';
+import { audio } from './core/audio';
 
 // Wait for the self-hosted webfonts before booting: Phaser Text drawn before a font finishes
 // loading silently falls back to the browser default and never re-renders once the font
@@ -40,7 +41,7 @@ async function boot(): Promise<void> {
     scene: [TitleScene, BandCreatorScene, RoutePlanScene, HubScene, CityScene, RhythmScene, ResultsScene, ScrapbookScene, SettingsScene],
   });
 
-  if (import.meta.env.DEV) (window as any).__game = game;
+  if (import.meta.env.DEV) { (window as any).__game = game; (window as any).__audio = audio; }
 }
 
 boot();

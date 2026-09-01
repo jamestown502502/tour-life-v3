@@ -8,7 +8,9 @@ import { DialogueBox } from './DialogueBox';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
 import { saveRun } from '../core/save';
-import { getCity } from '../game/content';
+import { getCity, getSong } from '../game/content';
+import { audio } from '../core/audio';
+import { parseChordProgression } from '../core/musicTheory';
 import { resolveNode, visibleChoices, applyChoice, advanceTarget } from '../game/dialogue';
 import { evaluateCondition } from '../game/condition';
 import { availabilityFlag } from '../game/scenePool';
@@ -44,6 +46,8 @@ export class CityScene extends Phaser.Scene {
     const bgKey = ensureCityBackground(this, this.city.id, this.city.tint);
     const bg = this.add.image(0, 0, bgKey).setOrigin(0, 0);
     applyVignette(bg);
+    const song = getSong(this.city.songId);
+    audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm * 0.5, song.waveform);
     const stop = State.data.route.find((s) => s.cityId === this.city.id);
     if (stop?.weather && /rain|drizzle/.test(stop.weather)) {
       this.rain = spawnRain(this, 0.3);
@@ -68,7 +72,11 @@ export class CityScene extends Phaser.Scene {
       case 'journal': this.startJournal(); break;
     }
 
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.rain?.stop(); this.fireflies?.stop(); });
+    // The dialogue box only un-ducks music on setVisible(false)/destroy(), neither of which
+    // fires when a scene ends mid-dialogue-visible (e.g. journal's last line -> straight to
+    // Hub) — without this, music stays stuck at half volume until some later dialogue happens
+    // to close. Always restore on the way out, regardless of what state the box was left in.
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.rain?.stop(); this.fireflies?.stop(); audio.duckMusic(false); });
   }
 
   private walk(nodeId: string, onDone: () => void): void {

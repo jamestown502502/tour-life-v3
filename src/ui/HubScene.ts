@@ -7,6 +7,8 @@ import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
 import { getCity } from '../game/content';
 import { saveRun } from '../core/save';
+import { audio } from '../core/audio';
+import { DEFAULT_AMBIENCE_BPM, DEFAULT_AMBIENCE_CHORDS } from '../core/musicTheory';
 import { generateEnding } from '../game/endings';
 import { completeRun } from '../game/meta';
 import type { StatKey } from '../../content/schema';
@@ -24,6 +26,7 @@ export class HubScene extends Phaser.Scene {
 
   create(): void {
     fadeIn(this);
+    audio.playAmbience(DEFAULT_AMBIENCE_CHORDS, DEFAULT_AMBIENCE_BPM);
     const bgKey = ensureBusHubBackground(this);
     const bg = this.add.image(0, 0, bgKey).setOrigin(0, 0);
     applyVignette(bg);

@@ -14,6 +14,7 @@ import {
 import type { ChartCue, ChartNote, ChoiceCueType } from '../../content/schema';
 import { saveRun } from '../core/save';
 import { textStyle } from './textStyles';
+import { parseChordProgression } from '../core/musicTheory';
 
 const HIT_LINE_Y = 1100;
 const SPAWN_Y = 160;
@@ -81,6 +82,7 @@ export class RhythmScene extends Phaser.Scene {
     const city = getCity(this.cityId);
     const song = getSong(city.songId);
     const arrangement = pickArrangement(song, State.data.flags);
+    audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm, song.waveform);
     this.ctx = {
       cityId: city.id, songId: song.id, arrangement,
       bandHarmony: State.data.stats.harmony, energy: State.data.stats.energy,

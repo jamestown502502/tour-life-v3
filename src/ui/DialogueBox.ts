@@ -8,6 +8,7 @@ import { BANDMATE_BASE, ensureDialoguePanel, ensurePortrait, ensurePortraitFrame
 import type { BandmateId } from '../../content/schema';
 import { textStyle } from './textStyles';
 import { createButton } from './Button';
+import { audio } from '../core/audio';
 
 // Panel sits low on the 720x1280 canvas but leaves room below for up to 4 choice buttons
 // (58px each) before running off the bottom edge.
@@ -36,6 +37,7 @@ export class DialogueBox {
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
+    audio.duckMusic(true);
     const panelKey = ensureDialoguePanel(scene);
     const shadowKey = ensureRoundedRect(scene, PANEL_W, PANEL_H, 22);
     this.container = scene.add.container(0, 0).setDepth(100);
@@ -130,9 +132,11 @@ export class DialogueBox {
    *  choices) occupies the screen, so stale text from the last node doesn't linger visible. */
   setVisible(visible: boolean): void {
     this.container.setVisible(visible);
+    audio.duckMusic(visible);
   }
 
   destroy(): void {
+    audio.duckMusic(false);
     this.container.destroy();
   }
 }

@@ -11,7 +11,7 @@ class AudioSystem {
   private sfxGain!: GainNode;
   private metronomeGain!: GainNode;
   private unlocked = false;
-  private musicNodes: { stop(): void } | null = null;
+  private musicNodes: { stop(fadeSec?: number): void } | null = null;
 
   volumes = { master: 1, music: 0.7, sfx: 0.9, metronome: 0.6 };
 
@@ -19,9 +19,31 @@ class AudioSystem {
   unlock(): void {
     if (this.unlocked) return;
     this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+    // Master chain: gentle low/high shelf for warmth + a compressor so layered ambience +
+    // arpeggio + bass pulse + SFX never clips, even at full volume with everything playing.
+    const lowShelf = this.ctx.createBiquadFilter();
+    lowShelf.type = 'lowshelf';
+    lowShelf.frequency.value = 200;
+    lowShelf.gain.value = 2;
+
+    const highShelf = this.ctx.createBiquadFilter();
+    highShelf.type = 'highshelf';
+    highShelf.frequency.value = 6000;
+    highShelf.gain.value = -3;
+
+    const compressor = this.ctx.createDynamicsCompressor();
+    compressor.threshold.value = -18;
+    compressor.knee.value = 24;
+    compressor.ratio.value = 4;
+    compressor.attack.value = 0.005;
+    compressor.release.value = 0.25;
+
+    lowShelf.connect(highShelf).connect(compressor).connect(this.ctx.destination);
+
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.value = this.volumes.master;
-    this.masterGain.connect(this.ctx.destination);
+    this.masterGain.connect(lowShelf);
 
     this.musicGain = this.ctx.createGain();
     this.musicGain.gain.value = this.volumes.music;
@@ -98,12 +120,14 @@ class AudioSystem {
     if (!this.ctx) return;
     const bus = name === 'metronome' || name === 'metronomeAccent' ? this.metronomeGain : this.sfxGain;
     switch (name) {
-      case 'tap': return this.tone(220, 330, 0.04, 0.15, 'square', bus);
+      // Softened toward sine/triangle — square reads harsh/cheap for a cozy game.
+      case 'tap': return this.tone(220, 330, 0.05, 0.14, 'triangle', bus);
       case 'perfect':
         this.tone(880, 1320, 0.08, 0.25, 'sine', bus);
         this.tone(1760, 1760, 0.06, 0.15, 'sine', bus);
+        this.tone(2200, 2200, 0.05, 0.05, 'sine', bus); // 5th-harmonic shimmer
         return;
-      case 'good': return this.tone(660, 660, 0.06, 0.18, 'square', bus);
+      case 'good': return this.tone(660, 660, 0.07, 0.16, 'triangle', bus);
       case 'ok': return this.tone(440, 440, 0.05, 0.12, 'triangle', bus);
       case 'miss': return this.tone(110, 110, 0.1, 0.12, 'sine', bus);
       case 'choiceConfirm':
@@ -121,39 +145,109 @@ class AudioSystem {
     this.noiseBurst(durationSec, 0.2, 1400, this.sfxGain);
   }
 
-  /** Simple procedural chord-loop ambience for a hub/city scene. Returns a stopper. */
-  playAmbience(chord: number[], bpm: number, waveform: OscillatorType = 'triangle'): void {
-    this.stopMusic();
+  /** Procedural ambience bed: a sustained chord-progression pad + a slow arpeggio picking
+   *  through each chord's tones (with a little per-note gain wobble for an organic feel) + a
+   *  soft bass pulse on beat 1 of every bar + a very quiet filtered-noise room-tone layer
+   *  (the "city ambience" — crowd murmur / traffic bed). Crossfades with whatever was already
+   *  playing instead of hard-cutting it. Returns nothing — call stopMusic() to end it. */
+  playAmbience(chords: number[][], bpm: number, waveform: OscillatorType = 'triangle'): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
+    const previous = this.musicNodes;
+    previous?.stop(0.8);
+
     const beatSec = 60 / bpm;
-    const oscillators: OscillatorNode[] = [];
-    const gains: GainNode[] = [];
-    chord.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      osc.type = waveform;
-      osc.frequency.value = freq;
-      const g = ctx.createGain();
-      g.gain.value = 0.05 / chord.length;
-      osc.connect(g).connect(this.musicGain);
-      osc.start(ctx.currentTime + i * 0.01);
-      oscillators.push(osc);
-      gains.push(g);
-    });
-    let stopped = false;
+    const barSec = beatSec * 4;
+    const padGain = ctx.createGain();
+    padGain.gain.value = 0;
+    padGain.connect(this.musicGain);
+    padGain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.8);
+
+    // Sustained pad: re-voice the oscillators to the next chord at each bar. Assumes every
+    // chord in the progression has the same tone count (true for both songs today — Lisbon's
+    // Am7/Fmaj7/Cmaj7/G6 are all 4-tone, Tokyo's Am/F/C/G are all 3-tone triads); a
+    // progression that shrinks voice count mid-loop would leave a stale oscillator holding
+    // the last chord's extra tone rather than fading it out.
+    let chordIndex = 0;
+    const padOscillators: OscillatorNode[] = [];
+    const padGains: GainNode[] = [];
+    const voiceChord = (freqs: number[], atTime: number) => {
+      freqs.forEach((freq, i) => {
+        if (!padOscillators[i]) {
+          const osc = ctx.createOscillator();
+          osc.type = waveform;
+          const g = ctx.createGain();
+          g.gain.value = 0.05 / freqs.length;
+          osc.connect(g).connect(padGain);
+          osc.start(atTime);
+          padOscillators.push(osc);
+          padGains.push(g);
+        }
+        padOscillators[i].frequency.setTargetAtTime(freq, atTime, 0.4);
+      });
+    };
+    voiceChord(chords[0], ctx.currentTime);
+
+    // Slow ambient LFO breathing on the pad gain.
     const lfo = ctx.createOscillator();
     lfo.frequency.value = 1 / (beatSec * 4);
     const lfoGain = ctx.createGain();
     lfoGain.gain.value = 0.02;
     lfo.connect(lfoGain);
-    gains.forEach((g) => lfoGain.connect(g.gain));
+    padGains.forEach((g) => lfoGain.connect(g.gain));
     lfo.start();
+
+    // Room-tone bed: very quiet filtered noise, standing in for crowd murmur / traffic.
+    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseData.length; i++) noiseData[i] = Math.random() * 2 - 1;
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = noiseBuffer;
+    noiseSrc.loop = true;
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'lowpass';
+    noiseFilter.frequency.value = 800;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.value = 0.015;
+    noiseSrc.connect(noiseFilter).connect(noiseGain).connect(padGain);
+    noiseSrc.start();
+
+    // Arpeggio: an 8th-note pluck cycling through the current chord, one octave up.
+    let arpStep = 0;
+    const arpInterval = window.setInterval(() => {
+      const freqs = chords[chordIndex % chords.length];
+      const freq = freqs[arpStep % freqs.length] * 2;
+      arpStep++;
+      const wobble = 0.85 + Math.random() * 0.3; // velocity variation, not a flat sequencer
+      this.tone(freq, freq, 0.35, 0.035 * wobble, 'sine', padGain);
+    }, (beatSec / 2) * 1000);
+
+    // Bass pulse on beat 1 of every bar.
+    let bar = 0;
+    const bassInterval = window.setInterval(() => {
+      const freqs = chords[bar % chords.length];
+      this.tone(freqs[0] / 2, freqs[0] / 2, 0.4, 0.09, 'sine', padGain);
+      bar++;
+      chordIndex = bar;
+      voiceChord(chords[bar % chords.length], ctx.currentTime + 0.05);
+    }, barSec * 1000);
+
+    let stopped = false;
     this.musicNodes = {
-      stop() {
+      stop: (fadeSec = 0.4) => {
         if (stopped) return;
         stopped = true;
-        oscillators.forEach((o) => o.stop());
-        lfo.stop();
+        clearInterval(arpInterval);
+        clearInterval(bassInterval);
+        const t = ctx.currentTime;
+        padGain.gain.cancelScheduledValues(t);
+        padGain.gain.setValueAtTime(padGain.gain.value, t);
+        padGain.gain.linearRampToValueAtTime(0, t + fadeSec);
+        window.setTimeout(() => {
+          padOscillators.forEach((o) => { try { o.stop(); } catch { /* already stopped */ } });
+          lfo.stop();
+          noiseSrc.stop();
+        }, fadeSec * 1000 + 50);
       },
     };
   }
