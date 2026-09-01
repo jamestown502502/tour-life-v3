@@ -50,7 +50,17 @@ export function createButton(
   container.setData('labelText', text);
 
   if (!opts.disabled) {
-    bg.setInteractive({ useHandCursor: true });
+    // Pad the TAPPABLE area beyond the drawn button — mobile-viewport measurement (390px wide,
+    // the Scale.FIT canvas renders at ~0.54x) showed most buttons draw at only ~27-33 CSS px
+    // tall, well under the ~44px touch-target guideline. A blanket pad large enough to fully
+    // guarantee 44px everywhere would overlap neighbors in the tightest layouts (e.g. the
+    // Settings volume +/- pair, 10px apart) — this is a conservative, collision-safe pad
+    // (checked against every current layout's tightest spacing) that meaningfully improves
+    // comfort without risking a hit-area overlap. Closing that last gap on the smallest phones
+    // needs a real spacing pass across the affected screens, not just a bigger pad here.
+    const padX = 8, padY = 8;
+    bg.setInteractive(new Phaser.Geom.Rectangle(-padX, -padY, w + padX * 2, h + padY * 2), Phaser.Geom.Rectangle.Contains);
+    bg.input!.cursor = 'pointer';
     bg.on('pointerover', () => {
       scene.tweens.add({ targets: hoverGlow, alpha: 0.25, duration: 120 });
       audio.playSfx('menuHover');
