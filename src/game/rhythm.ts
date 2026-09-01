@@ -29,6 +29,20 @@ export function judgeHit(deltaMs: number, windows: TimingWindows): HitJudgement 
   return 'miss';
 }
 
+const HOLD_DOWNGRADE: Record<HitJudgement, HitJudgement> = { perfect: 'good', good: 'ok', ok: 'ok', miss: 'miss' };
+
+/** Real hold-note grading (previously cosmetic — any single tap anywhere in the note's window
+ *  judged the whole hold, ignoring `dur` entirely). `startJudgement` comes from judging the
+ *  initial press against the note's start time exactly like a tap; `completion` is how much of
+ *  the note's duration the player actually held for (0..1). Holding through >=85% keeps the
+ *  start judgement; letting go early softens it one tier; releasing before halfway is a miss —
+ *  they didn't hold the note, no-fail mode just means it doesn't block the story. */
+export function combineHoldJudgement(startJudgement: HitJudgement, completion: number): HitJudgement {
+  if (completion >= 0.85) return startJudgement;
+  if (completion >= 0.5) return HOLD_DOWNGRADE[startJudgement];
+  return 'miss';
+}
+
 const BASE_POINTS: Record<HitJudgement, number> = { perfect: 100, good: 60, ok: 30, miss: 0 };
 const EASY_POINTS: Record<HitJudgement, number> = { perfect: 100, good: 85, ok: 70, miss: 0 };
 

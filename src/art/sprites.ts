@@ -378,7 +378,7 @@ export function ensurePortrait(scene: Phaser.Scene, id: BandmateId, mood: string
   return key;
 }
 
-export function ensureLaneTextures(scene: Phaser.Scene): { lane: string; noteTap: string; noteHold: string; noteChoice: string } {
+export function ensureLaneTextures(scene: Phaser.Scene): { lane: string; noteTap: string; noteChoice: string } {
   const laneKey = 'rhythm_lane';
   withGraphics(scene, 140, H, (g) => {
     g.fillStyle(PALETTE.teal, 0.18);
@@ -388,28 +388,123 @@ export function ensureLaneTextures(scene: Phaser.Scene): { lane: string; noteTap
   }, laneKey);
 
   const noteTap = 'note_tap';
-  withGraphics(scene, 110, 40, (g) => {
+  withGraphics(scene, 116, 46, (g) => {
+    // plum drop shadow, offset behind the note face
+    g.fillStyle(PALETTE.plum, 0.35);
+    g.fillRoundedRect(6, 9, 110, 40, 12);
     g.fillStyle(0xffffff, 1);
     g.fillRoundedRect(0, 0, 110, 40, 12);
     g.lineStyle(3, PALETTE.gold, 1);
     g.strokeRoundedRect(0, 0, 110, 40, 12);
   }, noteTap);
 
-  const noteHold = 'note_hold';
-  withGraphics(scene, 110, 40, (g) => {
-    g.fillStyle(PALETTE.gold, 0.9);
-    g.fillRoundedRect(0, 0, 110, 40, 12);
-  }, noteHold);
-
   const noteChoice = 'note_choice';
-  withGraphics(scene, 110, 60, (g) => {
+  withGraphics(scene, 116, 66, (g) => {
+    g.fillStyle(PALETTE.plum, 0.35);
+    g.fillRoundedRect(6, 9, 110, 60, 16);
     g.fillStyle(PALETTE.terracotta, 1);
     g.fillRoundedRect(0, 0, 110, 60, 16);
     g.lineStyle(3, 0xffffff, 0.9);
     g.strokeRoundedRect(0, 0, 110, 60, 16);
   }, noteChoice);
 
-  return { lane: laneKey, noteTap, noteHold, noteChoice };
+  return { lane: laneKey, noteTap, noteChoice };
+}
+
+/** A hold-note "rail": a vertical bar fading from a solid gold head to a translucent tail,
+ *  bucketed to the nearest 10px so a whole song doesn't generate one texture per note. */
+export function ensureHoldRail(scene: Phaser.Scene, heightPx: number): string {
+  const h = Math.max(20, Math.round(heightPx / 10) * 10);
+  const key = `note_hold_rail_${h}`;
+  const w = 70;
+  withGraphics(scene, w, h, (g) => {
+    const steps = Math.max(4, Math.round(h / 12));
+    for (let i = 0; i < steps; i++) {
+      const t = i / steps; // 0 at head (bottom), 1 at tail (top)
+      const bandH = h / steps;
+      g.fillStyle(PALETTE.gold, 0.85 - t * 0.55);
+      g.fillRect(0, h - (i + 1) * bandH, w, bandH + 1);
+    }
+    g.lineStyle(3, PALETTE.gold, 0.9);
+    g.strokeRoundedRect(0, h - 26, w, 26, 10); // head cap, solid
+  }, key);
+  return key;
+}
+
+/** Glowing hit line: a bright core with soft wider bands above/below faking a blur, since
+ *  Graphics has no blur filter. */
+export function ensureHitLineGlow(scene: Phaser.Scene, width: number): string {
+  const key = `hit_line_glow_${width}`;
+  const h = 28;
+  withGraphics(scene, width, h, (g) => {
+    g.fillStyle(PALETTE.gold, 0.12);
+    g.fillRect(0, 0, width, h);
+    g.fillStyle(PALETTE.gold, 0.3);
+    g.fillRect(0, h / 2 - 6, width, 12);
+    g.fillStyle(0xffffff, 0.9);
+    g.fillRect(0, h / 2 - 2, width, 4);
+  }, key);
+  return key;
+}
+
+const CUE_ICON_SIZE = 44;
+
+/** Small glyph per choice-cue type, drawn on a transparent square — used inside the styled
+ *  cue callout instead of a raw text banner. */
+export function ensureCueIcon(scene: Phaser.Scene, type: string): string {
+  const key = `cue_icon_${type}`;
+  const s = CUE_ICON_SIZE;
+  const c = s / 2;
+  withGraphics(scene, s, s, (g) => {
+    g.lineStyle(4, 0xffffff, 1);
+    g.fillStyle(0xffffff, 1);
+    if (type === 'pull_back') {
+      g.fillTriangle(c - 12, c - 4, c + 12, c - 4, c, c + 14);
+    } else if (type === 'build') {
+      g.fillTriangle(c - 12, c + 4, c + 12, c + 4, c, c - 14);
+    } else if (type === 'invite_crowd') {
+      g.fillCircle(c - 10, c, 8);
+      g.fillCircle(c + 10, c, 8);
+    } else if (type === 'improvise') {
+      g.beginPath();
+      g.arc(c, c, 13, Phaser.Math.DegToRad(30), Phaser.Math.DegToRad(320));
+      g.strokePath();
+      g.fillCircle(c + 11, c - 6, 3);
+    } else {
+      // spotlight_bandmate: a star
+      const points: Phaser.Types.Math.Vector2Like[] = [];
+      for (let i = 0; i < 10; i++) {
+        const r = i % 2 === 0 ? 14 : 6;
+        const a = Phaser.Math.DegToRad(i * 36 - 90);
+        points.push({ x: c + Math.cos(a) * r, y: c + Math.sin(a) * r });
+      }
+      g.fillPoints(points, true);
+    }
+  }, key);
+  return key;
+}
+
+/** Crowd-meter figure — a simple silhouette in two poses (idle vs arms-raised), used instead
+ *  of a plain progress bar so the meter reads as "a crowd," not a health bar. */
+export function ensureCrowdFigure(scene: Phaser.Scene, raised: boolean): string {
+  const key = `crowd_figure_${raised ? 'up' : 'down'}`;
+  const w = 30, h = 40;
+  withGraphics(scene, w, h, (g) => {
+    const color = raised ? PALETTE.gold : PALETTE.sky;
+    const alpha = raised ? 1 : 0.5;
+    g.fillStyle(color, alpha);
+    g.fillCircle(w / 2, 8, 7);
+    g.fillRoundedRect(w / 2 - 7, 16, 14, 18, 6);
+    g.lineStyle(4, color, alpha);
+    if (raised) {
+      g.lineBetween(w / 2 - 6, 20, w / 2 - 14, 4);
+      g.lineBetween(w / 2 + 6, 20, w / 2 + 14, 4);
+    } else {
+      g.lineBetween(w / 2 - 6, 22, w / 2 - 10, 32);
+      g.lineBetween(w / 2 + 6, 22, w / 2 + 10, 32);
+    }
+  }, key);
+  return key;
 }
 
 export function ensureScrapbookCard(scene: Phaser.Scene): string {

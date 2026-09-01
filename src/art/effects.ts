@@ -4,6 +4,15 @@ import { PALETTE, H, W } from '../const';
 import { ensurePixelTexture } from './sprites';
 import { State } from '../core/state';
 
+export function spawnRingPulse(scene: Phaser.Scene, x: number, y: number, color: number = PALETTE.gold): void {
+  if (State.data.accessibility.reducedMotion) return;
+  const ring = scene.add.circle(x, y, 10, color, 0).setStrokeStyle(3, color, 1);
+  scene.tweens.add({
+    targets: ring, radius: 34, alpha: 0, duration: 320, ease: 'Cubic.easeOut',
+    onComplete: () => ring.destroy(),
+  });
+}
+
 export function spawnPerfectSpark(scene: Phaser.Scene, x: number, y: number): void {
   if (State.data.accessibility.reducedMotion) return;
   const key = ensurePixelTexture(scene, 'fx_spark', PALETTE.gold);

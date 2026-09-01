@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildPerformanceResult, comboMultiplier, effectiveWindows, judgeHit,
+  buildPerformanceResult, combineHoldJudgement, comboMultiplier, effectiveWindows, judgeHit,
   pickArrangement, scoreForHit,
 } from '../game/rhythm';
 import type { SongDef } from '../../content/schema';
@@ -39,6 +39,21 @@ describe('rhythm windows and scoring', () => {
     expect(comboMultiplier(10)).toBeCloseTo(1.2);
     const capped = comboMultiplier(100);
     expect(comboMultiplier(50)).toBe(capped); // caps at combo 50
+  });
+});
+
+describe('hold-note grading (real, not cosmetic)', () => {
+  it('holding through the full duration keeps the start judgement', () => {
+    expect(combineHoldJudgement('perfect', 1.0)).toBe('perfect');
+    expect(combineHoldJudgement('good', 0.9)).toBe('good');
+  });
+  it('letting go early softens the judgement one tier', () => {
+    expect(combineHoldJudgement('perfect', 0.6)).toBe('good');
+    expect(combineHoldJudgement('good', 0.55)).toBe('ok');
+  });
+  it('releasing before halfway is a miss regardless of how good the press was', () => {
+    expect(combineHoldJudgement('perfect', 0.2)).toBe('miss');
+    expect(combineHoldJudgement('perfect', 0)).toBe('miss');
   });
 });
 
