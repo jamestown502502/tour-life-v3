@@ -60,9 +60,14 @@ export class HubScene extends Phaser.Scene {
       const value = State.data.stats[key];
       const displayMax = key === 'funds' ? Math.max(500, value) : 100;
       const barW = 280;
+      const targetW = Math.max(4, barW * Math.min(1, value / displayMax));
+
       this.add.text(60, y, STAT_LABELS[key], textStyle('stat', { fontSize: '16px' }));
       this.add.rectangle(220, y + 8, barW, 16, 0x000000, 0.25).setOrigin(0, 0);
-      this.add.rectangle(220, y + 8, Math.max(4, barW * Math.min(1, value / displayMax)), 16, STAT_COLORS[key], 1).setOrigin(0, 0);
+      const fill = this.add.rectangle(220, y + 8, 0, 16, STAT_COLORS[key], 1).setOrigin(0, 0);
+      this.tweens.add({
+        targets: fill, width: targetW, duration: 550, delay: i * 90, ease: 'Cubic.easeOut',
+      });
       this.add.text(220 + barW + 12, y, key === 'funds' ? `$${value}` : `${Math.round(value)}`, textStyle('stat'));
     });
   }

@@ -3,21 +3,28 @@
 // a merged hit area lets an impatient tap accidentally fire a choice).
 import Phaser from 'phaser';
 import type { DialogueChoice, DialogueNode } from '../../content/schema';
-import { PALETTE, TYPEWRITER_CHARS_PER_SEC, W } from '../const';
-import { ensureDialoguePanel, ensurePortrait } from '../art/sprites';
+import { PALETTE, PALETTE_HEX, TYPEWRITER_CHARS_PER_SEC, W } from '../const';
+import { BANDMATE_BASE, ensureDialoguePanel, ensurePortrait, ensurePortraitFrame, ensureRoundedRect } from '../art/sprites';
 import type { BandmateId } from '../../content/schema';
-import { audio } from '../core/audio';
 import { textStyle } from './textStyles';
+import { createButton } from './Button';
 
 // Panel sits low on the 720x1280 canvas but leaves room below for up to 4 choice buttons
-// (54px each) before running off the bottom edge.
+// (58px each) before running off the bottom edge.
 const PANEL_Y = 740;
 const PANEL_X = 30;
+const PANEL_W = W - PANEL_X * 2;
+const PANEL_H = 300;
+
+const BANDMATE_HEX: Record<BandmateId, string> = {
+  mira: PALETTE_HEX.terracotta, theo: PALETTE_HEX.teal, jun: PALETTE_HEX.gold, rowan: PALETTE_HEX.sky,
+};
 
 export class DialogueBox {
   private scene: Phaser.Scene;
   private container: Phaser.GameObjects.Container;
   private panel: Phaser.GameObjects.Image;
+  private portraitFrame: Phaser.GameObjects.Image | null = null;
   private portrait: Phaser.GameObjects.Image | null = null;
   private speakerText: Phaser.GameObjects.Text;
   private bodyText: Phaser.GameObjects.Text;
@@ -30,15 +37,18 @@ export class DialogueBox {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     const panelKey = ensureDialoguePanel(scene);
+    const shadowKey = ensureRoundedRect(scene, PANEL_W, PANEL_H, 22);
     this.container = scene.add.container(0, 0).setDepth(100);
+    const shadow = scene.add.image(PANEL_X + 4, PANEL_Y + 8, shadowKey).setOrigin(0, 0)
+      .setTint(PALETTE.plum).setAlpha(0.2);
     this.panel = scene.add.image(PANEL_X, PANEL_Y, panelKey).setOrigin(0, 0);
     this.speakerText = scene.add.text(PANEL_X + 26, PANEL_Y + 18, '', textStyle('speaker'));
     this.bodyText = scene.add.text(PANEL_X + 26, PANEL_Y + 54, '', textStyle('dialogue', {
       wordWrap: { width: W - PANEL_X * 2 - 52 }, lineSpacing: 6,
     }));
-    this.skipZone = scene.add.zone(PANEL_X, PANEL_Y, W - PANEL_X * 2, 300).setOrigin(0, 0).setInteractive();
+    this.skipZone = scene.add.zone(PANEL_X, PANEL_Y, PANEL_W, PANEL_H).setOrigin(0, 0).setInteractive();
     this.skipZone.on('pointerdown', () => this.handleTap());
-    this.container.add([this.panel, this.speakerText, this.bodyText, this.skipZone]);
+    this.container.add([shadow, this.panel, this.speakerText, this.bodyText, this.skipZone]);
   }
 
   private handleTap(): void {
@@ -57,11 +67,16 @@ export class DialogueBox {
 
   private setPortrait(speaker: string, mood: string | undefined): void {
     if (this.portrait) { this.portrait.destroy(); this.portrait = null; }
+    if (this.portraitFrame) { this.portraitFrame.destroy(); this.portraitFrame = null; }
     const bandmateIds: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
     if (bandmateIds.includes(speaker as BandmateId)) {
-      const key = ensurePortrait(this.scene, speaker as BandmateId, mood ?? 'happy');
-      this.portrait = this.scene.add.image(PANEL_X + (W - PANEL_X * 2) - 90, PANEL_Y - 70, key).setScale(0.7);
-      this.container.add(this.portrait);
+      const frameKey = ensurePortraitFrame(this.scene);
+      const portraitKey = ensurePortrait(this.scene, speaker as BandmateId, mood ?? 'happy');
+      const cx = PANEL_X + PANEL_W - 90;
+      const cy = PANEL_Y - 70;
+      this.portraitFrame = this.scene.add.image(cx, cy, frameKey).setScale(0.85);
+      this.portrait = this.scene.add.image(cx, cy, portraitKey).setScale(0.6);
+      this.container.add([this.portraitFrame, this.portrait]);
     }
   }
 
@@ -70,7 +85,10 @@ export class DialogueBox {
   show(node: DialogueNode, onAdvance: () => void, onChoice: (choice: DialogueChoice) => void): void {
     this.container.setVisible(true);
     this.clearChoices();
+    const bandmateIds: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
+    const isBandmate = bandmateIds.includes(node.speaker as BandmateId);
     this.speakerText.setText(node.speaker === 'narrator' ? '' : capitalize(node.speaker));
+    this.speakerText.setColor(isBandmate ? BANDMATE_HEX[node.speaker as BandmateId] : PALETTE_HEX.plum);
     this.setPortrait(node.speaker, node.portrait);
     this.fullText = node.text;
     this.bodyText.setText('');
@@ -97,22 +115,12 @@ export class DialogueBox {
   }
 
   private renderChoices(choices: DialogueChoice[], onChoice: (choice: DialogueChoice) => void): void {
-    const startY = this.panel.y + this.panel.height + 10;
+    const startY = this.panel.y + this.panel.height + 14;
     choices.forEach((choice, i) => {
-      const y = startY + i * 54;
-      const btn = this.scene.add.container(PANEL_X, y);
-      const bg = this.scene.add.rectangle(0, 0, W - PANEL_X * 2, 46, PALETTE.terracotta, 0.92).setOrigin(0, 0);
-      bg.setStrokeStyle(2, PALETTE.gold, 0.6);
-      const label = this.scene.add.text(16, 11, choice.label, textStyle('button', { fontSize: '20px' }));
-      bg.setInteractive({ useHandCursor: true });
-      bg.on('pointerover', () => { bg.setFillStyle(PALETTE.gold, 0.95); audio.playSfx('menuHover'); });
-      bg.on('pointerout', () => bg.setFillStyle(PALETTE.terracotta, 0.92));
-      bg.on('pointerdown', () => {
-        audio.playSfx('choiceConfirm');
+      const btn = createButton(this.scene, PANEL_X, startY + i * 58, PANEL_W, 48, choice.label, () => {
         this.clearChoices();
         onChoice(choice);
-      });
-      btn.add([bg, label]);
+      }, { fillColor: PALETTE.terracotta, fontSize: '20px', tapSfx: 'choiceConfirm' });
       this.container.add(btn);
       this.choiceButtons.push(btn);
     });

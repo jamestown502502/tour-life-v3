@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { W } from '../const';
-import { createButton } from './Button';
+import { createButton, getButtonText } from './Button';
 import { State, type RhythmMode } from '../core/state';
 import { audio } from '../core/audio';
 import { saveRun } from '../core/save';
@@ -42,7 +42,7 @@ export class SettingsScene extends Phaser.Scene {
       const btn = createButton(this, W - 160, y - 12, 100, 40, State.data.accessibility[key] ? 'On' : 'Off', () => {
         State.data.accessibility[key] = !State.data.accessibility[key];
         saveRun(State.data);
-        (btn.list[1] as Phaser.GameObjects.Text).setText(State.data.accessibility[key] ? 'On' : 'Off');
+        getButtonText(btn)?.setText(State.data.accessibility[key] ? 'On' : 'Off');
       }, { fontSize: '16px', fillColor: State.data.accessibility[key] ? 0x3e7c7b : 0x8a8a8a });
       y += 50;
     });
@@ -52,7 +52,7 @@ export class SettingsScene extends Phaser.Scene {
       const idx = RHYTHM_MODES.indexOf(State.data.accessibility.rhythmMode);
       State.data.accessibility.rhythmMode = RHYTHM_MODES[(idx + 1) % RHYTHM_MODES.length];
       saveRun(State.data);
-      (modeBtn.list[1] as Phaser.GameObjects.Text).setText(State.data.accessibility.rhythmMode);
+      getButtonText(modeBtn)?.setText(State.data.accessibility.rhythmMode);
     }, { fontSize: '16px' });
     y += 60;
 

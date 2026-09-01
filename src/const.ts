@@ -43,5 +43,15 @@ export const RHYTHM_DIFFICULTY_SCALE = {
 export const TYPEWRITER_CHARS_PER_SEC = 45;
 export const SCREEN_FADE_MS = 250;
 
+// Consistent UI geometry — every panel/card/button/chip in the game draws from these so the
+// whole game reads as one system rather than ad-hoc per-screen values.
+export const UI_RADIUS = {
+  card: 22,   // panels, cards, dialogue box
+  button: 14, // buttons, rhythm notes
+  chip: 10,   // small chips/tags
+} as const;
+export const UI_MARGIN = 24;   // screen edge margin
+export const UI_PADDING = 16;  // internal padding inside a panel/card
+
 export const SAVE_KEY = 'tourlife.run';
 export const SAVE_SCHEMA_VERSION = 1 as const;

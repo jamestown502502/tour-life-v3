@@ -1,6 +1,6 @@
 // All visuals are code-drawn: Phaser Graphics + generateTexture(). No image files.
 import Phaser from 'phaser';
-import { H, PALETTE, W } from '../const';
+import { H, PALETTE, UI_RADIUS, W } from '../const';
 import { CITY_TINTS } from './palette';
 import type { BandmateId } from '../../content/schema';
 
@@ -10,6 +10,35 @@ function withGraphics(scene: Phaser.Scene, w: number, h: number, draw: (g: Phase
   draw(g);
   g.generateTexture(key, w, h);
   g.destroy();
+}
+
+// Shared UI-chrome shapes. A plain white rounded rect (for shadows/glows via .setTint()) plus
+// a fill+gold-border variant (for actual button/chip faces) — one texture cache per unique
+// size+radius(+color), reused everywhere so the whole game shares one geometry language.
+export function ensureRoundedRect(scene: Phaser.Scene, w: number, h: number, radius: number): string {
+  const key = `rrect_${w}_${h}_${radius}`;
+  withGraphics(scene, w, h, (g) => {
+    g.fillStyle(0xffffff, 1);
+    g.fillRoundedRect(0, 0, w, h, radius);
+  }, key);
+  return key;
+}
+
+export function ensureButtonTexture(scene: Phaser.Scene, w: number, h: number, fill: number, disabled: boolean, radius: number = UI_RADIUS.button): string {
+  const key = `btn_${w}_${h}_${radius}_${fill.toString(16)}_${disabled ? 1 : 0}`;
+  withGraphics(scene, w, h, (g) => {
+    g.fillStyle(fill, 0.95);
+    g.fillRoundedRect(0, 0, w, h, radius);
+    g.lineStyle(2, PALETTE.gold, disabled ? 0.2 : 0.7);
+    g.strokeRoundedRect(1, 1, w - 2, h - 2, radius);
+    // subtle top-edge highlight so it reads as raised, not flat
+    g.lineStyle(2, 0xffffff, 0.15);
+    g.beginPath();
+    g.moveTo(radius, 2);
+    g.lineTo(w - radius, 2);
+    g.strokePath();
+  }, key);
+  return key;
 }
 
 export function ensureTitleBackground(scene: Phaser.Scene): string {
@@ -72,11 +101,30 @@ export function ensureBusHubBackground(scene: Phaser.Scene): string {
 
 export function ensureDialoguePanel(scene: Phaser.Scene): string {
   const key = 'panel_dialogue';
-  withGraphics(scene, W - 60, 300, (g) => {
+  const w = W - 60, h = 300, r = UI_RADIUS.card;
+  withGraphics(scene, w, h, (g) => {
     g.fillStyle(PALETTE.sand, 0.97);
-    g.fillRoundedRect(0, 0, W - 60, 300, 22);
-    g.lineStyle(2, PALETTE.plum, 0.15);
-    g.strokeRoundedRect(0, 0, W - 60, 300, 22);
+    g.fillRoundedRect(0, 0, w, h, r);
+    g.lineStyle(2, PALETTE.gold, 0.35);
+    g.strokeRoundedRect(1, 1, w - 2, h - 2, r);
+    // top-edge highlight so the panel reads as raised, not flat
+    g.lineStyle(3, 0xffffff, 0.4);
+    g.beginPath();
+    g.moveTo(r, 2);
+    g.lineTo(w - r, 2);
+    g.strokePath();
+  }, key);
+  return key;
+}
+
+export function ensurePortraitFrame(scene: Phaser.Scene): string {
+  const key = 'portrait_frame';
+  const size = 168;
+  withGraphics(scene, size, size, (g) => {
+    g.fillStyle(PALETTE.cream, 1);
+    g.fillCircle(size / 2, size / 2, size / 2 - 4);
+    g.lineStyle(4, PALETTE.gold, 0.9);
+    g.strokeCircle(size / 2, size / 2, size / 2 - 4);
   }, key);
   return key;
 }
@@ -88,7 +136,7 @@ const MOOD_COLORS: Record<string, number> = {
   inspired: 0x3e7c7b,
 };
 
-const BANDMATE_BASE: Record<BandmateId, number> = {
+export const BANDMATE_BASE: Record<BandmateId, number> = {
   mira: 0xc4704f,
   theo: 0x3e7c7b,
   jun: 0xd9a441,
@@ -162,11 +210,17 @@ export function ensureLaneTextures(scene: Phaser.Scene): { lane: string; noteTap
 
 export function ensureScrapbookCard(scene: Phaser.Scene): string {
   const key = 'scrapbook_card';
-  withGraphics(scene, W - 80, H - 260, (g) => {
+  const w = W - 80, h = H - 260, r = UI_RADIUS.card;
+  withGraphics(scene, w, h, (g) => {
     g.fillStyle(PALETTE.cream, 1);
-    g.fillRoundedRect(0, 0, W - 80, H - 260, 18);
+    g.fillRoundedRect(0, 0, w, h, r);
     g.lineStyle(4, PALETTE.gold, 0.8);
-    g.strokeRoundedRect(6, 6, W - 92, H - 272, 14);
+    g.strokeRoundedRect(6, 6, w - 12, h - 12, r - 4);
+    g.lineStyle(3, 0xffffff, 0.5);
+    g.beginPath();
+    g.moveTo(r, 3);
+    g.lineTo(w - r, 3);
+    g.strokePath();
   }, key);
   return key;
 }

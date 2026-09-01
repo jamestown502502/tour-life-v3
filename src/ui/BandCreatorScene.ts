@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { W } from '../const';
-import { createButton } from './Button';
+import { createButton, setButtonSelected } from './Button';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
 import { BANDMATES, GENRES, WHY_TOUR_BEATS } from '../../content/bands';
@@ -30,8 +30,8 @@ export class BandCreatorScene extends Phaser.Scene {
       const col = i % 2, row = Math.floor(i / 2);
       const btn = createButton(this, W / 2 - 300 + col * 310, 240 + row * 60, 290, 50, g.label, () => {
         this.genre = g.id;
-        genreLabels.forEach((b) => (b.list[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(2, 0xd9a441, 0.7));
-        (btn.list[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(4, 0xd9a441, 1);
+        genreLabels.forEach((b) => setButtonSelected(b, false));
+        setButtonSelected(btn, true);
       });
       genreLabels.push(btn);
     });
@@ -42,8 +42,8 @@ export class BandCreatorScene extends Phaser.Scene {
     WHY_TOUR_BEATS.forEach((beat, i) => {
       const btn = createButton(this, W / 2 - 300, whyY + 40 + i * 56, 600, 46, beat, () => {
         this.whyTour = beat;
-        whyLabels.forEach((b) => (b.list[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(2, 0xd9a441, 0.7));
-        (btn.list[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(4, 0xd9a441, 1);
+        whyLabels.forEach((b) => setButtonSelected(b, false));
+        setButtonSelected(btn, true);
       }, { fontSize: '18px' });
       whyLabels.push(btn);
     });
