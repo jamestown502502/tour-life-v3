@@ -75,7 +75,7 @@ export class DialogueBox {
       const cx = PANEL_X + PANEL_W - 90;
       const cy = PANEL_Y - 70;
       this.portraitFrame = this.scene.add.image(cx, cy, frameKey).setScale(0.85);
-      this.portrait = this.scene.add.image(cx, cy, portraitKey).setScale(0.6);
+      this.portrait = this.scene.add.image(cx, cy + 6, portraitKey).setScale(0.5);
       this.container.add([this.portraitFrame, this.portrait]);
     }
   }

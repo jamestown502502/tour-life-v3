@@ -129,13 +129,7 @@ export function ensurePortraitFrame(scene: Phaser.Scene): string {
   return key;
 }
 
-const MOOD_COLORS: Record<string, number> = {
-  worried: 0x8fb7c9,
-  happy: 0xd9a441,
-  tense: 0xc94f4f,
-  inspired: 0x3e7c7b,
-};
-
+// Clothing/identity color per bandmate (torso, accessory accents).
 export const BANDMATE_BASE: Record<BandmateId, number> = {
   mira: 0xc4704f,
   theo: 0x3e7c7b,
@@ -143,33 +137,157 @@ export const BANDMATE_BASE: Record<BandmateId, number> = {
   rowan: 0x8fb7c9,
 };
 
+const SKIN: Record<BandmateId, number> = {
+  mira: 0xead9bd, theo: 0xc48a5f, jun: 0x8a5a3c, rowan: 0xe0b48a,
+};
+const HAIR: Record<BandmateId, number> = {
+  mira: 0x3a2418, theo: 0x6b4a2f, jun: 0x1c1c1c, rowan: 0x8a3a2a,
+};
+
+const PORTRAIT_SIZE = 280;
+const CX = PORTRAIT_SIZE / 2;
+const CY = 118;
+const HEAD_R = 62;
+
+function drawTorso(g: Phaser.GameObjects.Graphics, id: BandmateId): void {
+  g.fillStyle(BANDMATE_BASE[id], 1);
+  g.beginPath();
+  g.moveTo(CX - 46, PORTRAIT_SIZE);
+  g.lineTo(CX - 70, CY + HEAD_R + 70);
+  g.lineTo(CX - 30, CY + HEAD_R + 34);
+  g.lineTo(CX + 30, CY + HEAD_R + 34);
+  g.lineTo(CX + 70, CY + HEAD_R + 70);
+  g.lineTo(CX + 46, PORTRAIT_SIZE);
+  g.closePath();
+  g.fillPath();
+  // neck
+  g.fillStyle(SKIN[id], 1);
+  g.fillRoundedRect(CX - 18, CY + HEAD_R - 14, 36, 40, 10);
+}
+
+function drawHairBack(g: Phaser.GameObjects.Graphics, id: BandmateId): void {
+  const hair = HAIR[id];
+  g.fillStyle(hair, 1);
+  if (id === 'mira') {
+    // long wavy sides, flowing past the shoulders
+    g.fillEllipse(CX, CY - HEAD_R * 0.35, HEAD_R * 1.7, HEAD_R * 1.15);
+    g.fillEllipse(CX - HEAD_R * 0.92, CY + HEAD_R * 0.75, HEAD_R * 0.55, HEAD_R * 1.9);
+    g.fillEllipse(CX + HEAD_R * 0.92, CY + HEAD_R * 0.75, HEAD_R * 0.55, HEAD_R * 1.9);
+  } else if (id === 'theo') {
+    // shaggy base — front spikes added in drawHairFront
+    g.fillEllipse(CX, CY - HEAD_R * 0.5, HEAD_R * 1.75, HEAD_R * 0.95);
+  } else if (id === 'jun') {
+    // cropped undercut — a thin band hugging just the top
+    g.fillEllipse(CX, CY - HEAD_R * 0.6, HEAD_R * 1.5, HEAD_R * 0.6);
+  } else {
+    // rowan: neat cap, braid added in drawHairFront
+    g.fillEllipse(CX, CY - HEAD_R * 0.42, HEAD_R * 1.55, HEAD_R * 1.0);
+  }
+}
+
+function drawHairFront(g: Phaser.GameObjects.Graphics, id: BandmateId): void {
+  const hair = HAIR[id];
+  g.fillStyle(hair, 1);
+  if (id === 'theo') {
+    for (let i = -2; i <= 2; i++) {
+      const x = CX + i * HEAD_R * 0.34;
+      const jitter = (i * i) % 2 === 0 ? 6 : -4;
+      g.fillTriangle(x - 12, CY - HEAD_R * 0.32, x + 12, CY - HEAD_R * 0.32, x + jitter, CY - HEAD_R * 0.78);
+    }
+  } else if (id === 'rowan') {
+    // braid over one shoulder — a segmented cord of shrinking circles
+    for (let i = 0; i < 6; i++) {
+      g.fillCircle(CX + HEAD_R * 0.8, CY + HEAD_R * 0.15 + i * 15, 9 - i * 0.6);
+    }
+  }
+}
+
+function drawAccessory(g: Phaser.GameObjects.Graphics, id: BandmateId): void {
+  if (id === 'mira') {
+    // small pendant necklace
+    g.lineStyle(2, PALETTE.gold, 0.8);
+    g.beginPath(); g.arc(CX, CY + HEAD_R + 4, 14, Phaser.Math.DegToRad(20), Phaser.Math.DegToRad(160)); g.strokePath();
+    g.fillStyle(PALETTE.gold, 1);
+    g.fillCircle(CX, CY + HEAD_R + 18, 6);
+  } else if (id === 'theo') {
+    // drumstick tucked behind one ear
+    g.fillStyle(0xc9a876, 1);
+    g.save();
+    g.translateCanvas(CX + HEAD_R * 0.75, CY - 6);
+    g.rotateCanvas(Phaser.Math.DegToRad(35));
+    g.fillRoundedRect(-4, -46, 8, 60, 4);
+    g.restore();
+  } else if (id === 'jun') {
+    // guitar pick on a cord
+    g.lineStyle(2, PALETTE.plum, 0.5);
+    g.lineBetween(CX - 10, CY + HEAD_R + 2, CX, CY + HEAD_R + 20);
+    g.lineBetween(CX + 10, CY + HEAD_R + 2, CX, CY + HEAD_R + 20);
+    g.fillStyle(BANDMATE_BASE.jun, 1);
+    g.fillTriangle(CX, CY + HEAD_R + 16, CX - 8, CY + HEAD_R + 32, CX + 8, CY + HEAD_R + 32);
+  } else {
+    // rowan: bass strap across the torso
+    g.lineStyle(10, PALETTE.plum, 0.5);
+    g.lineBetween(CX - 60, CY + HEAD_R + 30, CX + 50, PORTRAIT_SIZE - 10);
+  }
+}
+
+function drawFace(g: Phaser.GameObjects.Graphics, mood: string): void {
+  const eyeY = mood === 'tense' ? CY - 12 : mood === 'inspired' ? CY - 10 : CY - 6;
+  const dx = 22;
+
+  g.lineStyle(4, PALETTE.plum, 0.85);
+  if (mood === 'worried') {
+    g.lineBetween(CX - dx - 10, eyeY - 15, CX - dx + 8, eyeY - 21);
+    g.lineBetween(CX + dx + 10, eyeY - 15, CX + dx - 8, eyeY - 21);
+  } else if (mood === 'tense') {
+    g.lineBetween(CX - dx - 10, eyeY - 13, CX - dx + 6, eyeY - 19);
+    g.lineBetween(CX + dx + 10, eyeY - 13, CX + dx - 6, eyeY - 19);
+  } else if (mood === 'inspired') {
+    g.lineBetween(CX - dx - 10, eyeY - 21, CX - dx + 8, eyeY - 19);
+    g.lineBetween(CX + dx + 10, eyeY - 21, CX + dx - 8, eyeY - 19);
+  } else {
+    g.lineBetween(CX - dx - 10, eyeY - 17, CX - dx + 8, eyeY - 17);
+    g.lineBetween(CX + dx + 10, eyeY - 17, CX + dx - 8, eyeY - 17);
+  }
+
+  g.fillStyle(PALETTE.plum, 1);
+  if (mood === 'tense') {
+    g.fillRoundedRect(CX - dx - 8, eyeY, 16, 3, 1.5);
+    g.fillRoundedRect(CX + dx - 8, eyeY, 16, 3, 1.5);
+  } else if (mood === 'inspired') {
+    g.fillCircle(CX - dx, eyeY, 8);
+    g.fillCircle(CX + dx, eyeY, 8);
+    g.fillStyle(0xffffff, 0.9);
+    g.fillCircle(CX - dx + 2, eyeY - 2, 2.5);
+    g.fillCircle(CX + dx + 2, eyeY - 2, 2.5);
+  } else {
+    g.fillCircle(CX - dx, eyeY, 6);
+    g.fillCircle(CX + dx, eyeY, 6);
+  }
+
+  g.lineStyle(5, PALETTE.plum, 1);
+  if (mood === 'happy') {
+    g.beginPath(); g.arc(CX, CY + 26, 22, Phaser.Math.DegToRad(20), Phaser.Math.DegToRad(160)); g.strokePath();
+  } else if (mood === 'worried') {
+    g.beginPath(); g.arc(CX, CY + 44, 20, Phaser.Math.DegToRad(200), Phaser.Math.DegToRad(340)); g.strokePath();
+  } else if (mood === 'tense') {
+    g.lineBetween(CX - 16, CY + 30, CX + 16, CY + 30);
+  } else {
+    g.fillStyle(PALETTE.plum, 0.9);
+    g.fillEllipse(CX, CY + 28, 16, 12);
+  }
+}
+
 export function ensurePortrait(scene: Phaser.Scene, id: BandmateId, mood: string): string {
   const key = `portrait_${id}_${mood}`;
-  withGraphics(scene, 200, 200, (g) => {
-    const base = BANDMATE_BASE[id];
-    const accent = MOOD_COLORS[mood] ?? PALETTE.sand;
-    g.fillStyle(base, 1);
-    g.fillCircle(100, 110, 80);
-    g.fillStyle(accent, 0.5);
-    g.fillCircle(100, 110, 80);
-    // eyes
-    g.fillStyle(PALETTE.plum, 1);
-    const eyeY = mood === 'tense' ? 96 : 100;
-    g.fillCircle(75, eyeY, 7);
-    g.fillCircle(125, eyeY, 7);
-    // mouth by mood
-    g.lineStyle(5, PALETTE.plum, 1);
-    if (mood === 'happy') {
-      g.beginPath(); g.arc(100, 130, 26, Phaser.Math.DegToRad(20), Phaser.Math.DegToRad(160)); g.strokePath();
-    } else if (mood === 'worried') {
-      g.beginPath(); g.arc(100, 155, 22, Phaser.Math.DegToRad(200), Phaser.Math.DegToRad(340)); g.strokePath();
-    } else if (mood === 'tense') {
-      g.lineBetween(80, 140, 120, 140);
-    } else {
-      g.beginPath(); g.arc(100, 128, 18, Phaser.Math.DegToRad(10), Phaser.Math.DegToRad(170)); g.strokePath();
-      g.fillStyle(accent, 0.9);
-      g.fillCircle(100, 60, 10);
-    }
+  withGraphics(scene, PORTRAIT_SIZE, PORTRAIT_SIZE, (g) => {
+    drawTorso(g, id);
+    drawHairBack(g, id);
+    g.fillStyle(SKIN[id], 1);
+    g.fillEllipse(CX, CY, HEAD_R * 1.9, HEAD_R * 2.05);
+    drawHairFront(g, id);
+    drawFace(g, mood);
+    drawAccessory(g, id);
   }, key);
   return key;
 }
