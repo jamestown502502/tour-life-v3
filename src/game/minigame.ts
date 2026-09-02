@@ -11,3 +11,11 @@ export function minigamePlayedFlag(id: string): string {
 export function nextUnplayedMinigame(minigames: MiniGameDef[] | undefined, hasFlag: (flag: string) => boolean): MiniGameDef | undefined {
   return (minigames ?? []).find((mg) => !hasFlag(minigamePlayedFlag(mg.id)));
 }
+
+/** Close-out item 5c: a band already playing well gets one extra, faster timing round rather
+ *  than a flat difficulty for everyone — reads as the game noticing the run is going well, not
+ *  as an arbitrary extra step. `ui/MiniGameScene.ts` calls this with the content-authored rounds
+ *  and the run's current harmony stat. */
+export function timingRoundsForHarmony(baseRounds: number[], harmony: number): number[] {
+  return harmony >= 50 ? [...baseRounds, 1.0] : baseRounds;
+}

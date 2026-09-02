@@ -13,6 +13,7 @@ import { HowToPlayScene } from './ui/HowToPlayScene';
 import { MiniGameScene } from './ui/MiniGameScene';
 import { audio } from './core/audio';
 import { BootScene } from './ui/BootScene';
+import { State } from './core/state';
 
 // Wait for the self-hosted webfonts before booting: Phaser Text drawn before a font finishes
 // loading silently falls back to the browser default and never re-renders once the font
@@ -63,7 +64,7 @@ async function boot(): Promise<void> {
     scene: [BootScene, TitleScene, BandCreatorScene, RoutePlanScene, HubScene, CityScene, RhythmScene, ResultsScene, ScrapbookScene, SettingsScene, HowToPlayScene, MiniGameScene],
   });
 
-  if (import.meta.env.DEV) { (window as any).__game = game; (window as any).__audio = audio; }
+  if (import.meta.env.DEV) { (window as any).__game = game; (window as any).__audio = audio; (window as any).__state = State; }
 }
 
 boot();

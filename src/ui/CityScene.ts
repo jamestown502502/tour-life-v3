@@ -20,6 +20,7 @@ import type { CityDef, DialogueNode, LocationDef } from '../../content/schema';
 import { textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
 import { nextUnplayedMinigame } from '../game/minigame';
+import { WEATHER_EFFECTS, weatherAppliedFlag } from '../game/weather';
 
 export type CityPhase = 'arrival' | 'locations' | 'relationship' | 'preshow' | 'afterShow' | 'journal';
 const VALID_PHASES: CityPhase[] = ['arrival', 'locations', 'relationship', 'preshow', 'afterShow', 'journal'];
@@ -50,6 +51,7 @@ export class CityScene extends Phaser.Scene {
   private fireflies: WeatherHandle | null = null;
   private gradeOverlay: Phaser.GameObjects.Rectangle | null = null;
   private baseFireflyColor: number = PALETTE.cream;
+  private relationshipsPlayed = new Set<string>();
 
   init(data: { cityId: string; phase?: string }): void {
     this.city = getCity(data.cityId);
@@ -57,6 +59,7 @@ export class CityScene extends Phaser.Scene {
     // 'arrival' — the only truly unsafe resume points are ones with no matching phase handler.
     this.phase = data.phase && (VALID_PHASES as string[]).includes(data.phase) ? (data.phase as CityPhase) : 'arrival';
     this.locationsVisited = new Set();
+    this.relationshipsPlayed = new Set();
     this.gradeOverlay = null;
   }
 
@@ -90,6 +93,7 @@ export class CityScene extends Phaser.Scene {
       this.baseFireflyColor = NIGHT_TINTS.has(this.city.tint) ? CITY_TINTS[this.city.tint] : PALETTE.cream;
       this.fireflies = spawnFireflies(this, this.baseFireflyColor);
     }
+    this.applyWeatherEffectIfDue(stop?.weather);
 
     this.add.text(W / 2, 40, this.city.name, textStyle('h1', { fontSize: '26px' })).setOrigin(0.5).setDepth(50);
     addHelpButton(this, 'Read the story and tap to continue. Choices shape your stats and your relationships with the band — there\'s no wrong one.');
@@ -113,6 +117,19 @@ export class CityScene extends Phaser.Scene {
     // Hub) — without this, music stays stuck at half volume until some later dialogue happens
     // to close. Always restore on the way out, regardless of what state the box was left in.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.rain?.stop(); this.fireflies?.stop(); audio.duckMusic(false); });
+  }
+
+  /** Item 5b: the seed-picked weather (previously just a particle effect + flavor text) now
+   *  applies a small one-time stat delta, flag-gated so re-entering the scene (e.g. a save
+   *  resume landing back on 'arrival') never double-applies it. */
+  private applyWeatherEffectIfDue(weather: string | undefined): void {
+    if (!weather) return;
+    const flag = weatherAppliedFlag(this.city.id);
+    if (State.hasFlag(flag)) return;
+    State.addFlag(flag);
+    const effects = WEATHER_EFFECTS[weather];
+    if (effects) State.applyStatDeltas(effects);
+    saveRun(State.data);
   }
 
   private walk(nodeId: string, onDone: () => void): void {
@@ -188,10 +205,22 @@ export class CityScene extends Phaser.Scene {
     this.phase = 'relationship';
     State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'relationship' });
     saveRun(State.data);
+    this.playNextRelationshipScene();
+  }
+
+  /** Plays every relationship-pool entry this run drew as available for this city (item 5:
+   *  scenePool.drawScenePoolFlags now draws SCENES_PER_CITY, up from 1, so a run sees 2
+   *  relationship beats per city instead of 1) in seed-shuffled order, one after another, then
+   *  moves on to preshow. Falls back to the pool's first entry if somehow nothing was flagged
+   *  available (a legacy-save/empty-draw edge case) — exactly the old single-scene behavior,
+   *  just never repeated on the second call. */
+  private playNextRelationshipScene(): void {
     const pool = this.city.relationshipScenePool;
-    const available = pool.filter((e) => State.hasFlag(availabilityFlag(e.id)));
-    const entry = available[0] ?? pool[0];
-    this.walk(entry.sceneId, () => this.startPreshow());
+    const available = pool.filter((e) => State.hasFlag(availabilityFlag(e.id)) && !this.relationshipsPlayed.has(e.id));
+    const entry = available[0] ?? (this.relationshipsPlayed.size === 0 ? pool[0] : undefined);
+    if (!entry) { this.startPreshow(); return; }
+    this.relationshipsPlayed.add(entry.id);
+    this.walk(entry.sceneId, () => this.playNextRelationshipScene());
   }
 
   private startPreshow(): void {

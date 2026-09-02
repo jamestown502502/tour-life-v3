@@ -3,7 +3,7 @@ import { validateCity } from '../../content/schema';
 import lisbonRaw from '../../content/cities/lisbon.json';
 import tokyoRaw from '../../content/cities/tokyo.json';
 import mexicoRaw from '../../content/cities/mexico_city.json';
-import { minigamePlayedFlag, nextUnplayedMinigame } from '../game/minigame';
+import { minigamePlayedFlag, nextUnplayedMinigame, timingRoundsForHarmony } from '../game/minigame';
 
 function baseCity(minigames: unknown) {
   const c = JSON.parse(JSON.stringify(lisbonRaw)) as Record<string, unknown>;
@@ -62,6 +62,21 @@ describe('minigamePlayedFlag', () => {
   it('is stable and namespaced so it cannot collide with a content-authored flag', () => {
     expect(minigamePlayedFlag('lis_soundcheck')).toBe('minigame_lis_soundcheck_played');
     expect(minigamePlayedFlag('lis_soundcheck')).toBe(minigamePlayedFlag('lis_soundcheck'));
+  });
+});
+
+describe('timingRoundsForHarmony (close-out item 5c: minigame variance)', () => {
+  it('adds one extra, faster round once harmony crosses the threshold', () => {
+    const base = [2.2, 1.7, 1.3];
+    expect(timingRoundsForHarmony(base, 49)).toEqual(base);
+    expect(timingRoundsForHarmony(base, 50)).toEqual([2.2, 1.7, 1.3, 1.0]);
+    expect(timingRoundsForHarmony(base, 80)).toHaveLength(4);
+  });
+
+  it('never mutates the base rounds array', () => {
+    const base = [2.2, 1.7, 1.3];
+    timingRoundsForHarmony(base, 90);
+    expect(base).toEqual([2.2, 1.7, 1.3]);
   });
 });
 

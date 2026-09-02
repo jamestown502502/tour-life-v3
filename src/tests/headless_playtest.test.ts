@@ -38,9 +38,11 @@ function playCity(city: CityDef, seed: string): void {
   for (const loc of toVisit) walkToLeaf(city.scenes, loc.sceneId);
 
   for (const flag of drawScenePoolFlags(makeRng(`${seed}:${city.id}:pool`), city)) State.addFlag(flag);
+  // Item 5: a run now plays every available relationship-pool entry per city (2, up from 1) —
+  // walk all of them, matching CityScene.playNextRelationshipScene's actual behavior.
   const available = city.relationshipScenePool.filter((e) => State.hasFlag(availabilityFlag(e.id)));
-  const relEntry = available[0] ?? city.relationshipScenePool[0];
-  walkToLeaf(city.scenes, relEntry.sceneId);
+  const relEntries = available.length > 0 ? available : [city.relationshipScenePool[0]];
+  for (const relEntry of relEntries) walkToLeaf(city.scenes, relEntry.sceneId);
 
   walkToLeaf(city.scenes, city.preShowSceneId);
   const ctx = { stats: State.data.stats, relationships: State.data.relationships, localLove: State.data.localLove, flags: State.data.flags };

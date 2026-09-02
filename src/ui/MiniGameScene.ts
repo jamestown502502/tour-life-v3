@@ -16,8 +16,9 @@ import { saveRun } from '../core/save';
 import { getCity } from '../game/content';
 import { textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
-import type { MiniGameDef, MiniGameReward } from '../../content/schema';
-import { minigamePlayedFlag } from '../game/minigame';
+import type { MiniGameDef, MiniGameQuestion, MiniGameReward } from '../../content/schema';
+import { minigamePlayedFlag, timingRoundsForHarmony } from '../game/minigame';
+import { makeRng } from '../core/rng';
 
 const HELP_TEXT: Record<MiniGameDef['type'], string> = {
   timing: 'Tap the button when the needle is inside the gold zone. A few rounds, no penalty for missing.',
@@ -41,6 +42,14 @@ export class MiniGameScene extends Phaser.Scene {
   // choice
   private questionIndex = 0;
   private warmerCount = 0;
+  // Item 5c (close-out "unique playthroughs" pass): per-run variance seeded off State.data.seed
+  // rather than Phaser's own unseeded Math.random, so a replayed seed reproduces the same
+  // round count / item order / question order every time, same as everything else the run
+  // generator seeds. Computed once in init(), consumed by the run* methods below instead of
+  // reading this.mg.dragItems/questions/timingRoundsSec directly.
+  private timingRoundsSec: number[] = [];
+  private dragItemsOrder: string[] = [];
+  private questionsOrder: MiniGameQuestion[] = [];
 
   init(data: { cityId: string; minigameId: string; returnPhase: string }): void {
     this.cityId = data.cityId;
@@ -56,6 +65,11 @@ export class MiniGameScene extends Phaser.Scene {
     this.needleTween = null;
     this.questionIndex = 0;
     this.warmerCount = 0;
+
+    const rng = makeRng(`${State.data.seed}:minigame:${this.mg.id}`);
+    this.timingRoundsSec = timingRoundsForHarmony(this.mg.timingRoundsSec ?? [2.2, 1.7, 1.3], State.data.stats.harmony);
+    this.dragItemsOrder = rng.shuffle(this.mg.dragItems ?? ['Amps', 'Cables', 'Merch box', 'Pedalboard', 'Suitcase', 'Snacks']);
+    this.questionsOrder = rng.shuffle(this.mg.questions ?? []);
   }
 
   create(): void {
@@ -102,7 +116,7 @@ export class MiniGameScene extends Phaser.Scene {
 
   // ---- timing: a needle sweeps a gauge; tap while it's in the gold zone. ----
   private runTimingRound(): void {
-    const rounds = this.mg.timingRoundsSec ?? [2.2, 1.7, 1.3];
+    const rounds = this.timingRoundsSec;
     if (this.timingRound >= rounds.length) { this.finish(this.timingHits >= Math.ceil(rounds.length / 2)); return; }
     this.clearContent();
 
@@ -143,7 +157,7 @@ export class MiniGameScene extends Phaser.Scene {
   // ---- drag: place every item into an open slot before the timer runs out. ----
   private runDrag(): void {
     this.clearContent();
-    const items = this.mg.dragItems ?? ['Amps', 'Cables', 'Merch box', 'Pedalboard', 'Suitcase', 'Snacks'];
+    const items = this.dragItemsOrder;
     const timeSec = this.mg.dragTimeSec ?? 30;
     const cols = 3;
     const chipW = 190, chipH = 60, slotW = 190, slotH = 60;
@@ -220,7 +234,7 @@ export class MiniGameScene extends Phaser.Scene {
 
   // ---- choice: 3 quick two-option questions, a soft per-question timer, no wrong answer. ----
   private runChoiceQuestion(): void {
-    const questions = this.mg.questions ?? [];
+    const questions = this.questionsOrder;
     if (this.questionIndex >= questions.length) { this.finish(this.warmerCount >= Math.ceil(questions.length / 2)); return; }
     this.clearContent();
     const q = questions[this.questionIndex];
