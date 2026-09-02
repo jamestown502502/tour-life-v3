@@ -70,59 +70,93 @@ async function idbGet<T>(db: IDBDatabase, key: string): Promise<T | null> {
   });
 }
 
-export async function saveRun(data: RunState): Promise<void> {
+async function saveToKey(key: string, data: RunState): Promise<void> {
   const db = await openDb();
   if (db) {
-    const ok = await idbSet(db, SAVE_KEY, data);
+    const ok = await idbSet(db, key, data);
     if (ok) return;
   }
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    localStorage.setItem(key, JSON.stringify(data));
   } catch {
     // storage unavailable (private browsing) — play on without persistence
   }
 }
 
-export async function loadRun(): Promise<RunState | null> {
+async function loadFromKey(key: string): Promise<RunState | null> {
   const db = await openDb();
   if (db) {
-    const raw = await idbGet<unknown>(db, SAVE_KEY);
+    const raw = await idbGet<unknown>(db, key);
     if (raw) {
       const migrated = migrate(raw);
       if (migrated && isValidRunState(migrated)) return migrated;
-      console.warn('[save] IndexedDB save failed validation, ignoring it');
+      console.warn(`[save] IndexedDB save "${key}" failed validation, ignoring it`);
     }
   }
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     const migrated = migrate(parsed);
     if (migrated && isValidRunState(migrated)) return migrated;
-    console.warn('[save] localStorage save failed validation, ignoring it');
+    console.warn(`[save] localStorage save "${key}" failed validation, ignoring it`);
     return null;
   } catch {
     return null;
   }
 }
 
-export async function clearSave(): Promise<void> {
+async function clearKey(key: string): Promise<void> {
   const db = await openDb();
   if (db) {
     try {
       const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).delete(SAVE_KEY);
+      tx.objectStore(STORE).delete(key);
     } catch {
       // ignore
     }
   }
   try {
-    localStorage.removeItem(SAVE_KEY);
+    localStorage.removeItem(key);
   } catch {
     // ignore
   }
 }
 
+export async function saveRun(data: RunState): Promise<void> {
+  return saveToKey(SAVE_KEY, data);
+}
+
+export async function loadRun(): Promise<RunState | null> {
+  return loadFromKey(SAVE_KEY);
+}
+
+export async function clearSave(): Promise<void> {
+  return clearKey(SAVE_KEY);
+}
+
 export async function hasSave(): Promise<boolean> {
   return (await loadRun()) !== null;
+}
+
+// Close-out item 3b (r/visualnovels QoL consensus: save slots alongside a backlog). A separate
+// namespace from SAVE_KEY — the auto/Continue save above is untouched by any of this, and an
+// existing single-save player's Continue behavior doesn't change at all.
+export type SaveSlot = 1 | 2 | 3;
+export const SAVE_SLOTS: SaveSlot[] = [1, 2, 3];
+
+function slotKey(slot: SaveSlot): string {
+  return `${SAVE_KEY}.slot${slot}`;
+}
+
+export async function saveToSlot(slot: SaveSlot, data: RunState): Promise<void> {
+  return saveToKey(slotKey(slot), data);
+}
+
+export async function loadFromSlot(slot: SaveSlot): Promise<RunState | null> {
+  return loadFromKey(slotKey(slot));
+}
+
+export async function clearSlot(slot: SaveSlot): Promise<void> {
+  return clearKey(slotKey(slot));
 }

@@ -20,6 +20,10 @@ const PANEL_X = 30;
 const PANEL_W = W - PANEL_X * 2;
 const PANEL_H = 300;
 const AUTO_ADVANCE_MS = 4000;
+// Close-out item 3a (VN QoL: r/visualnovels' most-requested feature). Session-only, not saved —
+// a backlog surviving a save/reload is a "nice later," not what was asked for.
+const BACKLOG_CAP = 30;
+const BACKLOG_BTN_SIZE = 66; // matches HelpButton's BTN_SIZE — the same measured 44px-floor fix
 
 const BANDMATE_HEX: Record<BandmateId, string> = {
   mira: PALETTE_HEX.terracotta, theo: PALETTE_HEX.teal, jun: PALETTE_HEX.gold, rowan: PALETTE_HEX.sky,
@@ -49,6 +53,8 @@ export class DialogueBox {
   private onSkippedOrAdvance: (() => void) | null = null;
   private autoTimer: Phaser.Time.TimerEvent | null = null;
   private keyHandler: () => void;
+  private backlog: { speaker: string; text: string }[] = [];
+  private backlogPanel: Phaser.GameObjects.Container | null = null;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -87,6 +93,14 @@ export class DialogueBox {
     // per the touch-first rule; this just mirrors the tap.
     this.keyHandler = () => { if (this.container.visible) this.handleTap(); };
     scene.input.keyboard?.on('keydown-SPACE', this.keyHandler);
+
+    // Top-left, mirroring HelpButton's top-right placement — the one screen region every
+    // dialogue-bearing scene leaves clear (title text is centered, the portrait sits top-right
+    // of the panel far below this).
+    const backlogBtn = createButton(scene, 20, 20, BACKLOG_BTN_SIZE, BACKLOG_BTN_SIZE, '≡', () => this.toggleBacklog(), {
+      fillColor: PALETTE.plum, fontSize: '26px',
+    });
+    backlogBtn.setDepth(110);
   }
 
   private handleTap(): void {
@@ -171,6 +185,8 @@ export class DialogueBox {
     this.setPortrait(node.speaker, node.portrait);
     this.fullText = node.text;
     this.bodyText.setText('');
+    this.backlog.push({ speaker: node.speaker, text: node.text });
+    if (this.backlog.length > BACKLOG_CAP) this.backlog.shift();
     this.onSkippedOrAdvance = null;
     const complete = () => { this.finishTyping(); this.afterTypeComplete(node, onAdvance, onChoice); };
 
@@ -244,6 +260,74 @@ export class DialogueBox {
     });
   }
 
+  /** The last ~30 spoken lines, speaker-colored, drag-to-scroll if they overflow the panel.
+   *  Session-only (not persisted) — closes and reopens fresh each toggle rather than remembering
+   *  scroll position, which is a fine tradeoff for a QoL panel nobody needs to leave mid-scroll. */
+  private toggleBacklog(): void {
+    if (this.backlogPanel) {
+      this.backlogPanel.destroy();
+      this.backlogPanel = null;
+      this.container.setVisible(true);
+      return;
+    }
+    // Hide the live panel underneath — its choice buttons sit at panel.y + panel.height + 14
+    // onward, which can run past the backlog overlay's own footprint and bleed through
+    // otherwise (confirmed live: a 3rd/4th choice row overlapped the Close button's zone).
+    this.container.setVisible(false);
+    const panelKey = ensureDialoguePanel(this.scene);
+    // Panel bottom (y+h) at 1080, Close button at 1100-1166 — comfortably clear of
+    // SAFE_BOTTOM_Y (1230), matching every other bottom-of-screen control in the game.
+    const x = 30, y = 100, w = W - 60, h = 980;
+    const root = this.scene.add.container(0, 0).setDepth(160);
+    const bg = this.scene.add.image(x, y, panelKey).setOrigin(0, 0).setDisplaySize(w, h);
+    root.add(bg);
+
+    const padX = 24, padTop = 20;
+    const maskShape = this.scene.make.graphics({});
+    maskShape.fillRect(x + padX, y + padTop, w - padX * 2, h - padTop - 16);
+    const mask = maskShape.createGeometryMask();
+
+    const content = this.scene.add.container(x + padX, y + padTop);
+    content.setMask(mask);
+    root.add(content);
+
+    let cursorY = 0;
+    const entries = this.backlog.length > 0 ? this.backlog : [{ speaker: 'narrator', text: '(Nothing said yet.)' }];
+    for (const line of entries) {
+      const isBandmate = BANDMATE_IDS.includes(line.speaker as BandmateId);
+      const label = isBandmate ? `${capitalize(line.speaker)}: ` : '';
+      const color = isBandmate ? BANDMATE_HEX[line.speaker as BandmateId] : PALETTE_HEX.cream;
+      const t = this.scene.add.text(0, cursorY, `${label}${line.text}`, textStyle('small', {
+        fontSize: '16px', color, wordWrap: { width: w - padX * 2 }, lineSpacing: 3,
+      }));
+      content.add(t);
+      cursorY += t.height + 16;
+    }
+    const contentH = cursorY;
+    const viewH = h - padTop - 16;
+    const minY = Math.min(0, viewH - contentH);
+
+    // Drag-to-scroll: a transparent zone over the masked area tracks pointer delta-Y onto the
+    // content container's own y, clamped so it never scrolls past either end.
+    const dragZone = this.scene.add.zone(x + padX, y + padTop, w - padX * 2, viewH).setOrigin(0, 0).setInteractive();
+    root.add(dragZone);
+    let dragging = false, dragStartY = 0, contentStartY = 0;
+    dragZone.on('pointerdown', (p: Phaser.Input.Pointer) => { dragging = true; dragStartY = p.y; contentStartY = content.y; });
+    dragZone.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!dragging) return;
+      content.y = Phaser.Math.Clamp(contentStartY + (p.y - dragStartY), minY, 0);
+    });
+    const endDrag = () => { dragging = false; };
+    dragZone.on('pointerup', endDrag);
+    dragZone.on('pointerout', endDrag);
+
+    const closeBtn = createButton(this.scene, W / 2 - 130, y + h + 14, 260, 66, 'Close', () => this.toggleBacklog(), {
+      fillColor: 0xc4704f,
+    });
+    root.add(closeBtn);
+    this.backlogPanel = root;
+  }
+
   /** Hide the panel entirely — used while a non-dialogue picker UI (locations, pre-show
    *  choices) occupies the screen, so stale text from the last node doesn't linger visible. */
   setVisible(visible: boolean): void {
@@ -258,6 +342,7 @@ export class DialogueBox {
     this.chevronPulse?.stop();
     this.scene.input.keyboard?.off('keydown-SPACE', this.keyHandler);
     audio.duckMusic(false);
+    this.backlogPanel?.destroy();
     this.container.destroy();
   }
 }
