@@ -63,3 +63,14 @@ export function generateSeed(): string {
   const digits = Math.floor(Math.random() * 900) + 100;
   return `${SEED_WORDS[rand()]}-${SEED_WORDS[rand()]}-${digits}`;
 }
+
+/** Close-out item 4a: a "Today's Tour" seed that's the same for every player, all day, and
+ *  changes at UTC midnight — `Date#toISOString` is always UTC regardless of the caller's local
+ *  timezone, so this is genuinely one seed per calendar day, not per-timezone. Same word-list
+ *  style as generateSeed, just deterministic (makeRng, not Math.random) so it's reproducible. */
+export function dailySeed(date: Date = new Date()): string {
+  const dateStr = date.toISOString().slice(0, 10); // YYYY-MM-DD, UTC
+  const rng = makeRng(`daily-tour:${dateStr}`);
+  const digits = rng.int(100, 1000);
+  return `${rng.pick(SEED_WORDS)}-${rng.pick(SEED_WORDS)}-${digits}`;
+}

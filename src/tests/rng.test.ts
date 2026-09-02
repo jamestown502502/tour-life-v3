@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateSeed, makeRng } from '../core/rng';
+import { dailySeed, generateSeed, makeRng } from '../core/rng';
 
 describe('rng', () => {
   it('is deterministic for a given seed', () => {
@@ -41,5 +41,28 @@ describe('rng', () => {
   it('generateSeed returns a non-empty word-word-digits string', () => {
     const seed = generateSeed();
     expect(seed).toMatch(/^[a-z]+-[a-z]+-\d{3}$/);
+  });
+});
+
+describe('dailySeed (close-out item 4a: "Today\'s Tour")', () => {
+  it('is the same seed for the same UTC date, called twice', () => {
+    const date = new Date('2026-03-14T09:00:00Z');
+    expect(dailySeed(date)).toBe(dailySeed(new Date('2026-03-14T23:59:59Z')));
+  });
+
+  it('changes at UTC midnight, not local midnight', () => {
+    const a = dailySeed(new Date('2026-03-14T23:59:59Z'));
+    const b = dailySeed(new Date('2026-03-15T00:00:01Z'));
+    expect(a).not.toBe(b);
+  });
+
+  it('two different days produce different seeds', () => {
+    const a = dailySeed(new Date('2026-01-01T12:00:00Z'));
+    const b = dailySeed(new Date('2026-06-15T12:00:00Z'));
+    expect(a).not.toBe(b);
+  });
+
+  it('matches generateSeed\'s word-word-digits format', () => {
+    expect(dailySeed(new Date('2026-09-02T12:00:00Z'))).toMatch(/^[a-z]+-[a-z]+-\d{3}$/);
   });
 });

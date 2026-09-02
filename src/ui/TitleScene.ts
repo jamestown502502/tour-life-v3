@@ -7,7 +7,7 @@ import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { audio } from '../core/audio';
 import { DEFAULT_AMBIENCE_BPM, DEFAULT_AMBIENCE_CHORDS } from '../core/musicTheory';
-import { generateSeed } from '../core/rng';
+import { dailySeed, generateSeed } from '../core/rng';
 import { State, type Progress } from '../core/state';
 import { hasSave, loadRun, loadFromSlot, saveToSlot, SAVE_SLOTS, type SaveSlot } from '../core/save';
 import type { RunState } from '../core/state';
@@ -23,6 +23,10 @@ export class TitleScene extends Phaser.Scene {
   private seedInput: FloatingInput | null = null;
   private fireflies: WeatherHandle | null = null;
   private saveExists = false;
+  /** Which seed New Run should actually start once any overwrite-confirm is cleared — set right
+   *  before requesting the confirm, since "New Run" and "Today's Tour" both fun through the
+   *  same confirm dialog but start different seeds. */
+  private pendingSeed = '';
 
   create(): void {
     this.input.once('pointerdown', () => {
@@ -40,29 +44,36 @@ export class TitleScene extends Phaser.Scene {
     this.add.text(W / 2, 260, 'Tour Life', textStyle('title')).setOrigin(0.5);
     this.add.text(W / 2, 320, 'International Dates', textStyle('h2', { color: PALETTE_HEX.gold })).setOrigin(0.5);
 
-    const seedLabel = this.add.text(W / 2, 420, `Today's tour: ${this.currentSeed}`, textStyle('small')).setOrigin(0.5);
+    const seedLabel = this.add.text(W / 2, 420, `Custom seed: ${this.currentSeed}`, textStyle('small')).setOrigin(0.5);
 
     // 66, not the original 56 — (56+16)*0.5417=39 CSS px, under the 44px floor the Workstream E
     // audit fixed everywhere else it looked. Title itself wasn't in that audit's scope and was
     // missed; caught and fixed here while this section's Y layout was already being touched to
-    // fit the new Saves button in. BTN_ROW/BTN_GAP match the established 66/76 pattern.
+    // fit the new Today's Tour / Saves buttons in. BTN_ROW/BTN_GAP match the established 66/76
+    // pattern; the touch-target arithmetic in the comment above HelpButton.ts's BTN_SIZE applies
+    // identically to every button on this screen.
     const BTN_ROW = 66;
     const BTN_GAP = 76;
     let btnY = 480;
 
-    createButton(this, W / 2 - 160, btnY, 320, BTN_ROW, 'New Run', () => {
-      if (this.saveExists) {
-        this.showOverwriteConfirm();
-      } else {
-        this.startNewRun();
-      }
-    }, { fillColor: 0x3e7c7b });
+    // Close-out item 4a: one shared seed all day (UTC), featured above the "roll your own"
+    // path — the game already had a "Today's tour: <seed>" line, but it pointed at a fresh
+    // random seed each visit, not a real daily hook players could compare notes on.
+    const todaysSeed = dailySeed();
+    createButton(this, W / 2 - 160, btnY, 320, BTN_ROW, `Today's Tour — ${todaysSeed}`, () => {
+      this.requestNewRun(todaysSeed);
+    }, { fillColor: PALETTE.gold, fontSize: '16px' });
     btnY += BTN_GAP;
 
-    createButton(this, W / 2 - 160, btnY, 320, BTN_ROW, 'New seed', () => {
+    // New Run / reroll side by side — freed a full row for Today's Tour above without adding
+    // one, same total column height as before this pass.
+    createButton(this, W / 2 - 160, btnY, 200, BTN_ROW, 'New Run', () => {
+      this.requestNewRun(this.currentSeed);
+    }, { fillColor: 0x3e7c7b });
+    createButton(this, W / 2 + 50, btnY, 110, BTN_ROW, 'Reroll', () => {
       this.currentSeed = generateSeed();
-      seedLabel.setText(`Today's tour: ${this.currentSeed}`);
-    }, { fillColor: 0xc4704f, fontSize: '20px' });
+      seedLabel.setText(`Custom seed: ${this.currentSeed}`);
+    }, { fillColor: 0xc4704f, fontSize: '16px' });
     btnY += BTN_GAP;
 
     this.buildSeedEntry(seedLabel);
@@ -121,8 +132,21 @@ export class TitleScene extends Phaser.Scene {
     this.scene.pause();
   }
 
-  private startNewRun(): void {
-    State.newRun(this.currentSeed);
+  /** New Run and Today's Tour both fun through the same overwrite-confirm when a save exists —
+   *  this is the one entry point for "start a fresh run with this seed", threading the chosen
+   *  seed through pendingSeed so the confirm dialog (or the direct start, if there's nothing to
+   *  overwrite) starts the RIGHT seed rather than always the custom one. */
+  private requestNewRun(seed: string): void {
+    this.pendingSeed = seed;
+    if (this.saveExists) {
+      this.showOverwriteConfirm();
+    } else {
+      this.startNewRun(seed);
+    }
+  }
+
+  private startNewRun(seed: string): void {
+    State.newRun(seed);
     goTo(this, 'BandCreator');
   }
 
@@ -143,7 +167,7 @@ export class TitleScene extends Phaser.Scene {
     const cancelBtn = createButton(this, x + 40, y + h - 80, 220, 54, 'Cancel', close, { fillColor: 0x8fb7c9 });
     const confirmBtn = createButton(this, x + w - 260, y + h - 80, 220, 54, 'Start new tour', () => {
       close();
-      this.startNewRun();
+      this.startNewRun(this.pendingSeed);
     }, { fillColor: 0xc4704f });
     container.add([cancelBtn, confirmBtn]);
   }

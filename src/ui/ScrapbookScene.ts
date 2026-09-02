@@ -55,10 +55,48 @@ export class ScrapbookScene extends Phaser.Scene {
     const rel = Object.entries(State.data.relationships).map(([id, v]) => `${id} ${Math.round(v)}`).join('  ');
     this.add.text(W / 2, 420, `Where the band landed: ${rel}`, textStyle('dialogue', { fontSize: '14px', shadow: undefined })).setOrigin(0.5);
 
+    createButton(this, W / 2 - 150, 810, 300, 66, 'Save tour as image', () => this.exportAsImage(), { fillColor: 0x8a6fa3, fontSize: '18px' });
+
     createButton(this, W / 2 - 150, 900, 300, 66, 'Start a new tour', async () => {
       await clearSave();
       State.data.progress = { screen: 'title' };
       goTo(this, 'Title');
     }, { fillColor: 0x3e7c7b });
+  }
+
+  /** Close-out item 4b: the card content (title/tags/route/setlist/souvenirs/relationships)
+   *  rendered above is already exactly what a snapshot of its screen region captures — no need
+   *  to re-render anything to an offscreen canvas by hand. Phaser's own renderer.snapshotArea
+   *  reads back real pixels from whichever renderer (WebGL or Canvas) actually drew this frame.
+   *  The raw snapshot is only as wide as the game's own 720-unit canvas backing buffer, which on
+   *  a DPR-1 display (most desktop browsers) comes back under the "shareable image" bar — so the
+   *  snapshot is upscaled onto a fixed-size canvas before download rather than shipped as-is,
+   *  guaranteeing >=800px wide regardless of the viewing device's pixel ratio. */
+  private exportAsImage(): void {
+    const x = 40, y = 90, w = W - 80, h = 560;
+    const outW = 900;
+    const outH = Math.round((h / w) * outW);
+    this.game.renderer.snapshotArea(x, y, w, h, (image) => {
+      const src = (image as HTMLImageElement).src;
+      if (!src) return; // renderer/browser couldn't produce a snapshot — fail silently, not fatal
+      const canvas = document.createElement('canvas');
+      canvas.width = outW;
+      canvas.height = outH;
+      const ctx = canvas.getContext('2d');
+      const el = new Image();
+      el.onload = () => {
+        if (!ctx) return;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(el, 0, 0, outW, outH);
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = `tour-life-${this.endingId}-${State.data.seed}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      };
+      el.src = src;
+    });
   }
 }
