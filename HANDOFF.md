@@ -1,25 +1,25 @@
 # Tour Life: International Dates — Handoff Document (v3)
 
-**Written:** 2026-09-01, by Claude (Sonnet 5), for whichever agent (human or LLM) picks this up
-next. **This supersedes v1 and v2.** Those were written mid-project, after specific passes
-(initial vertical slice; an 8-phase visual/audio polish pass). This version is a full rewrite —
-not another patch — written after the game reached a genuinely shippable state, and organized as
-a *reference*, not a change-log. Historical "what changed" narrative is kept only where the
-*why* prevents a future regression; see the bug ledger (§9) for that. `DESIGN.md` is the
-*aspirational* blueprint — the original product spec, still the target to keep building toward.
-This file is what's actually true in the code, today. Where they disagree, trust this file.
+**Written:** 2026-09-01, last updated 2026-09-02, by Claude (Sonnet 5), for whichever agent
+(human or LLM) picks this up next. **This supersedes v1 and v2.** Those were written mid-project,
+after specific passes (initial vertical slice; an 8-phase visual/audio polish pass). This version
+is a full rewrite — not another patch — written after the game reached a genuinely shippable
+state, and organized as a *reference*, not a change-log. Historical "what changed" narrative is
+kept only where the *why* prevents a future regression; see the bug ledger (§9) for that.
+`DESIGN.md` is the *aspirational* blueprint — the original product spec, still the target to keep
+building toward. This file is what's actually true in the code, today. Where they disagree, trust
+this file.
 
-If you take away exactly three things from this document: **(1)** the game is finished-feeling
-and deployed, but its content averages roughly 30% of the blueprint's per-city target — the
-engine promises more story than exists yet, and 4 cities (of a 12-16 target) proved the authoring
-pipeline scales without engine changes but hasn't closed that gap on its own. **(2)** every
-"what's missing" item beyond that content gap is a *decision*, not an oversight — the Part 3
-reality layer is fully deferred (§7.1), a 5th+ city was never started (§7.2), and 2 of the 8
-originally-planned bandmate backstory beats (Jun's "letter from home," Rowan's "why they're
-here") are the one piece of §14.6's follow-up pass left incomplete; don't build any of these
-without re-reading §7 and §14.6. **(3)** if a Vercel deploy looks stuck at "Building…" forever, it
-is almost certainly not
-slow — see §1.
+If you take away exactly three things from this document: **(1)** the game is finished-feeling,
+deployed, and — as of the close-out pass (§15) — structurally Android-ready (a full wrap runbook,
+PWA scaffolding, haptics), but its content still averages roughly 33% of the blueprint's per-city
+target (26-46% range) — the engine promises more story than exists yet, and 4 cities (of a 12-16
+target) proved the authoring pipeline scales without engine changes but hasn't closed that gap on
+its own. **(2)** every "what's missing" item beyond that content gap is a *decision*, not an
+oversight — the Part 3 reality layer is fully deferred (§7.1) and a 5th+ city was never started
+(§7.2), across two separate passes now; don't build either without re-reading §7. All 8 of the
+originally-planned bandmate backstory beats exist as of §15.6 — that gap is closed. **(3)** if a
+Vercel deploy looks stuck at "Building…" forever, it is almost certainly not slow — see §1.
 
 ---
 
@@ -35,24 +35,31 @@ Vite + TypeScript (strict) + Phaser 3.90. No React/Next. Deployed and publicly l
 - **Audio:** 100% Web Audio API synthesis — oscillators, filtered noise, a real chord-driven
   ambience engine with crossfading and music-ducking. No audio files at all.
 - **Content:** 4 fully playable cities (Lisbon, Tokyo, Mexico City, Berlin), each with arrival →
-  exploration → (sometimes) a minigame → a relationship scene → a rhythm performance → after-show
-  → journal, plus gated bandmate-backstory beats and a flag-gated alternate after-show in 3 of the
-  4. ~3,839 words of prose across the four. See §6 for the honest per-city breakdown.
-- **Systems:** seeded RNG (deterministic, shareable runs), a JSON node-graph dialogue engine, a
-  4-lane rhythm minigame with real hold-note grading and an S/A/B/C grade plate, 3 content-driven
-  minigames (timing/drag/choice, real painted backdrops — §14.3/§14.6) that break up the
-  pure-dialogue flow, a 6-candidate ending generator, scene-pool scarcity for replayability,
-  meta-progression across runs, full onboarding for first-time players, 8 base accessibility
-  settings plus 2 dialogue QoL toggles (auto-advance, instant text), IndexedDB save with schema
-  versioning.
+  exploration → (sometimes) a minigame → 2 relationship scenes → a rhythm performance → after-show
+  → journal, plus all 8 planned gated bandmate-backstory beats and a flag-gated alternate
+  after-show in every city. ~4,278 words of prose across the four, each city's seed-picked weather
+  now applying a small real stat delta on arrival. See §6 for the honest per-city breakdown.
+- **Systems:** seeded RNG (deterministic, shareable runs, plus a daily "Today's Tour" seed shared
+  by every player — §15.4), a JSON node-graph dialogue engine, a 4-lane rhythm minigame with real
+  hold-note grading, an S/A/B/C grade plate, and per-device audio-latency calibration (§15.2), 3
+  content-driven minigames (timing/drag/choice, real painted backdrops, seed-varied item/question
+  order and harmony-scaled difficulty — §14.3/§14.6/§15.5) that break up the pure-dialogue flow, a
+  6-candidate ending generator with a written "two months later" epilogue per reachable
+  ending+tags combination (§15.7) and a shareable scrapbook PNG export (§15.4), a dialogue backlog
+  and 3 manual save slots alongside the original auto-save (§15.3), scene-pool scarcity for
+  replayability, meta-progression across runs, full onboarding for first-time players, 9 base
+  accessibility settings (haptics included) plus 2 dialogue QoL toggles, IndexedDB save with
+  schema versioning, a PWA manifest + service worker, and a complete Android-port runbook
+  (§15.1).
 - **Mobile-grade end to end:** real multi-touch (a second simultaneous finger used to be silently
   dropped), the rhythm playfield and every screen's interactive elements sit inside the iOS safe
   area, every hit/tap gets feedback in the right place, and every button on every screen in the
   game measures ≥44 CSS-px at a measured 390px mobile width — audited screen by screen, not
-  assumed (§14.1, §14.5).
-- **Quality bar:** typecheck clean (strict TS), 64/64 tests passing (8 of them an exhaustive
-  per-city scene-graph reference check, not just whatever a bot playtest's random walk happens to
-  exercise), a production build that succeeds, and everything below has been verified live in a
+  assumed (§14.1, §14.5, §15.3).
+- **Quality bar:** typecheck clean (strict TS), 88/88 tests passing (an exhaustive per-city
+  scene-graph reference check, a full sweep of every reachable ending+tags combination, and more —
+  not just whatever a bot playtest's random walk happens to exercise), CI green on every push
+  (§15.8), a production build that succeeds, and everything below has been verified live in a
   browser — not just read as a diff.
 
 **Art direction rule, deliberately chosen: painted world, code-drawn UI.** Backgrounds and
@@ -153,9 +160,9 @@ NOT update on the next deploy).
   the only version that has ever existed).
 - **Tests are Vitest, pure-logic only** — no Phaser/DOM in the test environment (no jsdom
   configured; one test file ships its own tiny in-memory `localStorage` shim rather than adding
-  a DOM dependency for that). 39 tests across 7 files.
-- **No CI.** `npm run typecheck && npm test` in a GitHub Action would catch regressions
-  automatically and does not exist yet — see §10.
+  a DOM dependency for that). 88 tests across 14 files.
+- **CI**: `.github/workflows/ci.yml` (added §15.8) runs `npm ci`, typecheck, test, and build on
+  every push to master and every PR.
 
 ---
 
@@ -370,6 +377,12 @@ future `schemaVersion` bumps (currently a no-op — v1 is the only version that 
 (dark backdrop + sand card, blocks click-through via `event.stopPropagation()`) before calling
 `State.newRun()` if one does.
 
+**3 manual save slots** (§15.3, added on top of the above, not replacing it): `saveToSlot`/
+`loadFromSlot`/`clearSlot` in `save.ts` write to a separate `tourlife.run.slot1-3` namespace via
+the exact same `saveToKey`/`loadFromKey` internals the auto-save above uses (both go through
+`isValidRunState`/`migrate()` identically). Title's "Saves" button/picker is the only thing that
+reads or writes these — Continue and the rest of the game are entirely unaware slots exist.
+
 ### 5.5 Onboarding (`src/ui/HowToPlayScene.ts`, `src/ui/HelpButton.ts`, `src/core/onboarding.ts`)
 
 A 3-page How to Play screen (auto-opens once ever on a fresh player — tracked via a persistent
@@ -406,19 +419,20 @@ this was closed in this pass; see §9 bug entries and §8 for what's still not f
 
 | City | Words | Locations | Relationship-pool entries | preShowChoices | Minigame | Song |
 |---|---|---|---|---|---|---|
-| Lisbon | ~758 | 6 | 7 (all 4 bandmates + 2nd Jun arc + Mira/Theo backstory) | 3 | Soundcheck (timing, painted) | `sailor_lullaby` |
-| Tokyo | ~738 | 6 | 7 (all 4 bandmates + 2nd Mira arc + Jun/Rowan backstory) | 3 | Pack the Van (drag, painted) | `neon_rain` |
+| Lisbon | ~843 | 6 | 8 (all 4 bandmates + 2nd Jun arc + Mira letter+why, Theo why+letter, Jun why — full backstory pair for Mira/Theo) | 3 | Soundcheck (timing, painted) | `sailor_lullaby` |
+| Tokyo | ~828 | 6 | 8 (all 4 bandmates + 2nd Mira arc + Jun letter, Rowan why+letter — full backstory pair for Rowan) | 3 | Pack the Van (drag, painted) | `neon_rain` |
 | Mexico City | ~1,460 | 6 | 7 (all 4 bandmates + 2nd Rowan arc + Theo/Mira backstory) | 3 | Interview (choice, painted) | `callejon_groove` |
-| Berlin | ~883 | 5 | 5 (all 4 bandmates + a 2nd Jun arc) | 3 | — | `kreuzberg_static` |
-| **Total** | **~3,839** | **23** | **26** | **12** | **3** | **4** |
+| Berlin | ~1,147 | 6 | 7 (all 4 bandmates + 2nd Jun/Mira/Rowan arcs) | 3 | — | `kreuzberg_static` |
+| **Total** | **~4,278** | **24** | **30** | **12** | **3** | **4** |
 
 Blueprint target (`DESIGN.md`): ~3,200 words **per city**, 12-16 cities in the pool (player
 picks 6-8 per run), a 3-4 hour "every run feels different" promise. **Current content per city
-now averages roughly 30% of that target (23-46% range — Mexico City's the deepest, Lisbon and
-Tokyo the thinnest, Berlin in between), and 4 of 12-16 cities exist.** A single run currently
-plays in ~12-25 minutes depending on how much dialogue a player lingers on, whether a minigame
-fires (20-45s each), and how the rhythm songs go (each song is a real ~55-70 second timer-driven
-event, not skippable).
+now averages roughly 33% of that target (26-46% range — Mexico City's the deepest, Tokyo the
+thinnest), and 4 of 12-16 cities exist.** A run now shows 2 relationship-pool scenes per city
+(§15.5, up from 1), so single-run playtime and dialogue volume both roughly doubled from what the
+word-count table alone suggests; a run currently plays in ~15-30 minutes depending on how much
+dialogue a player lingers on, whether a minigame fires (20-45s each), and how the rhythm songs go
+(each song is a real ~55-70 second timer-driven event, not skippable).
 This is still the single biggest gap between "how the game feels" (finished, polished, onboarded,
 mobile-grade) and "how much game there is" (a meaningful step up from before, still a fraction of
 the vision) — see §7 for why it hasn't been closed further and what the options are.
@@ -435,10 +449,11 @@ confirmed by `headless_playtest.test.ts` (which iterates `State.data.route` gene
 unmodified with no other changes.
 
 **Word-count caveat, important:** the numbers above are *authored* totals, not what a single
-playthrough shows. Scene-pool scarcity (§3.3) means a run only sees 1-2 of each city's 4-5
-relationship entries and 2 of 5 locations — real single-run content is meaningfully less than
-the table implies, which is a genuine replayability feature, not a shortfall, but worth knowing
-when reasoning about "how long is one run" vs. "how much was actually written."
+playthrough shows. Scene-pool scarcity (§3.3) means a run sees 2 of each city's 7-8 relationship
+entries (§15.5 — was 1-2 before this pass) and 2 of 6 locations — real single-run content is
+meaningfully less than the table implies, which is a genuine replayability feature, not a
+shortfall, but worth knowing when reasoning about "how long is one run" vs. "how much was
+actually written."
 
 ---
 
@@ -506,10 +521,11 @@ City/Berlin respectively).
   identity, and would add real payload weight. A single generated Title-theme loop is the one
   place this might be worth reconsidering (see `docs/asset-probes` / the Gemini music-generation
   skill referenced in project memory).
-- **CI.** No GitHub Action runs `typecheck`/`test` on push. Cheap to add, not yet done.
+- **CI** — closed, §15.8.
 - **Real physical-device touch testing.** All mobile verification this whole project has been
   viewport emulation (measured `getBoundingClientRect()` math, not guessed) — never a real phone
-  in hand.
+  in hand. `CAPACITOR_PORT.md` (§15.1) exists now; an actual device pass through it is the next
+  milestone toward closing this, not just wrapping the build.
 - **The `Ambitious` ending tag's route-length condition** (`route.length >= 6`) is currently
   unreachable with only 4 cities in the pool — not a bug, just dead code until city #5+ exists.
 
@@ -527,9 +543,15 @@ City/Berlin respectively).
 - **Hold-note visual feel** (the rail growing/shrinking) has been confirmed to render and score
   correctly under a rapid-tap stress test, but has never been watched in slow motion by a human
   to confirm the *visual* growth rate reads well — purely a "nobody's looked yet" gap, not a
-  known defect.
+  known defect. The close-out pass (§15.8) tried to close this and hit a tooling constraint
+  (automation round-trip latency in that session routinely exceeded a full song's length, making
+  a specific mid-fall frame unreliable to capture) rather than a code problem — still open.
 - **Keyboard input (D/F/J/K)** for the rhythm lanes is implemented and mirrors the pointer path
-  closely, but has never actually been pressed during live verification — only read from source.
+  closely. §15.8 proved the D lane live with a real physical key press (not a synthetic DOM
+  event — those silently no-op against Phaser's `KeyboardManager`, which reads `event.keyCode`,
+  a property a JS-constructed `KeyboardEvent` cannot set in a modern browser). F/J/K share the
+  identical registration loop and are structurally the same code, but weren't independently
+  re-pressed live due to the same latency constraint as the hold-note item above.
 - **The `Ambitious` route-length ending tag** — see §7.3.
 - **A cold-boot-straight-into-Rhythm audio path** (skipping Title, where `audio.unlock()` always
   fires first in real play) is unexercised — `playAmbience` guards with `if (!this.ctx) return`
@@ -982,39 +1004,251 @@ this pass touched.
 
 ---
 
+## 15. The close-out pass — Android-ready, VN QoL, calibration, payoff (2026-09-02)
+
+A second external plan the same day (`POLISH_CLOSE_OUT_PLAN.md`, executable form
+`RESUME_PROMPT_CLOSE_OUT.md`, both still in the repo root — again from Jameson's "Hermes (BAIS)"
+persona, again spot-checked against the live repo before executing) named 5 remaining weaknesses
+and shaped 8 build items around them: Android port readiness, rhythm audio-latency calibration, VN
+backlog + save slots, a daily-seed hook + shareable scrapbook export, more per-run variance,
+finishing the 2 backstory beats + Berlin depth §14.6 left open, written epilogues, and CI. **All 8
+are done.** No new city, no Part 3 reality layer — both stayed exactly the owner's deferred call,
+per the plan's own explicit guardrail.
+
+### 15.1 Item 1 — Android port readiness
+
+`CAPACITOR_PORT.md` (new, repo root): the complete wrap runbook for whoever does the actual
+port — init/add-android, the build+copy loop, why `vite.config.ts`'s existing `base: './'`
+matters for a `file://`-scheme WebView (this was already a deliberate choice — `src/core/assets.ts`
+documents the other half of that decision), portrait orientation lock, safe-area (already done,
+carries over as-is — the `capacitor-community/safe-area` plugin only if a real device shows
+otherwise), storage/audio-unlock (both already handled), haptics (below), and a signing/release
+checklist with an explicit honest note that Part 3 is **not** in this build, so the content-rating
+questionnaire should reflect an all-ages game.
+
+PWA scaffolding: `public/manifest.webmanifest` + `public/sw.js` (network-first navigation,
+cache-first `/assets/`), registered from `src/main.ts` on window load, skipped in DEV. A new
+Gemini-generated icon (`public/icons/icon-{192,512}.png}`, a cassette tape with a treble clef,
+matching the existing palette) backs both manifest sizes. Every path involved (manifest link,
+apple-touch-icon, SW registration, the manifest's own `start_url`/`scope`/icon `src`) is relative,
+matching the project's `base: './'` choice rather than introducing absolute paths that only work
+at a true domain root.
+
+**Haptics** (the one piece of item 1 that's actual game code, not scaffolding):
+`navigator.vibrate?.(15)` on a perfect hit, `(30)` on a miss, gated by a new "Haptics" Settings
+toggle (`accessibility.haptics`, defaulted on for an Android user agent, safe no-op everywhere
+else — no Capacitor plugin needed, this is the plain Web Vibration API).
+
+Verified: production build served locally (`npm run build && npm run preview`) confirmed
+manifest/sw.js/icons all 200 with correct content-type; Service Worker registration confirmed
+**actually active** via a Playwright-driven check — the Claude_Browser pane's own sandboxed
+context blocks SW registration entirely (same script, same server, registers fine under
+Playwright — a real environment restriction of that specific tool, not a code defect, discovered
+and worked around rather than assumed away).
+
+### 15.2 Item 2 — Rhythm audio-sync calibration + tap-sound/haptics toggles
+
+Exceed7's rhythm-crash-course finding the plan cited: latency calibration is treated as mandatory
+for a serious Android rhythm game, since audio-output lag varies meaningfully per device and an
+uncalibrated player just reads the game as "off" with no way to fix it. `accessibility.audioOffsetMs`
+(-150..150ms) is applied via `game/rhythm.ts`'s new `adjustedHitMs()` to **both** a falling note's
+visual position and its judged hit time — the two always move together, so a calibrated note still
+visually lands on the hit line exactly when it's judged on-time, never a mismatch between what a
+player sees and what they're scored against. Wired into all 4 of `RhythmScene`'s timing call sites
+(fall/judge, hold auto-release, cue banners, tap judging) via one `hitMsFor(t)` helper.
+
+Settings gained an "Audio sync" row: manual -5/+5 buttons, plus a "Re-calibrate" tap-along (6
+beats at a fixed 96bpm — deliberately independent of any city's song, since calibration is a
+device property, not a song property). The trimmed-mean math (drop the single worst-early and
+worst-late tap, clamp to the field's range, round to a 5ms step matching the manual adjuster)
+lives in new `game/calibration.ts`, pure and unit-tested, same split as `game/rhythm.ts` vs.
+`ui/RhythmScene.ts`. `computeCalibrationOffset` never writes state itself — "Apply" is a separate
+explicit step, so a distracted tap-along can't silently overwrite a working setting.
+
+Also added: a **Tap sound** toggle (Exceed7's "fingernail players" who want hit SFX off without
+losing music/ambience) and the **Haptics** toggle from §15.1.
+
+Settings' 7-toggle single-column block became a 9-item self-labeled 2-column grid (matching
+BandCreator's genre-grid pattern) — adding 2 rows to the old layout would have pushed the column
+past `SAFE_BOTTOM_Y` and past the canvas itself; the grid fits 9 in 5 rows instead of 9.
+
+Verified: a Playwright-driven pass drove the full tap-along end to end — 6 synthetic taps at a
+consistent +70ms produced "Measured offset: 105ms," Apply wrote it back to state and the Settings
+display updated live; the "not enough taps" path was verified separately. The Claude_Browser
+pane's render loop was throttled by host-panel visibility during this same check (confirmed via
+Phaser's own timer-elapsed state staying frozen, not assumed) — another case of routing around a
+tool-specific limitation rather than reporting a false negative.
+
+### 15.3 Item 3 — VN backlog + 3 save slots
+
+**Backlog** (r/visualnovels' most-requested VN QoL feature): `DialogueBox` records every shown
+line (speaker + text, capped at 30, session-only) behind a new top-left "≡" button (mirrors
+HelpButton's top-right placement and 66px sizing) opening a drag-to-scroll panel. The live dialogue
+panel underneath is explicitly hidden while backlog is open — its choice buttons sit past the
+backlog overlay's own footprint and bled through behind the Close button otherwise, caught live
+during verification, not assumed working from the code.
+
+**Save slots**: `save.ts` gained a parallel 3-slot API (`saveToSlot`/`loadFromSlot`/`clearSlot`,
+keyed `tourlife.run.slot1-3`) alongside the existing single auto-save every scene already calls via
+`saveRun`/`loadRun` — that API and every call site is untouched, so Continue's behavior for an
+existing single-save player doesn't change at all. Title gained a "Saves" button opening a 3-row
+picker: each row shows a live summary (band name + "just starting"/"en route (\<city>)"/"Tour
+complete", or "Empty"), a Save-here button (opens an overwrite-confirm if occupied, mirroring the
+existing New-Run confirm pattern), and a Load button.
+
+Found and fixed alongside: Title's own button heights were still 56px (Workstream E's touch-target
+audit never reached Title, since Title didn't exist as a concern until this pass restructured its
+Y layout to fit Saves in) — bumped to 66, matching every other screen. "Use this seed" (44) and
+"How to Play" (44) are still untouched, deliberately out of scope for this specific commit.
+
+Verified live: empty-state panel, Save writing and refreshing the summary, Load replacing
+`State.data` and navigating via the same `resumeTarget` logic Continue uses, and the
+overwrite-confirm path — all confirmed via a Playwright pass with zero console errors.
+
+### 15.4 Item 4 — Daily seed on Title + shareable scrapbook export
+
+**Today's Tour**: `game/rng.ts`'s new `dailySeed(date)` is the same word-word-digits format as
+`generateSeed` but deterministic (`makeRng`, not `Math.random`) off the UTC calendar date —
+`Date#toISOString` is always UTC regardless of the caller's timezone, so this is genuinely one
+seed per day worldwide. Title features it as a gold "Today's Tour — \<seed>" button above the
+existing "roll your own" path; New Run and a new small "Reroll" button share one row to make room
+without growing the column. Both funnel through a new `requestNewRun(seed)`/`pendingSeed` pair so
+the SAME overwrite-confirm dialog correctly threads through whichever seed was actually requested,
+rather than always starting whatever the custom-seed field happened to hold.
+
+**Scrapbook export**: a "Save tour as image" button. Phaser's `renderer.snapshotArea` reads back
+the card region's real rendered pixels — no need to re-implement the card layout on an offscreen
+canvas by hand — but the raw snapshot is only as wide as the game's native 720-unit canvas backing
+buffer, which came back **640px wide** on a DPR-1 desktop browser in testing, under any reasonable
+"shareable image" bar. The snapshot is upscaled onto a fixed 900px-wide canvas before download, so
+the exported PNG is always ≥800px wide regardless of the viewing device's pixel ratio.
+
+Verified: the button's daily-seed label matched what `State.data.seed` actually became after
+confirming, and navigation landed on BandCreator; the exported PNG decoded to a real 900×788 image
+with the ending/tags/route/setlist/souvenirs/relationships text legible.
+
+### 15.5 Item 5 — More per-run variance
+
+- **Two relationship scenes per city, not one.** `scenePool.drawScenePoolFlags` now draws
+  `SCENES_PER_CITY` (2, up from 1 — pools are 5-7, real headroom). `CityScene`'s new
+  `playNextRelationshipScene()` plays every available entry in a city, in seed-shuffled order,
+  before moving to preshow, replacing the old "just the first one" logic.
+- **Weather has teeth.** Seed-picked weather (previously only a particle effect + flavor text) now
+  applies a small one-time stat delta on arrival — new `game/weather.ts`'s `WEATHER_EFFECTS` map,
+  the same "give it a real consequence" move already done for the mid-tour complication in an
+  earlier pass.
+- **Minigame variance.** Timing minigames get one extra, faster round once harmony crosses 50
+  (`game/minigame.ts`'s pure, tested `timingRoundsForHarmony`); drag items and choice questions are
+  now shuffled via a seeded RNG (`makeRng(\`${seed}:minigame:${id}\`)`) computed once in `init()`,
+  replacing the fixed content-JSON order every run used to see identically.
+
+Also exposes `State` as `window.__state` in DEV alongside the existing `__game`/`__audio` debug
+globals — needed to verify the multi-scene sequence without a dev-server dynamic-import artifact
+(a separately-imported module instance vs. the one the running game actually uses) producing a
+false negative; kept, since it's the same precedented pattern as the other two.
+
+Verified: a live Playwright pass confirmed both drawn relationship-pool entries actually play in
+sequence (`relationshipsPlayed` ends up containing both, in the shuffled order) before the scene
+proceeds toward preshow.
+
+### 15.6 Item 6 — The last 2 backstory beats + Berlin deepened to parity
+
+The plan named the two missing beats as "Jun's letter from home + Rowan's why they're here" — but
+both already existed (added in the §14.6 pass). Checked against the actual content files before
+writing anything, same discipline as the `RelationshipScenePoolEntry.condition` check last pass:
+the real gap was the *other* type for each — Jun's "why they're here," Rowan's "letter from home."
+Added those into Lisbon/Tokyo. **All 8 of the originally-planned bandmate backstory beats now
+exist.**
+
+Berlin deepened to match the other 3 cities' post-§14.6 shape (it had been left at its original
+scoped-down depth): a 6th location (a stretch of the Wall repainted so many times the point is
+that nothing there lasts — fits Berlin's ambition/experimentation tone), 2 new relationship-pool
+entries for Mira and Rowan following Berlin's own established ungated "2nd arc" pattern (not a
+9th/10th forced "backstory beat" once all 8 already exist elsewhere), and a flag-gated alternate
+after-show reusing the existing `found_mystery_record` flag. 883 → 1,147 words, 5→6 locations,
+5→7 pool entries.
+
+### 15.7 Item 7 — Written epilogues
+
+New `content/epilogues.ts`: a "Two months later…" paragraph (~150-200 words) per reachable
+`(endingId, tags)` combination, not just per ending label — a Community-Minded breakout reads
+differently from a solo one. Falls back to a shorter per-ending paragraph for any tag combination
+not written (today, only the still-unreachable `route.length>=6` "Ambitious" bonus).
+
+Coverage was scoped by **sweeping the real `generateEnding()`** across a wide stat/relationship/
+localLove grid rather than hand-guessing reachable combinations — the sweep found exactly 10
+distinct reachable `(id, tags)` pairs (matching the plan's own "~10-14 total entries" target),
+and all 10 got bespoke prose; a permanent test (`epilogues.test.ts`) runs that same sweep and
+asserts every result is bespoke, not generic — so a future stat-formula change that opens up a
+new reachable combination will fail the test until it's given real prose, instead of silently
+falling back to a shorter paragraph forever.
+
+Scrapbook gained a "Read the epilogue" toggle (not inline — the card is already dense) opening a
+"Two Months Later" panel with the matched text.
+
+### 15.8 Item 8 — CI + final verification
+
+**CI**: `.github/workflows/ci.yml` — `npm ci`, typecheck, test, build, on push to master and every
+PR. Confirmed green on the push that added it.
+
+**Final verification, done honestly rather than assumed:**
+- **Keyboard (D/F/J/K), never verified before this pass**: a real physical keydown-D event
+  (dispatched via Playwright's `page.keyboard.press`, which carries a genuine `keyCode` — Phaser's
+  `KeyboardManager` reads `event.keyCode` specifically, and a JS-constructed `KeyboardEvent` cannot
+  set that property in a modern browser, so a synthetic dispatch silently no-ops regardless of
+  `key`/`code` values set on it; this was confirmed the hard way, not assumed) was proven to
+  correctly invoke `attemptHit(0)` on the live Rhythm scene, via an instrumented wrapper around the
+  method. F/J/K share the exact same registration loop and were not independently re-confirmed
+  live — this session's automation round-trip latency turned out to routinely exceed a full
+  55-70s song's length (confirmed by watching `scene.time.now` and the active-scene list jump past
+  an entire song between two consecutive tool calls), making a second precisely-timed live press
+  impractical to arrange reliably. Code review is the basis for F/J/K, not a live press each.
+- **Hold-note rail in slow motion**: **not independently re-verified this pass.** The same
+  round-trip-latency issue made landing a screenshot on a specific mid-fall frame unreliable — a
+  scene-pause-then-screenshot approach was attempted and didn't hold the frame as intended. This
+  stays exactly the "nobody's looked yet, not a known defect" gap §8 already named, now with a
+  specific note on why it's still open (a tooling constraint hit during this pass, not lost
+  effort) rather than silently re-claimed as done.
+- **Cold boot of production**: confirmed zero console errors on a fresh `https://tour-life-v3.
+  vercel.app` load, screenshot taken, all 8 items' UI visible and working (Today's Tour, New Run/
+  Reroll, Continue, Settings, Tour Gallery, Saves all rendering correctly).
+- **Deploy verification**: every one of this pass's 9 commits (items 1 through 8a; item 8b is this
+  verification itself) was individually confirmed `READY` in production via the Vercel API before
+  the next commit went out, same discipline as every prior pass this project has used.
+
+**What's still open after this pass**: the hold-note slow-motion check (above), the Part 3 reality
+layer, and a 5th+ city — none of which this pass touched, all still the owner's call.
+
+---
+
 ## 12. Prioritized next steps (current, not the stale ordering from earlier handoffs)
 
-The full best-in-class pass (A-E) plus the §14.6 follow-up are now done — minigames (with real
-backdrops), mobile rhythm feel, VN textbox life, a 4th city, the touch-target audit, and deepened
-Lisbon/Tokyo/Mexico City are all shipped and live (§14). What's left is the honest remainder from
-§14.6, plus the pre-existing smaller deferrals:
+Both the best-in-class pass (§14) and the close-out pass (§15) are now done — everything either
+named is shipped and live except two items both passes deliberately left to the owner: the Part 3
+reality layer and a 5th+ city. What's actually left is short:
 
-1. **Finish the last 2 bandmate backstory beats** — Jun's "letter from home," Rowan's "why
-   they're here" (§14.6). The other 6 are done; these 2 were left out purely by the 6-slot budget
-   (2 new relationship-pool entries × 3 cities), not by design. Follow the same node-level
-   `condition`/`fallback` pattern §14.6 established — do **not** use the
-   `RelationshipScenePoolEntry.condition` schema field, `CityScene` never reads it.
-2. **Deepen Berlin to match** — it's still at its original §14.4 depth (5 locations, 5
-   relationship-pool entries, no backstory beats, no alternate after-show), now the shallowest of
-   the 4 cities relative to the others' post-§14.6 shape.
-3. **CI** — `npm run typecheck && npm test` in a GitHub Action. Cheap, not yet done, more
-   valuable than ever given how much surface area (audio graph, texture generation, button
-   hit-areas, onboarding flag state, chart generation, minigame schema, now 4 cities' worth of
-   gated content) has accumulated.
-4. **Hold-note visual polish in slow motion**, and **a keyboard-input pass with real physical
-   key presses** (§8) — low-risk, just unconfirmed by a human's eyes/hands yet.
-5. **The Part 3 reality layer** (§7.1) and **a 5th+ city beyond Berlin** (§7.2) remain gated on
-   the owner's own decision, on honest terms. Don't start either without that.
+1. **Hold-note rail watched in slow motion by a human** (§8, §15.8) — the one verification item
+   the close-out pass's own tooling couldn't reliably complete (an automation round-trip-latency
+   constraint specific to that session, not a code risk). Structurally proven correct by both a
+   rapid-tap stress test (earlier pass) and code review (this pass); just never watched by eyes.
+2. **A real physical-device Android pass**, now that `CAPACITOR_PORT.md` (§15.1) exists — every
+   touch-target/safe-area/haptics claim in this repo has been verified via viewport emulation or
+   in-browser testing, never on real hardware. This is the actual next milestone toward the
+   "Android-ready" framing the close-out plan used, not just the wrap-and-ship mechanics.
+3. **F/J/K individually re-confirmed with real key presses** (§15.8) — D was proven live; the
+   other three lanes share the identical registration loop and weren't independently re-pressed
+   due to the same tooling latency issue as item 1. Low risk, just unconfirmed.
+4. **The Part 3 reality layer** (§7.1) and **a 5th+ city** (§7.2) remain gated on the owner's own
+   decision, on honest terms, across two separate passes now. Don't start either without that.
 
 ## 13. Open questions worth asking before assuming
 
-- Finish Jun/Rowan's remaining backstory beats and deepen Berlin first, or add a 5th city next?
-  §3.3's scene-pool math suggests finishing what's already gated-but-half-built wins for most
-  players' actual experience, but a 5th city is what makes the `Ambitious` ending tag reachable
-  (§7.3) — these serve different goals, worth confirming which the owner wants before picking.
+- Is a real Android build (via `CAPACITOR_PORT.md`) actually happening next, or does "Android-
+  ready" mean "ready whenever it's decided to happen"? That changes whether item 2 above is the
+  next thing to do or just infrastructure waiting to be used.
 - If the reality layer is ever revisited, what's the actual tone-dial default the owner wants
   (`DESIGN.md` proposes Warm-by-default, opt-in Raw) — this is a real product decision, not
   something to infer.
-- Is a real mobile/app-store release still the direction, or is this staying a browser-only
-  cozy web game? That materially changes how much the iPhone-specific touch-target work (§14.5)
-  matters versus treating the desktop-web experience as primary.
+- A 5th+ city is now the only thing standing between this game and the `Ambitious` ending tag
+  (§7.3) actually being reachable — worth asking directly whether that's worth doing for its own
+  sake, independent of the broader "how many cities should this game have" question §7.2 poses.
