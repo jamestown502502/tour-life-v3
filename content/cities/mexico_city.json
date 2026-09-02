@@ -31,6 +31,23 @@
   "storyGate": { "condition": "stat.harmony>=35", "unlock": "duet_percussion" },
   "afterShowSceneId": "mex_aftershow",
   "journalSceneId": "mex_journal",
+  "minigames": [
+    {
+      "id": "mex_interview",
+      "type": "choice",
+      "title": "Interview",
+      "introText": "A local zine caught wind of the show and wants five minutes before soundcheck.",
+      "outroText": "\"Great stuff,\" the writer says, already typing. \"This'll run before the weekend.\"",
+      "outroTextRough": "The writer nods, polite but unconvinced. \"I'll see what I can do with this.\"",
+      "reward": { "effects": { "funds": 20, "inspiration": 3 } },
+      "roughReward": { "effects": { "funds": 5 } },
+      "questions": [
+        { "id": "q1", "prompt": "\"What's the tour actually about?\"", "optionA": "\"Chasing something honest\"", "optionB": "\"Just seeing the world, mostly\"", "warmerOption": "A" },
+        { "id": "q2", "prompt": "\"Any regrets so far?\"", "optionA": "\"None we'd say out loud\"", "optionB": "\"A few, but they're ours\"", "warmerOption": "B" },
+        { "id": "q3", "prompt": "\"What happens when the tour ends?\"", "optionA": "\"We figure that out later\"", "optionB": "\"We're already writing the next one\"", "warmerOption": "B" }
+      ]
+    }
+  ],
   "scenes": {
     "mex_arrival": {
       "id": "mex_arrival",

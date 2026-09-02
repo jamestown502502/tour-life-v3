@@ -31,6 +31,20 @@
   "storyGate": { "condition": "relationship.rowan>=30", "unlock": "bass_forward" },
   "afterShowSceneId": "tok_aftershow",
   "journalSceneId": "tok_journal",
+  "minigames": [
+    {
+      "id": "tok_pack_van",
+      "type": "drag",
+      "title": "Pack the Van",
+      "introText": "Load-out's fast here — everything back in the van before the next act's gear shows up.",
+      "outroText": "Everything's stowed with room to spare. Theo actually looks relaxed.",
+      "outroTextRough": "Half-packed and out of time — you finish the rest on the sidewalk, laughing about it.",
+      "reward": { "effects": { "energy": 5 }, "flags": ["fast_load_out"] },
+      "roughReward": { "effects": { "energy": 1 } },
+      "dragItems": ["Amps", "Cables", "Pedalboard", "Merch box", "Suitcase", "Snacks"],
+      "dragTimeSec": 25
+    }
+  ],
   "scenes": {
     "tok_arrival": {
       "id": "tok_arrival",

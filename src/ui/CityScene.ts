@@ -19,6 +19,7 @@ import { arrangementFlag } from '../game/rhythm';
 import type { CityDef, DialogueNode, LocationDef } from '../../content/schema';
 import { textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
+import { nextUnplayedMinigame } from '../game/minigame';
 
 export type CityPhase = 'arrival' | 'locations' | 'relationship' | 'preshow' | 'afterShow' | 'journal';
 const VALID_PHASES: CityPhase[] = ['arrival', 'locations', 'relationship', 'preshow', 'afterShow', 'journal'];
@@ -99,7 +100,7 @@ export class CityScene extends Phaser.Scene {
     saveRun(State.data);
 
     switch (this.phase) {
-      case 'arrival': this.walk(this.city.arrivalSceneId, () => this.startLocationPicker()); break;
+      case 'arrival': this.walk(this.city.arrivalSceneId, () => this.startMinigameOrLocations()); break;
       case 'locations': this.startLocationPicker(); break;
       case 'relationship': this.startRelationship(); break;
       case 'preshow': this.startPreshow(); break;
@@ -128,6 +129,19 @@ export class CityScene extends Phaser.Scene {
         this.walk(nextId, onDone);
       },
     );
+  }
+
+  /** At most one minigame per city per run — the first one not yet played this run (checked via
+   *  a run-scoped flag, so it repeats gently on a later tour like the onboarding lines do, not
+   *  never again). If there is one, it plays between arrival and the location picker and hands
+   *  control straight back to 'locations' when done. If not, this is a no-op passthrough. */
+  private startMinigameOrLocations(): void {
+    const next = nextUnplayedMinigame(this.city.minigames, (flag) => State.hasFlag(flag));
+    if (next) {
+      goTo(this, 'MiniGame', { cityId: this.city.id, minigameId: next.id, returnPhase: 'locations' });
+    } else {
+      this.startLocationPicker();
+    }
   }
 
   private startLocationPicker(): void {

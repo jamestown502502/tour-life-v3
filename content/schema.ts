@@ -74,6 +74,53 @@ export interface CollaboratorDef {
   gift: string;
 }
 
+// Minigames break up the pure-dialogue flow with a short (20-45s), touch-first, NO-FAIL
+// interactive beat that uses one of the tour's own verbs. Every type always reaches an outcome
+// — 'timing'/'drag' have a graded-but-never-failing result, 'choice' has no wrong answer, only
+// a warmer or cooler one — matching the same no-fail philosophy as the rhythm minigame.
+export type MiniGameType = 'timing' | 'drag' | 'choice';
+
+export interface MiniGameReward {
+  effects?: StatDeltas;
+  relationshipEffects?: Partial<Record<BandmateId, number>>;
+  flags?: string[];
+}
+
+/** 'choice' type only: one prompt, exactly 2 options. Neither is "wrong" — `warmer` just picks
+ *  which reward tier applies, same spirit as a dialogue choice's effects. */
+export interface MiniGameQuestion {
+  id: string;
+  prompt: string;
+  optionA: string;
+  optionB: string;
+  /** Which option is treated as the "warmer" (full reward) pick. The other still gets `roughReward`, never nothing. */
+  warmerOption: 'A' | 'B';
+}
+
+export interface MiniGameDef {
+  id: string;
+  type: MiniGameType;
+  title: string;
+  introText: string;
+  /** Shown on a good outcome (timing: >=2/3 good hits; drag: all items placed in time; choice: majority-warmer answers). */
+  outroText: string;
+  /** Shown otherwise — "rough but fine," never a failure or scold. */
+  outroTextRough: string;
+  reward: MiniGameReward;
+  /** Applied instead of `reward` on the rough outcome. Omit for "no reward either way, just flavor." */
+  roughReward?: MiniGameReward;
+  /** Backdrop texture key (see art/sprites.ts ensureMiniGameBackdrop / the real-asset manifest). Falls back to a code-drawn panel if absent. */
+  backdropKey?: string;
+  /** 'timing' only: seconds the needle takes to sweep the gauge once, per round (gets faster). */
+  timingRoundsSec?: number[];
+  /** 'drag' only: item labels to place into slots before the timer runs out. */
+  dragItems?: string[];
+  /** 'drag' only: seconds allowed to place every item. */
+  dragTimeSec?: number;
+  /** 'choice' only: exactly 3 questions. */
+  questions?: MiniGameQuestion[];
+}
+
 export interface CityDef {
   id: string;
   name: string;
@@ -92,6 +139,9 @@ export interface CityDef {
   scenes: SceneGraph;
   afterShowSceneId: string;
   journalSceneId: string;
+  /** Optional — a city with no minigames plays exactly as before. At most one is offered per
+   *  city per run (CityScene picks the first unplayed entry), inserted after arrival. */
+  minigames?: MiniGameDef[];
 }
 
 export type NoteType = 'tap' | 'hold' | 'choice';
@@ -219,8 +269,45 @@ export function validateCity(data: unknown): ValidationResult {
   if (!isString(c.journalSceneId)) fail(errors, `${path}: journalSceneId required`);
   if (c.scenes) validateSceneGraph(c.scenes, path, errors);
   else fail(errors, `${path}: scenes required`);
+  if (c.minigames !== undefined) validateMiniGames(c.minigames, path, errors);
 
   return { valid: errors.length === 0, errors };
+}
+
+function validateMiniGames(minigames: unknown, path: string, errors: string[]): void {
+  if (!isArray(minigames)) { fail(errors, `${path}.minigames: must be an array`); return; }
+  for (const mg of minigames as Partial<MiniGameDef>[]) {
+    const p = `${path}.minigames.${mg.id ?? '?'}`;
+    if (!isString(mg.id) || !isString(mg.title) || !isString(mg.introText) ||
+        !isString(mg.outroText) || !isString(mg.outroTextRough)) {
+      fail(errors, `${p}: id/title/introText/outroText/outroTextRough must all be strings`);
+    }
+    if (mg.type === 'timing') {
+      if (!isArray(mg.timingRoundsSec) || mg.timingRoundsSec.length < 1) {
+        fail(errors, `${p}: timing type needs timingRoundsSec with >= 1 entry`);
+      }
+    } else if (mg.type === 'drag') {
+      if (!isArray(mg.dragItems) || mg.dragItems.length < 2) {
+        fail(errors, `${p}: drag type needs dragItems with >= 2 entries`);
+      }
+      if (!isNumber(mg.dragTimeSec) || mg.dragTimeSec! <= 0) {
+        fail(errors, `${p}: drag type needs a positive dragTimeSec`);
+      }
+    } else if (mg.type === 'choice') {
+      if (!isArray(mg.questions) || mg.questions.length !== 3) {
+        fail(errors, `${p}: choice type needs exactly 3 questions`);
+      } else {
+        for (const q of mg.questions as MiniGameQuestion[]) {
+          if (!isString(q.id) || !isString(q.prompt) || !isString(q.optionA) || !isString(q.optionB) ||
+              (q.warmerOption !== 'A' && q.warmerOption !== 'B')) {
+            fail(errors, `${p}: each question needs id/prompt/optionA/optionB and warmerOption 'A'|'B'`);
+          }
+        }
+      }
+    } else {
+      fail(errors, `${p}: type must be 'timing' | 'drag' | 'choice'`);
+    }
+  }
 }
 
 export function validateSong(data: unknown): ValidationResult {

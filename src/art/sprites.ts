@@ -165,6 +165,29 @@ export function ensureCityBackground(scene: Phaser.Scene, cityId: string, tint: 
   return key;
 }
 
+/** Code-drawn fallback backdrop for a minigame that has no real painted backdrop yet (or when
+ *  one fails to load) — the same texture-key seam as every other background: register a real
+ *  image under `bg_mini_<id>` and this function is simply never called. A soft gradient +
+ *  a few scattered warm motes reads as "somewhere backstage," not a placeholder. */
+export function ensureMiniGameBackdrop(scene: Phaser.Scene, id: string, tint: number): string {
+  const key = `bg_mini_${id}`;
+  withGraphics(scene, W, H, (g) => {
+    fillVerticalGradient(g, 0, 0, W, H, PALETTE.night, tint, 1, 20);
+    let seed = id.length * 97 + 13;
+    for (let i = 0; i < 26; i++) {
+      seed = nextSeed(seed);
+      const x = seed % W;
+      seed = nextSeed(seed);
+      const y = 80 + (seed % (H - 200));
+      seed = nextSeed(seed);
+      const r = 2 + (seed % 4);
+      g.fillStyle(PALETTE.gold, 0.12 + (seed % 20) / 100);
+      g.fillCircle(x, y, r);
+    }
+  }, key);
+  return key;
+}
+
 export function ensureBusHubBackground(scene: Phaser.Scene): string {
   const key = 'bg_hub';
   withGraphics(scene, W, H, (g) => {

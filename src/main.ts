@@ -10,6 +10,7 @@ import { ResultsScene } from './ui/ResultsScene';
 import { ScrapbookScene } from './ui/ScrapbookScene';
 import { SettingsScene } from './ui/SettingsScene';
 import { HowToPlayScene } from './ui/HowToPlayScene';
+import { MiniGameScene } from './ui/MiniGameScene';
 import { audio } from './core/audio';
 import { BootScene } from './ui/BootScene';
 
@@ -45,7 +46,7 @@ async function boot(): Promise<void> {
       height: H,
     },
     // BootScene loads real painted assets (if present) then starts Title.
-    scene: [BootScene, TitleScene, BandCreatorScene, RoutePlanScene, HubScene, CityScene, RhythmScene, ResultsScene, ScrapbookScene, SettingsScene, HowToPlayScene],
+    scene: [BootScene, TitleScene, BandCreatorScene, RoutePlanScene, HubScene, CityScene, RhythmScene, ResultsScene, ScrapbookScene, SettingsScene, HowToPlayScene, MiniGameScene],
   });
 
   if (import.meta.env.DEV) { (window as any).__game = game; (window as any).__audio = audio; }

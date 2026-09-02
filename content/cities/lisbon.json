@@ -31,6 +31,19 @@
   "storyGate": { "condition": "stat.harmony>=30", "unlock": "duet" },
   "afterShowSceneId": "lis_aftershow",
   "journalSceneId": "lis_journal",
+  "minigames": [
+    {
+      "id": "lis_soundcheck",
+      "type": "timing",
+      "title": "Soundcheck",
+      "introText": "The house engineer waves you up. \"Give me a level check — tap when the needle's hot.\"",
+      "outroText": "\"Clean signal, good levels,\" the engineer says. \"You're set for tonight.\"",
+      "outroTextRough": "\"A little hot in places,\" the engineer shrugs, \"but it'll read fine from the back.\"",
+      "reward": { "effects": { "harmony": 4 } },
+      "roughReward": { "effects": { "harmony": 1 } },
+      "timingRoundsSec": [2.2, 1.7, 1.3]
+    }
+  ],
   "scenes": {
     "lis_arrival": {
       "id": "lis_arrival",
