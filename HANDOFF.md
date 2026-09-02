@@ -10,13 +10,15 @@ a *reference*, not a change-log. Historical "what changed" narrative is kept onl
 This file is what's actually true in the code, today. Where they disagree, trust this file.
 
 If you take away exactly three things from this document: **(1)** the game is finished-feeling
-and deployed, but its content is roughly 20-24% of the blueprint's target — the engine promises
-more story than exists yet, and a 4th city (Berlin) proved the authoring pipeline scales without
-engine changes but didn't itself close that gap. **(2)** every "what's missing" item beyond that
-content gap is a *decision*, not an oversight — the Part 3 reality layer is fully deferred,
-deepening the 3 pre-Berlin cities and bandmate backstory beats are explicitly scoped-but-not-done
-(§14.4), and a 5th+ city was never started; don't build any of these without re-reading §7 and
-§14.4. **(3)** if a Vercel deploy looks stuck at "Building…" forever, it is almost certainly not
+and deployed, but its content averages roughly 30% of the blueprint's per-city target — the
+engine promises more story than exists yet, and 4 cities (of a 12-16 target) proved the authoring
+pipeline scales without engine changes but hasn't closed that gap on its own. **(2)** every
+"what's missing" item beyond that content gap is a *decision*, not an oversight — the Part 3
+reality layer is fully deferred (§7.1), a 5th+ city was never started (§7.2), and 2 of the 8
+originally-planned bandmate backstory beats (Jun's "letter from home," Rowan's "why they're
+here") are the one piece of §14.6's follow-up pass left incomplete; don't build any of these
+without re-reading §7 and §14.6. **(3)** if a Vercel deploy looks stuck at "Building…" forever, it
+is almost certainly not
 slow — see §1.
 
 ---
@@ -26,27 +28,32 @@ slow — see §1.
 A cozy rhythm-adventure browser game about an indie band's world tour, built as a playable diary.
 Vite + TypeScript (strict) + Phaser 3.90. No React/Next. Deployed and publicly live.
 
-- **Art:** real painted Gemini backgrounds (6) + character portraits (16, all 4 bandmates × 4
-  moods), loaded over a full code-drawn fallback system through one texture-key seam (§5.1). UI
-  chrome (panels, buttons, HUD) stays code-drawn on purpose — see the art-direction rule below.
+- **Art:** real painted Gemini backgrounds (6 city/hub/title + 3 minigame backdrops) + character
+  portraits (16, all 4 bandmates × 4 moods), loaded over a full code-drawn fallback system through
+  one texture-key seam (§5.1). UI chrome (panels, buttons, HUD) stays code-drawn on purpose — see
+  the art-direction rule below.
 - **Audio:** 100% Web Audio API synthesis — oscillators, filtered noise, a real chord-driven
   ambience engine with crossfading and music-ducking. No audio files at all.
 - **Content:** 4 fully playable cities (Lisbon, Tokyo, Mexico City, Berlin), each with arrival →
   exploration → (sometimes) a minigame → a relationship scene → a rhythm performance → after-show
-  → journal. ~3,100 words of prose across the four. See §6 for the honest per-city breakdown.
+  → journal, plus gated bandmate-backstory beats and a flag-gated alternate after-show in 3 of the
+  4. ~3,839 words of prose across the four. See §6 for the honest per-city breakdown.
 - **Systems:** seeded RNG (deterministic, shareable runs), a JSON node-graph dialogue engine, a
   4-lane rhythm minigame with real hold-note grading and an S/A/B/C grade plate, 3 content-driven
-  minigames (timing/drag/choice — §14.3) that break up the pure-dialogue flow, a 6-candidate
-  ending generator, scene-pool scarcity for replayability, meta-progression across runs, full
-  onboarding for first-time players, 8 base accessibility settings plus 2 dialogue QoL toggles
-  (auto-advance, instant text), IndexedDB save with schema versioning.
+  minigames (timing/drag/choice, real painted backdrops — §14.3/§14.6) that break up the
+  pure-dialogue flow, a 6-candidate ending generator, scene-pool scarcity for replayability,
+  meta-progression across runs, full onboarding for first-time players, 8 base accessibility
+  settings plus 2 dialogue QoL toggles (auto-advance, instant text), IndexedDB save with schema
+  versioning.
 - **Mobile-grade end to end:** real multi-touch (a second simultaneous finger used to be silently
   dropped), the rhythm playfield and every screen's interactive elements sit inside the iOS safe
   area, every hit/tap gets feedback in the right place, and every button on every screen in the
   game measures ≥44 CSS-px at a measured 390px mobile width — audited screen by screen, not
   assumed (§14.1, §14.5).
-- **Quality bar:** typecheck clean (strict TS), 56/56 tests passing, a production build that
-  succeeds, and everything below has been verified live in a browser — not just read as a diff.
+- **Quality bar:** typecheck clean (strict TS), 64/64 tests passing (8 of them an exhaustive
+  per-city scene-graph reference check, not just whatever a bot playtest's random walk happens to
+  exercise), a production build that succeeds, and everything below has been verified live in a
+  browser — not just read as a diff.
 
 **Art direction rule, deliberately chosen: painted world, code-drawn UI.** Backgrounds and
 character portraits are real assets; panels, buttons, notes, dialogue lanes, and the rhythm HUD
@@ -399,21 +406,22 @@ this was closed in this pass; see §9 bug entries and §8 for what's still not f
 
 | City | Words | Locations | Relationship-pool entries | preShowChoices | Minigame | Song |
 |---|---|---|---|---|---|---|
-| Lisbon | ~513 | 5 | 5 (all 4 bandmates + a 2nd Jun arc) | 3 | Soundcheck (timing) | `sailor_lullaby` |
-| Tokyo | ~498 | 5 | 5 (all 4 bandmates + a 2nd Mira arc) | 3 | Pack the Van (drag) | `neon_rain` |
-| Mexico City | ~1,210 | 5 | 4 (all 4 bandmates) | 3 | Interview (choice) | `callejon_groove` |
+| Lisbon | ~758 | 6 | 7 (all 4 bandmates + 2nd Jun arc + Mira/Theo backstory) | 3 | Soundcheck (timing, painted) | `sailor_lullaby` |
+| Tokyo | ~738 | 6 | 7 (all 4 bandmates + 2nd Mira arc + Jun/Rowan backstory) | 3 | Pack the Van (drag, painted) | `neon_rain` |
+| Mexico City | ~1,460 | 6 | 7 (all 4 bandmates + 2nd Rowan arc + Theo/Mira backstory) | 3 | Interview (choice, painted) | `callejon_groove` |
 | Berlin | ~883 | 5 | 5 (all 4 bandmates + a 2nd Jun arc) | 3 | — | `kreuzberg_static` |
-| **Total** | **~3,104** | **20** | **19** | **12** | **3** | **4** |
+| **Total** | **~3,839** | **23** | **26** | **12** | **3** | **4** |
 
 Blueprint target (`DESIGN.md`): ~3,200 words **per city**, 12-16 cities in the pool (player
-picks 6-8 per run), a 3-4 hour "every run feels different" promise. **Current content is roughly
-20-24% of that target by word count, and 4 of 12-16 cities exist.** A single run currently plays
-in ~12-25 minutes depending on how much dialogue a player lingers on, whether a minigame fires
-(20-45s each), and how the rhythm songs go (each song is a real ~55-70 second timer-driven
-event, not skippable). This is still the single biggest gap between "how the game feels"
-(finished, polished, onboarded, mobile-grade) and "how much game there is" (a meaningful step up
-from before, still a fraction of the vision) — see §7 for why it hasn't been closed further and
-what the options are.
+picks 6-8 per run), a 3-4 hour "every run feels different" promise. **Current content per city
+now averages roughly 30% of that target (23-46% range — Mexico City's the deepest, Lisbon and
+Tokyo the thinnest, Berlin in between), and 4 of 12-16 cities exist.** A single run currently
+plays in ~12-25 minutes depending on how much dialogue a player lingers on, whether a minigame
+fires (20-45s each), and how the rhythm songs go (each song is a real ~55-70 second timer-driven
+event, not skippable).
+This is still the single biggest gap between "how the game feels" (finished, polished, onboarded,
+mobile-grade) and "how much game there is" (a meaningful step up from before, still a fraction of
+the vision) — see §7 for why it hasn't been closed further and what the options are.
 
 **Content-authoring pipeline is proven, cheap, and needs zero engine changes**: adding a city
 means writing `content/cities/<id>.json` to the exact schema `content/schema.ts` enforces
@@ -477,15 +485,19 @@ either. **If a future request revisits this, the honest-rating path is still ope
 Melbourne "+ more" as the intended 12-16-city pool, with players picking 6-8 per run. This was
 originally a decision to ship with 3 (Lisbon/Tokyo/Mexico City) rather than add a 4th; a later
 pass (§14.4) added Berlin as city #4, at roughly two-thirds the word count of the other three and
-scoped down from the fuller plan — deepening the original 3 further, and a 5th+ city, were both
-explicitly deferred out of that pass rather than attempted, not because of any technical blocker.
-§6 establishes the authoring pipeline is proven at 4 cities and cheap to extend (2 lines in
-`content.ts`, zero engine changes). If you're asked to add another city, the template to match is
-Mexico City's or Berlin's — 5 locations, 4-5 relationship-pool entries, 3 preShowChoices with one
-storyGate-conditioned arrangement, 900-1,800 words, a collaborator NPC + gift, a distinct
-`CITY_TINTS` entry (4 of the 8 named tints in `src/art/palette.ts` are still unused:
-`lavender_dusk`, `rose_gold`, `forest_moss`, `desert_clay` — `warm_amber`/`teal_pink`/
-`citrus_bloom`/`midnight_indigo` are taken by Lisbon/Tokyo/Mexico City/Berlin respectively).
+scoped down from the fuller plan; a same-week follow-up pass (§14.6) deepened the original 3 —
+Berlin itself is still at that scoped-down depth, untouched since §14.4. **A 5th+ city is the one
+piece of this that's still genuinely unstarted**, and remains a pure scope decision, not a
+technical blocker. §6 establishes the authoring pipeline is proven at 4 cities and cheap to extend
+(2 lines in `content.ts`, zero engine changes). If you're asked to add another city, the template
+to match is Mexico City's or Lisbon/Tokyo's post-§14.6 shape — 6 locations, 7 relationship-pool
+entries (including 1-2 gated backstory beats via the node-level `condition`/`fallback` pattern —
+see §14.6, and note the `RelationshipScenePoolEntry.condition` schema field is a trap, unread by
+`CityScene`), 3 preShowChoices with one storyGate-conditioned arrangement, ~750-1,500 words, a
+collaborator NPC + gift, a distinct `CITY_TINTS` entry (4 of the 8 named tints in
+`src/art/palette.ts` are still unused: `lavender_dusk`, `rose_gold`, `forest_moss`, `desert_clay`
+— `warm_amber`/`teal_pink`/`citrus_bloom`/`midnight_indigo` are taken by Lisbon/Tokyo/Mexico
+City/Berlin respectively).
 
 ### 7.3 Smaller, lower-stakes deferrals (not decisions, just not done)
 
@@ -669,14 +681,21 @@ worked for a 92-118bpm song will carry over; check the generated duration and it
 ### 11.3 Adding a city
 
 Match `content/cities/mexico_city.json`'s structure exactly (see `content/schema.ts`'s `CityDef`
-for the authoritative shape): `locations` (≥3, schema minimum; 5 is the established norm),
-`relationshipScenePool` (≥2 minimum; 4-5 established), `preShowChoices` (≥2 minimum; 3
-established, with the pattern of one storyGate-conditioned special arrangement), a
-`collaborator` NPC + gift, `arrivalSceneId`/`preShowSceneId`/`afterShowSceneId`/`journalSceneId`
-each pointing into the `scenes` graph, and every node's `text` under 40 words (enforced). Pick an
-unused `tint` from `src/art/palette.ts`'s `CITY_TINTS` (6 of 8 are still unused). Register it
-with two lines in `src/game/content.ts` (import + push into `CITIES`/`SONGS`). Generate its
-background (§11.1). No engine/TypeScript changes required for any of this — proven twice.
+for the authoritative shape): `locations` (≥3, schema minimum; 6 is the established norm post-
+§14.6, `CityScene`'s picker grid is already sized for it), `relationshipScenePool` (≥2 minimum;
+7 established, including 1-2 gated bandmate-backstory beats via a node-level `condition`/
+`fallback` on the scene itself — **not** the `RelationshipScenePoolEntry.condition` field, which
+`CityScene.startRelationship()` never reads, so a gate placed there silently never applies),
+`preShowChoices` (≥2 minimum; 3 established, with the pattern of one storyGate-conditioned
+special arrangement), a `collaborator` NPC + gift, `arrivalSceneId`/`preShowSceneId`/
+`afterShowSceneId`/`journalSceneId` each pointing into the `scenes` graph, and every node's `text`
+under 40 words (enforced). Consider a flag-gated alternate after-show scene too (§14.6) — reuse an
+existing choice flag rather than adding a new one if a natural one already exists. Pick an unused
+`tint` from `src/art/palette.ts`'s `CITY_TINTS` (4 of 8 are still unused). Register it with two
+lines in `src/game/content.ts` (import + push into `CITIES`/`SONGS`). Generate its background
+(§11.1). Run `npm test` when done — `src/tests/content.test.ts` will catch any broken
+`next`/`choice`/`fallback` reference before it ships. No engine/TypeScript changes required for
+any of this — proven three times now.
 
 ### 11.4 Adding portraits (new bandmate, or regenerating existing)
 
@@ -689,16 +708,18 @@ trusting a run succeeded; the automated verify gate cannot catch the key eating 
 
 ---
 
-## 14. The "best-in-class" pass — mobile feel, VN life, and what's still queued (2026-09-01)
+## 14. The "best-in-class" pass — mobile feel, VN life, and what's still queued (2026-09-01/02)
 
 A five-workstream plan (`POLISH_BEST_IN_CLASS_PLAN.md`, executable form
 `RESUME_PROMPT_BEST_IN_CLASS.md`, both still in the repo root) came out of a direct code-and-
 research review that found the rhythm minigame literally couldn't be played with two fingers,
 the hit line sat under the iOS home-indicator zone, hit feedback fired in the wrong lane, and
 the dialogue box was a static card with no life to it. **All five workstreams (A-E) are done,
-verified live, deployed** — this section is the record of what shipped, including where a
+verified live, deployed**, plus a same-week follow-up pass (§14.6, "Workstream F" — not part of
+the original plan's lettering, but the direct continuation of what §14.4 scoped out) that closed
+most of what D left open. This section is the record of what shipped, including where a
 workstream (D) was deliberately scoped down rather than fully completed; see §14.4 for exactly
-what that means and what's still open because of it.
+what that means and §14.6 for how much of it is closed now.
 
 ### 14.1 Workstream A — mobile rhythm feel (done)
 
@@ -824,7 +845,8 @@ round-trip delay during testing — zero console errors either way.
 `sprites.ts` is a code-drawn fallback (warm gradient + scattered gold motes, keyed
 `bg_mini_<id>`) that goes through the exact same texture-key seam as every other background —
 swapping in painted art later needs only 3 generations + manifest entries, per §11.1, no code
-changes.
+changes. **Update, §14.6:** done in the same-week follow-up pass — all 3 minigames now have real
+painted backdrops through this exact seam, exactly as predicted here.
 
 ### 14.4 Workstream D — city #4: Berlin (partially done — scoped down, see below)
 
@@ -847,10 +869,14 @@ handles every other city's numbers.
 
 **Explicitly NOT done this pass, still fully scoped in `POLISH_BEST_IN_CLASS_PLAN.md`/
 `RESUME_PROMPT_BEST_IN_CLASS.md`:**
-- Deepening Lisbon/Tokyo/Mexico City further (+1 location, +2 relationship-pool entries each,
-  5→6/5→6 per the original plan).
+- Deepening Lisbon/Tokyo/Mexico City further (+1 location, +2 relationship-pool entries each).
 - Bandmate backstory beats ("letter from home" / "why they're here," gated on relationship
   thresholds) across the existing pools.
+
+**Update, §14.6:** both done in the same-week follow-up pass, for the 3 pre-Berlin cities — 6
+locations and 7 relationship-pool entries each now, 6 of the 8 backstory beats written. Berlin
+itself is still at 5/5 and untouched; see §14.6 for the honest remainder (2 backstory beats still
+missing) and §7.2 for the still-open 5th+ city question.
 
 The `route.length >= 6` `Ambitious` ending tag (§4, §7.3) is **still unreachable** — the pool is
 now 4 cities, not 6+; it stays dead code until the roster grows further, which is the owner's
@@ -891,26 +917,90 @@ state.**
 None of C, D, or E touch the reality layer or the broader city-roster question (§7) — those stay
 the owner's call, unchanged.
 
+### 14.6 Workstream F — deepening Lisbon/Tokyo/Mexico City, bandmate backstories, minigame art (done)
+
+The three items §14.4 explicitly scoped out of the Berlin pass, done as a follow-up session the
+same day. All content-only — zero engine changes, because the engine was already built for this:
+`CityScene`'s location grid was already sized and safe-area-checked for 6 locations per city (see
+its `LOCATION_GRADES` comment, written during §14.5 anticipating exactly this), and `resolveNode`
+already follows a node's `condition`/`fallback` chain (used for Berlin's storyGate arrangement,
+now reused for gated story content instead of just gated mechanics).
+
+**Deepening (all 3 pre-Berlin cities → 6 locations, 7 relationship-pool entries each):**
+- One new location per city, matching the existing template (an entry node + 2 choices, 2 short
+  response nodes): Lisbon's tile painter's workshop, Tokyo's vending-machine alley, Mexico City's
+  mid-mural courtyard.
+- **Bandmate backstory beats**, 6 of the ideal 8 (`RESUME_PROMPT_BEST_IN_CLASS.md`'s "2 short
+  gated scenes per bandmate — letter from home / why they're here") — Mira and Theo each got
+  their full pair, Jun and Rowan one each; Jun-why and Rowan-letter are the 2 still open. Gated on
+  `relationship.<id>>=40` using the node-level `condition`/`fallback` pattern, **not** the
+  `RelationshipScenePoolEntry.condition` field in `content/schema.ts` — that field exists but
+  `CityScene.startRelationship()` never reads it (`available[0] ?? pool[0]`, no condition filter
+  at all), so a pool-entry-level gate would silently never apply. This was checked against the
+  actual selection code before writing a single scene, not assumed from the schema's shape — the
+  right layer for this gate is the scene node itself, resolved live when the scene plays (which
+  can be well after the run-start pool draw, once relationships have actually moved), with a
+  `fallback` to a short "not ready yet" node so an unmet threshold is a different beat, never a
+  dead end.
+- **One flag-gated alternate after-show scene per city**, reusing an *existing* choice flag rather
+  than adding a new one: Lisbon's `found_cassette` (market tape), Tokyo's `fast_load_out` (the
+  Pack the Van minigame's own good-outcome reward flag — a minigame result now pays off again
+  later in the same city, not just in its own reward), Mexico City's `found_hand_drum` (mercado
+  haggle). Same node-level `condition`/`fallback` mechanism as the backstory beats, on the node at
+  `afterShowSceneId` itself.
+- **Net content added**: Lisbon 513→758 words (+245), Tokyo 498→738 (+240), Mexico City
+  1,210→1,460 (+250) — text-only, not counting choice labels. Short of the plan's 800-1,000/city
+  target (stated honestly, same as Berlin's word count last pass) but real, tested, gated content,
+  not padding. New total across all 4 cities: **~3,839 words**.
+
+**Minigame backdrops**: real Gemini backgrounds for the 3 existing minigames (Soundcheck/Lisbon,
+Pack the Van/Tokyo, Interview/Mexico City), closing the one thing §14.3 flagged as deliberately
+skipped. `ensureMiniGameBackdrop`'s code-drawn gradient was always meant as a fallback behind the
+same `bg_mini_<id>` texture-key seam every other background uses (`withGraphics` early-returns if
+the key is already registered) — so this needed zero code changes, only 3 generations (same
+style-probe prompt template as the city backgrounds, `process-bg.sh` pipeline unchanged) and 3
+manifest entries. `MiniGameScene.ts`'s hardcoded fallback tint (`PALETTE.terracotta`, used only
+when no real image loads) was left as-is.
+
+**Verification, beyond typecheck/tests/build**: a standalone Node script walked every
+`next`/`choice.next`/`fallback` reference in all 4 cities' scene graphs and confirmed every one
+resolves to a real node id — the existing bot playtest only exercises whichever pool entries a
+seeded RNG happens to draw, which would not have caught a broken reference in, say, a backstory
+beat's fallback branch that a given seed never selects. That check is now a permanent test
+(`src/tests/content.test.ts`, 8 new tests) rather than a one-off script. A second script simulated
+`resolveNode` with low and high relationship values (and with/without each gating flag) and
+confirmed all 6 backstory beats and all 3 afterShow variants actually branch to different nodes
+in both directions — condition-gated content that never diverges is a silent bug the schema
+validator can't catch (a syntactically valid `condition`+`fallback` pair says nothing about
+whether the two branches are actually distinct). All three minigame backdrops, the new 6th
+location, and one backstory scene were also confirmed rendering live in a browser, plus a
+zero-console-error cold boot of production afterward.
+
+**Still open after this pass** (see §12): Jun's "letter from home" and Rowan's "why they're here"
+(the 2 backstory beats not yet written), a 5th+ city, and the Part 3 reality layer — none of which
+this pass touched.
+
 ---
 
 ## 12. Prioritized next steps (current, not the stale ordering from earlier handoffs)
 
-The full best-in-class pass (A-E) is now done — minigames, mobile rhythm feel, VN textbox life,
-a 4th city, and the touch-target audit are all shipped and live (§14). What's left is what §14.4
-explicitly scoped out of the Berlin pass, plus the pre-existing smaller deferrals:
+The full best-in-class pass (A-E) plus the §14.6 follow-up are now done — minigames (with real
+backdrops), mobile rhythm feel, VN textbox life, a 4th city, the touch-target audit, and deepened
+Lisbon/Tokyo/Mexico City are all shipped and live (§14). What's left is the honest remainder from
+§14.6, plus the pre-existing smaller deferrals:
 
-1. **Deepen the 3 pre-Berlin cities** (Lisbon/Tokyo/Mexico City) — more relationship-pool
-   entries, bandmate backstory beats woven into existing scenes (§14.4, §7.2). This is the single
-   highest-leverage next step for "the game feels bland/repetitive," since it adds density to
-   content players already reach every run, unlike a new city which most single runs won't visit
-   in full (§3.3).
-2. **Gemini-generated backdrops for the 3 minigames** — currently code-drawn gradients via
-   `ensureMiniGameBackdrop()` (§14.3), matching the "painted world, code-drawn UI" split except
-   minigames read more like world than UI. Worth revisiting once the art budget allows 3 more
-   generated images.
+1. **Finish the last 2 bandmate backstory beats** — Jun's "letter from home," Rowan's "why
+   they're here" (§14.6). The other 6 are done; these 2 were left out purely by the 6-slot budget
+   (2 new relationship-pool entries × 3 cities), not by design. Follow the same node-level
+   `condition`/`fallback` pattern §14.6 established — do **not** use the
+   `RelationshipScenePoolEntry.condition` schema field, `CityScene` never reads it.
+2. **Deepen Berlin to match** — it's still at its original §14.4 depth (5 locations, 5
+   relationship-pool entries, no backstory beats, no alternate after-show), now the shallowest of
+   the 4 cities relative to the others' post-§14.6 shape.
 3. **CI** — `npm run typecheck && npm test` in a GitHub Action. Cheap, not yet done, more
    valuable than ever given how much surface area (audio graph, texture generation, button
-   hit-areas, onboarding flag state, chart generation, minigame schema) has accumulated.
+   hit-areas, onboarding flag state, chart generation, minigame schema, now 4 cities' worth of
+   gated content) has accumulated.
 4. **Hold-note visual polish in slow motion**, and **a keyboard-input pass with real physical
    key presses** (§8) — low-risk, just unconfirmed by a human's eyes/hands yet.
 5. **The Part 3 reality layer** (§7.1) and **a 5th+ city beyond Berlin** (§7.2) remain gated on
@@ -918,10 +1008,10 @@ explicitly scoped out of the Berlin pass, plus the pre-existing smaller deferral
 
 ## 13. Open questions worth asking before assuming
 
-- Deepen the existing 3 cities first, or add a 5th city next? §3.3's scene-pool math suggests
-  deepening wins for most players' actual experience, but a 5th city is what makes the
-  `Ambitious` ending tag reachable (§7.3) — these serve different goals, worth confirming which
-  the owner wants before picking.
+- Finish Jun/Rowan's remaining backstory beats and deepen Berlin first, or add a 5th city next?
+  §3.3's scene-pool math suggests finishing what's already gated-but-half-built wins for most
+  players' actual experience, but a 5th city is what makes the `Ambitious` ending tag reachable
+  (§7.3) — these serve different goals, worth confirming which the owner wants before picking.
 - If the reality layer is ever revisited, what's the actual tone-dial default the owner wants
   (`DESIGN.md` proposes Warm-by-default, opt-in Raw) — this is a real product decision, not
   something to infer.
