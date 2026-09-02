@@ -2,7 +2,7 @@
 
 export type SfxName =
   | 'tap' | 'perfect' | 'good' | 'ok' | 'miss'
-  | 'choiceConfirm' | 'menuHover' | 'pickup' | 'metronome' | 'metronomeAccent';
+  | 'choiceConfirm' | 'menuHover' | 'pickup' | 'metronome' | 'metronomeAccent' | 'typewriter';
 
 class AudioSystem {
   private ctx: AudioContext | null = null;
@@ -138,6 +138,12 @@ class AudioSystem {
       case 'pickup': return this.tone(660, 990, 0.07, 0.14, 'sine', bus);
       case 'metronome': return this.tone(1000, 1000, 0.02, 0.1, 'square', bus);
       case 'metronomeAccent': return this.tone(1200, 1200, 0.02, 0.14, 'square', bus);
+      // Soft per-character dialogue tick: very short, quiet, pitch jittered +-10% so a run of
+      // them reads as texture rather than a mechanical buzz. On the SFX bus like everything else.
+      case 'typewriter': {
+        const f = 520 * (0.9 + Math.random() * 0.2);
+        return this.tone(f, f, 0.012, 0.05, 'sine', bus);
+      }
     }
   }
 

@@ -51,6 +51,10 @@ export interface AccessibilitySettings {
   noFailCozyMode: boolean;
   reducedMotion: boolean;
   noFlash: boolean;
+  /** Dialogue auto-advances a few seconds after a line finishes (never past a choice). */
+  autoAdvance: boolean;
+  /** Dialogue lines appear instantly instead of typing out. */
+  skipReadText: boolean;
   volumes: { master: number; music: number; sfx: number; metronome: number };
 }
 
@@ -87,6 +91,8 @@ export function freshAccessibility(): AccessibilitySettings {
     noFailCozyMode: true,
     reducedMotion: false,
     noFlash: false,
+    autoAdvance: false,
+    skipReadText: false,
     volumes: { master: 1, music: 0.7, sfx: 0.9, metronome: 0.6 },
   };
 }

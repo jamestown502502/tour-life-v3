@@ -38,18 +38,17 @@ export class SettingsScene extends Phaser.Scene {
     this.add.text(W / 2, 90, 'Rhythm score never gates the story. No-fail mode is always on.',
       textStyle('small', { fontSize: '13px', wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);
 
-    // Button/row sizing here targets a real >=44 CSS-px touch target at the 390px-wide mobile
-    // viewport, not just the blanket pad Button.ts itself applies (which alone still landed
-    // under 44px on these specific rows — see the comment there). At that width the canvas
-    // renders at ~0.542x, so a raw canvas-unit dimension needs to clear ~65px (including
-    // Button.ts's own 8px pad each side) before scaling down to 44 CSS px. Heights below use
-    // 68-70; increments leave an 8px gap on top of that so adjacent rows' padded hit areas
-    // don't touch. Verified by measuring getBoundingClientRect() live at 390x844, not just by
-    // this arithmetic.
-    const ROW_H = 70;
-    const ROW_INCREMENT = 78;
+    // Button/row sizing targets a real >=44 CSS-px touch target at the 390px-wide mobile
+    // viewport, not just the blanket pad Button.ts applies. At that width the canvas renders
+    // at 0.5417x, so a raw dimension needs (dim + 16px pad) * 0.5417 >= 44 -> dim >= 66. Rows
+    // use 68 with a 76 increment (8px gap so adjacent padded hit areas never touch). The whole
+    // column, Back button included, must also finish above SAFE_BOTTOM_Y (1230) — with 8 toggle
+    // rows + rhythm mode + 4 volume rows that's 130 + 9*76 + 36 + 4*76 + 12 + 56 = 1222.
+    // Verified by measuring getBoundingClientRect() live at 390x844, not just by arithmetic.
+    const ROW_H = 68;
+    const ROW_INCREMENT = 76;
 
-    let y = 140;
+    let y = 130;
     BOOL_ROWS.forEach(({ key, label }) => {
       this.add.text(60, y, label, textStyle('body', { fontSize: '16px' }));
       const btn = createButton(this, W - 170, y - (ROW_H / 2 - 8), 110, ROW_H, State.data.accessibility[key] ? 'On' : 'Off', () => {
@@ -59,6 +58,23 @@ export class SettingsScene extends Phaser.Scene {
       }, { fontSize: '16px', fillColor: State.data.accessibility[key] ? 0x3e7c7b : 0x8a8a8a });
       y += ROW_INCREMENT;
     });
+
+    // Dialogue QoL as one row with two side-by-side toggles (a row each would push Back under
+    // the safe line). 158 wide, 22px apart: 6px clear once both 8px pads are subtracted.
+    this.add.text(60, y, 'Dialogue', textStyle('body', { fontSize: '16px' }));
+    const dlg: { key: 'autoAdvance' | 'skipReadText'; label: string; x: number }[] = [
+      { key: 'autoAdvance', label: 'Auto', x: W - 350 },
+      { key: 'skipReadText', label: 'Instant', x: W - 170 },
+    ];
+    for (const d of dlg) {
+      const text = () => `${d.label}: ${State.data.accessibility[d.key] ? 'On' : 'Off'}`;
+      const btn = createButton(this, d.x, y - (ROW_H / 2 - 8), 158, ROW_H, text(), () => {
+        State.data.accessibility[d.key] = !State.data.accessibility[d.key];
+        saveRun(State.data);
+        getButtonText(btn)?.setText(text());
+      }, { fontSize: '15px', fillColor: State.data.accessibility[d.key] ? 0x3e7c7b : 0x8a8a8a });
+    }
+    y += ROW_INCREMENT;
 
     this.add.text(60, y, 'Rhythm mode', textStyle('body', { fontSize: '16px' }));
     const modeBtn = createButton(this, W - 230, y - (ROW_H / 2 - 8), 170, ROW_H, State.data.accessibility.rhythmMode, () => {
@@ -70,7 +86,7 @@ export class SettingsScene extends Phaser.Scene {
     y += ROW_INCREMENT;
 
     this.add.text(60, y, 'Volumes', textStyle('h2'));
-    y += 40;
+    y += 36;
     const VOL_BTN = 70, VOL_BTN_H = 68;
     VOLUME_KEYS.forEach((key) => {
       this.add.text(60, y, key, textStyle('body', { fontSize: '15px' }));
@@ -81,7 +97,7 @@ export class SettingsScene extends Phaser.Scene {
       y += ROW_INCREMENT;
     });
 
-    createButton(this, W / 2 - 150, y + 20, 300, 56, 'Back', () => {
+    createButton(this, W / 2 - 150, y + 12, 300, 56, 'Back', () => {
       this.scene.stop();
       this.scene.resume(this.returnTo);
     }, { fillColor: 0xc4704f });

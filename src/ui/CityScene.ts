@@ -24,6 +24,19 @@ export type CityPhase = 'arrival' | 'locations' | 'relationship' | 'preshow' | '
 const VALID_PHASES: CityPhase[] = ['arrival', 'locations', 'relationship', 'preshow', 'afterShow', 'journal'];
 const LOCATIONS_TO_VISIT = 2;
 
+// Per-location color grade over the shared city background, by location index. Every location
+// in a city reuses the one painted backdrop; a tinted overlay + matching ambient-particle color
+// is what makes "the fado house" and "the night market" read as different places at zero
+// asset cost. Six entries so a sixth location per city is covered.
+const LOCATION_GRADES: { color: number; alpha: number }[] = [
+  { color: 0xe0a458, alpha: 0.14 }, // warm citrus — golden-hour interiors
+  { color: 0x4a4a8a, alpha: 0.22 }, // indigo — dusk / neon-adjacent
+  { color: 0x3e7c7b, alpha: 0.16 }, // teal — cool, calm spaces
+  { color: 0xc4704f, alpha: 0.14 }, // terracotta — crowded, lively
+  { color: 0x8a6fa3, alpha: 0.20 }, // lavender — quiet, late
+  { color: 0x6b8a5a, alpha: 0.16 }, // moss — green, open air
+];
+
 export class CityScene extends Phaser.Scene {
   constructor() { super('City'); }
 
@@ -34,6 +47,8 @@ export class CityScene extends Phaser.Scene {
   private locationsVisited = new Set<string>();
   private rain: WeatherHandle | null = null;
   private fireflies: WeatherHandle | null = null;
+  private gradeOverlay: Phaser.GameObjects.Rectangle | null = null;
+  private baseFireflyColor: number = PALETTE.cream;
 
   init(data: { cityId: string; phase?: string }): void {
     this.city = getCity(data.cityId);
@@ -41,6 +56,23 @@ export class CityScene extends Phaser.Scene {
     // 'arrival' — the only truly unsafe resume points are ones with no matching phase handler.
     this.phase = data.phase && (VALID_PHASES as string[]).includes(data.phase) ? (data.phase as CityPhase) : 'arrival';
     this.locationsVisited = new Set();
+    this.gradeOverlay = null;
+  }
+
+  /** Fade a location's color grade in (index >= 0) or out (index < 0). Fireflies are re-spawned
+   *  in the grade's color so the particles agree with the tint; rain is left alone. */
+  private setLocationGrade(index: number): void {
+    const grade = index >= 0 ? LOCATION_GRADES[index % LOCATION_GRADES.length] : null;
+    if (!this.gradeOverlay) {
+      this.gradeOverlay = this.add.rectangle(0, 0, W, this.cameras.main.height, PALETTE.night, 1).setOrigin(0, 0).setAlpha(0).setDepth(2);
+    }
+    this.tweens.killTweensOf(this.gradeOverlay);
+    if (grade) this.gradeOverlay.setFillStyle(grade.color, 1);
+    this.tweens.add({ targets: this.gradeOverlay, alpha: grade ? grade.alpha : 0, duration: 450, ease: 'Sine.easeInOut' });
+    if (this.fireflies) {
+      this.fireflies.stop();
+      this.fireflies = spawnFireflies(this, grade ? grade.color : this.baseFireflyColor);
+    }
   }
 
   create(): void {
@@ -54,8 +86,8 @@ export class CityScene extends Phaser.Scene {
     if (stop?.weather && /rain|drizzle/.test(stop.weather)) {
       this.rain = spawnRain(this, 0.3);
     } else {
-      const fireflyColor = NIGHT_TINTS.has(this.city.tint) ? CITY_TINTS[this.city.tint] : PALETTE.cream;
-      this.fireflies = spawnFireflies(this, fireflyColor);
+      this.baseFireflyColor = NIGHT_TINTS.has(this.city.tint) ? CITY_TINTS[this.city.tint] : PALETTE.cream;
+      this.fireflies = spawnFireflies(this, this.baseFireflyColor);
     }
 
     this.add.text(W / 2, 40, this.city.name, textStyle('h1', { fontSize: '26px' })).setOrigin(0.5).setDepth(50);
@@ -122,8 +154,10 @@ export class CityScene extends Phaser.Scene {
   private visitLocation(loc: LocationDef): void {
     this.pickerContainer?.destroy();
     this.pickerContainer = null;
+    this.setLocationGrade(this.city.locations.indexOf(loc));
     this.walk(loc.sceneId, () => {
       this.locationsVisited.add(loc.id);
+      this.setLocationGrade(-1);
       if (this.locationsVisited.size >= LOCATIONS_TO_VISIT || this.locationsVisited.size >= this.city.locations.length) {
         this.startRelationship();
       } else {

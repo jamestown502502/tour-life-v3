@@ -1,7 +1,7 @@
 // IndexedDB save with localStorage fallback. Schema-versioned + validated on load, with a
 // migration hook for future schemaVersion bumps (e.g. when the reality-layer phase adds fields).
 
-import type { RunState } from './state';
+import { freshAccessibility, type RunState } from './state';
 import { SAVE_KEY, SAVE_SCHEMA_VERSION } from '../const';
 
 const DB_NAME = 'tourlife';
@@ -20,11 +20,16 @@ function isValidRunState(v: unknown): v is RunState {
   );
 }
 
-/** Migrates an older-schema save forward. v1 is the only version today. */
+/** Migrates an older-schema save forward. v1 is the only version today, but settings fields
+ *  have been ADDED within v1 (dialogue autoAdvance/skipReadText) — a save written before they
+ *  existed is still v1 and just lacks the keys, so missing accessibility keys are backfilled
+ *  from the defaults rather than bumping the schema version for an additive change. */
 function migrate(raw: any): RunState | null {
-  if (raw.schemaVersion === SAVE_SCHEMA_VERSION) return raw as RunState;
-  // No prior versions exist yet — nothing to migrate from.
-  return null;
+  if (raw.schemaVersion !== SAVE_SCHEMA_VERSION) return null; // no prior versions exist yet
+  const defaults = freshAccessibility();
+  const saved = raw.accessibility ?? {};
+  raw.accessibility = { ...defaults, ...saved, volumes: { ...defaults.volumes, ...(saved.volumes ?? {}) } };
+  return raw as RunState;
 }
 
 function openDb(): Promise<IDBDatabase | null> {
