@@ -22,7 +22,8 @@
     { "id": "theo_the_only_quiet_room", "bandmate": "theo", "sceneId": "tok_rel_theo" },
     { "id": "mira_running_on_empty", "bandmate": "mira", "sceneId": "tok_rel_mira2" },
     { "id": "jun_letter_from_home", "bandmate": "jun", "sceneId": "tok_rel_jun_letter" },
-    { "id": "rowan_why_hes_here", "bandmate": "rowan", "sceneId": "tok_rel_rowan_why" }
+    { "id": "rowan_why_hes_here", "bandmate": "rowan", "sceneId": "tok_rel_rowan_why" },
+    { "id": "rowan_letter_from_home", "bandmate": "rowan", "sceneId": "tok_rel_rowan_letter" }
   ],
   "collaborator": { "npcName": "Kenji", "role": "session drummer", "gift": "a mixtape labeled only 'city sounds, vol. 4'" },
   "preShowChoices": [
@@ -211,6 +212,20 @@
     "tok_rel_rowan_why_a": { "id": "tok_rel_rowan_why_a", "speaker": "rowan", "portrait": "happy", "text": "Rowan doesn't say anything for a second. Then, quietly: \"Yeah. Look where I am.\"" },
     "tok_rel_rowan_why_b": { "id": "tok_rel_rowan_why_b", "speaker": "rowan", "portrait": "inspired", "text": "\"It really was,\" Rowan says, and laughs, surprised to find it funny now instead of just sharp." },
     "tok_rel_rowan_why_fallback": { "id": "tok_rel_rowan_why_fallback", "speaker": "rowan", "portrait": "worried", "text": "Rowan starts to say something about the last band, stops, and tunes the bass instead." },
+
+    "tok_rel_rowan_letter": {
+      "id": "tok_rel_rowan_letter", "speaker": "rowan", "portrait": "worried",
+      "text": "\"My dad finally listened to the album,\" Rowan says, staring at the phone. \"Wrote one line: 'I can hear you in there now.' Fifteen years of playing and that's the first time he's said it.\"",
+      "condition": "relationship.rowan>=40",
+      "fallback": "tok_rel_rowan_letter_fallback",
+      "choices": [
+        { "id": "thats_huge", "label": "That's huge. Let yourself feel that.", "next": "tok_rel_rowan_letter_a", "relationshipEffects": { "rowan": 6 }, "effects": { "harmony": 1 } },
+        { "id": "took_him_long", "label": "Took him fifteen years. That's allowed to sting too.", "next": "tok_rel_rowan_letter_b", "relationshipEffects": { "rowan": 4 } }
+      ]
+    },
+    "tok_rel_rowan_letter_a": { "id": "tok_rel_rowan_letter_a", "speaker": "rowan", "portrait": "happy", "text": "Rowan reads the line three more times before pocketing the phone, something visibly loosening in their shoulders." },
+    "tok_rel_rowan_letter_b": { "id": "tok_rel_rowan_letter_b", "speaker": "rowan", "portrait": "inspired", "text": "\"Yeah,\" Rowan admits. \"Both things are true, I think. Glad he said it. Wish it hadn't taken this long.\"" },
+    "tok_rel_rowan_letter_fallback": { "id": "tok_rel_rowan_letter_fallback", "speaker": "rowan", "portrait": "worried", "text": "Rowan glances at a message from home, reads it twice, and pockets the phone without saying what it said." },
 
     "tok_preshow": {
       "id": "tok_preshow", "speaker": "narrator",

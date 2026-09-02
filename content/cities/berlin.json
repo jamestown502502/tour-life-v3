@@ -10,7 +10,8 @@
     { "id": "records", "name": "An all-night record shop stacked to the ceiling", "sound": "vinyl_static", "sceneId": "ber_loc_records" },
     { "id": "biergarten", "name": "A graffiti-covered courtyard beer garden", "sound": "glass_clink_and_chatter", "sceneId": "ber_loc_biergarten" },
     { "id": "tower", "name": "The base of the TV tower, glowing red", "sound": "wind_at_height", "sceneId": "ber_loc_tower" },
-    { "id": "doner", "name": "A 24-hour döner counter three blocks from the venue", "sound": "grill_sizzle", "sceneId": "ber_loc_doner" }
+    { "id": "doner", "name": "A 24-hour döner counter three blocks from the venue", "sound": "grill_sizzle", "sceneId": "ber_loc_doner" },
+    { "id": "wall_gallery", "name": "A stretch of the old wall, repainted a hundred times", "sound": "spray_can_echo", "sceneId": "ber_loc_wall" }
   ],
   "arrivalSceneId": "ber_arrival",
   "preShowSceneId": "ber_preshow",
@@ -19,7 +20,9 @@
     { "id": "theo_the_city_that_never_sleeps", "bandmate": "theo", "sceneId": "ber_rel_theo" },
     { "id": "jun_break_it_on_purpose", "bandmate": "jun", "sceneId": "ber_rel_jun" },
     { "id": "jun_the_synth_builder", "bandmate": "jun", "sceneId": "ber_rel_jun2" },
-    { "id": "rowan_someone_elses_scene", "bandmate": "rowan", "sceneId": "ber_rel_rowan" }
+    { "id": "rowan_someone_elses_scene", "bandmate": "rowan", "sceneId": "ber_rel_rowan" },
+    { "id": "mira_busking_for_the_sound", "bandmate": "mira", "sceneId": "ber_rel_mira2" },
+    { "id": "rowan_the_alley_jam", "bandmate": "rowan", "sceneId": "ber_rel_rowan2" }
   ],
   "collaborator": { "npcName": "Lene", "role": "modular synth artist", "gift": "a patch cable, still coiled the way she left it" },
   "preShowChoices": [
@@ -102,6 +105,17 @@
     "ber_loc_doner_order": { "id": "ber_loc_doner_order", "speaker": "narrator", "text": "It's exactly as good as the line outside promised it would be. Worth every minute of the wait, barely." },
     "ber_loc_doner_people": { "id": "ber_loc_doner_people", "speaker": "narrator", "text": "Nobody in this line looks like they're actually from anywhere in particular. Somehow, for once, you fit right in." },
 
+    "ber_loc_wall": {
+      "id": "ber_loc_wall", "speaker": "narrator",
+      "text": "A stretch of the old wall, repainted so many times the newest layer is already flaking to show three others underneath. Nothing here is meant to last — that seems to be the entire point.",
+      "choices": [
+        { "id": "add_something", "label": "Leave something small of your own", "next": "ber_loc_wall_add", "effects": { "inspiration": 3 } },
+        { "id": "read_layers", "label": "Try to read the layers underneath", "next": "ber_loc_wall_read", "effects": { "energy": 2 } }
+      ]
+    },
+    "ber_loc_wall_add": { "id": "ber_loc_wall_add", "speaker": "narrator", "text": "A single stray line, gone within the week probably, painted over by someone who'll never know it was yours to begin with. Somehow that feels exactly right." },
+    "ber_loc_wall_read": { "id": "ber_loc_wall_read", "speaker": "narrator", "text": "A date from decades ago, half a name, a phone number that surely doesn't ring anymore. History here doesn't get preserved so much as simply outlived." },
+
     "ber_rel_mira": {
       "id": "ber_rel_mira", "speaker": "mira", "portrait": "tense",
       "text": "\"Nobody here has any idea who we are,\" Mira says, watching the crowd. \"Which should feel like freedom, and mostly just feels like nothing at all.\"",
@@ -157,6 +171,28 @@
     "ber_rel_rowan_a": { "id": "ber_rel_rowan_a", "speaker": "rowan", "portrait": "inspired", "text": "Rowan doesn't answer out loud, but the bass case opens a little more easily than it did an hour ago." },
     "ber_rel_rowan_b": { "id": "ber_rel_rowan_b", "speaker": "rowan", "portrait": "worried", "text": "\"Yeah,\" Rowan says quietly, mostly to the pavement. \"Maybe that's just what this whole thing actually is.\"" },
 
+    "ber_rel_mira2": {
+      "id": "ber_rel_mira2", "speaker": "mira", "portrait": "inspired",
+      "text": "A street musician outside the venue waves off a passerby's cash — busking for the sound, not the coins, apparently. \"I used to think wanting anything back made it fake,\" Mira says. \"Now I'm not so sure.\"",
+      "choices": [
+        { "id": "both_true", "label": "Maybe wanting it doesn't make it less real", "next": "ber_rel_mira2_a", "relationshipEffects": { "mira": 5 }, "effects": { "harmony": 1 } },
+        { "id": "ask_her", "label": "Go ask her what she actually thinks", "next": "ber_rel_mira2_b", "relationshipEffects": { "mira": 3 }, "effects": { "inspiration": 2 } }
+      ]
+    },
+    "ber_rel_mira2_a": { "id": "ber_rel_mira2_a", "speaker": "mira", "portrait": "happy", "text": "\"Yeah,\" she says slowly, like she's trying the sentence on for size. \"Yeah, maybe both things are just true at once.\"" },
+    "ber_rel_mira2_b": { "id": "ber_rel_mira2_b", "speaker": "mira", "portrait": "inspired", "text": "The busker just laughs. \"Ask me after rent's due,\" she says, and keeps playing anyway, unbothered either way." },
+
+    "ber_rel_rowan2": {
+      "id": "ber_rel_rowan2", "speaker": "rowan", "portrait": "happy",
+      "text": "Three strangers with a borrowed drum machine wave Rowan over mid-jam in the alley behind the venue — nobody asks a name, nobody cares about the tour. Just: can you keep this groove going.",
+      "choices": [
+        { "id": "join_in", "label": "Jump in without a second thought", "next": "ber_rel_rowan2_a", "relationshipEffects": { "rowan": 6 }, "effects": { "harmony": 1 } },
+        { "id": "watch_first", "label": "Watch a round before joining", "next": "ber_rel_rowan2_b", "relationshipEffects": { "rowan": 3 } }
+      ]
+    },
+    "ber_rel_rowan2_a": { "id": "ber_rel_rowan2_a", "speaker": "rowan", "portrait": "inspired", "text": "Nobody claps when the groove locks in. Nobody needs to. Rowan grins the whole walk back, not saying why." },
+    "ber_rel_rowan2_b": { "id": "ber_rel_rowan2_b", "speaker": "rowan", "portrait": "happy", "text": "By the second round Rowan's in, uninvited-but-welcome, and nobody in that alley ever does learn a single name." },
+
     "ber_preshow": {
       "id": "ber_preshow", "speaker": "narrator",
       "text": "The power-plant venue fills fast — all denim and boots and nobody once checking their phone. Tonight's shape, like every night's, is still entirely yours to choose."
@@ -165,9 +201,19 @@
     "ber_aftershow": {
       "id": "ber_aftershow", "speaker": "narrator",
       "text": "The crowd doesn't so much leave as dissolve into whatever's happening next somewhere else in the city — a party, another set, a sunrise nobody planned on staying up for.",
+      "condition": "!flag:found_mystery_record",
+      "fallback": "ber_aftershow_record",
       "choices": [
         { "id": "follow", "label": "Follow the crowd to whatever's next", "next": "ber_aftershow_a", "relationshipEffects": { "mira": 2, "theo": 2, "jun": 2, "rowan": 2 }, "effects": { "energy": -4 } },
         { "id": "bus", "label": "Head straight back to the bus instead", "next": "ber_aftershow_b", "effects": { "energy": 5 } }
+      ]
+    },
+    "ber_aftershow_record": {
+      "id": "ber_aftershow_record", "speaker": "narrator",
+      "text": "Someone backstage has a turntable, of course they do. You play the unlabeled record once, start to finish, and still can't tell what country or decade it's actually from.",
+      "choices": [
+        { "id": "follow2", "label": "Follow the crowd to whatever's next", "next": "ber_aftershow_a", "relationshipEffects": { "mira": 2, "theo": 2, "jun": 2, "rowan": 2 }, "effects": { "energy": -4 } },
+        { "id": "bus2", "label": "Head straight back to the bus instead", "next": "ber_aftershow_b", "effects": { "energy": 5 } }
       ]
     },
     "ber_aftershow_a": { "id": "ber_aftershow_a", "speaker": "narrator", "text": "You don't remember most of what happened after. You do remember, clearly, not wanting any of it to end." },

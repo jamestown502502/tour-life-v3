@@ -22,7 +22,8 @@
     { "id": "rowan_watching_the_room", "bandmate": "rowan", "sceneId": "lis_rel_rowan" },
     { "id": "jun_old_and_new", "bandmate": "jun", "sceneId": "lis_rel_jun2" },
     { "id": "mira_letter_from_home", "bandmate": "mira", "sceneId": "lis_rel_mira_letter" },
-    { "id": "theo_why_hes_here", "bandmate": "theo", "sceneId": "lis_rel_theo_why" }
+    { "id": "theo_why_hes_here", "bandmate": "theo", "sceneId": "lis_rel_theo_why" },
+    { "id": "jun_why_hes_here", "bandmate": "jun", "sceneId": "lis_rel_jun_why" }
   ],
   "collaborator": { "npcName": "Inês", "role": "fado singer", "gift": "a scrap of a fado phrase, hummed onto a napkin" },
   "preShowChoices": [
@@ -210,6 +211,20 @@
     "lis_rel_theo_why_a": { "id": "lis_rel_theo_why_a", "speaker": "theo", "portrait": "happy", "text": "\"Better than I expected,\" he admits, surprised by his own answer. \"Ask me again down the road.\"" },
     "lis_rel_theo_why_b": { "id": "lis_rel_theo_why_b", "speaker": "theo", "portrait": "inspired", "text": "Something in his shoulders drops. \"Nobody's offered that before,\" he says. \"Yeah. Please.\"" },
     "lis_rel_theo_why_fallback": { "id": "lis_rel_theo_why_fallback", "speaker": "theo", "portrait": "tense", "text": "Theo mentions the last band, briefly, then waves it off. \"Old story. Not worth telling yet.\"" },
+
+    "lis_rel_jun_why": {
+      "id": "lis_rel_jun_why", "speaker": "jun", "portrait": "tense",
+      "text": "\"I turned down a touring slot with a band that already had three hit singles,\" Jun says. \"Everyone thought I was insane. I just couldn't watch myself play the same set for two years straight.\"",
+      "condition": "relationship.jun>=40",
+      "fallback": "lis_rel_jun_why_fallback",
+      "choices": [
+        { "id": "worth_it", "label": "Was it worth it, though — really?", "next": "lis_rel_jun_why_a", "relationshipEffects": { "jun": 5 }, "effects": { "inspiration": 1 } },
+        { "id": "no_regrets", "label": "You clearly don't regret it. That's the answer.", "next": "lis_rel_jun_why_b", "relationshipEffects": { "jun": 6 } }
+      ]
+    },
+    "lis_rel_jun_why_a": { "id": "lis_rel_jun_why_a", "speaker": "jun", "portrait": "inspired", "text": "\"Ask me on a good night versus a broke one,\" Jun laughs. \"Tonight, though — yeah. Worth it.\"" },
+    "lis_rel_jun_why_b": { "id": "lis_rel_jun_why_b", "speaker": "jun", "portrait": "happy", "text": "Jun goes quiet, surprised. \"Huh. Yeah. Guess I don't.\" A real smile, not the performed one." },
+    "lis_rel_jun_why_fallback": { "id": "lis_rel_jun_why_fallback", "speaker": "jun", "portrait": "tense", "text": "Jun mentions turning down some old offer, then waves it off. \"Old news. Ask me later.\"" },
 
     "lis_preshow": {
       "id": "lis_preshow", "speaker": "narrator",
