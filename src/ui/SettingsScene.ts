@@ -6,17 +6,24 @@ import { audio } from '../core/audio';
 import { saveRun } from '../core/save';
 import { textStyle } from './textStyles';
 import { markSettingsOpened } from '../core/onboarding';
+import { computeCalibrationOffset, MIN_CALIBRATION_TAPS } from '../game/calibration';
 
-type BoolKey = 'visualAssist' | 'audioAssist' | 'wiggleRoom' | 'easyScoring' | 'autoplay' | 'reducedMotion' | 'noFlash';
+type BoolKey =
+  | 'visualAssist' | 'audioAssist' | 'wiggleRoom' | 'easyScoring' | 'autoplay' | 'reducedMotion'
+  | 'noFlash' | 'tapSoundEnabled' | 'haptics';
 
+// Short labels — these render inside a single self-labeled button in a 2-column grid (see
+// BOOL_ROWS below), not a full-width row with a separate label, so they need to stay terse.
 const BOOL_ROWS: { key: BoolKey; label: string }[] = [
-  { key: 'visualAssist', label: 'Visual assist (timing guide)' },
-  { key: 'audioAssist', label: 'Audio assist (metronome)' },
-  { key: 'wiggleRoom', label: 'Wiggle room (wider windows)' },
+  { key: 'visualAssist', label: 'Visual assist' },
+  { key: 'audioAssist', label: 'Metronome' },
+  { key: 'wiggleRoom', label: 'Wiggle room' },
   { key: 'easyScoring', label: 'Easy scoring' },
   { key: 'autoplay', label: 'Autoplay' },
   { key: 'reducedMotion', label: 'Reduced motion' },
   { key: 'noFlash', label: 'No screen flash' },
+  { key: 'tapSoundEnabled', label: 'Tap sound' },
+  { key: 'haptics', label: 'Haptics' },
 ];
 
 const RHYTHM_MODES: RhythmMode[] = ['relaxed', 'standard', 'expert'];
@@ -42,22 +49,28 @@ export class SettingsScene extends Phaser.Scene {
     // viewport, not just the blanket pad Button.ts applies. At that width the canvas renders
     // at 0.5417x, so a raw dimension needs (dim + 16px pad) * 0.5417 >= 44 -> dim >= 66. Rows
     // use 68 with a 76 increment (8px gap so adjacent padded hit areas never touch). The whole
-    // column, Back button included, must also finish above SAFE_BOTTOM_Y (1230) — with 8 toggle
-    // rows + rhythm mode + 4 volume rows that's 130 + 9*76 + 36 + 4*76 + 12 + 56 = 1222.
+    // column, Back button included, must also finish above SAFE_BOTTOM_Y (1230).
     // Verified by measuring getBoundingClientRect() live at 390x844, not just by arithmetic.
     const ROW_H = 68;
     const ROW_INCREMENT = 76;
 
+    // 9 toggles as a self-labeled 2-column grid (matching BandCreator's genre-grid pattern:
+    // GRID_ROW_H/GRID_INCREMENT), not 9 stacked full-width rows — adding the close-out pass's
+    // 2 new toggles (Haptics, Tap sound) to the old single-column layout would have pushed the
+    // column height to ~1450 game units, well past SAFE_BOTTOM_Y (1230) and even past the H=1280
+    // canvas itself. The grid keeps 9 toggles in 5 rows (390px) instead of 9 (684px).
+    const GRID_ROW_H = 70, GRID_INCREMENT = 78;
     let y = 130;
-    BOOL_ROWS.forEach(({ key, label }) => {
-      this.add.text(60, y, label, textStyle('body', { fontSize: '16px' }));
-      const btn = createButton(this, W - 170, y - (ROW_H / 2 - 8), 110, ROW_H, State.data.accessibility[key] ? 'On' : 'Off', () => {
+    BOOL_ROWS.forEach(({ key, label }, i) => {
+      const col = i % 2, row = Math.floor(i / 2);
+      const text = () => `${label}: ${State.data.accessibility[key] ? 'On' : 'Off'}`;
+      const btn = createButton(this, W / 2 - 300 + col * 310, 130 + row * GRID_INCREMENT, 290, GRID_ROW_H, text(), () => {
         State.data.accessibility[key] = !State.data.accessibility[key];
         saveRun(State.data);
-        getButtonText(btn)?.setText(State.data.accessibility[key] ? 'On' : 'Off');
-      }, { fontSize: '16px', fillColor: State.data.accessibility[key] ? 0x3e7c7b : 0x8a8a8a });
-      y += ROW_INCREMENT;
+        getButtonText(btn)?.setText(text());
+      }, { fontSize: '15px', fillColor: State.data.accessibility[key] ? 0x3e7c7b : 0x8a8a8a });
     });
+    y = 130 + Math.ceil(BOOL_ROWS.length / 2) * GRID_INCREMENT + 10;
 
     // Dialogue QoL as one row with two side-by-side toggles (a row each would push Back under
     // the safe line). 158 wide, 22px apart: 6px clear once both 8px pads are subtracted.
@@ -85,6 +98,18 @@ export class SettingsScene extends Phaser.Scene {
     }, { fontSize: '16px' });
     y += ROW_INCREMENT;
 
+    this.add.text(60, y, 'Audio sync', textStyle('body', { fontSize: '16px' }));
+    const syncValue = this.add.text(180, y, `${State.data.accessibility.audioOffsetMs}ms`, textStyle('small', { fontSize: '15px' }));
+    const setOffset = (ms: number) => {
+      State.data.accessibility.audioOffsetMs = Phaser.Math.Clamp(ms, -150, 150);
+      saveRun(State.data);
+      syncValue.setText(`${State.data.accessibility.audioOffsetMs}ms`);
+    };
+    createButton(this, 300, y - (ROW_H / 2 - 8), 70, ROW_H, '-5', () => setOffset(State.data.accessibility.audioOffsetMs - 5), { fontSize: '16px' });
+    createButton(this, 380, y - (ROW_H / 2 - 8), 70, ROW_H, '+5', () => setOffset(State.data.accessibility.audioOffsetMs + 5), { fontSize: '16px' });
+    createButton(this, 460, y - (ROW_H / 2 - 8), 190, ROW_H, 'Re-calibrate', () => this.runCalibration(setOffset), { fontSize: '15px', fillColor: 0x8a6fa3 });
+    y += ROW_INCREMENT;
+
     this.add.text(60, y, 'Volumes', textStyle('h2'));
     y += 36;
     const VOL_BTN = 70, VOL_BTN_H = 68;
@@ -109,5 +134,73 @@ export class SettingsScene extends Phaser.Scene {
     audio.setVolume(key, next);
     saveRun(State.data);
     label.setText(`${Math.round(next * 100)}%`);
+  }
+
+  /** A short tap-along modal: 6 beats at a fixed 96bpm, tap in time with each. The measured
+   *  offset (game/calibration.ts's trimmed-mean math, kept pure and unit-tested there) is
+   *  offered as "Apply" rather than written automatically — a bad tap-along (distracted, wrong
+   *  rhythm) should never silently overwrite a working setting. */
+  private runCalibration(onOffsetSet: (ms: number) => void): void {
+    const overlay = this.add.container(0, 0).setDepth(200);
+    overlay.add(this.add.rectangle(0, 0, W, this.cameras.main.height, 0x1a2436, 0.94).setOrigin(0, 0).setInteractive());
+    const title = this.add.text(W / 2, 300, 'Tap along with the beat', textStyle('h2')).setOrigin(0.5);
+    const dot = this.add.circle(W / 2, 420, 26, 0x8a6fa3, 1);
+    overlay.add([title, dot]);
+
+    const bpm = 96;
+    const beatMs = 60000 / bpm;
+    const leadMs = 1200;
+    const beatCount = 6;
+    const beatTimes: number[] = [];
+    const claimed: boolean[] = [];
+    const deltas: number[] = [];
+    const startAt = this.time.now + leadMs;
+    for (let b = 0; b < beatCount; b++) {
+      beatTimes.push(startAt + b * beatMs);
+      claimed.push(false);
+    }
+
+    beatTimes.forEach((t, b) => {
+      this.time.delayedCall(Math.max(0, t - this.time.now), () => {
+        audio.playSfx(b === 0 ? 'metronomeAccent' : 'metronome');
+        this.tweens.add({ targets: dot, scale: 1.4, duration: 90, yoyo: true, ease: 'Quad.easeOut' });
+      });
+    });
+
+    const tapZone = this.add.zone(W / 2, 420, 400, 400).setOrigin(0.5).setInteractive();
+    const tapLabel = this.add.text(W / 2, 560, 'Tap anywhere in time with the beat', textStyle('small', { fontSize: '15px' })).setOrigin(0.5);
+    overlay.add([tapZone, tapLabel]);
+    const onTap = () => {
+      const now = this.time.now;
+      let nearest = -1, nearestDist = Infinity;
+      beatTimes.forEach((t, b) => {
+        if (claimed[b]) return;
+        const dist = Math.abs(now - t);
+        if (dist < nearestDist) { nearest = b; nearestDist = dist; }
+      });
+      if (nearest === -1 || nearestDist > beatMs / 2) return; // no unclaimed beat nearby — ignore
+      claimed[nearest] = true;
+      deltas.push(now - beatTimes[nearest]);
+      audio.playSfx('tap');
+    };
+    tapZone.on('pointerdown', onTap);
+
+    this.time.delayedCall(leadMs + (beatCount - 1) * beatMs + 900, () => {
+      tapZone.off('pointerdown', onTap);
+      tapZone.destroy();
+      tapLabel.destroy();
+      dot.destroy();
+      const offset = computeCalibrationOffset(deltas);
+      if (deltas.length < MIN_CALIBRATION_TAPS) {
+        title.setText('Not enough taps to measure — try again anytime');
+        const closeBtn = createButton(this, W / 2 - 100, 420, 200, 60, 'Close', () => overlay.destroy(), { fillColor: 0x8a8a8a, fontSize: '16px' });
+        overlay.add(closeBtn);
+      } else {
+        title.setText(`Measured offset: ${offset}ms`);
+        const applyBtn = createButton(this, W / 2 - 210, 420, 200, 60, 'Apply', () => { onOffsetSet(offset); overlay.destroy(); }, { fillColor: 0x3e7c7b, fontSize: '16px' });
+        const skipBtn = createButton(this, W / 2 + 10, 420, 200, 60, 'Skip', () => overlay.destroy(), { fillColor: 0x8a8a8a, fontSize: '16px' });
+        overlay.add([applyBtn, skipBtn]);
+      }
+    });
   }
 }

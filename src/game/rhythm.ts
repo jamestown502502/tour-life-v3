@@ -21,6 +21,15 @@ export function effectiveWindows(mode: RhythmMode, wiggleRoom: boolean): TimingW
   };
 }
 
+/** Shifts a note's raw hit time by the player's calibrated audio offset before it's used for
+ *  either the falling-note's visual position or judging a tap against it — a positive offset
+ *  means audio (and so the felt beat) arrives late on this device, so notes are judged and drawn
+ *  earlier to compensate. Visual and judged timing always move together, so a calibrated note
+ *  still visually lands on the hit line exactly when it's judged as on-time. */
+export function adjustedHitMs(baseHitMs: number, offsetMs: number): number {
+  return baseHitMs - offsetMs;
+}
+
 export function judgeHit(deltaMs: number, windows: TimingWindows): HitJudgement {
   const abs = Math.abs(deltaMs);
   if (abs <= windows.perfect) return 'perfect';

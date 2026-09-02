@@ -7,10 +7,10 @@ import { spawnPerfectSpark, comboPop, hitstop, shake, spawnRingPulse } from '../
 import { goTo, fadeIn } from './transition';
 import { createButton } from './Button';
 import { State } from '../core/state';
-import { audio } from '../core/audio';
+import { audio, type SfxName } from '../core/audio';
 import { getCity, getSong } from '../game/content';
 import {
-  buildPerformanceResult, combineHoldJudgement, effectiveWindows, judgeHit,
+  adjustedHitMs, buildPerformanceResult, combineHoldJudgement, effectiveWindows, judgeHit,
   pickArrangement, scoreForHit, type HitJudgement, type PerformanceContext,
 } from '../game/rhythm';
 import type { ChartCue, ChartNote, ChoiceCueType } from '../../content/schema';
@@ -207,6 +207,13 @@ export class RhythmScene extends Phaser.Scene {
     return LANE_X_START + l * LANE_W + LANE_W / 2;
   }
 
+  /** A note/cue's hit time, shifted by the player's calibrated audio offset (§Settings "Audio
+   *  sync"). Used for both the falling-note's visual position and judging a tap, so the two
+   *  always agree — see game/rhythm.ts's adjustedHitMs. */
+  private hitMsFor(t: number): number {
+    return adjustedHitMs(this.startTime + t * 1000, State.data.accessibility.audioOffsetMs);
+  }
+
   /** The player's own saved rhythmMode, except for their very first-ever song when they've
    *  never opened Settings — then it's overridden to 'relaxed' for this song only. Never
    *  mutates or saves State.data.accessibility.rhythmMode, so a real preference set in a later
@@ -295,7 +302,7 @@ export class RhythmScene extends Phaser.Scene {
     const windows = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
 
     for (const ns of this.notes) {
-      const hitMs = this.startTime + ns.note.t * 1000;
+      const hitMs = this.hitMsFor(ns.note.t);
       const progress = 1 - (hitMs - now) / this.leadMs;
       if (progress < -0.15 || progress > 1.3) {
         if (!ns.judged && !ns.holding && progress > 1.3) this.judgeMiss(ns);
@@ -323,7 +330,7 @@ export class RhythmScene extends Phaser.Scene {
 
     // Auto-finalize a hold nobody released — reward holding through as if released on time.
     for (const [lane, ns] of this.activeHolds) {
-      const expectedEndMs = this.startTime + (ns.note.t + (ns.note.dur ?? 0.2)) * 1000;
+      const expectedEndMs = this.hitMsFor(ns.note.t + (ns.note.dur ?? 0.2));
       if (now > expectedEndMs + windows.ok) {
         this.finalizeHold(ns, expectedEndMs);
         this.activeHolds.delete(lane);
@@ -331,7 +338,7 @@ export class RhythmScene extends Phaser.Scene {
     }
 
     for (const cs of this.cues) {
-      const cueMs = this.startTime + cs.cue.t * 1000;
+      const cueMs = this.hitMsFor(cs.cue.t);
       if (!cs.handled && Math.abs(now - cueMs) < 1200 && !cs.banner) {
         cs.banner = this.showCueBanner(cs);
       }
@@ -363,12 +370,12 @@ export class RhythmScene extends Phaser.Scene {
     let bestDelta = Infinity;
     for (const ns of this.notes) {
       if (ns.judged || ns.holding || ns.note.l !== lane) continue;
-      const hitMs = this.startTime + ns.note.t * 1000;
+      const hitMs = this.hitMsFor(ns.note.t);
       const delta = Math.abs(now - hitMs);
       if (delta < bestDelta && delta <= windows.ok) { best = ns; bestDelta = delta; }
     }
     if (!best) return;
-    const delta = now - (this.startTime + best.note.t * 1000);
+    const delta = now - this.hitMsFor(best.note.t);
     if (best.note.type === 'hold') this.beginHold(best, delta, now);
     else this.judgeNote(best, delta);
   }
@@ -378,7 +385,19 @@ export class RhythmScene extends Phaser.Scene {
     ns.holdStartDelta = startDelta;
     ns.holdStartAt = now;
     this.activeHolds.set(ns.note.l, ns);
-    audio.playSfx('tap');
+    this.playHitSfx('tap');
+  }
+
+  /** Rhythm hit feedback SFX (tap/perfect/good/ok/miss), muted by the "Tap sound" toggle —
+   *  music/ambience/metronome are separate and unaffected. */
+  private playHitSfx(name: SfxName): void {
+    if (State.data.accessibility.tapSoundEnabled) audio.playSfx(name);
+  }
+
+  /** navigator.vibrate is a no-op where unsupported (iOS Safari, desktop) — safe to call
+   *  unconditionally behind the Haptics toggle, no platform check needed. */
+  private vibrate(pattern: number): void {
+    if (State.data.accessibility.haptics) navigator.vibrate?.(pattern);
   }
 
   private releaseAllHolds(): void {
@@ -433,17 +452,19 @@ export class RhythmScene extends Phaser.Scene {
     this.flashLane(lane, judgement);
     this.showJudgementText(hitX, judgement, points);
     if (judgement === 'perfect') {
-      audio.playSfx('perfect');
+      this.playHitSfx('perfect');
+      this.vibrate(15);
       spawnPerfectSpark(this, hitX, HIT_LINE_Y);
       spawnRingPulse(this, hitX, HIT_LINE_Y, PALETTE.gold);
       hitstop(this, 30);
     } else if (judgement === 'good') {
-      audio.playSfx('good');
+      this.playHitSfx('good');
       spawnRingPulse(this, hitX, HIT_LINE_Y, PALETTE.cream);
     } else if (judgement === 'ok') {
-      audio.playSfx('ok');
+      this.playHitSfx('ok');
     } else {
-      audio.playSfx('miss');
+      this.playHitSfx('miss');
+      this.vibrate(30);
       if (this.combo === 0) shake(this, 4);
     }
   }

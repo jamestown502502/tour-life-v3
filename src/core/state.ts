@@ -55,6 +55,13 @@ export interface AccessibilitySettings {
   autoAdvance: boolean;
   /** Dialogue lines appear instantly instead of typing out. */
   skipReadText: boolean;
+  /** ms, -150..150. Subtracted from a note's judged hit time — a positive value means audio
+   *  (and so the visible/felt beat) arrives late on this device, so notes are judged earlier. */
+  audioOffsetMs: number;
+  /** Tap/perfect/good/ok/miss SFX during rhythm play. Music/ambience unaffected either way. */
+  tapSoundEnabled: boolean;
+  /** navigator.vibrate() on rhythm hits (perfect/miss). No-op on devices without vibration. */
+  haptics: boolean;
   volumes: { master: number; music: number; sfx: number; metronome: number };
 }
 
@@ -93,6 +100,9 @@ export function freshAccessibility(): AccessibilitySettings {
     noFlash: false,
     autoAdvance: false,
     skipReadText: false,
+    audioOffsetMs: 0,
+    tapSoundEnabled: true,
+    haptics: /Android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : ''),
     volumes: { master: 1, music: 0.7, sfx: 0.9, metronome: 0.6 },
   };
 }

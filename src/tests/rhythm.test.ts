@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildPerformanceResult, combineHoldJudgement, comboMultiplier, effectiveWindows, judgeHit,
-  letterGrade, pickArrangement, scoreForHit,
+  adjustedHitMs, buildPerformanceResult, combineHoldJudgement, comboMultiplier, effectiveWindows,
+  judgeHit, letterGrade, pickArrangement, scoreForHit,
 } from '../game/rhythm';
 import type { SongDef } from '../../content/schema';
 
@@ -100,6 +100,25 @@ describe('buildPerformanceResult', () => {
     expect(missResult.grade).toBe('miss');
     expect(perfectResult.ratio).toBeCloseTo(1);
     expect(missResult.ratio).toBe(0);
+  });
+});
+
+describe('audio offset calibration (Settings "Audio sync")', () => {
+  it('a positive offset judges the same raw tap earlier — the mandatory-for-Android case', () => {
+    const windows = { perfect: 50, good: 100, ok: 160 };
+    const baseHitMs = 1000;
+    // A tap 40ms after the raw note time — 'perfect' with no offset.
+    const now = 1040;
+    expect(judgeHit(now - adjustedHitMs(baseHitMs, 0), windows)).toBe('perfect');
+    // +100ms offset (audio arrives late on this device) shifts the note's judged time earlier,
+    // so the same real-world tap now reads as later relative to it — no longer 'perfect'.
+    expect(judgeHit(now - adjustedHitMs(baseHitMs, 100), windows)).toBe('ok');
+    // -100ms offset shifts the other way.
+    expect(judgeHit(now - adjustedHitMs(baseHitMs, -100), windows)).toBe('good');
+  });
+
+  it('offset 0 is a no-op', () => {
+    expect(adjustedHitMs(12345, 0)).toBe(12345);
   });
 });
 
