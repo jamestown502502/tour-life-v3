@@ -35,8 +35,13 @@ Vite + TypeScript (strict) + Phaser 3.90. No React/Next. Deployed and publicly l
 - **Systems:** seeded RNG (deterministic, shareable runs), a JSON node-graph dialogue engine, a
   4-lane rhythm minigame with real hold-note grading, a 6-candidate ending generator, scene-pool
   scarcity for replayability, meta-progression across runs, full onboarding for first-time
-  players, 8 accessibility settings, IndexedDB save with schema versioning.
-- **Quality bar:** typecheck clean (strict TS), 39/39 tests passing, a production build that
+  players, 8 base accessibility settings plus 2 dialogue QoL toggles (auto-advance, instant
+  text), IndexedDB save with schema versioning.
+- **Mobile-grade input and feedback (new — §14):** the rhythm minigame supports real multi-touch
+  (a second simultaneous finger used to be silently dropped), the whole playfield sits inside
+  the iOS safe area, every hit gets per-lane visual feedback, and every dialogue/settings screen
+  fits above the home-indicator zone at a measured 390px mobile width.
+- **Quality bar:** typecheck clean (strict TS), 46/46 tests passing, a production build that
   succeeds, and everything below has been verified live in a browser — not just read as a diff.
 
 **Art direction rule, deliberately chosen: painted world, code-drawn UI.** Backgrounds and
@@ -664,29 +669,154 @@ trusting a run succeeded; the automated verify gate cannot catch the key eating 
 
 ---
 
+## 14. The "best-in-class" pass — mobile feel, VN life, and what's still queued (2026-09-01)
+
+A five-workstream plan (`POLISH_BEST_IN_CLASS_PLAN.md`, executable form
+`RESUME_PROMPT_BEST_IN_CLASS.md`, both still in the repo root) came out of a direct code-and-
+research review that found the rhythm minigame literally couldn't be played with two fingers,
+the hit line sat under the iOS home-indicator zone, hit feedback fired in the wrong lane, and
+the dialogue box was a static card with no life to it. **Workstreams A and B are done, verified
+live, deployed. C, D, and E are not started** — this section is both the record of what shipped
+and the resume point for whoever picks up C/D/E next.
+
+### 14.1 Workstream A — mobile rhythm feel (done)
+
+- **Multi-touch enabled**: `input: { activePointers: 4 }` in the `main.ts` Phaser config. Before
+  this, Phaser tracked exactly one touch pointer — a second simultaneous finger was silently
+  dropped, so any chart with two lanes hit at once was unplayable on a real phone. Verified with
+  actual two-finger CDP touch input in a `hasTouch` browser context: both pointers report
+  `isDown: true` simultaneously, not just one.
+- **Playfield moved into the safe area and widened**: hit line `1100 → 980`, lanes `140px → 165px`
+  starting at `x=30` (all now named constants in `const.ts`: `RHYTHM_HIT_LINE_Y`,
+  `RHYTHM_LANE_W`, `RHYTHM_LANE_X_START`, `SAFE_BOTTOM_Y=1230`). At the measured 0.5417× phone
+  scale the tap zones now end well clear of the iOS home-indicator gesture zone; lanes render at
+  89 CSS px wide (were 76). Lead time is now per-difficulty (`RHYTHM_LEAD_MS`: relaxed 1800 /
+  standard 1600 / expert 1400) instead of one fixed 1600ms for everyone.
+- **Per-lane feedback, and a real bug fixed along the way**: every judgement used to spark at a
+  *hardcoded lane-0 x* regardless of which lane was actually hit — on lanes 1-3 this read as "the
+  game didn't see my tap" even on a clean hit. Fixed: `applyJudgement` now takes the judged
+  note's lane and fires the spark/ring-pulse/lane-flash/floating "Perfect! +100" text there.
+  Lane flash respects `noFlash`; floating text respects `reducedMotion` (fades in place instead
+  of rising).
+- **Results screen gained an S/A/B/C letter-grade plate** (`letterGrade(ratio)` in
+  `game/rhythm.ts`, `ratio` added to `PerformanceResult`) — purely presentational, stamps in
+  with a tween, never gates anything, same as everything else on that screen.
+- **Charts rebuilt from a tested generator**, not hand-typed JSON: `src/game/chartGen.ts` is a
+  pure, unit-tested motif system — kicks on the left-hand lanes, snares on the right (two-thumb
+  play), offbeats as holds, explicit rest bars every section (Exceed7's "readability over
+  density" principle), a same-lane collision guard, holds capped short of the next note in their
+  lane. Each song's storyGate-unlocked arrangement uses hand-designed, song-specific patterns
+  (Sailor Lullaby's duet: call-and-response phrases; Neon Rain's bass_forward: Rowan's sustained
+  bassline; Callejón Groove's duet_percussion: a 3-2 clave feel + chord trades).
+  `scripts/generate-charts.mjs` regenerates the committed JSON from the config; `chartGen.test.ts`
+  asserts determinism, schema validity, 55-70s duration, real rests, no lane-stacking, **and that
+  the committed JSON matches the generator** — a drift guard that immediately caught two
+  arrangements ending 0.1s short of the 55s floor before they ever reached a live test.
+  Arrangement ids are unchanged (city JSON references them by id, e.g. `'duet_percussion'`), so
+  no content files needed edits.
+- **The practice pass now runs on the song's real beat grid** (a soft metronome ticks every beat,
+  each demo note is spawned `leadMs` early so it lands on a beat) instead of a fixed timer —
+  teaches timing feel, not just the gesture.
+
+### 14.2 Workstream B — a VN textbox that feels alive (done)
+
+- **Portrait bob**: `±3px`, synced to the typewriter (stops when text finishes or `skipReadText`
+  is on), static under `reducedMotion`.
+- **Typewriter tick**: a soft, pitch-jittered sine click roughly every 3 non-space characters
+  (not every character — at 45 cps that would buzz), on the SFX bus, added as a new `'typewriter'`
+  `SfxName`.
+- **A gold advance chevron** pulses once a line finishes and is waiting on a tap; a 2px
+  per-bandmate-colored underline bar sits under the nameplate; a soft radial glow (two circles,
+  low alpha) sits behind it, tinted the same color. Space bar now mirrors a tap (skip typewriter /
+  advance), unbound in `destroy()`.
+- **Safe-area layout, not just a vibe**: `PANEL_Y` `740 → 690`, dialogue body `24px → 26px`.
+  Choice rows now compute their own height/spacing to fit above `SAFE_BOTTOM_Y` (`renderChoices`
+  in `DialogueBox.ts`) instead of assuming a fixed 58px row always fits — verified live: 3
+  choices at 62px rows land with their bottom edge well inside the safe line.
+- **Two new accessibility fields**, additive within `schemaVersion: 1` (no version bump — see the
+  `migrate()` change below): `autoAdvance` (advances a plain, non-choice line ~4s after it
+  finishes typing; **never** advances past a choice) and `skipReadText` (renders a line's full
+  text immediately, still through the normal advance/choice flow). Both live in Settings as a
+  new "Dialogue" row with two side-by-side toggles. `save.ts`'s `migrate()` now backfills any
+  accessibility keys missing from an older save with `freshAccessibility()`'s defaults, since
+  these were added *within* v1 rather than warranting a schema-version bump — an older save
+  loads fine and just gets the new fields at their default (off).
+- **Location color grade** (`CityScene.setLocationGrade`): a tinted full-screen overlay (6 named
+  palette entries) + re-colored fireflies fades in when a location scene starts and out when it
+  ends, so a city's 5 shared-background locations read as distinct places at zero new-asset
+  cost. Verified live: overlay fill color and target alpha match the requested grade exactly.
+
+**Both workstreams: typecheck clean, 46/46 tests (7 new — all of `chartGen.test.ts` plus a
+`letterGrade` case), production build succeeds, zero console errors across every live check**
+(multi-touch proof, a full autoplay-driven rhythm run, the practice pass timed against its own
+beat grid, a bandmate portrait line with the glow/chevron/underline visible, a real click on the
+new Settings toggle followed by proof the next line rendered instantly, the location-grade
+overlay applied and cleared). Commits `ab45c99` (A) and `ebb275c` (B), both deployed —
+**https://tour-life-v3.vercel.app** is currently serving commit `ebb275c` (confirmed via the
+Vercel API's deployment list, `state: READY`, `target: production`, plus a byte-for-byte
+matching build hash between the live bundle and a fresh local build:
+`assets/index-WzlF0kXx.js` on both).
+
+**A deploy-CLI gotcha distinct from bug #11, worth recording**: `npx vercel deploy --prod --yes`
+returned `{"status":"error","message":"Not authorized"}` immediately (not a `BLOCKED` hang) even
+though `vercel whoami` and the linked `.vercel/project.json` were both correct. **The push to
+GitHub had already triggered Vercel's own GitHub integration, which built and promoted the exact
+same commit to production successfully** — confirmed via `list_deployments` showing a `READY`
+deployment for that commit seconds before the CLI's error. Lesson: if the manual CLI deploy
+errors right after a `git push`, check whether the GitHub-integration deploy already succeeded
+(`list_deployments` or the Vercel dashboard) before assuming the push itself needs redoing — a
+manual `vercel deploy` is not the only path to production for a git-connected project, and
+racing it against an in-flight GitHub-triggered deploy is a plausible explanation for a same-
+commit "not authorized" that has nothing to do with the account or team.
+
+### 14.3 Workstreams C, D, E — not started, fully scoped, ready to resume
+
+Everything below is written out in detail in `RESUME_PROMPT_BEST_IN_CLASS.md` (paste-ready for a
+fresh session) and `POLISH_BEST_IN_CLASS_PLAN.md` (the research-cited rationale). Summary:
+
+- **C — Minigames to break up the VN flow**: `Soundcheck` (timing-gauge, reuses `judgeHit`),
+  `Pack the Van` (drag-to-slot), `Interview` (rapid-chat with 2-option picks). One shared
+  `MiniGameScene.ts` keyed by a new `MiniGameDef` type in `content/schema.ts`, city JSON gets an
+  optional `minigames[]` array. 20-45s each, no fail state, reward-only. 3 Gemini backdrops
+  (soundboard, van interior, radio booth) via the established pipeline (§11.1).
+- **D — Story depth**: +1 location and +2 relationship-pool entries per existing city (5→6, 5→6),
+  bandmate backstory beats gated on relationship thresholds, and **city #4: Berlin**
+  (`midnight_indigo` tint — currently unused; ambition/experimentation tone per the blueprint).
+  Berlin at Mexico City's depth (§11.3's template) also makes the `route.length >= 6` `Ambitious`
+  ending tag reachable for the first time (§4, §7.3 — it's been dead code until now).
+- **E — A genuine screen-by-screen iPhone/safe-area audit**: Workstream B only fixed the
+  dialogue panel and Settings; RoutePlan, BandCreator, Hub, and Scrapbook haven't been re-
+  measured against `SAFE_BOTTOM_Y` since the onboarding pass. Playwright `resize_window` to an
+  iPhone 12/14 preset, screenshot every screen, measure every tappable via
+  `getBoundingClientRect()` the same way §14.1/§14.2 did — don't eyeball it.
+
+None of C/D/E touch the reality layer or the city-roster question (§7) — those stay the owner's
+call, unchanged.
+
+---
+
 ## 12. Prioritized next steps (current, not the stale ordering from earlier handoffs)
 
-1. **More content, if this game is meant to grow toward the blueprint's scope.** The pipeline
-   (§11.3) is proven and cheap; the question is purely how many more cities and how much deeper
-   the existing 3 should go, which is a scope/time decision for the owner, not a technical one.
+1. **Workstreams C, D, E (§14.3)** — the best-in-class pass isn't finished, just its first two
+   fifths. Minigames and story depth are the two that most directly address "the game feels
+   bland/repetitive"; the iPhone audit is the one most directly tied to "can't see/unclear on my
+   phone" if that complaint keeps recurring.
 2. **CI** — `npm run typecheck && npm test` in a GitHub Action. Cheap, not yet done, more
-   valuable now than ever given how much surface area (audio graph, texture generation, button
-   hit-areas, onboarding flag state) has accumulated.
-3. **Close the remaining touch-target gap fully** (§8) — a genuine screen-by-screen audit rather
-   than the two specific layouts fixed so far, if the game is going toward a real mobile/app
-   store release where this matters more than on desktop web.
-4. **Hold-note visual polish** and **keyboard-input live verification** (§8) — low-risk, just
-   unconfirmed by a human's eyes/hands yet.
-5. **The Part 3 reality layer** (§7.1) and **a larger city roster** (§7.2) remain gated on the
-   owner's own decision, on honest terms. Don't start either without that.
+   valuable than ever given how much surface area (audio graph, texture generation, button
+   hit-areas, onboarding flag state, now chart generation) has accumulated.
+3. **Hold-note visual polish in slow motion**, and **a keyboard-input pass with real physical
+   key presses** (§8) — low-risk, just unconfirmed by a human's eyes/hands yet.
+4. **The Part 3 reality layer** (§7.1) and **a larger city roster beyond Berlin** (§7.2) remain
+   gated on the owner's own decision, on honest terms. Don't start either without that.
 
 ## 13. Open questions worth asking before assuming
 
-- Is 3 cities / ~10-20 minutes per run "done" for this phase, or is more content depth a
-  prerequisite before the live URL is actively promoted/shared further?
+- Should the next session go straight into Workstream C (minigames) per the plan's stated
+  ordering, or does content depth (D, including Berlin) matter more right now? The plan orders
+  A→B→C→D→E; that's one defensible ordering, not a mandate.
 - If the reality layer is ever revisited, what's the actual tone-dial default the owner wants
   (`DESIGN.md` proposes Warm-by-default, opt-in Raw) — this is a real product decision, not
   something to infer.
 - Is a real mobile/app-store release still the direction, or is this staying a browser-only
-  cozy web game? That materially changes how much the touch-target/device-testing gaps (§8)
-  matter.
+  cozy web game? That materially changes how much Workstream E's iPhone-specific audit matters
+  versus treating the desktop-web experience as primary.
