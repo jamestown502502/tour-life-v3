@@ -7,7 +7,7 @@ import { SAVE_KEY, SAVE_SCHEMA_VERSION } from '../const';
 const DB_NAME = 'tourlife';
 const STORE = 'saves';
 
-function isValidRunState(v: unknown): v is RunState {
+export function isValidRunState(v: unknown): v is RunState {
   if (!v || typeof v !== 'object') return false;
   const r = v as Partial<RunState>;
   return (
@@ -24,7 +24,7 @@ function isValidRunState(v: unknown): v is RunState {
  *  have been ADDED within v1 (dialogue autoAdvance/skipReadText) — a save written before they
  *  existed is still v1 and just lacks the keys, so missing accessibility keys are backfilled
  *  from the defaults rather than bumping the schema version for an additive change. */
-function migrate(raw: any): RunState | null {
+export function migrate(raw: any): RunState | null {
   if (raw.schemaVersion !== SAVE_SCHEMA_VERSION) return null; // no prior versions exist yet
   const defaults = freshAccessibility();
   const saved = raw.accessibility ?? {};

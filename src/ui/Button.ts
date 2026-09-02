@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PALETTE, UI_RADIUS } from '../const';
+import { PALETTE, PALETTE_HEX, UI_RADIUS } from '../const';
 import { audio, type SfxName } from '../core/audio';
 import { textStyle } from './textStyles';
 import { ensureButtonTexture, ensureRoundedRect } from '../art/sprites';
@@ -11,6 +11,34 @@ export interface ButtonOptions {
   radius?: number;
   /** SFX played on press. Defaults to 'tap' — pass 'choiceConfirm' for dialogue choices, etc. */
   tapSfx?: SfxName;
+}
+
+// WCAG relative luminance / contrast (see scripts/contrast-audit.mjs for the same math applied
+// project-wide — this is the smaller, runtime version, kept in sync by eye since it's ~15 lines).
+function srgbToLinear(c: number): number {
+  c /= 255;
+  return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+function relLuminance(hex: number): number {
+  const r = (hex >> 16) & 0xff, g = (hex >> 8) & 0xff, b = hex & 0xff;
+  return 0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
+}
+export function contrastRatio(hexA: number, hexB: number): number {
+  const lA = relLuminance(hexA), lB = relLuminance(hexB);
+  const lighter = Math.max(lA, lB), darker = Math.min(lA, lB);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/** Every button used to hardcode cream label text regardless of fill color — fine on dark
+ *  fills (teal/plum/night), illegible on light ones (sky ~1.8:1, gold ~1.9:1 — both well under
+ *  WCAG's 3:1 floor for bold 20px+ text). Computed per fill instead of trusting each of the ~40
+ *  call sites across src/ui/*.ts to have picked a working color — cream and plum are the two
+ *  candidates (matching the rest of the text system's light/dark split), whichever contrasts
+ *  more with the actual fill wins. */
+export function labelColorForFill(fill: number): string {
+  const creamRatio = contrastRatio(fill, PALETTE.cream);
+  const plumRatio = contrastRatio(fill, PALETTE.plum);
+  return creamRatio >= plumRatio ? PALETTE_HEX.cream : PALETTE_HEX.plum;
 }
 
 /** Toggle a persistent gold selection ring on a button created by createButton — used by
@@ -43,7 +71,10 @@ export function createButton(
   const bg = scene.add.image(0, 0, btnKey).setOrigin(0, 0);
   const selectedRing = scene.add.image(w / 2, h / 2, shapeKey).setOrigin(0.5)
     .setDisplaySize(w + 6, h + 6).setTint(PALETTE.gold).setAlpha(0.9).setVisible(false);
-  const text = scene.add.text(w / 2, h / 2, label, textStyle('button', { fontSize: opts.fontSize ?? '22px' })).setOrigin(0.5);
+  const text = scene.add.text(w / 2, h / 2, label, textStyle('button', {
+    fontSize: opts.fontSize ?? '22px',
+    color: labelColorForFill(fill),
+  })).setOrigin(0.5);
 
   container.add([shadow, hoverGlow, bg, selectedRing, text]);
   container.setData('selectedRing', selectedRing);

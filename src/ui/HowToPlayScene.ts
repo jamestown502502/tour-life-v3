@@ -2,7 +2,7 @@
 // Hub visit, same launch/pause/stop/resume pattern as SettingsScene. Reuses only existing UI
 // chrome (rounded-rect texture cache, textStyle, createButton) — no new art.
 import Phaser from 'phaser';
-import { PALETTE, W } from '../const';
+import { PALETTE, PALETTE_HEX, W } from '../const';
 import { createButton, getButtonText } from './Button';
 import { ensureRoundedRect } from '../art/sprites';
 import { textStyle } from './textStyles';
@@ -57,7 +57,10 @@ export class HowToPlayScene extends Phaser.Scene {
 
     this.add.text(W / 2, 160, 'How to Play', textStyle('title', { fontSize: '40px' })).setOrigin(0.5);
 
-    this.heading = this.add.text(W / 2, CARD_Y + 60, '', textStyle('h1', { fontSize: '28px' })).setOrigin(0.5);
+    // h1's default gold is tuned for dark surfaces (1.57:1 on this card's sand tint — fails WCAG);
+    // this heading sits on the sand card below, so it needs the same plum the card's dialogue
+    // body already uses.
+    this.heading = this.add.text(W / 2, CARD_Y + 60, '', textStyle('h1', { fontSize: '28px', color: PALETTE_HEX.plum })).setOrigin(0.5);
     this.body = this.add.text(CARD_X + 44, CARD_Y + 120, '', textStyle('dialogue', {
       fontSize: '22px', wordWrap: { width: CARD_W - 88 }, lineSpacing: 8,
     }));

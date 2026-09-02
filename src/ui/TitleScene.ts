@@ -8,12 +8,13 @@ import { goTo, fadeIn } from './transition';
 import { audio } from '../core/audio';
 import { DEFAULT_AMBIENCE_BPM, DEFAULT_AMBIENCE_CHORDS } from '../core/musicTheory';
 import { dailySeed, generateSeed } from '../core/rng';
-import { State, type Progress } from '../core/state';
+import { State } from '../core/state';
 import { hasSave, loadRun, loadFromSlot, saveToSlot, SAVE_SLOTS, type SaveSlot } from '../core/save';
 import type { RunState } from '../core/state';
 import { hasSeenHowToPlay } from '../core/onboarding';
 import { createFloatingInput, type FloatingInput } from './htmlOverlay';
-import { textStyle } from './textStyles';
+import { addTextScrim, textStyle } from './textStyles';
+import { resumeTarget } from '../game/resume';
 
 export class TitleScene extends Phaser.Scene {
   constructor() { super('Title'); }
@@ -41,10 +42,15 @@ export class TitleScene extends Phaser.Scene {
     this.fireflies = spawnFireflies(this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.fireflies?.stop());
 
+    // applyVignette above only darkens the frame's far corners, not this central title band —
+    // see addTextScrim's own doc comment for why a scrim is needed here at all.
+    addTextScrim(this, W / 2, 335, 640, 220);
     this.add.text(W / 2, 260, 'Tour Life', textStyle('title')).setOrigin(0.5);
-    this.add.text(W / 2, 320, 'International Dates', textStyle('h2', { color: PALETTE_HEX.gold })).setOrigin(0.5);
+    // gold measures 2.77:1 on this scrim (just under the 3:1 large-text floor) — cream is the
+    // one preset color that reliably clears it here (5.28:1), see docs/contrast-audit.md.
+    this.add.text(W / 2, 320, 'International Dates', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
 
-    const seedLabel = this.add.text(W / 2, 420, `Custom seed: ${this.currentSeed}`, textStyle('small')).setOrigin(0.5);
+    const seedLabel = this.add.text(W / 2, 420, `Custom seed: ${this.currentSeed}`, textStyle('small', { color: PALETTE_HEX.cream })).setOrigin(0.5);
 
     // 66, not the original 56 — (56+16)*0.5417=39 CSS px, under the 44px floor the Workstream E
     // audit fixed everywhere else it looked. Title itself wasn't in that audit's scope and was
@@ -295,18 +301,3 @@ function summarizeSave(saved: RunState | null): string {
   return `${band} — ${where}`;
 }
 
-function resumeTarget(progress: Progress): { key: string; data?: object } {
-  switch (progress.screen) {
-    case 'title': return { key: 'Title' };
-    case 'bandCreator': return { key: 'BandCreator' };
-    case 'routePlan': return { key: 'RoutePlan' };
-    case 'city':
-      return progress.cityId
-        ? { key: 'City', data: { cityId: progress.cityId, phase: progress.nodeId } }
-        : { key: 'Hub' };
-    // Rhythm/Results need live in-flight data we don't persist — safest resume is the Hub.
-    case 'hub': case 'rhythm': case 'results': case 'settings': default:
-      return { key: 'Hub' };
-    case 'scrapbook': return { key: 'Scrapbook' };
-  }
-}

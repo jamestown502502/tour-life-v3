@@ -5,9 +5,16 @@
 // immutable per deploy — a cache-first miss just falls through to network and caches the
 // result). CACHE_NAME is bumped whenever the caching *strategy* itself changes, not per
 // content change — content changes are covered by cache-first's network fallback.
-const CACHE_NAME = 'tourlife-v1';
+const CACHE_NAME = 'tourlife-v2'; // v1 -> v2: the offline-shell-caching fix below is a strategy change
+// The navigation document itself was never actually cached anywhere — the fetch handler below
+// only ever READ from caches.match('/index.html') as an offline fallback, so "offline reload"
+// could never work (confirmed live: e2e/dist-smoke.spec.ts's offline test failed with
+// net::ERR_INTERNET_DISCONNECTED). Pre-caching the shell here, plus opportunistically caching
+// whatever the real deployed navigate request resolves to (below), fixes that.
+const SHELL_URLS = ['./', './index.html'];
 
 self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_URLS)).catch(() => {}));
   self.skipWaiting();
 });
 
@@ -27,7 +34,16 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/index.html').then((r) => r || caches.match('/'))),
+      fetch(request)
+        .then((res) => {
+          if (res.ok) caches.open(CACHE_NAME).then((cache) => cache.put(request, res.clone()));
+          return res;
+        })
+        .catch(() =>
+          caches.match(request)
+            .then((r) => r || caches.match('./index.html'))
+            .then((r) => r || caches.match('./')),
+        ),
     );
     return;
   }

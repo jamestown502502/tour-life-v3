@@ -144,10 +144,12 @@ export class HubScene extends Phaser.Scene {
       const board = this.add.rectangle(CORKBOARD_X, CORKBOARD_Y, 150, 190, 0x8a6a4a, 0.92).setOrigin(0, 0);
       board.setStrokeStyle(6, 0x6b4a2f, 1);
     }
-    this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 14, 'Souvenirs', textStyle('stat', { fontSize: '13px', color: '#F5EBDD' })).setOrigin(0.5);
+    // cream measures 4.2:1 on this corkboard's brown tint — just under the 4.5:1 floor this
+    // 13px label needs (too small to qualify for the looser large-text bar). White clears it.
+    this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 14, 'Souvenirs', textStyle('stat', { fontSize: '13px', color: '#FFFFFF' })).setOrigin(0.5);
     const items = State.data.inventory.slice(0, 4);
     if (items.length === 0) {
-      this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 60, 'Nothing yet', textStyle('small', { fontSize: '12px' })).setOrigin(0.5);
+      this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 60, 'Nothing yet', textStyle('small', { fontSize: '12px', color: '#FFFFFF' })).setOrigin(0.5);
       return;
     }
     items.forEach((item, i) => {
@@ -161,8 +163,10 @@ export class HubScene extends Phaser.Scene {
       this.add.circle(CORKBOARD_X + 20, y - 10, 3, PALETTE.terracotta, 1);
     });
     if (State.data.inventory.length > 4) {
+      // Default small's sky measures 2.3:1 on this corkboard's brown tint — same fix as the
+      // "Souvenirs" header above.
       this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 40 + 4 * 34, `+${State.data.inventory.length - 4} more`,
-        textStyle('small', { fontSize: '11px' })).setOrigin(0.5);
+        textStyle('small', { fontSize: '11px', color: '#FFFFFF' })).setOrigin(0.5);
     }
   }
 

@@ -5,7 +5,7 @@
 // text drawn before a font finishes loading silently falls back and never re-renders, so the
 // load-then-boot ordering matters more than this file does.
 import type Phaser from 'phaser';
-import { PALETTE_HEX } from '../const';
+import { PALETTE, PALETTE_HEX } from '../const';
 
 export const DISPLAY_FONT = '"Baloo 2", Georgia, serif';
 export const BODY_FONT = '"Nunito", Georgia, serif';
@@ -62,4 +62,16 @@ export function textStyle(
   overrides?: Partial<Phaser.Types.GameObjects.Text.TextStyle>,
 ): Phaser.Types.GameObjects.Text.TextStyle {
   return { ...TEXT_STYLES[name], ...overrides } as Phaser.Types.GameObjects.Text.TextStyle;
+}
+
+/** A translucent night-tinted backing for text placed directly over painted/photographic art —
+ *  see docs/contrast-audit.md. Bare cream/gold/sky text over the game's warm painted backgrounds
+ *  measures well under WCAG's contrast floor with only the frame's edge vignette behind it; 0.72
+ *  alpha over a representative painted tone leaves ~5:1 against cream, clearing both the 3:1
+ *  (large/bold) and 4.5:1 (normal-weight) thresholds with margin. Centered on (x, y); w/h are the
+ *  scrim's full size. Depth defaults just above a typical background image/vignette. */
+export function addTextScrim(
+  scene: Phaser.Scene, x: number, y: number, w: number, h: number, alpha = 0.72,
+): Phaser.GameObjects.Rectangle {
+  return scene.add.rectangle(x, y, w, h, PALETTE.night, alpha).setOrigin(0.5).setDepth(40);
 }

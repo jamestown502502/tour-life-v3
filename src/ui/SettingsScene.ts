@@ -4,6 +4,7 @@ import { createButton, getButtonText } from './Button';
 import { State, type RhythmMode } from '../core/state';
 import { audio } from '../core/audio';
 import { saveRun } from '../core/save';
+import { goTo } from './transition';
 import { textStyle } from './textStyles';
 import { markSettingsOpened } from '../core/onboarding';
 import { computeCalibrationOffset, MIN_CALIBRATION_TAPS } from '../game/calibration';
@@ -122,10 +123,19 @@ export class SettingsScene extends Phaser.Scene {
       y += ROW_INCREMENT;
     });
 
-    createButton(this, W / 2 - 150, y + 12, 300, 56, 'Back', () => {
+    createButton(this, W / 2 - 150, y + 12, 145, 56, 'Back', () => {
       this.scene.stop();
       this.scene.resume(this.returnTo);
-    }, { fillColor: 0xc4704f });
+    }, { fillColor: 0xc4704f, fontSize: '18px' });
+    // Workstream 2 (navigation fix pass): City/Rhythm/MiniGame had no way back to the menu at
+    // all before this — the only exits were Title and Hub's own Settings button. this.returnTo
+    // is stopped (not just left paused) so its own SHUTDOWN cleanup actually runs (un-duck
+    // music, stop fireflies/rain — see CityScene's SHUTDOWN handler) instead of leaking a
+    // paused scene in the background forever.
+    createButton(this, W / 2 + 5, y + 12, 145, 56, 'Quit to Title', () => {
+      this.scene.stop(this.returnTo);
+      goTo(this, 'Title');
+    }, { fillColor: 0x8a6fa3, fontSize: '14px' });
   }
 
   private adjustVolume(key: keyof typeof State.data.accessibility.volumes, delta: number, label: Phaser.GameObjects.Text): void {

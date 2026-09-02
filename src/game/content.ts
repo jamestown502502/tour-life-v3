@@ -34,6 +34,13 @@ export function getCity(id: string): CityDef {
   return c;
 }
 
+/** For validating a resume target BEFORE routing to CityScene (which calls getCity and throws
+ *  on an unknown id) — a save with a stale cityId (renamed/removed content, or corrupted
+ *  storage) should fall back to Hub, not throw mid scene-transition and freeze the game. */
+export function hasCity(id: string): boolean {
+  return cityIndex.has(id);
+}
+
 export function getSong(id: string): SongDef {
   const s = songIndex.get(id);
   if (!s) throw new Error(`[content] unknown song "${id}"`);

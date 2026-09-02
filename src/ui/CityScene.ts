@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PALETTE, W } from '../const';
+import { PALETTE, PALETTE_HEX, W } from '../const';
 import { ensureCityBackground } from '../art/sprites';
 import { applyVignette, spawnFireflies, spawnRain, type WeatherHandle } from '../art/effects';
 import { addCoverBackground } from '../art/background';
@@ -17,8 +17,9 @@ import { evaluateCondition } from '../game/condition';
 import { availabilityFlag } from '../game/scenePool';
 import { arrangementFlag } from '../game/rhythm';
 import type { CityDef, DialogueNode, LocationDef } from '../../content/schema';
-import { textStyle } from './textStyles';
+import { addTextScrim, textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
+import { addMenuButton } from './MenuButton';
 import { nextUnplayedMinigame } from '../game/minigame';
 import { WEATHER_EFFECTS, weatherAppliedFlag } from '../game/weather';
 
@@ -95,8 +96,14 @@ export class CityScene extends Phaser.Scene {
     }
     this.applyWeatherEffectIfDue(stop?.weather);
 
-    this.add.text(W / 2, 40, this.city.name, textStyle('h1', { fontSize: '26px' })).setOrigin(0.5).setDepth(50);
+    addTextScrim(this, W / 2, 40, 420, 66);
+    // h1's default gold measures 2.77:1 on this scrim (just under the 3:1 large-text floor) —
+    // cream reliably clears it (5.28:1), see docs/contrast-audit.md.
+    this.add.text(W / 2, 40, this.city.name, textStyle('h1', { fontSize: '26px', color: PALETTE_HEX.cream })).setOrigin(0.5).setDepth(50);
     addHelpButton(this, 'Read the story and tap to continue. Choices shape your stats and your relationships with the band — there\'s no wrong one.');
+    // yOffset 76: stacked below the DialogueBox backlog toggle this scene always constructs
+    // (same (20,20) spot otherwise — see MenuButton.ts's own comment).
+    addMenuButton(this, 'City', 76);
 
     this.dialogueBox = new DialogueBox(this);
 
@@ -173,9 +180,10 @@ export class CityScene extends Phaser.Scene {
     this.pickerContainer?.destroy();
     this.pickerContainer = this.add.container(0, 0).setDepth(80);
     const remaining = this.city.locations.filter((l) => !this.locationsVisited.has(l.id));
+    const scrim = addTextScrim(this, W / 2, 620, W - 60, 56);
     const header = this.add.text(W / 2, 620, `Where to, before the show? (${LOCATIONS_TO_VISIT - this.locationsVisited.size} left)`,
       textStyle('body', { fontSize: '18px' })).setOrigin(0.5);
-    this.pickerContainer.add(header);
+    this.pickerContainer.add([scrim, header]);
     // 70/78 (not the original 50/60): matches BandCreator's genre-grid fix — a raw button needs
     // to clear ~65px including Button.ts's own pad before it reaches a real 44 CSS-px target at
     // the measured 390px scale. With up to 6 locations (3 rows), the grid's bottom edge still
@@ -244,7 +252,14 @@ export class CityScene extends Phaser.Scene {
         goTo(this, 'Rhythm', { cityId: this.city.id });
       }, { fontSize: '18px' });
       container.add(btn);
-      container.add(this.add.text(W / 2 - 280, 960 + i * 82 + 68, opt.description, textStyle('small', { fontSize: '13px' })));
+      // These sit directly on the painted city background, same as the location-picker header
+      // above — bumped from 13px to 16px (it carries real meaning: what pressing this choice
+      // actually does) and given the same scrim treatment as everything else over painted art.
+      // small's default sky measures 2.90:1 on this scrim, under even the loosest 3:1 floor and
+      // well under this normal-weight text's actual 4.5:1 — cream clears both.
+      const descScrim = addTextScrim(this, W / 2, 960 + i * 82 + 76, 600, 34);
+      const desc = this.add.text(W / 2 - 280, 960 + i * 82 + 68, opt.description, textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream }));
+      container.add([descScrim, desc]);
     });
   }
 

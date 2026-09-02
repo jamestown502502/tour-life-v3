@@ -40,7 +40,11 @@ const JUDGEMENT_COLOR: Record<HitJudgement, number> = {
   perfect: PALETTE.gold, good: PALETTE.cream, ok: PALETTE.sky, miss: PALETTE.softRed,
 };
 const JUDGEMENT_HEX: Record<HitJudgement, string> = {
-  perfect: PALETTE_HEX.gold, good: PALETTE_HEX.cream, ok: PALETTE_HEX.sky, miss: PALETTE_HEX.softRed,
+  // softRed itself measures 2.56:1 against this scene's night background — under the 3:1 floor
+  // even for this popup's large bold text. This lighter tint (still reads as "miss") clears it
+  // at ~3.7:1; only the popup text uses it — JUDGEMENT_COLOR's softRed (the lane-flash fill,
+  // not text) is untouched.
+  perfect: PALETTE_HEX.gold, good: PALETTE_HEX.cream, ok: PALETTE_HEX.sky, miss: '#E27272',
 };
 
 interface NoteState {

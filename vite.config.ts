@@ -8,5 +8,8 @@ export default defineConfig({
     outDir: 'dist',
     chunkSizeWarningLimit: 2000,
   },
-  test: {},
+  // Scoped to src/tests/ (this project's convention) — without this, vitest's default glob also
+  // picks up e2e/*.spec.ts (Playwright specs, added by the UX/QA fix pass), which use a
+  // different `test`/`describe` and fail immediately under vitest's runner.
+  test: { include: ['src/tests/**/*.test.ts'] },
 });

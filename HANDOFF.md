@@ -1221,30 +1221,191 @@ layer, and a 5th+ city — none of which this pass touched, all still the owner'
 
 ---
 
+## 16. The UX/QA fix pass — readability, navigation, cross-platform (2026-09-02)
+
+Three user-reported defects on the live Vercel build, fixed in one pass: (1) low text contrast
+across menus/explainers/painted backgrounds, (2) "Continue" appearing to get stuck on some
+screens, (3) no documented cross-platform testing standard. No new city, no Part 3, no audio-file
+swap, no engine change — a fix-and-polish pass only, same guardrail as §15.
+
+### 16.1 Workstream 1 — readability & contrast audit
+
+`scripts/contrast-audit.mjs` (new, committed with its output at `docs/contrast-audit.md`)
+computes real WCAG 2.1 contrast ratios for every text preset against every surface it can
+plausibly sit on. The default preset colors (unchanged, still correct for their *original*
+intended surfaces) fail badly on several *other* surfaces the same preset also gets used on —
+84 of 126 preset×surface pairs in the "BEFORE" table fail. The fix was per-usage, not a blanket
+recolor (a `button`-preset-is-always-cream approach would just move the bug elsewhere):
+
+- **`src/ui/Button.ts`**: every button label used to hardcode cream regardless of fill —
+  fine on dark fills, illegible on light ones (gold 1.91:1, sky 1.82:1, the disabled gray
+  2.93:1). `labelColorForFill()` now computes cream-or-plum per the button's own fill color,
+  covering every button in the game (not just today's fills — any future fill gets the same
+  treatment automatically). `scripts/contrast-audit.mjs`'s "AFTER" table re-derives this against
+  every fill actually used in the game: 8/8 pass.
+- **`src/ui/DialogueBox.ts`**: the speaker nameplate and VN backlog panel used each bandmate's
+  bright accent color directly as text on the sand dialogue panel — gold 1.57:1, sky 1.50:1,
+  terracotta 2.53:1 (only teal scraped by at 3.35:1). This is the single highest-frequency fix in
+  the pass (every dialogue line in the game shows a speaker nameplate): darker same-hue variants
+  (`BANDMATE_HEX`) keep each character's color identity while clearing 4.5:1 — high enough for
+  both the nameplate (bold, 3:1 floor) and the backlog panel (normal-weight, 4.5:1 floor).
+  Narrator lines in the backlog also switched cream → plum (was 1.22:1).
+- **`src/ui/textStyles.ts`**: new `addTextScrim()` — a night-tinted 0.72-alpha backing for text
+  that sits directly on painted/photographic art with nothing else behind it (Title's logo block,
+  City's name banner + location-picker header + preshow choice descriptions, MiniGame's title +
+  in-round labels). Gold/sky (the h1/h2 defaults) still measure just under 3:1 even on the
+  scrim, so every scrimmed text was standardized to cream (5.28:1) rather than darkening the
+  scrim further into a heavier-looking bar than intended.
+- Several isolated fixes where a preset's default color didn't match its actual local surface:
+  `HowToPlayScene`'s page heading (gold → plum, sits on a sand card), `MiniGameScene`'s
+  "Question X of Y" (sky → plum, sits on a sand card), `HubScene`'s corkboard "Souvenirs"/"Nothing
+  yet"/"+N more" labels (cream/sky → white, sit on a brown corkboard panel), `RhythmScene`'s
+  "Miss" judgement popup (softRed → a lighter tint, softRed itself is 2.56:1 on the scene's night
+  background).
+- `CityScene`'s preshow choice descriptions bumped 13px → 16px alongside their contrast fix (they
+  carry real information — what pressing the choice does).
+- Screens already using a dark solid background (Hub's bus interior, RoutePlan, Settings,
+  BandCreator, Results, Rhythm's HUD, Scrapbook's main card) were checked and found already
+  correct — cream/gold/sky all pass comfortably against `PALETTE.night`. Not touched, since
+  nothing there was broken.
+
+**Regression coverage**: `src/tests/contrast.test.ts` (5 tests) — locks in the button
+auto-contrast algorithm, the bandmate color fix, and the scrim treatment against the real
+`PALETTE` values, each paired with a "the original/pre-fix color actually fails" test so a
+future accidental revert is caught. `scripts/contrast-audit.mjs` is meant to be re-run (`node
+scripts/contrast-audit.mjs`) any time a new text/surface combination is added.
+
+**Partially done, not the full brief**: real screenshots were captured live during Workstream 2's
+debugging (Title with the daily-tour/Continue row, Lisbon's city header + location picker,
+Settings) and visually confirm the fixes read correctly at a glance — scrimmed text legible over
+painted art, button labels legible on every fill, location-picker buttons legible. That is not
+the full screen-by-screen PASS/FAIL table at 390×844 with before/after annotations the original
+brief's Workstream 1c asked for — RhythmScene, MiniGame's 3 variants, Scrapbook, BandCreator,
+HowToPlay, and the Saves/Gallery panels were not individually screenshotted and annotated this
+pass. The contrast fixes themselves are grounded in the same WCAG math the audit script computes
+(real numbers, not eyeballing) and in source-level identification of the actual surface each text
+sits on, which is a stronger basis than eyeballing alone — but a systematic visual walk of every
+remaining screen is still open. Treat this as the same kind of honest gap §8/§15.8 already
+established the convention for, not a silent claim.
+
+### 16.2 Workstream 2 — navigation / "Continue" stuck-state fix
+
+Investigated every hypothesis the ground truth listed for the reported "Continue gets stuck":
+
+1. **`progress.cityId` pointing at content that no longer exists** — confirmed real.
+   `CityScene.init()` calls `getCity(id)`, which **throws** on an unknown id; that throw happens
+   inside Phaser's own scene-start dispatch, not synchronously catchable by the click handler —
+   a stale/corrupted cityId froze the transition instead of landing anywhere. Fixed: `resumeTarget`
+   (moved to the new `src/game/resume.ts` so it's unit-testable without Phaser) now validates via
+   `hasCity()` before ever routing to City, falling back to Hub.
+2. **`progress.nodeId` values Rhythm/MiniGame/Settings never persist** — investigated, confirmed
+   *already* safe: `CityScene.init()` already sanitizes any unrecognized phase to `'arrival'`.
+   No change needed.
+3. **The floating seed `<input>` overlapping Continue** — ruled out by source inspection (318
+   logical units of vertical separation, ~25% of the screen height).
+4. **A modal left open across a transition** — ruled out; the Saves-slot Load button already
+   calls `panel.destroy()` before `goTo()`.
+5. **`isValidRunState`/`loadRun()` on a corrupted save** — confirmed already correct: a save
+   failing validation already resolves as "no save" (Continue doesn't render), not partial state.
+6. **No escape hatch from City/Rhythm/MiniGame** — confirmed real: only Title and Hub could open
+   Settings before this pass. Fixed: `src/ui/MenuButton.ts` (new) adds a small persistent Settings
+   button to City and MiniGame (deliberately **not** Rhythm — its lanes already cover most of the
+   play area, risking an accidental mid-song pause, and a song is short/bounded and always reaches
+   Results on its own). `SettingsScene`'s single "Back" button is now "Back" + "Quit to Title"
+   side by side (no added row height); Quit to Title stops (not just leaves paused) whatever scene
+   launched it, so that scene's own SHUTDOWN cleanup — un-ducking music, stopping fireflies/rain —
+   actually runs instead of leaking a paused scene in the background. The live test suite then
+   caught a second real bug in this same fix: `MenuButton` first landed at the exact same
+   `(20,20,66,66)` spot `DialogueBox`'s own "≡" backlog toggle already occupies — `CityScene`
+   always constructs a `DialogueBox`, so a tap there silently hit the backlog toggle instead of
+   opening Settings, every time. `addMenuButton` now takes a `yOffset`; City stacks its button
+   below the backlog toggle instead of on top of it.
+
+Full writeup, including exactly what was ruled out and why: `docs/navigation-fixes.md`.
+
+**Regression coverage**: `src/tests/resumeTarget.test.ts` (8 tests, every `ScreenName` value +
+the stale-cityId/stale-nodeId edge cases) and `src/tests/saveMigration.test.ts` (5 tests,
+exporting `isValidRunState`/`migrate` from `save.ts` for direct testing — its actual IndexedDB
+path needs a real `window`, which this project's node-environment vitest config doesn't have).
+`e2e/smoke.spec.ts` is the live version of the same claims — see §16.4 for its run status.
+
+### 16.3 Workstream 3 — cross-platform testing standard
+
+`docs/CROSS_PLATFORM_TESTING.md` (new): the behavior contract (one build, one behavior — only
+input method/safe-area/audio-unlock-timing/PWA-installability/haptics differ by platform, never
+game logic), a standards table with each item's actual verified status (not assumed), and the
+3-part testing workflow below.
+
+### 16.4 The testing workflow itself, and its own honest run status
+
+- **`e2e/smoke.spec.ts`** (new) + **`playwright.config.ts`** (new): a device-emulation matrix
+  (iPhone 12, iPhone 14, Pixel 7, generic 360×740 Android) covering boot, New Run, the full
+  resume-state matrix from §16.2 (every `ScreenName` plus the stale-data edge cases), and
+  Settings reachability + Quit to Title. Runs against the dev server, reading scene state back
+  via `window.__game`/`__state` (DEV-only) since Phaser draws to one `<canvas>` with no DOM a
+  normal Playwright locator can read.
+- **`e2e/dist-smoke.spec.ts`** + **`playwright.dist.config.ts`** (new): a lighter check against
+  the actual built `dist/` (`vite preview`) — PWA manifest validity, service worker reaching an
+  active registration, and the shell (`/` + `/index.html`) being present in its cache after
+  activation. This is the "test dist/ before a Capacitor port" step from
+  `docs/CROSS_PLATFORM_TESTING.md`.
+- Both wired into `.github/workflows/ci.yml` as a separate `e2e-smoke` job (installs
+  chromium+webkit, runs both suites, uploads the HTML report as an artifact on failure) so a
+  flaky browser-automation run doesn't gate the fast unit-test job.
+- **Status**: all 18 `smoke.spec.ts` tests and all 4 `dist-smoke.spec.ts` tests pass, confirmed on
+  repeated runs, on the **Pixel 7** profile. Getting there surfaced two real, useful findings, not
+  just test-code bugs: (1) `public/sw.js` never actually cached the navigation document anywhere
+  — only ever *read* from a cache entry that nothing wrote — so "offline reload" could never have
+  worked; fixed by pre-caching the shell on `install` and opportunistically caching the real
+  navigate request too (§16.1's sibling fix, same file). (2) the `MenuButton`/`DialogueBox`
+  position collision documented in §16.2 item 6. A third thing surfaced along the way that's
+  *correct* behavior, not a bug: a fresh browser profile auto-opens the first-time `HowToPlay`
+  overlay over Title (`src/core/onboarding.ts`) — the test helpers now account for it, and it has
+  its own dedicated test. **What's not confirmed**: the other 3 device profiles (iPhone 12/14,
+  generic Android) weren't run to completion locally — this session's sandboxed environment made
+  the full 4-device matrix impractically slow, and only Pixel 7 was run to a clean, repeated pass.
+  Same test logic/coordinates against the same aspect-ratio-locked canvas, so no device-specific
+  reason to expect a different result, but check the first CI run before treating all 4 as
+  verified. Also **not** claimed as run: the manual real-device checklist in
+  `docs/CROSS_PLATFORM_TESTING.md` — no physical iPhone or Android hardware was available this
+  session, consistent with §12 item 3's still-open status. And Playwright's own
+  `context.setOffline()` was found to not reliably exercise a service-worker-served offline
+  reload in this environment (a Chromium/Playwright quirk, not an app bug) — see
+  `docs/CROSS_PLATFORM_TESTING.md`'s note on that for what the dist-smoke test checks instead.
+
 ## 12. Prioritized next steps (current, not the stale ordering from earlier handoffs)
 
-Both the best-in-class pass (§14) and the close-out pass (§15) are now done — everything either
-named is shipped and live except two items both passes deliberately left to the owner: the Part 3
-reality layer and a 5th+ city. What's actually left is short:
+The best-in-class pass (§14), the close-out pass (§15), and the UX/QA fix pass (§16) are all now
+done — everything any of them named is shipped and live except two items every pass has
+deliberately left to the owner: the Part 3 reality layer and a 5th+ city. What's actually left is
+short:
 
-1. **Hold-note rail watched in slow motion by a human** (§8, §15.8) — the one verification item
+1. **The other 3 device profiles of `e2e/smoke.spec.ts` + `e2e/dist-smoke.spec.ts`** (§16.4) —
+   all 22 tests pass cleanly (repeated runs) on Pixel 7; iPhone 12, iPhone 14, and the generic
+   360×740 Android profile weren't run to completion locally (this session's sandboxed
+   environment made the full 4-device matrix impractically slow). Same test logic against the
+   same aspect-ratio-locked canvas, so no specific reason to expect a different result — but
+   check the first CI run on the PR/push that lands this pass (a normal, non-sandboxed runner)
+   before treating all 4 profiles as verified.
+2. **Hold-note rail watched in slow motion by a human** (§8, §15.8) — the one verification item
    the close-out pass's own tooling couldn't reliably complete (an automation round-trip-latency
    constraint specific to that session, not a code risk). Structurally proven correct by both a
    rapid-tap stress test (earlier pass) and code review (this pass); just never watched by eyes.
-2. **A real physical-device Android pass**, now that `CAPACITOR_PORT.md` (§15.1) exists — every
-   touch-target/safe-area/haptics claim in this repo has been verified via viewport emulation or
-   in-browser testing, never on real hardware. This is the actual next milestone toward the
-   "Android-ready" framing the close-out plan used, not just the wrap-and-ship mechanics.
-3. **F/J/K individually re-confirmed with real key presses** (§15.8) — D was proven live; the
+3. **A real physical-device Android *and* iPhone pass** — every touch-target/safe-area/haptics/
+   contrast claim in this repo has been verified via viewport emulation or in-browser testing,
+   never on real hardware. `docs/CROSS_PLATFORM_TESTING.md`'s manual checklist (§16.3) is written
+   and ready to run; nobody's run it on physical devices yet. This is the actual next milestone
+   toward "Android-ready," not just the wrap-and-ship mechanics `CAPACITOR_PORT.md` (§15.1) covers.
+4. **F/J/K individually re-confirmed with real key presses** (§15.8) — D was proven live; the
    other three lanes share the identical registration loop and weren't independently re-pressed
-   due to the same tooling latency issue as item 1. Low risk, just unconfirmed.
-4. **The Part 3 reality layer** (§7.1) and **a 5th+ city** (§7.2) remain gated on the owner's own
-   decision, on honest terms, across two separate passes now. Don't start either without that.
+   due to the same tooling latency issue as item 2. Low risk, just unconfirmed.
+5. **The Part 3 reality layer** (§7.1) and **a 5th+ city** (§7.2) remain gated on the owner's own
+   decision, on honest terms, across three separate passes now. Don't start either without that.
 
 ## 13. Open questions worth asking before assuming
 
 - Is a real Android build (via `CAPACITOR_PORT.md`) actually happening next, or does "Android-
-  ready" mean "ready whenever it's decided to happen"? That changes whether item 2 above is the
+  ready" mean "ready whenever it's decided to happen"? That changes whether item 3 above is the
   next thing to do or just infrastructure waiting to be used.
 - If the reality layer is ever revisited, what's the actual tone-dial default the owner wants
   (`DESIGN.md` proposes Warm-by-default, opt-in Raw) — this is a real product decision, not

@@ -25,8 +25,15 @@ const AUTO_ADVANCE_MS = 4000;
 const BACKLOG_CAP = 30;
 const BACKLOG_BTN_SIZE = 66; // matches HelpButton's BTN_SIZE — the same measured 44px-floor fix
 
-const BANDMATE_HEX: Record<BandmateId, string> = {
-  mira: PALETTE_HEX.terracotta, theo: PALETTE_HEX.teal, jun: PALETTE_HEX.gold, rowan: PALETTE_HEX.sky,
+// The nameplate/glow's own accent colors (BANDMATE_COLOR, unchanged below) read fine as
+// low-alpha decorative glows and underline bars, but 3 of 4 measure well under WCAG on the
+// dialogue/backlog panels' sand tint when used as TEXT: gold 1.57:1, sky 1.50:1, terracotta
+// 2.53:1 (only teal's 3.35:1 scrapes past the loosest 3:1 bar) — see docs/contrast-audit.md.
+// Darker, same-hue-family variants here keep each bandmate's color identity while clearing
+// 4.5:1 on sand — high enough to cover both the bold 20px speaker nameplate (3:1 floor) and
+// the normal-weight 16px backlog panel (4.5:1 floor) with one shared set.
+export const BANDMATE_HEX: Record<BandmateId, string> = {
+  mira: '#7D4028', theo: '#275452', jun: '#6B4C18', rowan: '#2E5266',
 };
 const BANDMATE_COLOR: Record<BandmateId, number> = {
   mira: PALETTE.terracotta, theo: PALETTE.teal, jun: PALETTE.gold, rowan: PALETTE.sky,
@@ -81,8 +88,10 @@ export class DialogueBox {
     }));
     // Advance affordance: a chevron that pulses once a line is fully typed and is waiting on a
     // tap. Hidden while typing and whenever choices are up.
+    // gold measures 1.57:1 on this panel's sand tint (contrast-audit Workstream 1) — plum matches
+    // the rest of this panel's text (speaker/dialogue) and is the pairing that actually passes.
     this.chevron = scene.add.text(PANEL_X + PANEL_W - 30, PANEL_Y + PANEL_H - 28, '▼', textStyle('button', {
-      fontSize: '22px', color: PALETTE_HEX.gold,
+      fontSize: '22px', color: PALETTE_HEX.plum,
     })).setOrigin(0.5).setVisible(false);
 
     this.skipZone = scene.add.zone(PANEL_X, PANEL_Y, PANEL_W, PANEL_H).setOrigin(0, 0).setInteractive();
@@ -296,7 +305,7 @@ export class DialogueBox {
     for (const line of entries) {
       const isBandmate = BANDMATE_IDS.includes(line.speaker as BandmateId);
       const label = isBandmate ? `${capitalize(line.speaker)}: ` : '';
-      const color = isBandmate ? BANDMATE_HEX[line.speaker as BandmateId] : PALETTE_HEX.cream;
+      const color = isBandmate ? BANDMATE_HEX[line.speaker as BandmateId] : PALETTE_HEX.plum;
       const t = this.scene.add.text(0, cursorY, `${label}${line.text}`, textStyle('small', {
         fontSize: '16px', color, wordWrap: { width: w - padX * 2 }, lineSpacing: 3,
       }));

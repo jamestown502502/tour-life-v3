@@ -14,8 +14,9 @@ import { State } from '../core/state';
 import { audio } from '../core/audio';
 import { saveRun } from '../core/save';
 import { getCity } from '../game/content';
-import { textStyle } from './textStyles';
+import { addTextScrim, textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
+import { addMenuButton } from './MenuButton';
 import type { MiniGameDef, MiniGameQuestion, MiniGameReward } from '../../content/schema';
 import { minigamePlayedFlag, timingRoundsForHarmony } from '../game/minigame';
 import { makeRng } from '../core/rng';
@@ -79,8 +80,12 @@ export class MiniGameScene extends Phaser.Scene {
     const bg = addCoverBackground(this, bgKey);
     applyVignette(bg, 0.35);
 
-    this.add.text(W / 2, 60, this.mg.title, textStyle('h1')).setOrigin(0.5);
+    addTextScrim(this, W / 2, 60, 420, 66);
+    // h1's default gold measures 2.77:1 on this scrim (just under the 3:1 large-text floor) —
+    // cream reliably clears it (5.28:1), see docs/contrast-audit.md.
+    this.add.text(W / 2, 60, this.mg.title, textStyle('h1', { color: PALETTE_HEX.cream })).setOrigin(0.5);
     addHelpButton(this, HELP_TEXT[this.mg.type]);
+    addMenuButton(this, 'MiniGame');
 
     this.contentLayer = this.add.container(0, 0);
     this.showIntro();
@@ -125,7 +130,10 @@ export class MiniGameScene extends Phaser.Scene {
     const zoneX = barX + (barW - zoneW) / 2;
     this.contentLayer.add(this.add.rectangle(barX, barY, barW, barH, 0x000000, 0.3).setOrigin(0, 0));
     this.contentLayer.add(this.add.rectangle(zoneX, barY, zoneW, barH, PALETTE.gold, 0.55).setOrigin(0, 0));
-    this.contentLayer.add(this.add.text(W / 2, barY - 40, `Round ${this.timingRound + 1} of ${rounds.length}`, textStyle('h2')).setOrigin(0.5));
+    this.contentLayer.add(addTextScrim(this, W / 2, barY - 40, 320, 48));
+    // h2's default sky measures 2.90:1 on this scrim (just under the 3:1 large-text floor).
+    this.contentLayer.add(this.add.text(W / 2, barY - 40, `Round ${this.timingRound + 1} of ${rounds.length}`,
+      textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
 
     this.needle = this.add.circle(barX, barY + barH / 2, 14, PALETTE.cream, 1);
     this.contentLayer.add(this.needle);
@@ -174,9 +182,12 @@ export class MiniGameScene extends Phaser.Scene {
     });
 
     let placedCount = 0;
-    const timerText = this.add.text(W / 2, 480, `${timeSec}s`, textStyle('h1', { fontSize: '26px' })).setOrigin(0.5);
+    this.contentLayer.add(addTextScrim(this, W / 2, 500, 340, 90));
+    // Both default to gold/sky, which measure 2.77:1 / 2.90:1 on this scrim (just under 3:1) —
+    // cream reliably clears it, see docs/contrast-audit.md.
+    const timerText = this.add.text(W / 2, 480, `${timeSec}s`, textStyle('h1', { fontSize: '26px', color: PALETTE_HEX.cream })).setOrigin(0.5);
     this.contentLayer.add(timerText);
-    this.contentLayer.add(this.add.text(W / 2, 520, 'Drag each item into an open slot', textStyle('small', { fontSize: '15px' })).setOrigin(0.5));
+    this.contentLayer.add(this.add.text(W / 2, 520, 'Drag each item into an open slot', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0.5));
 
     let secondsLeft = timeSec;
     let finished = false;
@@ -239,7 +250,8 @@ export class MiniGameScene extends Phaser.Scene {
     this.clearContent();
     const q = questions[this.questionIndex];
     this.card(300, 460);
-    this.contentLayer.add(this.add.text(W / 2, 60 + 280, `Question ${this.questionIndex + 1} of ${questions.length}`, textStyle('small')).setOrigin(0.5));
+    this.contentLayer.add(this.add.text(W / 2, 60 + 280, `Question ${this.questionIndex + 1} of ${questions.length}`,
+      textStyle('small', { color: PALETTE_HEX.plum })).setOrigin(0.5));
     this.contentLayer.add(this.add.text(W / 2, 350, q.prompt, textStyle('dialogue', {
       fontSize: '24px', wordWrap: { width: W - 140 }, align: 'center', lineSpacing: 6,
     })).setOrigin(0.5, 0));
