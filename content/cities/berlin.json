@@ -1,0 +1,181 @@
+{
+  "id": "berlin",
+  "name": "Berlin",
+  "tone": "ambition_and_experimentation",
+  "weather": ["cold_neon_rain", "clear_industrial_night"],
+  "tempo": 126,
+  "tint": "midnight_indigo",
+  "locations": [
+    { "id": "powerplant", "name": "A converted power-plant venue mid-soundcheck", "sound": "generator_hum", "sceneId": "ber_loc_powerplant" },
+    { "id": "records", "name": "An all-night record shop stacked to the ceiling", "sound": "vinyl_static", "sceneId": "ber_loc_records" },
+    { "id": "biergarten", "name": "A graffiti-covered courtyard beer garden", "sound": "glass_clink_and_chatter", "sceneId": "ber_loc_biergarten" },
+    { "id": "tower", "name": "The base of the TV tower, glowing red", "sound": "wind_at_height", "sceneId": "ber_loc_tower" },
+    { "id": "doner", "name": "A 24-hour döner counter three blocks from the venue", "sound": "grill_sizzle", "sceneId": "ber_loc_doner" }
+  ],
+  "arrivalSceneId": "ber_arrival",
+  "preShowSceneId": "ber_preshow",
+  "relationshipScenePool": [
+    { "id": "mira_no_one_knows_us", "bandmate": "mira", "sceneId": "ber_rel_mira" },
+    { "id": "theo_the_city_that_never_sleeps", "bandmate": "theo", "sceneId": "ber_rel_theo" },
+    { "id": "jun_break_it_on_purpose", "bandmate": "jun", "sceneId": "ber_rel_jun" },
+    { "id": "jun_the_synth_builder", "bandmate": "jun", "sceneId": "ber_rel_jun2" },
+    { "id": "rowan_someone_elses_scene", "bandmate": "rowan", "sceneId": "ber_rel_rowan" }
+  ],
+  "collaborator": { "npcName": "Lene", "role": "modular synth artist", "gift": "a patch cable, still coiled the way she left it" },
+  "preShowChoices": [
+    { "id": "no_click_track", "label": "Cut the click track entirely", "description": "Play it loose. Let the room set the tempo tonight.", "arrangementId": "loose_wire", "effects": { "inspiration": 3 } },
+    { "id": "full_pa_push", "label": "Push the PA to the edge", "description": "Loud enough to feel it in your teeth.", "arrangementId": "overdrive", "effects": { "harmony": 1 } },
+    { "id": "duet_with_lene", "label": "Trade the bridge with Lene's modular rig", "description": "Hand four bars to a machine that's never played it the same way twice.", "arrangementId": "modular_trade", "effects": { "inspiration": 4 }, "condition": "relationship.jun>=35" }
+  ],
+  "songId": "kreuzberg_static",
+  "storyGate": { "condition": "relationship.jun>=35", "unlock": "modular_trade" },
+  "afterShowSceneId": "ber_aftershow",
+  "journalSceneId": "ber_journal",
+  "minigames": [],
+  "scenes": {
+    "ber_arrival": {
+      "id": "ber_arrival",
+      "speaker": "narrator",
+      "text": "The van dies in traffic under the TV tower's red blinking eye, and somehow nobody's mad about it — Berlin doesn't seem to care if you're late, it just keeps going without you either way.",
+      "choices": [
+        { "id": "view", "label": "Watch the light hit the tower", "next": "ber_arrival_view", "effects": { "inspiration": 2 } },
+        { "id": "gear", "label": "Get the gear off before the meter runs", "next": "ber_arrival_gear", "effects": { "energy": -3 } },
+        { "id": "theo", "label": "Check on Theo, who's gone unusually quiet", "next": "ber_arrival_theo", "relationshipEffects": { "theo": 3 } }
+      ]
+    },
+    "ber_arrival_view": { "id": "ber_arrival_view", "speaker": "narrator", "text": "The tower blinks red, steady, indifferent to all of you. Somewhere below it, a hundred clubs are only just now opening their doors for the night." },
+    "ber_arrival_gear": { "id": "ber_arrival_gear", "speaker": "narrator", "text": "The parking attendant doesn't even glance up from his phone. Everyone in this city, it seems, has somewhere else they'd rather be right now." },
+    "ber_arrival_theo": { "id": "ber_arrival_theo", "speaker": "theo", "portrait": "tense", "text": "\"This city doesn't sleep, and apparently neither will I,\" Theo says, staring up at the tower like it personally owes him an explanation." },
+
+    "ber_loc_powerplant": {
+      "id": "ber_loc_powerplant", "speaker": "narrator",
+      "text": "Turbines the size of buses, rusted into accidental sculpture. Someone from tonight's other act is already running cable across the concrete floor, whistling something you almost recognize.",
+      "choices": [
+        { "id": "watch", "label": "Watch the other band's soundcheck", "next": "ber_loc_powerplant_watch", "effects": { "inspiration": 3 } },
+        { "id": "help", "label": "Offer to help carry cases", "next": "ber_loc_powerplant_help", "relationshipEffects": { "jun": 4 } }
+      ]
+    },
+    "ber_loc_powerplant_watch": { "id": "ber_loc_powerplant_watch", "speaker": "narrator", "text": "Their bassist nods at you once, like a password quietly exchanged between strangers who understand exactly what the other one is carrying." },
+    "ber_loc_powerplant_help": { "id": "ber_loc_powerplant_help", "speaker": "jun", "portrait": "happy", "text": "\"This whole place used to run half the city,\" Jun says, hauling a case, grinning like it's somehow Christmas morning." },
+
+    "ber_loc_records": {
+      "id": "ber_loc_records", "speaker": "narrator",
+      "text": "Krautrock reissues stacked against techno white labels stacked against a whole shelf in a language none of you can read. The owner doesn't look up from his paperback.",
+      "choices": [
+        { "id": "dig", "label": "Dig for something you can't identify", "next": "ber_loc_records_dig", "effects": { "inspiration": 2 }, "flags": ["found_mystery_record"] },
+        { "id": "ask", "label": "Ask the owner for a recommendation", "next": "ber_loc_records_ask", "effects": { "funds": -15 }, "relationshipEffects": { "mira": 3 } }
+      ]
+    },
+    "ber_loc_records_dig": { "id": "ber_loc_records_dig", "speaker": "narrator", "text": "No label, no year, no country listed anywhere on the sleeve. You buy it purely on the strength of the cover art alone." },
+    "ber_loc_records_ask": { "id": "ber_loc_records_ask", "speaker": "mira", "portrait": "happy", "text": "\"He just handed me something with no cover at all,\" Mira says, delighted, already turning the blank sleeve over in her hands." },
+
+    "ber_loc_biergarten": {
+      "id": "ber_loc_biergarten", "speaker": "narrator",
+      "text": "Fairy lights strung between murals of faces nobody remembers the names of anymore. Somebody's dog is peacefully asleep under every third table in the courtyard.",
+      "choices": [
+        { "id": "toast", "label": "Toast to nothing in particular", "next": "ber_loc_biergarten_toast", "effects": { "harmony": 3 } },
+        { "id": "quiet", "label": "Find the quietest corner and just breathe", "next": "ber_loc_biergarten_quiet", "effects": { "energy": 4 } }
+      ]
+    },
+    "ber_loc_biergarten_toast": { "id": "ber_loc_biergarten_toast", "speaker": "narrator", "text": "Glasses clink around the table. Nobody actually asks what for. That's apparently just how it's done here, no explanation required." },
+    "ber_loc_biergarten_quiet": { "id": "ber_loc_biergarten_quiet", "speaker": "narrator", "text": "For twenty whole minutes, the only job in the world is existing quietly in a plastic chair. You turn out to be surprisingly good at it." },
+
+    "ber_loc_tower": {
+      "id": "ber_loc_tower", "speaker": "narrator",
+      "text": "The base of the tower hums faintly — some machinery deep inside still working after all these decades. From down here, the whole city looks like a lit, patient circuit board.",
+      "choices": [
+        { "id": "climb", "label": "See how far up the stairs go before they're locked", "next": "ber_loc_tower_climb", "effects": { "inspiration": 3, "energy": -2 } },
+        { "id": "rowan", "label": "Rowan's already sitting against the base, not talking", "next": "ber_loc_tower_rowan", "relationshipEffects": { "rowan": 3 } }
+      ]
+    },
+    "ber_loc_tower_climb": { "id": "ber_loc_tower_climb", "speaker": "narrator", "text": "Four flights up, a locked gate stops you cold. The view from that landing is still, somehow, entirely worth the climb." },
+    "ber_loc_tower_rowan": { "id": "ber_loc_tower_rowan", "speaker": "rowan", "portrait": "worried", "text": "\"I like it better from down here,\" Rowan says. \"Less obvious that you're the one being looked at, for once.\"" },
+
+    "ber_loc_doner": {
+      "id": "ber_loc_doner", "speaker": "narrator",
+      "text": "Three in the morning and the line is still eight people deep, mostly folks who look like they haven't yet decided whether the night is actually over.",
+      "choices": [
+        { "id": "order", "label": "Order the thing everyone else is ordering", "next": "ber_loc_doner_order", "effects": { "funds": -8, "harmony": 2 } },
+        { "id": "people", "label": "People-watch instead of ordering anything", "next": "ber_loc_doner_people", "effects": { "inspiration": 2 } }
+      ]
+    },
+    "ber_loc_doner_order": { "id": "ber_loc_doner_order", "speaker": "narrator", "text": "It's exactly as good as the line outside promised it would be. Worth every minute of the wait, barely." },
+    "ber_loc_doner_people": { "id": "ber_loc_doner_people", "speaker": "narrator", "text": "Nobody in this line looks like they're actually from anywhere in particular. Somehow, for once, you fit right in." },
+
+    "ber_rel_mira": {
+      "id": "ber_rel_mira", "speaker": "mira", "portrait": "tense",
+      "text": "\"Nobody here has any idea who we are,\" Mira says, watching the crowd. \"Which should feel like freedom, and mostly just feels like nothing at all.\"",
+      "choices": [
+        { "id": "reframe", "label": "That's exactly what makes it freedom", "next": "ber_rel_mira_a", "relationshipEffects": { "mira": 5 }, "effects": { "harmony": 1 } },
+        { "id": "sit", "label": "Let her sit with the nothing a while", "next": "ber_rel_mira_b", "relationshipEffects": { "mira": 2 } }
+      ]
+    },
+    "ber_rel_mira_a": { "id": "ber_rel_mira_a", "speaker": "mira", "portrait": "happy", "text": "She doesn't fully buy the reframe. But she stops arguing with it, which turns out to be its own quiet kind of yes." },
+    "ber_rel_mira_b": { "id": "ber_rel_mira_b", "speaker": "mira", "portrait": "tense", "text": "\"Okay,\" she says eventually, to the tower, not really to you at all." },
+
+    "ber_rel_theo": {
+      "id": "ber_rel_theo", "speaker": "theo", "portrait": "tense",
+      "text": "\"I haven't slept right since Lisbon,\" Theo admits. \"This whole city runs on no sleep at all. I genuinely don't know if that helps me or ruins me.\"",
+      "choices": [
+        { "id": "rest", "label": "Find him somewhere actually quiet to crash", "next": "ber_rel_theo_a", "effects": { "energy": 5 }, "relationshipEffects": { "theo": 4 } },
+        { "id": "match", "label": "Match his hours instead of fighting them", "next": "ber_rel_theo_b", "effects": { "inspiration": 3, "energy": -3 } }
+      ]
+    },
+    "ber_rel_theo_a": { "id": "ber_rel_theo_a", "speaker": "theo", "portrait": "happy", "text": "He's asleep within nine minutes flat. You count, somehow, though you couldn't say exactly why that matters to you." },
+    "ber_rel_theo_b": { "id": "ber_rel_theo_b", "speaker": "theo", "portrait": "inspired", "text": "By dawn you've written half a new song together and completely forgotten what day of the week it even is." },
+
+    "ber_rel_jun": {
+      "id": "ber_rel_jun", "speaker": "jun", "portrait": "inspired",
+      "text": "\"What if we ran the whole set through something that's broken on purpose,\" Jun says, already holding a cable that clearly, visibly shouldn't work at all.",
+      "choices": [
+        { "id": "yes", "label": "Let's actually try it tonight", "next": "ber_rel_jun_a", "effects": { "inspiration": 5 }, "relationshipEffects": { "jun": 5 } },
+        { "id": "later", "label": "Save it — we can't risk tonight", "next": "ber_rel_jun_b", "effects": { "funds": 5 } }
+      ]
+    },
+    "ber_rel_jun_a": { "id": "ber_rel_jun_a", "speaker": "jun", "portrait": "inspired", "text": "\"Tonight then,\" Jun says, already halfway to the stage before you've even finished agreeing to it." },
+    "ber_rel_jun_b": { "id": "ber_rel_jun_b", "speaker": "jun", "portrait": "happy", "text": "Jun shrugs, entirely unbothered, and starts sketching the idea out for some later, safer night instead." },
+
+    "ber_rel_jun2": {
+      "id": "ber_rel_jun2", "speaker": "jun", "portrait": "happy",
+      "text": "\"Found someone who builds her own synths out of spare parts,\" Jun says. \"She said I could sit in on tonight's set, if we're brave enough to let her.\"",
+      "choices": [
+        { "id": "brave", "label": "Say yes before you can talk yourself out of it", "next": "ber_rel_jun2_a", "relationshipEffects": { "jun": 5 }, "effects": { "inspiration": 3 } },
+        { "id": "careful", "label": "Ask what \"brave\" actually means here first", "next": "ber_rel_jun2_b", "relationshipEffects": { "jun": 2 } }
+      ]
+    },
+    "ber_rel_jun2_a": { "id": "ber_rel_jun2_a", "speaker": "jun", "portrait": "inspired", "text": "\"Brave,\" Jun repeats, delighted, already typing out a reply before you've fully finished saying yes." },
+    "ber_rel_jun2_b": { "id": "ber_rel_jun2_b", "speaker": "jun", "portrait": "happy", "text": "\"Fair question. Honestly, I don't fully know either,\" Jun admits. \"That might be sort of the whole point.\"" },
+
+    "ber_rel_rowan": {
+      "id": "ber_rel_rowan", "speaker": "rowan", "portrait": "worried",
+      "text": "\"Everyone here already has a scene,\" Rowan says, watching the crowd. \"We're just passing through it.\" It doesn't sound like a complaint. It sounds closer to grief.",
+      "choices": [
+        { "id": "promise", "label": "You're building your own, one city at a time", "next": "ber_rel_rowan_a", "relationshipEffects": { "rowan": 6 } },
+        { "id": "agree", "label": "Maybe that's just what touring actually is", "next": "ber_rel_rowan_b", "relationshipEffects": { "rowan": 3 } }
+      ]
+    },
+    "ber_rel_rowan_a": { "id": "ber_rel_rowan_a", "speaker": "rowan", "portrait": "inspired", "text": "Rowan doesn't answer out loud, but the bass case opens a little more easily than it did an hour ago." },
+    "ber_rel_rowan_b": { "id": "ber_rel_rowan_b", "speaker": "rowan", "portrait": "worried", "text": "\"Yeah,\" Rowan says quietly, mostly to the pavement. \"Maybe that's just what this whole thing actually is.\"" },
+
+    "ber_preshow": {
+      "id": "ber_preshow", "speaker": "narrator",
+      "text": "The power-plant venue fills fast — all denim and boots and nobody once checking their phone. Tonight's shape, like every night's, is still entirely yours to choose."
+    },
+
+    "ber_aftershow": {
+      "id": "ber_aftershow", "speaker": "narrator",
+      "text": "The crowd doesn't so much leave as dissolve into whatever's happening next somewhere else in the city — a party, another set, a sunrise nobody planned on staying up for.",
+      "choices": [
+        { "id": "follow", "label": "Follow the crowd to whatever's next", "next": "ber_aftershow_a", "relationshipEffects": { "mira": 2, "theo": 2, "jun": 2, "rowan": 2 }, "effects": { "energy": -4 } },
+        { "id": "bus", "label": "Head straight back to the bus instead", "next": "ber_aftershow_b", "effects": { "energy": 5 } }
+      ]
+    },
+    "ber_aftershow_a": { "id": "ber_aftershow_a", "speaker": "narrator", "text": "You don't remember most of what happened after. You do remember, clearly, not wanting any of it to end." },
+    "ber_aftershow_b": { "id": "ber_aftershow_b", "speaker": "narrator", "text": "The bus is quiet and still. Somewhere outside, the whole city keeps going without you, same as always." },
+
+    "ber_journal": {
+      "id": "ber_journal", "speaker": "narrator",
+      "text": "You write: Berlin never once cared whether we were there. We stayed anyway, and it let us. Onward."
+    }
+  }
+}

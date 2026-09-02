@@ -4,9 +4,10 @@ import { validateSong } from '../../content/schema';
 import sailorJson from '../../content/songs/sailor_lullaby.json';
 import neonJson from '../../content/songs/neon_rain.json';
 import callejonJson from '../../content/songs/callejon_groove.json';
+import kreuzbergJson from '../../content/songs/kreuzberg_static.json';
 
 const COMMITTED: Record<string, unknown> = {
-  sailor_lullaby: sailorJson, neon_rain: neonJson, callejon_groove: callejonJson,
+  sailor_lullaby: sailorJson, neon_rain: neonJson, callejon_groove: callejonJson, kreuzberg_static: kreuzbergJson,
 };
 
 describe('chart generator', () => {
@@ -66,6 +67,7 @@ describe('chart generator', () => {
       'sailor_lullaby:acoustic', 'sailor_lullaby:full_band', 'sailor_lullaby:duet',
       'neon_rain:tight', 'neon_rain:loose', 'neon_rain:bass_forward',
       'callejon_groove:rehearsed', 'callejon_groove:call_and_response', 'callejon_groove:duet_percussion',
+      'kreuzberg_static:loose_wire', 'kreuzberg_static:overdrive', 'kreuzberg_static:modular_trade',
     ]) expect(ids.has(ref), ref).toBe(true);
   });
 });

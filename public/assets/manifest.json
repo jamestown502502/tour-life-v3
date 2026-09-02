@@ -20,6 +20,10 @@
     "file": "img/bg_city_mexico_city.webp"
   },
   {
+    "key": "bg_city_berlin",
+    "file": "img/bg_city_berlin.webp"
+  },
+  {
     "key": "portrait_mira_happy",
     "file": "img/portrait_mira_happy.png"
   },

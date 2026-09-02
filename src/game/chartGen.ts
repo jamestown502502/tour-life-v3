@@ -269,4 +269,47 @@ export const CALLEJON_GROOVE: SongConfig = {
   ],
 };
 
-export const SONG_CONFIGS: SongConfig[] = [SAILOR_LULLABY, NEON_RAIN, CALLEJON_GROOVE];
+export const KREUZBERG_STATIC: SongConfig = {
+  id: 'kreuzberg_static', name: 'Kreuzberg Static', bpm: 126, lanes: 4, chordProgression: 'Dm-Bb-F-C', waveform: 'square',
+  patterns: {
+    // Driving four-on-the-floor pulse. Hero (modular_trade): the "machine" answers with an
+    // erratic, syncopated pattern that never quite repeats — Lene's rig, not the band.
+    pulse: [k(0), k(1), k(2), k(3)],
+    pulse_off: [k(0), o(0.5), k(1), o(1.5), k(2), o(2.5), k(3), o(3.5)],
+    machine_call: [c(0), s(1.5)],
+    machine_answer: [o(0), k(0.75), s(1.25), o(2), k(2.75), s(3.25)],
+  },
+  arrangements: [
+    {
+      id: 'loose_wire', label: 'Loose Wire', description: "No click track — the room sets the tempo.", noteDensity: 1,
+      sections: [
+        { pattern: 'intro', bars: 4 }, { pattern: 'swing', bars: 8 }, { pattern: 'rest', bars: 1 },
+        { pattern: 'sparse', bars: 6 }, { pattern: 'swing', bars: 8 }, { pattern: 'sparse', bars: 6 },
+      ],
+      cues: [{ bar: 8, type: 'improvise' }, { bar: 20, type: 'pull_back' }],
+    },
+    {
+      id: 'overdrive', label: 'Overdrive', description: 'The PA pushed to the edge, loud enough to feel it.', noteDensity: 2,
+      sections: [
+        { pattern: 'intro', bars: 2 }, { pattern: 'pulse', bars: 8 }, { pattern: 'eighths', bars: 4 },
+        { pattern: 'rest', bars: 1 }, { pattern: 'fill', bars: 1 }, { pattern: 'chorus_nohold', bars: 8 },
+        { pattern: 'pulse', bars: 8 },
+      ],
+      cues: [{ bar: 8, type: 'build' }, { bar: 16, type: 'invite_crowd' }, { bar: 26, type: 'improvise' }],
+    },
+    {
+      id: 'modular_trade', label: 'Trading Bars with Lene', description: "Four bars handed to a machine that's never the same twice.", noteDensity: 1.8,
+      sections: [
+        { pattern: 'intro', bars: 2 },
+        { pattern: 'machine_call', bars: 2 }, { pattern: 'machine_answer', bars: 2 },
+        { pattern: 'machine_call', bars: 2 }, { pattern: 'machine_answer', bars: 2 },
+        { pattern: 'machine_call', bars: 2 }, { pattern: 'machine_answer', bars: 2 },
+        { pattern: 'machine_call', bars: 2 }, { pattern: 'machine_answer', bars: 2 },
+        { pattern: 'rest', bars: 1 }, { pattern: 'pulse_off', bars: 10 }, { pattern: 'machine_call', bars: 2 },
+      ],
+      cues: [{ bar: 6, type: 'spotlight_bandmate' }, { bar: 18, type: 'build' }],
+    },
+  ],
+};
+
+export const SONG_CONFIGS: SongConfig[] = [SAILOR_LULLABY, NEON_RAIN, CALLEJON_GROOVE, KREUZBERG_STATIC];
