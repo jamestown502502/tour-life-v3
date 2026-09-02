@@ -10,7 +10,8 @@
     { "id": "record_shop", "name": "A dusty record shop", "sound": "vinyl_crackle", "sceneId": "lis_loc_records" },
     { "id": "miradouro", "name": "The rooftop miradouro", "sound": "wind_and_trams", "sceneId": "lis_loc_miradouro" },
     { "id": "night_market", "name": "The night market", "sound": "crowd_and_bells", "sceneId": "lis_loc_market" },
-    { "id": "riverside_docks", "name": "The riverside docks at dusk", "sound": "water_lapping", "sceneId": "lis_loc_docks" }
+    { "id": "riverside_docks", "name": "The riverside docks at dusk", "sound": "water_lapping", "sceneId": "lis_loc_docks" },
+    { "id": "azulejo_workshop", "name": "A tile painter's workshop, past closing", "sound": "brush_on_ceramic", "sceneId": "lis_loc_azulejo" }
   ],
   "arrivalSceneId": "lis_arrival",
   "preShowSceneId": "lis_preshow",
@@ -19,7 +20,9 @@
     { "id": "theo_rest_day", "bandmate": "theo", "sceneId": "lis_rel_theo" },
     { "id": "jun_new_sound", "bandmate": "jun", "sceneId": "lis_rel_jun" },
     { "id": "rowan_watching_the_room", "bandmate": "rowan", "sceneId": "lis_rel_rowan" },
-    { "id": "jun_old_and_new", "bandmate": "jun", "sceneId": "lis_rel_jun2" }
+    { "id": "jun_old_and_new", "bandmate": "jun", "sceneId": "lis_rel_jun2" },
+    { "id": "mira_letter_from_home", "bandmate": "mira", "sceneId": "lis_rel_mira_letter" },
+    { "id": "theo_why_hes_here", "bandmate": "theo", "sceneId": "lis_rel_theo_why" }
   ],
   "collaborator": { "npcName": "Inês", "role": "fado singer", "gift": "a scrap of a fado phrase, hummed onto a napkin" },
   "preShowChoices": [
@@ -147,6 +150,17 @@
     "lis_loc_docks_watch": { "id": "lis_loc_docks_watch", "speaker": "narrator", "text": "A fisherman nods at you like you've always been here. You nod back like it's true." },
     "lis_loc_docks_write": { "id": "lis_loc_docks_write", "speaker": "narrator", "text": "One line becomes four. You cross out two and keep the rest." },
 
+    "lis_loc_azulejo": {
+      "id": "lis_loc_azulejo", "speaker": "narrator",
+      "text": "Past closing time, a painter still bends over unglazed tile, brush loaded with cobalt blue. She doesn't look up when the bell rings.",
+      "choices": [
+        { "id": "watch_paint", "label": "Watch her finish the pattern", "next": "lis_loc_azulejo_watch", "effects": { "inspiration": 3 } },
+        { "id": "buy_tile", "label": "Buy a cracked reject tile, cheap", "next": "lis_loc_azulejo_buy", "effects": { "funds": -6, "harmony": 1 } }
+      ]
+    },
+    "lis_loc_azulejo_watch": { "id": "lis_loc_azulejo_watch", "speaker": "narrator", "text": "Six hundred years of the same nine patterns, she says, and nobody's bored of them yet. You believe her." },
+    "lis_loc_azulejo_buy": { "id": "lis_loc_azulejo_buy", "speaker": "narrator", "text": "The crack runs straight through the pattern's center. She wraps it anyway, like the flaw is the whole point." },
+
     "lis_rel_rowan": {
       "id": "lis_rel_rowan", "speaker": "rowan", "portrait": "worried",
       "text": "\"Nobody looks at the bass player in a room this pretty,\" Rowan says, watching the water instead of you.",
@@ -169,6 +183,34 @@
     "lis_rel_jun2_a": { "id": "lis_rel_jun2_a", "speaker": "jun", "portrait": "inspired", "text": "Jun goes quiet, turning that over. \"Answer it,\" they repeat, like a key turning." },
     "lis_rel_jun2_b": { "id": "lis_rel_jun2_b", "speaker": "jun", "portrait": "happy", "text": "Jun grins, already humming a fado melody bent sideways into something new." },
 
+    "lis_rel_mira_letter": {
+      "id": "lis_rel_mira_letter", "speaker": "mira", "portrait": "worried",
+      "text": "A letter caught up with the tour today. \"My sister wrote asking if we've 'made it' yet,\" Mira says. \"I don't know how to answer that without sounding like I sold something.\"",
+      "condition": "relationship.mira>=40",
+      "fallback": "lis_rel_mira_letter_fallback",
+      "choices": [
+        { "id": "define_it", "label": "Maybe 'made it' just means still here", "next": "lis_rel_mira_letter_a", "relationshipEffects": { "mira": 5 }, "effects": { "harmony": 1 } },
+        { "id": "dont_answer", "label": "Don't answer yet. Sit with the question first.", "next": "lis_rel_mira_letter_b", "relationshipEffects": { "mira": 3 } }
+      ]
+    },
+    "lis_rel_mira_letter_a": { "id": "lis_rel_mira_letter_a", "speaker": "mira", "portrait": "happy", "text": "She writes that back, word for word. It feels truer typed out than it did spoken." },
+    "lis_rel_mira_letter_b": { "id": "lis_rel_mira_letter_b", "speaker": "mira", "portrait": "inspired", "text": "She folds the letter into her notebook instead, unanswered. \"Later,\" she says. \"When I actually know.\"" },
+    "lis_rel_mira_letter_fallback": { "id": "lis_rel_mira_letter_fallback", "speaker": "mira", "portrait": "tense", "text": "Mira mentions a letter from home, then changes the subject fast, folding it away before you can ask." },
+
+    "lis_rel_theo_why": {
+      "id": "lis_rel_theo_why", "speaker": "theo", "portrait": "tense",
+      "text": "\"I quit for eight months, after the last band,\" Theo says, quiet. \"This tour is me finding out if I can do this without it wrecking me again.\"",
+      "condition": "relationship.theo>=40",
+      "fallback": "lis_rel_theo_why_fallback",
+      "choices": [
+        { "id": "how_going", "label": "How's it going so far, honestly?", "next": "lis_rel_theo_why_a", "relationshipEffects": { "theo": 5 } },
+        { "id": "watch_for_it", "label": "I'll watch for it, if you want me to", "next": "lis_rel_theo_why_b", "relationshipEffects": { "theo": 6 }, "effects": { "harmony": 1 } }
+      ]
+    },
+    "lis_rel_theo_why_a": { "id": "lis_rel_theo_why_a", "speaker": "theo", "portrait": "happy", "text": "\"Better than I expected,\" he admits, surprised by his own answer. \"Ask me again down the road.\"" },
+    "lis_rel_theo_why_b": { "id": "lis_rel_theo_why_b", "speaker": "theo", "portrait": "inspired", "text": "Something in his shoulders drops. \"Nobody's offered that before,\" he says. \"Yeah. Please.\"" },
+    "lis_rel_theo_why_fallback": { "id": "lis_rel_theo_why_fallback", "speaker": "theo", "portrait": "tense", "text": "Theo mentions the last band, briefly, then waves it off. \"Old story. Not worth telling yet.\"" },
+
     "lis_preshow": {
       "id": "lis_preshow", "speaker": "narrator",
       "text": "Soundcheck's done. The room is filling. Tonight's shape is still yours to choose."
@@ -177,9 +219,19 @@
     "lis_aftershow": {
       "id": "lis_aftershow", "speaker": "narrator",
       "text": "The last chord fades into applause that doesn't want to stop.",
+      "condition": "!flag:found_cassette",
+      "fallback": "lis_aftershow_cassette",
       "choices": [
         { "id": "celebrate", "label": "Celebrate with the crowd", "next": "lis_aftershow_a", "relationshipEffects": { "mira": 2, "theo": 2, "jun": 2, "rowan": 2 } },
         { "id": "early_bus", "label": "Head back to the bus early", "next": "lis_aftershow_b", "effects": { "energy": 5 } }
+      ]
+    },
+    "lis_aftershow_cassette": {
+      "id": "lis_aftershow_cassette", "speaker": "narrator",
+      "text": "Backstage, someone finds a cassette deck older than the whole band combined. You play the warped market tape once, just to hear what nobody else ever will again.",
+      "choices": [
+        { "id": "celebrate2", "label": "Celebrate with the crowd", "next": "lis_aftershow_a", "relationshipEffects": { "mira": 2, "theo": 2, "jun": 2, "rowan": 2 } },
+        { "id": "early_bus2", "label": "Head back to the bus early", "next": "lis_aftershow_b", "effects": { "energy": 5 } }
       ]
     },
     "lis_aftershow_a": { "id": "lis_aftershow_a", "speaker": "narrator", "text": "Someone buys the band a round they can't really afford. Worth it." },

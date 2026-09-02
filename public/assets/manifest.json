@@ -24,6 +24,18 @@
     "file": "img/bg_city_berlin.webp"
   },
   {
+    "key": "bg_mini_lis_soundcheck",
+    "file": "img/bg_mini_lis_soundcheck.webp"
+  },
+  {
+    "key": "bg_mini_tok_pack_van",
+    "file": "img/bg_mini_tok_pack_van.webp"
+  },
+  {
+    "key": "bg_mini_mex_interview",
+    "file": "img/bg_mini_mex_interview.webp"
+  },
+  {
     "key": "portrait_mira_happy",
     "file": "img/portrait_mira_happy.png"
   },

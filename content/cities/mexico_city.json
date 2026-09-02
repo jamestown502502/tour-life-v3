@@ -10,7 +10,8 @@
     { "id": "plaza", "name": "A plaza where mariachi are warming up", "sound": "brass_and_chatter", "sceneId": "mex_loc_plaza" },
     { "id": "lucha", "name": "A lucha libre gym down a side street", "sound": "crowd_roar", "sceneId": "mex_loc_lucha" },
     { "id": "terraza", "name": "A rooftop terraza overlooking the Zócalo", "sound": "distant_bells", "sceneId": "mex_loc_terraza" },
-    { "id": "mercado", "name": "A sprawling mercado selling everything at once", "sound": "vendor_calls", "sceneId": "mex_loc_mercado" }
+    { "id": "mercado", "name": "A sprawling mercado selling everything at once", "sound": "vendor_calls", "sceneId": "mex_loc_mercado" },
+    { "id": "mural_courtyard", "name": "A courtyard mid-mural, paint still wet", "sound": "spray_can_hiss", "sceneId": "mex_loc_mural" }
   ],
   "arrivalSceneId": "mex_arrival",
   "preShowSceneId": "mex_preshow",
@@ -19,7 +20,9 @@
     { "id": "theo_the_citys_backbeat", "bandmate": "theo", "sceneId": "mex_rel_theo" },
     { "id": "jun_mic_everything", "bandmate": "jun", "sceneId": "mex_rel_jun" },
     { "id": "rowan_ximena_asked_for_me", "bandmate": "rowan", "sceneId": "mex_rel_rowan" },
-    { "id": "rowan_the_lesson", "bandmate": "rowan", "sceneId": "mex_rel_rowan2" }
+    { "id": "rowan_the_lesson", "bandmate": "rowan", "sceneId": "mex_rel_rowan2" },
+    { "id": "theo_letter_from_home", "bandmate": "theo", "sceneId": "mex_rel_theo_letter" },
+    { "id": "mira_why_shes_here", "bandmate": "mira", "sceneId": "mex_rel_mira_why" }
   ],
   "collaborator": { "npcName": "Ximena", "role": "street percussionist", "gift": "a cascabel anklet, still warm from her ankle" },
   "preShowChoices": [
@@ -128,6 +131,17 @@
     "mex_loc_mercado_rowan": { "id": "mex_loc_mercado_rowan", "speaker": "rowan", "portrait": "happy", "text": "\"Every single stall has a different beat,\" Rowan says, delighted, tapping along on an overturned bucket someone's using as a stool, completely lost to it." },
     "mex_loc_mercado_lost": { "id": "mex_loc_mercado_lost", "speaker": "narrator", "text": "You take four wrong turns on purpose and find a courtyard nobody mentioned in any guidebook you've ever read, on any tour, in any city." },
 
+    "mex_loc_mural": {
+      "id": "mex_loc_mural", "speaker": "narrator",
+      "text": "A muralist balances on a paint-flecked ladder, finishing a wall of birds mid-flight. Half the courtyard has stopped just to watch her work.",
+      "choices": [
+        { "id": "ask_meaning", "label": "Ask what the mural means", "next": "mex_loc_mural_ask", "effects": { "inspiration": 3 } },
+        { "id": "hold_ladder", "label": "Steady the ladder for her", "next": "mex_loc_mural_help", "effects": { "harmony": 2 } }
+      ]
+    },
+    "mex_loc_mural_ask": { "id": "mex_loc_mural_ask", "speaker": "narrator", "text": "\"Everyone who left and came back,\" she says, not looking down. \"There's more of us than you'd think.\"" },
+    "mex_loc_mural_help": { "id": "mex_loc_mural_help", "speaker": "narrator", "text": "She finishes a wing in half the time, unbothered, like the extra hand was expected all along." },
+
     "mex_rel_mira": {
       "id": "mex_rel_mira", "speaker": "mira", "portrait": "happy",
       "text": "\"Nobody here knows who we are, and they're dancing anyway,\" Mira says, delighted, almost disbelieving. \"I don't think I knew how much I needed exactly that.\"",
@@ -183,6 +197,34 @@
     "mex_rel_rowan2_a": { "id": "mex_rel_rowan2_a", "speaker": "rowan", "portrait": "happy", "text": "Rowan teaches you three bars badly and patiently, correcting your hands twice, clearly enjoying being the one who knows something for once, for a change." },
     "mex_rel_rowan2_b": { "id": "mex_rel_rowan2_b", "speaker": "rowan", "portrait": "inspired", "text": "Rowan just nods, grateful, and keeps tapping the pattern out quietly for the rest of the walk back to the bus, not needing an audience for it." },
 
+    "mex_rel_theo_letter": {
+      "id": "mex_rel_theo_letter", "speaker": "theo", "portrait": "tense",
+      "text": "A message finally loads through spotty signal. \"My sister's checking in again,\" Theo says. \"She's the one who noticed, before I did, that I wasn't okay last year.\"",
+      "condition": "relationship.theo>=40",
+      "fallback": "mex_rel_theo_letter_fallback",
+      "choices": [
+        { "id": "tell_her_good", "label": "Tell her the truth — you're actually doing okay", "next": "mex_rel_theo_letter_a", "relationshipEffects": { "theo": 6 }, "effects": { "harmony": 1 } },
+        { "id": "not_yet", "label": "Not yet. Some things need more time to be true.", "next": "mex_rel_theo_letter_b", "relationshipEffects": { "theo": 3 } }
+      ]
+    },
+    "mex_rel_theo_letter_a": { "id": "mex_rel_theo_letter_a", "speaker": "theo", "portrait": "happy", "text": "He sends it before he can second-guess it. Three words back, almost instantly: \"Good. Stay there.\"" },
+    "mex_rel_theo_letter_b": { "id": "mex_rel_theo_letter_b", "speaker": "theo", "portrait": "worried", "text": "He types four different replies and deletes all of them. \"Later,\" he says out loud, to nobody." },
+    "mex_rel_theo_letter_fallback": { "id": "mex_rel_theo_letter_fallback", "speaker": "theo", "portrait": "tense", "text": "Theo's phone buzzes. He glances at it, pockets it without reading further, and says nothing about it." },
+
+    "mex_rel_mira_why": {
+      "id": "mex_rel_mira_why", "speaker": "mira", "portrait": "inspired",
+      "text": "\"A producer once told me I'd never carry a room without a bigger voice,\" Mira says. \"I think about that every single time we walk on stage.\"",
+      "condition": "relationship.mira>=40",
+      "fallback": "mex_rel_mira_why_fallback",
+      "choices": [
+        { "id": "he_was_wrong", "label": "He was wrong. You carry every room.", "next": "mex_rel_mira_why_a", "relationshipEffects": { "mira": 6 }, "effects": { "harmony": 1 } },
+        { "id": "let_it_go", "label": "Maybe it's time to let his voice go", "next": "mex_rel_mira_why_b", "relationshipEffects": { "mira": 5 }, "effects": { "inspiration": 1 } }
+      ]
+    },
+    "mex_rel_mira_why_a": { "id": "mex_rel_mira_why_a", "speaker": "mira", "portrait": "happy", "text": "\"Say that again after tonight's set,\" she says, half-joking, half not joking at all." },
+    "mex_rel_mira_why_b": { "id": "mex_rel_mira_why_b", "speaker": "mira", "portrait": "inspired", "text": "She's quiet a moment. \"Working on it,\" she says. \"Slower than I'd like. But working on it.\"" },
+    "mex_rel_mira_why_fallback": { "id": "mex_rel_mira_why_fallback", "speaker": "mira", "portrait": "worried", "text": "Mira starts to mention a producer from years back, then catches herself and asks about the set list instead." },
+
     "mex_preshow": {
       "id": "mex_preshow", "speaker": "narrator",
       "text": "Ximena's already warming up just outside, cascabels jingling softly against the doorframe with every shift of her weight. The whole block seems to be finding its way toward the venue tonight, unhurried."
@@ -191,9 +233,19 @@
     "mex_aftershow": {
       "id": "mex_aftershow", "speaker": "narrator",
       "text": "The last drumbeat doesn't really end so much as get absorbed straight into the street outside, which is still going, and shows absolutely no sign of stopping any time soon.",
+      "condition": "!flag:found_hand_drum",
+      "fallback": "mex_aftershow_drum",
       "choices": [
         { "id": "join_street", "label": "Follow the rhythm out into the street", "next": "mex_aftershow_a", "relationshipEffects": { "mira": 2, "theo": 2, "jun": 2, "rowan": 2 } },
         { "id": "stay_venue", "label": "Stay and help Ximena pack up", "next": "mex_aftershow_b", "relationshipEffects": { "rowan": 3 }, "effects": { "harmony": 2 } }
+      ]
+    },
+    "mex_aftershow_drum": {
+      "id": "mex_aftershow_drum", "speaker": "narrator",
+      "text": "You bring the hand drum out into the street after the show, and a stranger starts a rhythm on it that has nothing to do with tonight's set list at all — and somehow it still fits.",
+      "choices": [
+        { "id": "join_street2", "label": "Follow the rhythm out into the street", "next": "mex_aftershow_a", "relationshipEffects": { "mira": 2, "theo": 2, "jun": 2, "rowan": 2 } },
+        { "id": "stay_venue2", "label": "Stay and help Ximena pack up", "next": "mex_aftershow_b", "relationshipEffects": { "rowan": 3 }, "effects": { "harmony": 2 } }
       ]
     },
     "mex_aftershow_a": { "id": "mex_aftershow_a", "speaker": "narrator", "text": "You end up three blocks away, still playing, strangers keeping time on car hoods and folding chairs and each other's shoulders, nobody counting the beat out loud." },

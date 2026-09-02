@@ -10,7 +10,8 @@
     { "id": "late_night_ramen", "name": "A steam-fogged ramen counter", "sound": "broth_simmer", "sceneId": "tok_loc_ramen" },
     { "id": "shrine_garden", "name": "A shrine garden off the main street", "sound": "bell_and_gravel", "sceneId": "tok_loc_shrine" },
     { "id": "karaoke_box", "name": "A tiny karaoke box", "sound": "muffled_bass", "sceneId": "tok_loc_karaoke" },
-    { "id": "pachinko_parlor", "name": "A rain-slicked pachinko parlor", "sound": "bell_cascade", "sceneId": "tok_loc_pachinko" }
+    { "id": "pachinko_parlor", "name": "A rain-slicked pachinko parlor", "sound": "bell_cascade", "sceneId": "tok_loc_pachinko" },
+    { "id": "vending_alley", "name": "An alley lined with vending machines", "sound": "hum_and_clink", "sceneId": "tok_loc_vending" }
   ],
   "arrivalSceneId": "tok_arrival",
   "preShowSceneId": "tok_preshow",
@@ -19,7 +20,9 @@
     { "id": "mira_after_the_encore", "bandmate": "mira", "sceneId": "tok_rel_mira" },
     { "id": "jun_gear_swap", "bandmate": "jun", "sceneId": "tok_rel_jun" },
     { "id": "theo_the_only_quiet_room", "bandmate": "theo", "sceneId": "tok_rel_theo" },
-    { "id": "mira_running_on_empty", "bandmate": "mira", "sceneId": "tok_rel_mira2" }
+    { "id": "mira_running_on_empty", "bandmate": "mira", "sceneId": "tok_rel_mira2" },
+    { "id": "jun_letter_from_home", "bandmate": "jun", "sceneId": "tok_rel_jun_letter" },
+    { "id": "rowan_why_hes_here", "bandmate": "rowan", "sceneId": "tok_rel_rowan_why" }
   ],
   "collaborator": { "npcName": "Kenji", "role": "session drummer", "gift": "a mixtape labeled only 'city sounds, vol. 4'" },
   "preShowChoices": [
@@ -115,6 +118,17 @@
     "tok_loc_pachinko_try": { "id": "tok_loc_pachinko_try", "speaker": "narrator", "text": "You lose every coin in under a minute and somehow leave grinning." },
     "tok_loc_pachinko_watch": { "id": "tok_loc_pachinko_watch", "speaker": "narrator", "text": "She never once looks at the balls. Forty years of muscle memory, still ringing." },
 
+    "tok_loc_vending": {
+      "id": "tok_loc_vending", "speaker": "narrator",
+      "text": "An alley of vending machines hums floor to ceiling — hot coffee, cold coffee, canned soup, something in a bottle none of you can read.",
+      "choices": [
+        { "id": "mystery_can", "label": "Buy the unlabeled bottle, no questions", "next": "tok_loc_vending_mystery", "effects": { "funds": -3, "inspiration": 2 } },
+        { "id": "hot_coffee", "label": "Get a hot can and just stand there", "next": "tok_loc_vending_coffee", "effects": { "energy": 3 } }
+      ]
+    },
+    "tok_loc_vending_mystery": { "id": "tok_loc_vending_mystery", "speaker": "narrator", "text": "It tastes like melon and static electricity. Nobody can explain it and everybody wants another." },
+    "tok_loc_vending_coffee": { "id": "tok_loc_vending_coffee", "speaker": "narrator", "text": "The can's too hot to hold bare-handed and exactly the right temperature to drink. Small, perfect machine." },
+
     "tok_rel_rowan": {
       "id": "tok_rel_rowan", "speaker": "rowan", "portrait": "worried",
       "text": "\"Nobody requests the bass solo,\" Rowan says. \"I've counted.\"",
@@ -170,6 +184,34 @@
     "tok_rel_mira2_a": { "id": "tok_rel_mira2_a", "speaker": "mira", "portrait": "happy", "text": "\"Less,\" Mira repeats, like she's allowed to. Her shoulders actually drop." },
     "tok_rel_mira2_b": { "id": "tok_rel_mira2_b", "speaker": "mira", "portrait": "inspired", "text": "She finds it. Voice cracking on purpose this time — the room loves it more." },
 
+    "tok_rel_jun_letter": {
+      "id": "tok_rel_jun_letter", "speaker": "jun", "portrait": "tense",
+      "text": "\"My old bandmate wrote,\" Jun says, staring at the phone. \"Still playing the same four chords back home. Part of me is jealous of how settled that sounds.\"",
+      "condition": "relationship.jun>=40",
+      "fallback": "tok_rel_jun_letter_fallback",
+      "choices": [
+        { "id": "youre_not_stuck", "label": "You're not stuck. That's the whole point.", "next": "tok_rel_jun_letter_a", "relationshipEffects": { "jun": 5 }, "effects": { "inspiration": 2 } },
+        { "id": "write_back", "label": "Write back. Tell them what you're chasing.", "next": "tok_rel_jun_letter_b", "relationshipEffects": { "jun": 4 } }
+      ]
+    },
+    "tok_rel_jun_letter_a": { "id": "tok_rel_jun_letter_a", "speaker": "jun", "portrait": "inspired", "text": "\"Not stuck,\" Jun repeats, testing it. \"Just moving. Okay. I can live with moving.\"" },
+    "tok_rel_jun_letter_b": { "id": "tok_rel_jun_letter_b", "speaker": "jun", "portrait": "happy", "text": "Jun writes three pages back that night, none of them about the four chords at all." },
+    "tok_rel_jun_letter_fallback": { "id": "tok_rel_jun_letter_fallback", "speaker": "jun", "portrait": "tense", "text": "Jun mentions a message from home, then shrugs it off, already reaching for a different pedal to fiddle with." },
+
+    "tok_rel_rowan_why": {
+      "id": "tok_rel_rowan_why", "speaker": "rowan", "portrait": "worried",
+      "text": "\"My last band cut me two days before a tour,\" Rowan says, flat. \"Texted it. I signed up for this one to prove that wasn't the whole story.\"",
+      "condition": "relationship.rowan>=40",
+      "fallback": "tok_rel_rowan_why_fallback",
+      "choices": [
+        { "id": "it_wasnt", "label": "It clearly wasn't. Look where you are.", "next": "tok_rel_rowan_why_a", "relationshipEffects": { "rowan": 6 }, "effects": { "harmony": 1 } },
+        { "id": "that_sucks", "label": "That's a genuinely terrible way to find out", "next": "tok_rel_rowan_why_b", "relationshipEffects": { "rowan": 4 } }
+      ]
+    },
+    "tok_rel_rowan_why_a": { "id": "tok_rel_rowan_why_a", "speaker": "rowan", "portrait": "happy", "text": "Rowan doesn't say anything for a second. Then, quietly: \"Yeah. Look where I am.\"" },
+    "tok_rel_rowan_why_b": { "id": "tok_rel_rowan_why_b", "speaker": "rowan", "portrait": "inspired", "text": "\"It really was,\" Rowan says, and laughs, surprised to find it funny now instead of just sharp." },
+    "tok_rel_rowan_why_fallback": { "id": "tok_rel_rowan_why_fallback", "speaker": "rowan", "portrait": "worried", "text": "Rowan starts to say something about the last band, stops, and tunes the bass instead." },
+
     "tok_preshow": {
       "id": "tok_preshow", "speaker": "narrator",
       "text": "The venue's LEDs sync to your soundcheck without being asked. Tokyo is already listening."
@@ -178,9 +220,19 @@
     "tok_aftershow": {
       "id": "tok_aftershow", "speaker": "narrator",
       "text": "The crowd files out into neon and rain, already talking about tonight.",
+      "condition": "!flag:fast_load_out",
+      "fallback": "tok_aftershow_extra_time",
       "choices": [
         { "id": "afterparty", "label": "Say yes to the afterparty", "next": "tok_aftershow_a", "relationshipEffects": { "jun": 2, "rowan": 2 }, "effects": { "energy": -3 } },
         { "id": "wind_down", "label": "Wind down quietly with the band", "next": "tok_aftershow_b", "effects": { "harmony": 3 } }
+      ]
+    },
+    "tok_aftershow_extra_time": {
+      "id": "tok_aftershow_extra_time", "speaker": "narrator",
+      "text": "The van was packed in record time tonight, gear stowed before the last chord even faded — which means, for once, there's an actual hour to kill and nowhere urgent to be.",
+      "choices": [
+        { "id": "afterparty2", "label": "Say yes to the afterparty", "next": "tok_aftershow_a", "relationshipEffects": { "jun": 2, "rowan": 2 }, "effects": { "energy": -3 } },
+        { "id": "wind_down2", "label": "Wind down quietly with the band", "next": "tok_aftershow_b", "effects": { "harmony": 3 } }
       ]
     },
     "tok_aftershow_a": { "id": "tok_aftershow_a", "speaker": "narrator", "text": "You don't remember half the conversations. You remember feeling wanted." },
