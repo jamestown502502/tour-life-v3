@@ -28,7 +28,21 @@ async function waitForFonts(): Promise<void> {
   }
 }
 
+// PWA install path (also the web fallback for offline play once assets are cached once). A
+// missing/failing registration is never fatal — the game plays the same either way, this is
+// purely additive. Skipped in dev: Vite's own dev-server caching + a stale SW fighting HMR is a
+// worse experience than no SW at all while iterating.
+function registerServiceWorker(): void {
+  if (import.meta.env.DEV || !('serviceWorker' in navigator)) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      // offline/PWA support degrades gracefully — the game still plays fully online.
+    });
+  });
+}
+
 async function boot(): Promise<void> {
+  registerServiceWorker();
   await waitForFonts();
 
   const game = new Phaser.Game({
