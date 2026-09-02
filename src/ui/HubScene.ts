@@ -89,7 +89,7 @@ export class HubScene extends Phaser.Scene {
     if (stop) {
       const city = getCity(stop.cityId);
       this.add.text(W / 2, 780, `Next stop: ${city.name}`, textStyle('body', { fontSize: '22px' })).setOrigin(0.5);
-      createButton(this, W / 2 - 160, 820, 320, 60, `Travel to ${city.name}`, () => {
+      createButton(this, W / 2 - 160, 820, 320, 66, `Travel to ${city.name}`, () => {
         State.setProgress({ screen: 'city', cityId: city.id });
         saveRun(State.data);
         goTo(this, 'City', { cityId: city.id });
@@ -100,7 +100,7 @@ export class HubScene extends Phaser.Scene {
         textStyle('small', { fontSize: '14px', wordWrap: { width: 460 } }));
     } else {
       this.add.text(W / 2, 780, 'The last show is behind you.', textStyle('body', { fontSize: '22px' })).setOrigin(0.5);
-      createButton(this, W / 2 - 160, 820, 320, 60, 'Wrap the tour', () => this.wrapTour(), { fillColor: 0xd9a441 });
+      createButton(this, W / 2 - 160, 820, 320, 66, 'Wrap the tour', () => this.wrapTour(), { fillColor: 0xd9a441 });
     }
 
     if (State.data.meta.unlockedDecor.length > 0) {
@@ -108,7 +108,7 @@ export class HubScene extends Phaser.Scene {
         textStyle('small', { wordWrap: { width: W - 100 }, align: 'center' })).setOrigin(0.5);
     }
 
-    createButton(this, W / 2 - 100, 1140, 200, 50, 'Settings', () => {
+    createButton(this, W / 2 - 100, 1140, 200, 66, 'Settings', () => {
       this.scene.launch('Settings', { returnTo: 'Hub' });
       this.scene.pause();
     }, { fillColor: 0x8fb7c9, fontSize: '18px' });

@@ -6,7 +6,9 @@ import { createButton } from './Button';
 import { ensureDialoguePanel } from '../art/sprites';
 import { textStyle } from './textStyles';
 
-const BTN_SIZE = 60;
+// 66, not 60: (60+16)*0.5417=41.2 CSS px, under the 44px touch-target floor at the measured
+// 390px-width scale — caught during the Workstream E iPhone audit. 66 clears it (44.4).
+const BTN_SIZE = 66;
 const BTN_X = W - BTN_SIZE - 20;
 const BTN_Y = 20;
 

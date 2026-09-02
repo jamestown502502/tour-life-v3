@@ -145,8 +145,12 @@ export class CityScene extends Phaser.Scene {
     const header = this.add.text(W / 2, 620, `Where to, before the show? (${LOCATIONS_TO_VISIT - this.locationsVisited.size} left)`,
       textStyle('body', { fontSize: '18px' })).setOrigin(0.5);
     this.pickerContainer.add(header);
+    // 70/78 (not the original 50/60): matches BandCreator's genre-grid fix — a raw button needs
+    // to clear ~65px including Button.ts's own pad before it reaches a real 44 CSS-px target at
+    // the measured 390px scale. With up to 6 locations (3 rows), the grid's bottom edge still
+    // clears SAFE_BOTTOM_Y comfortably from its y=660 start.
     remaining.forEach((loc, i) => {
-      const btn = createButton(this, W / 2 - 300 + (i % 2) * 310, 660 + Math.floor(i / 2) * 60, 290, 50, loc.name, () => this.visitLocation(loc), { fontSize: '16px' });
+      const btn = createButton(this, W / 2 - 300 + (i % 2) * 310, 660 + Math.floor(i / 2) * 78, 290, 70, loc.name, () => this.visitLocation(loc), { fontSize: '16px' });
       this.pickerContainer!.add(btn);
     });
   }
@@ -189,7 +193,7 @@ export class CityScene extends Phaser.Scene {
     const options = this.city.preShowChoices.filter((c) => evaluateCondition(c.condition, ctx));
     const container = this.add.container(0, 0).setDepth(80);
     options.forEach((opt, i) => {
-      const btn = createButton(this, W / 2 - 300, 960 + i * 70, 600, 60, opt.label, () => {
+      const btn = createButton(this, W / 2 - 300, 960 + i * 82, 600, 66, opt.label, () => {
         State.applyStatDeltas(opt.effects);
         State.addFlag(arrangementFlag(opt.arrangementId));
         State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'preshow-done' });
@@ -197,7 +201,7 @@ export class CityScene extends Phaser.Scene {
         goTo(this, 'Rhythm', { cityId: this.city.id });
       }, { fontSize: '18px' });
       container.add(btn);
-      container.add(this.add.text(W / 2 - 280, 960 + i * 70 + 62, opt.description, textStyle('small', { fontSize: '13px' })));
+      container.add(this.add.text(W / 2 - 280, 960 + i * 82 + 68, opt.description, textStyle('small', { fontSize: '13px' })));
     });
   }
 

@@ -55,7 +55,7 @@ export class ScrapbookScene extends Phaser.Scene {
     const rel = Object.entries(State.data.relationships).map(([id, v]) => `${id} ${Math.round(v)}`).join('  ');
     this.add.text(W / 2, 420, `Where the band landed: ${rel}`, textStyle('dialogue', { fontSize: '14px', shadow: undefined })).setOrigin(0.5);
 
-    createButton(this, W / 2 - 150, 900, 300, 56, 'Start a new tour', async () => {
+    createButton(this, W / 2 - 150, 900, 300, 66, 'Start a new tour', async () => {
       await clearSave();
       State.data.progress = { screen: 'title' };
       goTo(this, 'Title');

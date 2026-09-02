@@ -60,7 +60,11 @@ export class RoutePlanScene extends Phaser.Scene {
     this.add.text(W / 2, complicationY, COMPLICATION_LABELS[generated.midTourComplication] ?? '',
       textStyle('small', { color: PALETTE_HEX.terracotta, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);
 
-    createButton(this, W / 2 - 150, complicationY + 80, 300, 56, 'Confirm route', () => {
+    // 66px (not the original 56): at the measured 390px-width scale (0.5417x), a raw button
+    // needs h>=66 — (66+16)*0.5417=44.4 CSS px — to actually clear the 44px floor including
+    // Button.ts's own 8px-each-side pad. 64 measured at 43.3, just under; don't round down from
+    // 66 without re-measuring live, the margin here is thin.
+    createButton(this, W / 2 - 150, complicationY + 80, 300, 66, 'Confirm route', () => {
       State.data.route = generated.stops;
       State.data.midTourComplication = generated.midTourComplication;
       for (const stop of generated.stops) {

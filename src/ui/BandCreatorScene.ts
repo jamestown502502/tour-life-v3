@@ -63,7 +63,7 @@ export class BandCreatorScene extends Phaser.Scene {
         textStyle('body', { fontSize: '16px' })).setOrigin(0.5);
     });
 
-    createButton(this, W / 2 - 150, membersY + 40 + BANDMATES.length * 34 + 30, 300, 56, "Hit the road", () => {
+    createButton(this, W / 2 - 150, membersY + 40 + BANDMATES.length * 34 + 30, 300, GRID_ROW_H, "Hit the road", () => {
       const name = this.nameInput.el.value.trim() || 'The Unnamed';
       const genre = this.genre || GENRES[0].id;
       const whyTour = this.whyTour || WHY_TOUR_BEATS[0];
