@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { PALETTE_HEX, W } from '../const';
-import { ensureScrapbookCard } from '../art/sprites';
+import { ensureDialoguePanel, ensureScrapbookCard } from '../art/sprites';
 import { spawnConfetti } from '../art/effects';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
@@ -10,6 +10,7 @@ import { generateEnding } from '../game/endings';
 import { clearSave } from '../core/save';
 import { textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
+import { getEpilogue } from '../../content/epilogues';
 
 export class ScrapbookScene extends Phaser.Scene {
   constructor() { super('Scrapbook'); }
@@ -55,6 +56,8 @@ export class ScrapbookScene extends Phaser.Scene {
     const rel = Object.entries(State.data.relationships).map(([id, v]) => `${id} ${Math.round(v)}`).join('  ');
     this.add.text(W / 2, 420, `Where the band landed: ${rel}`, textStyle('dialogue', { fontSize: '14px', shadow: undefined })).setOrigin(0.5);
 
+    createButton(this, W / 2 - 150, 720, 300, 66, 'Read the epilogue', () => this.toggleEpilogue(), { fillColor: 0xd9a441, fontSize: '18px' });
+
     createButton(this, W / 2 - 150, 810, 300, 66, 'Save tour as image', () => this.exportAsImage(), { fillColor: 0x8a6fa3, fontSize: '18px' });
 
     createButton(this, W / 2 - 150, 900, 300, 66, 'Start a new tour', async () => {
@@ -62,6 +65,28 @@ export class ScrapbookScene extends Phaser.Scene {
       State.data.progress = { screen: 'title' };
       goTo(this, 'Title');
     }, { fillColor: 0x3e7c7b });
+  }
+
+  /** Close-out item 7: a written payoff ("Two months later...") matched to the exact
+   *  ending+tags this run landed on (content/epilogues.ts), not just the scorecard label —
+   *  toggled rather than shown inline so the existing card layout (already dense: title, tags,
+   *  route, setlist, souvenirs, relationships) doesn't have to absorb another 150-200 words. */
+  private toggleEpilogue(): void {
+    const existing = this.children.getByName('epiloguePanel');
+    if (existing) { existing.destroy(); return; }
+    const text = getEpilogue(this.endingId, this.tags);
+    const panelKey = ensureDialoguePanel(this);
+    const x = 40, y = 100, w = W - 80, h = 700;
+    const panel = this.add.container(0, 0).setName('epiloguePanel').setDepth(160);
+    const overlay = this.add.rectangle(0, 0, W, this.cameras.main.height, 0x000000, 0.55).setOrigin(0, 0).setInteractive();
+    overlay.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event: { stopPropagation: () => void }) => event.stopPropagation());
+    const bg = this.add.image(x, y, panelKey).setOrigin(0, 0).setDisplaySize(w, h);
+    const title = this.add.text(x + w / 2, y + 40, 'Two Months Later', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5);
+    const body = this.add.text(x + 36, y + 90, text, textStyle('dialogue', {
+      fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: w - 72 }, lineSpacing: 8,
+    }));
+    const closeBtn = createButton(this, x + w / 2 - 110, y + h - 80, 220, 60, 'Close', () => this.toggleEpilogue(), { fillColor: 0x8fb7c9 });
+    panel.add([overlay, bg, title, body, closeBtn]);
   }
 
   /** Close-out item 4b: the card content (title/tags/route/setlist/souvenirs/relationships)
