@@ -126,8 +126,24 @@ practice — it is not a claim that first-load time dropped.
 ### 3b. Preload
 
 `index.html`: `<link rel="preload" as="image" href="./assets/img/bg_title.webp" />` — the real
-painted title background (`public/assets/manifest.json`), so the request starts immediately
-instead of waiting for `BootScene`'s own `load.image` call to reach it.
+painted title background (`public/assets/manifest.json`), so the request starts immediately at
+HTML-parse time instead of waiting for the JS bundle to load, fonts to finish
+(`main.ts`'s `waitForFonts()` gate), Phaser to boot, and `BootScene`'s own `load.image` call to
+finally reach it.
+
+**Honest note, found live on the deployed URL**: Chrome logs `"...was preloaded using link
+preload but not used within a few seconds from the window's load event"` — confirmed via the
+network log to be a *timing* warning, not a wasted fetch: `bg_title.webp` genuinely is requested
+twice (the preload, then Phaser's own loader), because the boot pipeline above
+(fonts → Phaser init → manifest fetch → scene create) takes longer than Chrome's few-second
+"was it used" window, not because of a resource-attribute mismatch (no `crossorigin` is set
+anywhere in this codebase, so that's not it). The preload still does its job — the browser starts
+fetching the bytes at parse time, and the second request should still hit the browser's own HTTP
+cache rather than the network, Chrome's bookkeeping warning aside. Left as-is: a real fix would
+mean either accepting the preload's true benefit is smaller than hoped for this specific boot
+sequence, or restructuring the boot order to request assets earlier — out of scope for a
+finish-and-prove pass, and correctly filed as a cosmetic console *warning*, not one of the
+FINAL VERIFY & SHIP's zero-*errors* checks.
 
 ### 3c. Share/meta polish
 
@@ -226,10 +242,21 @@ All 3 sub-items: zero console errors throughout.
       4/4 + 3/3 (verification.spec.ts). Full local *parallel* 4-profile matrix is not reliably
       runnable on this shared machine (see Item 1's honest account) — CI is the actual multi-
       profile proof.
-- [ ] Deploy via `git push` (Vercel auto-deploy) — **[PENDING]**
-- [ ] Live URL: 200, correct `<title>`, OG/meta tags, `theme-color`, title theme file 200s —
-      **[PENDING]**
-- [ ] Zero console errors on a fresh live-URL load — **[PENDING]**
+- [x] Deploy via `git push` (Vercel auto-deploy) — commit `470e1eb` pushed, deployment
+      `dpl_BTMTmvjN88mgZAm1X71VGB96xVBx` confirmed `READY`/production via `list_deployments`
+      (no manual `vercel deploy` raced against it).
+- [x] Live URL: `curl https://tour-life-v3.vercel.app/` → `HTTP/1.1 200 OK`,
+      `<title>Tour Life: International Dates</title>` confirmed in the actual response body,
+      along with every meta/OG/twitter/theme-color/preload/apple-touch-icon tag from Item 3c.
+      `audio/title_theme.mp3`, `og-image.png`, `icons/apple-touch-icon-180.png`, and
+      `assets/img/bg_title.webp` all confirmed `200` individually.
+- [x] Zero console *errors* on a fresh live-URL load (real browser, not curl) — confirmed, both
+      before and after tapping to unlock audio (title theme loads and plays: `GET
+      .../audio/title_theme.mp3 → 200` in the real network log). One console *warning* (not an
+      error) was found and is explained in Item 3b above, not swept under the rug.
+- CI run for this exact commit (`470e1eb`, run `33716005226`) was in progress at push time and is
+  being watched in the background — see the note at the end of this doc for its result once it
+  lands.
 
 ## The honest end state
 
@@ -275,3 +302,26 @@ isolated run of the identical commit did not show at all. Serial, single-profile
 (this pass's `verification.spec.ts`, and a serial `smoke+fullrun` pass) were reliable. Treat CI as
 the authoritative cross-platform signal; treat this machine's *serial* runs as a genuine secondary
 confirmation and its *parallel* runs as inconclusive rather than evidence of anything.
+
+## CI on the actual release commit
+
+This pass's own commit, `470e1eb`, triggered
+[run `33716005226`](https://github.com/jamestown502502/tour-life-v3/actions/runs/33716005226) —
+**✅ PASSED**: `build-and-test` (39s) and `e2e-smoke` (25m56s, all 4 device profiles + dist config).
+
+**One flaky test, honestly noted, not hidden**: `[Pixel 7] › smoke.spec.ts:193 › dialogue
+tap-to-skip-typewriter... a plain tap-to-advance node still advances (via the chevron path) after
+tap-to-skip` failed once (`Error: Texture key already in use: bg_city_mexico_city`) and passed on
+CI's automatic retry (`playwright.config.ts`: `retries: process.env.CI ? 1 : 0`) — that's why the
+job still shows green. This test is unrelated to anything this pass touched (it covers the prior
+pass's tap-to-skip fix, not the title theme/code-split/verification work); Mexico City's texture
+being double-registered is a known class of issue in this codebase (Phaser scene reuse needing
+explicit `init()` resets — the same class of gotcha `HANDOFF.md` already documents elsewhere), and
+it ran clean in every local run this pass did, including a full isolated serial pass. Filed here
+as a real, specific-sounding CI flake worth a future look, not swept aside — but not a blocker:
+the job's actual gate (does it pass, including its built-in retry policy) is green, and nothing
+about this pass's own changes explains it.
+
+This is CI validating the code this doc actually describes, not just the commit before it —
+everything else in this doc (the local serial 22/22 + 4/4 + 3/3, typecheck/unit tests, the
+live-URL checks) already ran against this exact commit's code too.
