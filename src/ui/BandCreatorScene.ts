@@ -7,6 +7,7 @@ import { BANDMATES, GENRES, WHY_TOUR_BEATS } from '../../content/bands';
 import { saveRun } from '../core/save';
 import { createFloatingInput, type FloatingInput } from './htmlOverlay';
 import { textStyle } from './textStyles';
+import { addMenuButton } from './MenuButton';
 
 export class BandCreatorScene extends Phaser.Scene {
   constructor() { super('BandCreator'); }
@@ -19,6 +20,9 @@ export class BandCreatorScene extends Phaser.Scene {
     fadeIn(this);
     this.add.rectangle(0, 0, W, this.cameras.main.height, 0x2b3a55, 1).setOrigin(0, 0);
     this.add.text(W / 2, 70, 'Name your band', textStyle('h1')).setOrigin(0.5);
+    // Pre-Hub setup screens (this one and RoutePlan) had no way out at all before this — only
+    // forward. "Quit to Title" from here is the actual "back out of setup" path.
+    addMenuButton(this, 'BandCreator');
 
     this.nameInput = createFloatingInput(W / 2, 130, 320, 'Band name');
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.nameInput.destroy());
@@ -68,6 +72,11 @@ export class BandCreatorScene extends Phaser.Scene {
       const genre = this.genre || GENRES[0].id;
       const whyTour = this.whyTour || WHY_TOUR_BEATS[0];
       State.data.band = { name, genre, whyTour, members: BANDMATES.map((b) => b.id) };
+      // WHY_TOUR_BEATS was purely decorative before this — picking "why this tour" never
+      // affected anything downstream. This flag gives the funeral-promise beat specifically one
+      // real payoff (Lisbon's journal entry, content/cities/lisbon.json's lis_journal) — the
+      // same condition/fallback mechanism every gated backstory beat already uses.
+      if (whyTour === 'A promise made at a funeral.') State.addFlag('why_tour_funeral_promise');
       State.setProgress({ screen: 'routePlan' });
       saveRun(State.data);
       goTo(this, 'RoutePlan');

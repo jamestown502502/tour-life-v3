@@ -58,6 +58,7 @@ export class DialogueBox {
   private typing = false;
   private fullText = '';
   private onSkippedOrAdvance: (() => void) | null = null;
+  private pendingComplete: (() => void) | null = null;
   private autoTimer: Phaser.Time.TimerEvent | null = null;
   private keyHandler: () => void;
   private backlog: { speaker: string; text: string }[] = [];
@@ -115,7 +116,14 @@ export class DialogueBox {
   private handleTap(): void {
     this.cancelAuto();
     if (this.typing) {
-      this.finishTyping();
+      // Was finishTyping() alone — that reveals the full line but never runs afterTypeComplete,
+      // so a choice node showed all its text with no buttons underneath and a plain node showed
+      // no chevron and stopped responding: tapping to skip the typewriter (a normal, expected
+      // move on any node with more than a couple words of text) silently soft-locked the game.
+      // Confirmed live on Mexico City's arrival line (3 choices, ~240 chars — long enough that a
+      // tap-to-skip is the likely first tap, not the second). pendingComplete runs the exact same
+      // finishTyping + afterTypeComplete the tween's own onComplete would have.
+      this.pendingComplete?.();
       return;
     }
     if (this.onSkippedOrAdvance) this.onSkippedOrAdvance();
@@ -198,6 +206,7 @@ export class DialogueBox {
     if (this.backlog.length > BACKLOG_CAP) this.backlog.shift();
     this.onSkippedOrAdvance = null;
     const complete = () => { this.finishTyping(); this.afterTypeComplete(node, onAdvance, onChoice); };
+    this.pendingComplete = complete;
 
     if (State.data.accessibility.skipReadText) {
       this.typing = false;

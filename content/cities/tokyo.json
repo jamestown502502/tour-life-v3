@@ -132,14 +132,14 @@
 
     "tok_rel_rowan": {
       "id": "tok_rel_rowan", "speaker": "rowan", "portrait": "worried",
-      "text": "\"Nobody requests the bass solo,\" Rowan says. \"I've counted.\"",
+      "text": "\"Nobody requests the bass solo,\" Rowan says. \"I've counted.\" Not really about the setlist. More about whether the band would notice the shape of what's missing, if it just wasn't there one night.",
       "choices": [
         { "id": "promise", "label": "Promise tonight's different", "next": "tok_rel_rowan_a", "relationshipEffects": { "rowan": 6 } },
         { "id": "listen", "label": "Just listen, don't fix it", "next": "tok_rel_rowan_b", "relationshipEffects": { "rowan": 3 } }
       ]
     },
-    "tok_rel_rowan_a": { "id": "tok_rel_rowan_a", "speaker": "rowan", "portrait": "inspired", "text": "Rowan doesn't quite smile, but the bass case opens a little more eagerly." },
-    "tok_rel_rowan_b": { "id": "tok_rel_rowan_b", "speaker": "rowan", "portrait": "worried", "text": "\"Thanks for not saying it'll be fine,\" Rowan says." },
+    "tok_rel_rowan_a": { "id": "tok_rel_rowan_a", "speaker": "rowan", "portrait": "inspired", "text": "Rowan doesn't quite smile, but the bass case opens a little more eagerly — like some small, cautious part of them just filed the promise away as evidence." },
+    "tok_rel_rowan_b": { "id": "tok_rel_rowan_b", "speaker": "rowan", "portrait": "worried", "text": "\"Thanks for not saying it'll be fine,\" Rowan says. Being believed matters more than being fixed, most days." },
 
     "tok_rel_mira": {
       "id": "tok_rel_mira", "speaker": "mira", "portrait": "tense",

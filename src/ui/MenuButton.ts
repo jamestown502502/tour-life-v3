@@ -1,10 +1,12 @@
-// Small persistent menu button, top-left on City/MiniGame — Workstream 2 of the UX/QA fix pass
-// found these had NO way back to Settings (and so no way to Quit to Title) at all: only Title
-// and Hub could open it. Opens Settings via the same launch+pause pattern Hub/Title already use;
-// Settings' own Back/Quit-to-Title buttons resume or replace whichever scene passed itself as
-// returnTo. Deliberately NOT added to RhythmScene — its lanes' tap zones already cover most of
-// the play area, so a persistent tap target there risks an accidental mid-song pause, and a song
-// is always a short, bounded segment that reaches Results on its own (see docs/navigation-fixes.md).
+// Small persistent menu button, top-left on City/MiniGame/Rhythm — Workstream 2 of the UX/QA fix
+// pass found these had NO way back to Settings (and so no way to Quit to Title) at all: only
+// Title and Hub could open it. Opens Settings via the same launch+pause pattern Hub/Title already
+// use; Settings' own Back/Quit-to-Title buttons resume or replace whichever scene passed itself
+// as returnTo. Originally left off RhythmScene over a theoretical accidental-tap risk; added
+// after checking the actual geometry — each lane's real tap zone only spans HIT_LINE_Y-160 to
+// +140 (RhythmScene.ts), nowhere near this button's position near the top of the screen — and
+// after a live bug report made "no escape from a stuck screen" a confirmed, not hypothetical,
+// risk (see docs/navigation-fixes.md's tap-to-skip-typewriter fix).
 import Phaser from 'phaser';
 import { PALETTE } from '../const';
 import { createButton } from './Button';

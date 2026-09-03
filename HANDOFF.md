@@ -1373,6 +1373,129 @@ game logic), a standards table with each item's actual verified status (not assu
   reload in this environment (a Chromium/Playwright quirk, not an app bug) — see
   `docs/CROSS_PLATFORM_TESTING.md`'s note on that for what the dist-smoke test checks instead.
 
+## 17. UX/QA follow-up pass — the real stuck-screen cause, escape-hatch gaps, narrative depth (2026-09-02)
+
+Triggered by a live bug report after §16's redeploy: screenshots of Mexico City's arrival
+dialogue, full text on screen, no way forward. Full before/after:
+`docs/UX_QA_FOLLOWUP_BEFORE_AFTER.md`. Summary here; that doc has the complete table.
+
+### 17.1 The actual root cause
+
+`DialogueBox.handleTap()`'s tap-to-skip-typewriter path (`src/ui/DialogueBox.ts`) called
+`finishTyping()` alone, never `afterTypeComplete()` — so tapping to skip a line **while it was
+still typing** (an ordinary move, not an edge case) left the full text visible with no choice
+buttons and no advance chevron, on *any* node, in *any* city. This is almost certainly what
+"stuck early in playthrough" actually was: arrival lines are long enough (Mexico City's runs
+~240 characters, ~5s to type) that an early tap is the *likely* first interaction, not rare, and
+arrival is the first thing every city shows. Fixed by storing the per-node completion closure on
+`this.pendingComplete` and having the skip-path call it — the exact same logic the typewriter's
+own `onComplete` would have run.
+
+**§16.1's Workstream 1 already fixed the "why is `handleTap()` even reachable when nothing else
+is wrong" contrast issues on the same panel; this is a different bug in the same file, found by a
+second live report, not a regression from that earlier pass.**
+
+### 17.2 Escape-hatch gaps closed
+
+`src/ui/MenuButton.ts`'s coverage was City and MiniGame only (§16.2). Extended to:
+- **RhythmScene** — originally skipped over a *theoretical* accidental-tap risk; checking the
+  actual geometry showed each lane's real tap zone only spans `HIT_LINE_Y-160` to `+140`
+  (y:820-1120), nowhere near the button's position near the top of the screen. Added once "no
+  escape from a stuck screen" became a confirmed risk, not a hypothetical one.
+- **BandCreatorScene, RoutePlanScene** — had no way out at all before this (only "Hit the road" /
+  "Confirm route", forward-only). `RoutePlanScene`'s button lives in `renderRoutePlan()`
+  specifically, called only *after* any onboarding `DialogueBox` is destroyed — avoiding the
+  collision described next.
+
+**A second real bug the live test suite caught, not inspection**: `MenuButton` first landed at
+the exact `(20,20,66,66)` spot `DialogueBox`'s own "≡" backlog toggle already occupies in City —
+whichever was added later in the display list silently intercepted every tap, so Settings was
+unreachable from City even after the button existed (confirmed live: the tap toggled the empty
+backlog panel instead, no scene change). `addMenuButton` now takes a `yOffset`; City stacks its
+button below the backlog toggle (`⚙` vs. the toggle's `≡` — also switched icons, since stacked
+directly on top of each other in an early screenshot they read as duplicate buttons).
+
+**A related audio bug**: "Quit to Title" stops the departing scene but Title only restarts its
+own ambience on the session's very first tap (a `.once` gate on `audio.unlock()`) — landing back
+on Title mid-Rhythm-song left that song's audio playing forever underneath the menu. Fixed:
+`SettingsScene.ts`'s Quit to Title now calls `audio.stopMusic()` explicitly.
+
+### 17.3 Narrative depth — 6 existing beats, 0 new characters/locations
+
+Per the explicit ask: enhanced without introducing new characters or cities. Six existing
+relationship/location/journal beats — spanning all 4 existing cities and all 4 existing
+bandmates — were rewritten with a specific psychological framework as literary subtext (never
+named in the actual game text, which stays in its established terse voice): Rowan/Tokyo
+(attachment theory, caregiving system, interdependence), the Lisbon miradouro (schema
+accommodation, self-transcendence, broaden-and-build), Jun/Berlin (reward prediction error,
+behavioral activation, savoring), Theo/Lisbon (threat appraisal, defensive cascade, fear
+conditioning), Mira/Lisbon (self-conscious emotion, social-rank, self-discrepancy), and a **new**
+conditional branch on Lisbon's journal entry (attachment reactivation, meaning reconstruction,
+continuing bonds) gated on a new flag `BandCreatorScene.ts` now sets when the player picks the
+"a promise made at a funeral" `WHY_TOUR_BEATS` option — previously purely decorative, now the
+game's only piece of content that actually reads it. Full table: the before/after doc above.
+
+All six respect the existing hard 40-word-per-node pacing budget (`content/schema.ts` — a real
+validation rule; two of the six first drafts exceeded it and were trimmed without losing the
+added beat).
+
+**Regression coverage**: `src/tests/narrativeDepth.test.ts` (3 tests) — the funeral-promise
+branch's real content wiring specifically (the generic condition/fallback mechanism already had
+coverage via `src/tests/dialogue.test.ts`).
+
+### 17.4 Testing infrastructure fixes (found while building the above)
+
+- The tap-to-skip regression tests in `e2e/smoke.spec.ts` originally tried to catch the dialogue
+  box mid-typewriter by racing real animation timing (a fixed wait, then an active poll). Both
+  were flaky *in this sandboxed session specifically* — confirmed live, a fully synchronous,
+  zero-wait check once already observed a ~5-second typewriter tween as 100% complete (Phaser's
+  tween clock runs on real elapsed time; one delayed animation frame can "catch up" a whole tween
+  in a single jump if painting was deferred long enough). Rewritten to call `DialogueBox.show()`/
+  `handleTap()` directly with a throwaway node — `typing` is set synchronously inside `show()`,
+  before the reveal tween is even created, so checking it in the same script (no `await` in
+  between) is deterministic regardless of real frame timing.
+- **`e2e/fullrun.spec.ts`** (new): a real, UI-driven walkthrough of one full city loop (Hub → City
+  arrival → minigame → 2 locations → relationship → preshow choice → Rhythm, autoplay → Results →
+  City afterShow/journal → back to Hub), tapping through actual dialogue rather than bypassing the
+  UI. This is the direct answer to "you missed things previously": `headless_playtest.test.ts`
+  already walked this exact shape for all 4 cities, but at the state/logic layer only — it never
+  taps anything, which is exactly why it never caught §17.1's bug. Wired into
+  `playwright.config.ts`'s `testMatch` alongside `smoke.spec.ts` so it runs in CI too.
+- Building `fullrun.spec.ts` surfaced one more environment-specific issue: Playwright's default
+  `click()` waits for its target to be "stable" (bounding box unchanged across two consecutive
+  animation frames) — confirmed live, a single click can hang for a very long time waiting on
+  that in this session's slower rendering (one instance consumed a full 180-second test budget).
+  `e2e/helpers.ts`'s `canvasClick` now passes `force: true` — the canvas element's own box never
+  actually moves during gameplay (only its drawn content does), so the wait was never protecting
+  against anything real here.
+- Two further bugs turned up in `fullrun.spec.ts` **itself** while getting it running, not in the
+  app: (1) its setup called `game.scene.start('Hub', ...)` directly rather than through a real
+  `goTo()`-style transition, so Title was never stopped and stayed live enough underneath to
+  receive some of the test's own later clicks — fixed by explicitly stopping Title first. (2)
+  `walkDialogueToSceneChange` originally only stopped once the *scene itself* changed, but
+  visiting a City location doesn't change the scene at all — it walks that location's dialogue
+  and returns to the *same* CityScene's picker, which explicitly hides the dialogue box
+  (`renderLocationButtons()`/`renderPreShowChoices()`) — so the walker kept tapping into the void
+  until it exhausted its budget. Fixed by also stopping once the dialogue box itself goes idle,
+  which — usefully — also made a separate hand-rolled "loop through relationship scenes" block
+  redundant, since the walker now carries straight through them on its own.
+
+### 17.5 Honest status
+
+**Clean on Pixel 7**: 109/109 unit tests, all 22 `smoke.spec.ts`/`fullrun.spec.ts` e2e tests
+(including a full real playthrough — arrival → minigame → 2 locations → relationship scenes →
+preshow → a complete autoplayed song → Results → afterShow/journal → back to Hub, taps only, no
+shortcuts), all 4 `dist-smoke.spec.ts` tests against the rebuilt production bundle, typecheck
+clean, production build clean. Getting `fullrun.spec.ts` to that point took several honest
+iterations within this same session — each one a real bug caught and named in §17.4, not silently
+retried — landing on Score 12590 / Combo x76 with autoplay mid-song was the concrete evidence the
+game itself was never the problem in that last stretch, only the test's own time budget.
+
+**Still not run this pass**: the other 3 CI device profiles (iPhone 12/14, generic Android —
+unchanged from §16's own note, only Pixel 7 confirmed locally both passes) and the manual
+real-device checklist (no physical hardware available this session either). Check the first CI
+run on the landing PR/push for those before treating them as verified.
+
 ## 12. Prioritized next steps (current, not the stale ordering from earlier handoffs)
 
 The best-in-class pass (§14), the close-out pass (§15), and the UX/QA fix pass (§16) are all now

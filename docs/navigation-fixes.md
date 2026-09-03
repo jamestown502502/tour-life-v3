@@ -3,7 +3,63 @@
 Workstream 2 of the UX/QA fix pass, investigating the reported "'Continue' buttons are failing,
 causing the application to get stuck on certain screens."
 
-## What was checked, and what it found
+## Update: the actual dominant cause, found from a second live report
+
+Everything in "What was checked" below was investigated and (mostly) fixed *before* the first
+redeploy of this pass. A second live report — screenshots of Mexico City's arrival dialogue,
+full text visible, no choices, no way forward — pointed at something none of the original
+hypotheses covered: **`DialogueBox.handleTap()`'s tap-to-skip-typewriter path never ran the
+node's completion logic.**
+
+`show()` reveals a line's text with a typewriter animation; when it finishes on its own, an
+`onComplete` callback runs `finishTyping()` *and* `afterTypeComplete()` — the second call is what
+decides whether to render choice buttons or arm the tap-to-advance chevron. But tapping the panel
+*while a line is still typing* (the ordinary, expected way to skip ahead — not an edge case) went
+through `handleTap()` instead, which called `finishTyping()` alone and returned. `afterTypeComplete`
+never ran. On a choice node, no buttons ever appeared. On a plain node, the chevron never appeared
+and a second tap did nothing (`onSkippedOrAdvance` was still `null` from the previous line). The
+player was left looking at complete, readable text with no way to continue — this is almost
+certainly what "stuck early in playthrough" actually was: Mexico City's arrival line runs ~240
+characters (~5s to type out), long enough that tapping before it finishes is the *likely* first
+interaction, not a rare one, and arrival is the first thing every city shows.
+
+**Fix**: `src/ui/DialogueBox.ts` — `show()` now stores its per-node completion closure
+(`finishTyping` + `afterTypeComplete`) on `this.pendingComplete`; `handleTap()`'s skip-path calls
+that instead of `finishTyping()` alone, so skipping the typewriter always leaves the dialogue in
+the exact same state finishing it naturally would have.
+
+This also prompted a second look at the "continuous optionality" ask directly: `RhythmScene` now
+gets the same Menu-button escape hatch City/MiniGame already had (see item 6 below) — the original
+"lanes cover the play area" concern turned out to only be true for `HIT_LINE_Y-160` to `+140`
+(y:820-1120); the top of the screen, where the button sits, isn't part of any lane's tap zone.
+Adding it surfaced one more real gap: `SettingsScene`'s "Quit to Title" now also calls
+`audio.stopMusic()` explicitly — Title only restarts its own ambience on the session's very first
+tap (a `.once` gate), so landing back on Title mid-song via Quit to Title previously left that
+song's audio playing forever underneath it.
+
+Two more pre-Hub screens also had no way out at all, forward-only: `BandCreatorScene` and
+`RoutePlanScene`. Both now get the same Menu button. `RoutePlanScene`'s lives in
+`renderRoutePlan()` specifically (called only after any onboarding `DialogueBox` has already been
+destroyed), avoiding the same collision described next.
+
+A **second** real bug the live test suite itself caught while adding City's escape hatch, not
+inspection: `MenuButton` first landed at the exact `(20,20,66,66)` spot `DialogueBox`'s own "≡"
+backlog toggle already occupies in City — whichever was added later in the display list silently
+intercepted every tap there, so Settings was unreachable from City even after the button was
+added (confirmed live: the tap toggled the empty backlog panel instead, no scene change).
+`addMenuButton` now takes a `yOffset`; City stacks its button below the toggle instead of on top
+of it, and switched to a gear glyph (⚙, vs. the toggle's ≡) since the two stacked directly on top
+of each other read as duplicate buttons in an early screenshot even once the collision itself was
+fixed.
+
+Regression coverage: `e2e/smoke.spec.ts`'s `dialogue tap-to-skip-typewriter must not soft-lock
+progression` describe block (both a choice node and a plain tap-to-advance node), a new Rhythm
+Menu-button reachability test, and `e2e/fullrun.spec.ts` (new) — a real, UI-driven walkthrough of
+one full city loop, tapping through actual dialogue rather than bypassing the UI the way
+`headless_playtest.test.ts` does (which is exactly why that test never caught the tap-to-skip
+bug in the first place).
+
+## What was checked, and what it found (the original investigation)
 
 Per the ground truth handed to this pass, `TitleScene.resumeTarget(progress)` (moved to
 `src/game/resume.ts` during this fix so it can be unit-tested — see below) is the single function

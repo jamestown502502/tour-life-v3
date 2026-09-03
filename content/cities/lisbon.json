@@ -87,13 +87,13 @@
 
     "lis_loc_miradouro": {
       "id": "lis_loc_miradouro", "speaker": "narrator",
-      "text": "Wind, trams, a view that makes the whole trip feel smaller and bigger at once.",
+      "text": "Wind, trams, a view that makes the whole trip feel smaller and bigger at once — like whatever map you had of this tour just got quietly redrawn without asking permission first.",
       "choices": [
         { "id": "breathe", "label": "Sit and breathe", "next": "lis_loc_miradouro_breathe", "effects": { "energy": 4 } },
         { "id": "sketch", "label": "Sketch the skyline", "next": "lis_loc_miradouro_sketch", "effects": { "inspiration": 3 } }
       ]
     },
-    "lis_loc_miradouro_breathe": { "id": "lis_loc_miradouro_breathe", "speaker": "narrator", "text": "For five minutes, nothing is due and no one needs you." },
+    "lis_loc_miradouro_breathe": { "id": "lis_loc_miradouro_breathe", "speaker": "narrator", "text": "For five minutes, nothing is due and no one needs you. The list of things that usually matter gets quietly, temporarily shorter." },
     "lis_loc_miradouro_sketch": { "id": "lis_loc_miradouro_sketch", "speaker": "narrator", "text": "The lines come out crooked. You keep the page anyway." },
 
     "lis_loc_market": {
@@ -109,25 +109,25 @@
 
     "lis_rel_mira": {
       "id": "lis_rel_mira", "speaker": "mira", "portrait": "worried",
-      "text": "\"What if they came for someone else's band?\" Mira asks the window, not you.",
+      "text": "\"What if they came for someone else's band?\" Mira asks the window, not you. Whoever she pictured up there tonight, she's fairly sure it wasn't this version of her.",
       "choices": [
         { "id": "reassure", "label": "She's wrong, and you know it", "next": "lis_rel_mira_a", "relationshipEffects": { "mira": 5 }, "effects": { "harmony": 2 } },
         { "id": "sit_with", "label": "Let her sit with it a moment", "next": "lis_rel_mira_b", "relationshipEffects": { "mira": 2 } }
       ]
     },
-    "lis_rel_mira_a": { "id": "lis_rel_mira_a", "speaker": "mira", "portrait": "happy", "text": "She doesn't argue back this time. That's new." },
+    "lis_rel_mira_a": { "id": "lis_rel_mira_a", "speaker": "mira", "portrait": "happy", "text": "She doesn't argue back this time. That's new — usually she'd deflect a compliment like it cost her something to keep." },
     "lis_rel_mira_b": { "id": "lis_rel_mira_b", "speaker": "mira", "portrait": "worried", "text": "\"Okay,\" she says, eventually. Not fixed. Heard." },
 
     "lis_rel_theo": {
       "id": "lis_rel_theo", "speaker": "theo", "portrait": "tense",
-      "text": "\"I could sleep for a year,\" Theo says, \"and still be tired when I woke up.\"",
+      "text": "\"I could sleep for a year,\" Theo says, \"and still be tired when I woke up.\" It's not the tour talking. It's the last time he felt this tired, and where that ended up.",
       "choices": [
         { "id": "rest", "label": "Take the afternoon off", "next": "lis_rel_theo_a", "effects": { "energy": 5 }, "relationshipEffects": { "theo": 4 } },
         { "id": "push", "label": "One more pass at the bridge, then rest", "next": "lis_rel_theo_b", "effects": { "inspiration": 3, "energy": -4 } }
       ]
     },
-    "lis_rel_theo_a": { "id": "lis_rel_theo_a", "speaker": "theo", "portrait": "happy", "text": "He actually naps. You stand guard over the silence like it's precious." },
-    "lis_rel_theo_b": { "id": "lis_rel_theo_b", "speaker": "theo", "portrait": "tense", "text": "The bridge is tighter now. Theo looks a little more hollow for it." },
+    "lis_rel_theo_a": { "id": "lis_rel_theo_a", "speaker": "theo", "portrait": "happy", "text": "He actually naps. You stand guard over the silence like it's precious — like the alternative is something worth guarding against." },
+    "lis_rel_theo_b": { "id": "lis_rel_theo_b", "speaker": "theo", "portrait": "tense", "text": "The bridge is tighter now. Theo looks a little more hollow for it — not frustrated anymore, just quiet in the specific way that isn't calm." },
 
     "lis_rel_jun": {
       "id": "lis_rel_jun", "speaker": "jun", "portrait": "inspired",
@@ -254,6 +254,12 @@
 
     "lis_journal": {
       "id": "lis_journal", "speaker": "narrator",
+      "text": "You write: Lisbon smelled like rain and someone else's song. You wonder if the promise still counts when the person it was made to never hears how it turned out — then decide it counts more, not less. Onward.",
+      "condition": "flag:why_tour_funeral_promise",
+      "fallback": "lis_journal_generic"
+    },
+    "lis_journal_generic": {
+      "id": "lis_journal_generic", "speaker": "narrator",
       "text": "You write: Lisbon smelled like rain and someone else's song. Onward."
     }
   }

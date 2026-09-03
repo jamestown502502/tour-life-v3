@@ -18,6 +18,7 @@ import { saveRun } from '../core/save';
 import { textStyle } from './textStyles';
 import { parseChordProgression } from '../core/musicTheory';
 import { addHelpButton } from './HelpButton';
+import { addMenuButton } from './MenuButton';
 import {
   hasSeenRhythmTutorial, markRhythmTutorialSeen, hasEverOpenedSettings,
   hasSeenHoldHint, markHoldHintSeen, hasSeenCueHint, markCueHintSeen,
@@ -140,6 +141,18 @@ export class RhythmScene extends Phaser.Scene {
     // "?" help button (which occupies the last ~100px of the top edge).
     this.cityLabel = this.add.text(W - 110, 24, '', textStyle('small')).setOrigin(1, 0).setDepth(50);
     addHelpButton(this, 'Tap notes as they reach the gold line. Hold notes: press and hold. Choice cues: tap the banner. Score never blocks the story.');
+    // Below the Score/Combo text (which ends ~y76), not overlapping it. Each lane's actual tap
+    // zone (below) only spans HIT_LINE_Y-160 to +140 (y:820-1120) — the top of the screen where
+    // this sits is not part of any lane's interactive area, so this doesn't risk an accidental
+    // pause mid-song the way a button placed nearer the hit line would.
+    // Known trade-off, not fixed here: Settings' "Back" resumes this scene's own paused clock
+    // exactly where it left off, but the song's Web Audio playback keeps running in real time
+    // while paused (no pause/resume exists for the procedural oscillator-based ambience) — so a
+    // pause-then-Back during a song leaves the chart briefly out of sync with the audio for the
+    // remainder of that song. No-fail scoring means this never blocks progress (the song still
+    // reaches Results), just feels off for that one play-through. "Quit to Title" doesn't have
+    // this problem — it stops the audio outright (see SettingsScene.ts's Quit to Title handler).
+    addMenuButton(this, 'Rhythm', 86);
 
     this.add.text(W - 110, 50, 'Crowd', textStyle('small', { fontSize: '13px' })).setOrigin(1, 0).setDepth(50);
     const downKey = ensureCrowdFigure(this, false);

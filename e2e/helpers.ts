@@ -62,15 +62,85 @@ export async function waitForActiveScene(page: Page, key: string, timeoutMs = 80
   return last;
 }
 
+/** Polls `check()` (an in-page function returning a boolean) until it's true or `timeoutMs`
+ *  elapses. Used instead of a fixed waitForTimeout wherever "mid-typewriter" or similar transient
+ *  game state needs to be caught reliably — a fixed delay is a race against however fast this
+ *  particular run's CDP round-trips/CPU happen to be, and was confirmed flaky in practice (a
+ *  300ms wait that reliably landed mid-typewriter in one run finished typing early in another,
+ *  same code, just slower page.evaluate round-trips that run). Returns whether it succeeded. */
+export async function waitForCondition(page: Page, check: () => boolean, timeoutMs = 5000): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await page.evaluate(check)) return true;
+    await page.waitForTimeout(30);
+  }
+  return false;
+}
+
+/** Generic dialogue-walker for real full-playthrough tests: repeatedly taps the dialogue panel
+ *  (advancing or skip-completing a typing line — since the tap-to-skip fix, either state now
+ *  converges correctly, which this exercises implicitly on every tap) and clicks the first choice
+ *  whenever choices are showing. Stops when either (a) `sceneKey` is no longer active (a minigame/
+ *  rhythm hand-off) or (b) the dialogue box itself goes idle/hidden — confirmed live: visiting a
+ *  City location doesn't change the active scene at all, it walks that location's dialogue chain
+ *  and returns to the *same* CityScene's location picker, which explicitly hides the dialogue box
+ *  (`this.dialogueBox.setVisible(false)` in `renderLocationButtons()`/`renderPreShowChoices()`) —
+ *  without watching for that too, this kept tapping into the void until it exhausted its tap
+ *  budget, a bug in this test's own exit condition, not the app. Returns the tap count actually
+ *  used — a caller asserting against `< maxTaps` gets a real "didn't get stuck" signal, not just
+ *  "didn't crash". */
+export async function walkDialogueToSceneChange(page: Page, sceneKey: string, maxTaps = 40): Promise<number> {
+  let taps = 0;
+  for (; taps < maxTaps; taps++) {
+    const state = await page.evaluate((key) => {
+      const g = (window as any).__game;
+      const active = g.scene.getScenes(true).map((s: any) => s.scene.key);
+      if (!active.includes(key)) return { done: true } as const;
+      const db = g.scene.getScene(key)?.dialogueBox;
+      if (!db) return { done: false, hasDb: false } as const;
+      if (!db.container.visible) return { done: true } as const;
+      const choice = db.choiceButtons[0];
+      const b = choice?.getBounds();
+      return { done: false, hasDb: true, choiceXY: b ? { x: b.x + b.width / 2, y: b.y + b.height / 2 } : null } as const;
+    }, sceneKey);
+    if (state.done) return taps;
+    if (!state.hasDb) { await page.waitForTimeout(150); continue; }
+    if (state.choiceXY) await canvasClick(page, state.choiceXY.x, state.choiceXY.y);
+    else await canvasClick(page, 360, 800);
+    await page.waitForTimeout(150);
+  }
+  return taps;
+}
+
+/** Starts a scene directly via the global scene manager, bypassing Title/goTo — for tests that
+ *  need to land on a specific scene+data combination without playing through to reach it (e.g. a
+ *  specific city's arrival dialogue). Faster and more precise than seeding a save + Continue, but
+ *  doesn't stop whatever scene was previously running the way a real goTo() transition does —
+ *  fine for a fresh page load where nothing else is running yet. */
+export async function startScene(page: Page, key: string, data?: object): Promise<void> {
+  await page.evaluate(({ key, data }) => (window as any).__game.scene.start(key, data), { key, data });
+}
+
 /** Clicks at a point in the game's own 720x1280 logical coordinate space — Phaser's Scale.FIT
  *  resizes the canvas element itself to the scaled/letterboxed content, so a position relative
  *  to the canvas element's own bounding box (not the page) lands correctly regardless of the
  *  device's actual viewport size or pixel ratio. */
-export async function canvasClick(page: Page, logicalX: number, logicalY: number): Promise<void> {
+export async function canvasClick(page: Page, logicalX: number, logicalY: number, opts: { timeout?: number } = {}): Promise<void> {
   const canvas = page.locator('canvas').first();
   const box = await canvas.boundingBox();
   if (!box) throw new Error('canvas not found/visible for canvasClick');
-  await canvas.click({ position: { x: (logicalX / LOGICAL_W) * box.width, y: (logicalY / LOGICAL_H) * box.height } });
+  // force: true — Playwright's default click() also waits for the target to be "stable" (its
+  // bounding box unchanged across two consecutive animation frames). The canvas element's own
+  // box never moves or resizes during gameplay (only its drawn *content* changes, which
+  // stability-checking doesn't look at), so that wait is never actually protecting against
+  // anything real here — and confirmed live, it can stall for a very long time in this sandboxed
+  // environment's slower rendering (a single click waited the full length of a 180s test budget).
+  // force skips straight to dispatching the event at the computed position.
+  await canvas.click({
+    position: { x: (logicalX / LOGICAL_W) * box.width, y: (logicalY / LOGICAL_H) * box.height },
+    force: true,
+    timeout: opts.timeout ?? 10000,
+  });
 }
 
 /** A minimal-but-schema-valid RunState (see src/core/state.ts's freshRun/RunState) for seeding

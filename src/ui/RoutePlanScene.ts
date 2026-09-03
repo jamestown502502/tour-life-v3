@@ -10,6 +10,7 @@ import { drawScenePoolFlags } from '../game/scenePool';
 import { saveRun } from '../core/save';
 import { textStyle } from './textStyles';
 import { DialogueBox } from './DialogueBox';
+import { addMenuButton } from './MenuButton';
 
 const ONBOARD_FLAG = 'onboard_routeplan_seen';
 
@@ -42,6 +43,9 @@ export class RoutePlanScene extends Phaser.Scene {
   }
 
   private renderRoutePlan(): void {
+    // Called after any onboarding DialogueBox has already been destroyed (see create()), so
+    // this never collides with its top-left backlog toggle the way CityScene's did.
+    addMenuButton(this, 'RoutePlan');
     const possessive = State.data.band.name.endsWith('s') ? `${State.data.band.name}'` : `${State.data.band.name}'s`;
     this.add.text(W / 2, 80, `${possessive} Route`, textStyle('h1')).setOrigin(0.5);
     this.add.text(W / 2, 130, `Seed: ${State.data.seed}`, textStyle('small')).setOrigin(0.5);

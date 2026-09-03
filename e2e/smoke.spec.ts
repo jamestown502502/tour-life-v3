@@ -3,7 +3,7 @@
 // claim. Runs against the DEV server (see playwright.config.ts's header for why) at 4 device
 // profiles: iPhone 12, iPhone 14, Pixel 7, and a generic 360x740 Android viewport.
 import { test, expect } from '@playwright/test';
-import { bootGame, canvasClick, collectConsoleErrors, getActiveSceneKeys, waitForActiveScene, seedSave, skipFirstTimeOnboarding } from './helpers';
+import { bootGame, canvasClick, collectConsoleErrors, getActiveSceneKeys, startScene, waitForActiveScene, waitForCondition, seedSave, skipFirstTimeOnboarding } from './helpers';
 
 test.describe('boot', () => {
   test('a first-time player (fresh profile, no save) sees the HowToPlay overlay auto-open over Title — intentional onboarding, not a bug', async ({ page }) => {
@@ -126,6 +126,94 @@ test.describe('Settings is reachable from every resumable screen and Back return
     expect(active).toContain('Title');
     expect(active).not.toContain('City');
     expect(active).not.toContain('Settings');
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
+  test('Rhythm has a Menu button reaching Settings (added after a live report: no escape existed from any mid-song state)', async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await skipFirstTimeOnboarding(page);
+    await bootGame(page);
+    await startScene(page, 'Rhythm', { cityId: 'lisbon' });
+    await page.waitForTimeout(500);
+
+    // MenuButton.ts: BTN_X=20, BTN_Y=20+86 (RhythmScene's own yOffset, clears the Score/Combo
+    // text above it) — center (53, 139).
+    await canvasClick(page, 53, 139);
+    expect(await waitForActiveScene(page, 'Settings')).toContain('Settings');
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+});
+
+// Regression coverage for a real live bug report: DialogueBox.handleTap()'s tap-to-skip-typing
+// path called finishTyping() but never afterTypeComplete() — so tapping to skip a long line's
+// typewriter animation (a completely normal move, not an edge case) left the player with the
+// full text on screen and no way to proceed: no choice buttons on a choice node, no chevron/
+// second-tap on a plain node. Reported live on Mexico City's arrival line (long text, 3 choices —
+// exactly the shape most likely to get an impatient tap). Fixed by having the skip path run the
+// same completion logic the typewriter's own onComplete would have.
+// This environment's browser rendering is unreliable enough (confirmed live: a fully synchronous
+// page.evaluate() round-trip, with zero explicit wait, sometimes already observed a ~5s
+// typewriter tween as 100% complete — Phaser's tween clock runs on real elapsed time, and a
+// single delayed animation frame can "catch up" the whole tween in one jump if painting was
+// deferred) that racing real wall-clock time to catch a "mid-typewriter" instant is not a
+// reliable test strategy here — not even a polling one, since nothing renders between polls
+// either. These call DialogueBox.show() directly with a throwaway node, entirely bypassing
+// CityScene's own content-driven flow: `typing` is set synchronously inside show(), *before* the
+// tween that reveals text is even created, so checking it in the same script (no await in
+// between) is deterministic regardless of real animation/frame timing.
+test.describe('dialogue tap-to-skip-typewriter must not soft-lock progression', () => {
+  test('a choice node still shows its choices after tap-to-skip', async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await skipFirstTimeOnboarding(page);
+    await bootGame(page);
+    await startScene(page, 'City', { cityId: 'mexico_city', phase: 'arrival' });
+    const hasDb = await waitForCondition(page, () => !!(window as any).__game.scene.getScene('City')?.dialogueBox);
+    expect(hasDb, 'test setup: DialogueBox must exist').toBe(true);
+
+    const result = await page.evaluate(() => {
+      const db = (window as any).__game.scene.getScene('City').dialogueBox;
+      const node = { id: 'test_choice', speaker: 'narrator', text: 'A' + 'x'.repeat(200), choices: [
+        { id: 'a', label: 'Option A', next: 'x' }, { id: 'b', label: 'Option B', next: 'y' },
+      ] };
+      db.show(node, () => {}, () => {});
+      const typingRightAfterShow = db.typing; // must be true — set synchronously in show()
+      db.handleTap(); // the tap-to-skip a real impatient tap sends
+      return {
+        typingRightAfterShow, typingAfterTap: db.typing,
+        bodyLen: db.bodyText.text.length, fullLen: db.fullText.length, choiceButtonCount: db.choiceButtons.length,
+      };
+    });
+    expect(result.typingRightAfterShow, 'test setup: typing must be true synchronously inside show()').toBe(true);
+    expect(result.typingAfterTap).toBe(false);
+    expect(result.bodyLen).toBe(result.fullLen);
+    expect(result.choiceButtonCount, 'the 2 choice buttons must render after tap-to-skip, not just after the typewriter finishes on its own').toBe(2);
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
+  test('a plain tap-to-advance node still advances (via the chevron path) after tap-to-skip', async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await skipFirstTimeOnboarding(page);
+    await bootGame(page);
+    await startScene(page, 'City', { cityId: 'mexico_city', phase: 'arrival' });
+    const hasDb = await waitForCondition(page, () => !!(window as any).__game.scene.getScene('City')?.dialogueBox);
+    expect(hasDb, 'test setup: DialogueBox must exist').toBe(true);
+
+    const result = await page.evaluate(() => {
+      const db = (window as any).__game.scene.getScene('City').dialogueBox;
+      let advanceCount = 0;
+      const node = { id: 'test_plain', speaker: 'narrator', text: 'B' + 'y'.repeat(200) };
+      db.show(node, () => { advanceCount++; }, () => {});
+      const typingRightAfterShow = db.typing;
+      db.handleTap(); // tap-to-skip
+      const stateAfterSkip = { typing: db.typing, chevronVisible: db.chevron.visible, hasOnAdvance: !!db.onSkippedOrAdvance };
+      db.handleTap(); // second tap: should now invoke onAdvance via the chevron path
+      return { typingRightAfterShow, stateAfterSkip, advanceCount };
+    });
+    expect(result.typingRightAfterShow, 'test setup: typing must be true synchronously inside show()').toBe(true);
+    expect(result.stateAfterSkip.typing).toBe(false);
+    expect(result.stateAfterSkip.chevronVisible, 'chevron must appear after tap-to-skip on a plain node, or a second tap has nothing to do').toBe(true);
+    expect(result.stateAfterSkip.hasOnAdvance).toBe(true);
+    expect(result.advanceCount, 'onAdvance must fire exactly once from the second tap').toBe(1);
     expect(errors, errors.join('\n')).toEqual([]);
   });
 });

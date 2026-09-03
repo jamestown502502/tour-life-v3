@@ -131,9 +131,14 @@ export class SettingsScene extends Phaser.Scene {
     // all before this — the only exits were Title and Hub's own Settings button. this.returnTo
     // is stopped (not just left paused) so its own SHUTDOWN cleanup actually runs (un-duck
     // music, stop fireflies/rain — see CityScene's SHUTDOWN handler) instead of leaking a
-    // paused scene in the background forever.
+    // paused scene in the background forever. audio.stopMusic() is explicit here too: Title
+    // only (re)starts its own ambience on the FIRST pointerdown of the whole session (a `.once`
+    // gate, so audio.unlock() only ever runs once) — landing back on Title mid-song via Quit to
+    // Title otherwise left a Rhythm song's audio playing forever underneath it, since nothing
+    // downstream would ever call playAmbience again to crossfade it out.
     createButton(this, W / 2 + 5, y + 12, 145, 56, 'Quit to Title', () => {
       this.scene.stop(this.returnTo);
+      audio.stopMusic();
       goTo(this, 'Title');
     }, { fillColor: 0x8a6fa3, fontSize: '14px' });
   }

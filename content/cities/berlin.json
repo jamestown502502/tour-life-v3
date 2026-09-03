@@ -151,13 +151,13 @@
 
     "ber_rel_jun2": {
       "id": "ber_rel_jun2", "speaker": "jun", "portrait": "happy",
-      "text": "\"Found someone who builds her own synths out of spare parts,\" Jun says. \"She said I could sit in on tonight's set, if we're brave enough to let her.\"",
+      "text": "\"Found someone who builds her own synths out of spare parts,\" Jun says, practically vibrating. \"She said I could sit in on tonight's set, if we're brave enough to let her.\" Not budgeted for. Landing hard anyway.",
       "choices": [
         { "id": "brave", "label": "Say yes before you can talk yourself out of it", "next": "ber_rel_jun2_a", "relationshipEffects": { "jun": 5 }, "effects": { "inspiration": 3 } },
         { "id": "careful", "label": "Ask what \"brave\" actually means here first", "next": "ber_rel_jun2_b", "relationshipEffects": { "jun": 2 } }
       ]
     },
-    "ber_rel_jun2_a": { "id": "ber_rel_jun2_a", "speaker": "jun", "portrait": "inspired", "text": "\"Brave,\" Jun repeats, delighted, already typing out a reply before you've fully finished saying yes." },
+    "ber_rel_jun2_a": { "id": "ber_rel_jun2_a", "speaker": "jun", "portrait": "inspired", "text": "\"Brave,\" Jun repeats, delighted, already typing out a reply before you've fully finished saying yes — already replaying how tonight's going to sound before it's happened." },
     "ber_rel_jun2_b": { "id": "ber_rel_jun2_b", "speaker": "jun", "portrait": "happy", "text": "\"Fair question. Honestly, I don't fully know either,\" Jun admits. \"That might be sort of the whole point.\"" },
 
     "ber_rel_rowan": {
