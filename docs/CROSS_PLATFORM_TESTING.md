@@ -46,6 +46,40 @@ the underlying mechanic needs to be redesigned to be platform-agnostic, not bran
 | Every `progress.screen` resume path lands on a playable scene | ✅ Verified live — `e2e/smoke.spec.ts`'s full resume-state matrix (13 cases) passes on Pixel 7, plus `src/tests/resumeTarget.test.ts` (8 unit tests). iPhone 12/14 and generic-Android profiles not run to completion locally; check CI. | `src/game/resume.ts` |
 | Real iPhone/Android hardware (actual device, not emulation) | ⚠️ **Not verified this pass** — every check above ran in Playwright's device *emulation* (viewport + UA + touch simulation) or the in-session browser pane, not physical hardware. See the manual checklist below. | — |
 
+## CI device-matrix PASS table (Final Polish pass, 2026-09-02)
+
+Closed the one item `CROSS_PLATFORM_TESTING.md` had flagged as unrun: the full 4-profile CI
+matrix, watched on its first real run rather than assumed green. Commit `21c53d1` (the UX/QA
+follow-up pass that fixed the tap-to-skip bug) triggered CI run
+[`33707063110`](https://github.com/jamestown502502/tour-life-v3/actions/runs/33707063110) on
+push to `master` — the actual first execution of this workflow's e2e-smoke job.
+
+| Device profile | `npx playwright test` (22 tests each) | `--config=playwright.dist.config.ts` |
+|---|---|---|
+| iPhone 12 | ✅ PASS (22/22) | — (dist config runs one profile only, see below) |
+| iPhone 14 | ✅ PASS (22/22) | — |
+| Pixel 7 | ✅ PASS (22/22) | ✅ PASS (4/4) |
+| Android 360×740 | ✅ PASS (22/22) | — |
+
+- `build-and-test` job: ✅ PASS (36s).
+- `e2e-smoke` job, `npx playwright test` step: **88 passed, 0 failed** (24.0m) — 22 tests ×
+  4 profiles, confirmed via the raw step log (`iPhone 12`/`iPhone 14`/`Pixel 7`/`Android`
+  each appear exactly 22 times, zero `failed`/`✘` lines).
+- `e2e-smoke` job, `--config=playwright.dist.config.ts` step: **4 passed, 0 failed** (22.6s) —
+  this config only defines a single `Pixel 7 (production build)` project (see
+  `playwright.dist.config.ts`), so there's no per-profile matrix on this side; it's the
+  production-bundle check from Testing workflow §2 above.
+- No profile failed, so there was nothing to fix and re-run — the DONE-WHEN bar ("don't mark a
+  profile green without a green run") is met by an actual green run, not an assumption.
+
+**Local second source of truth**: a full 4-profile parallel run was attempted twice on this
+machine and both times failed on resource-starvation grounds (a `<canvas>` locator timing out at
+10s on even the simplest tests — this machine is the owner's own live desktop, not an isolated
+runner; full detail in `docs/release-readiness.md`'s Item 1). A serial, isolated Pixel-7-only
+run of the same suites was fully clean: `smoke.spec.ts` + `fullrun.spec.ts` 22/22,
+`--config=playwright.dist.config.ts` 4/4. That's the genuine local confirmation this pass has;
+CI's matrix above remains the actual multi-profile proof.
+
 ## Testing workflow
 
 ### 1. Automated: Playwright device-emulation matrix (CI, every push/PR)

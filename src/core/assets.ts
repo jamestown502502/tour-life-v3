@@ -54,3 +54,18 @@ export function markRealAsset(key: string): void {
 export function hasRealAsset(key: string): boolean {
   return realAssetKeys.has(key);
 }
+
+// The one real (non-procedural) audio asset the design allows (DESIGN.md §15.17) — a single
+// flag rather than a Set since there's only ever this one file. Same missing-file tolerance as
+// markRealAsset/hasRealAsset above: BootScene only calls markTitleThemeLoaded() on a successful
+// load, so a missing/corrupt file just leaves this false and TitleScene keeps using the
+// procedural DEFAULT_AMBIENCE it already had.
+let titleThemeLoaded = false;
+
+export function markTitleThemeLoaded(): void {
+  titleThemeLoaded = true;
+}
+
+export function hasTitleTheme(): boolean {
+  return titleThemeLoaded;
+}

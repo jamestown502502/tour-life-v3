@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { assetBaseUrl, fetchManifest, markRealAsset } from '../core/assets';
+import { assetBaseUrl, fetchManifest, markRealAsset, markTitleThemeLoaded } from '../core/assets';
 
 /** Loads real painted assets (if any) into the texture manager, then hands off to Title.
  *
@@ -17,22 +17,29 @@ export class BootScene extends Phaser.Scene {
 
   async create(): Promise<void> {
     const entries = await fetchManifest();
-    if (entries.length === 0) {
-      this.scene.start('Title');
-      return;
-    }
 
     // A missing/corrupt file must never block boot — log it and let that key fall back to
-    // code-drawn, which is exactly what happens if it never enters the texture manager.
-    this.load.on(Phaser.Loader.Events.FILE_COMPLETE, (key: string) => markRealAsset(key));
+    // code-drawn (images) or the procedural title ambience (title_theme), which is exactly what
+    // happens if it never enters the texture/audio cache.
+    this.load.on(Phaser.Loader.Events.FILE_COMPLETE, (key: string) => {
+      if (key === 'title_theme') markTitleThemeLoaded();
+      else markRealAsset(key);
+    });
     this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => {
-      console.warn(`[assets] could not load "${file.src}" for key "${file.key}" — falling back to code-drawn`);
+      const fallback = file.key === 'title_theme' ? 'the procedural title ambience' : 'code-drawn';
+      console.warn(`[assets] could not load "${file.src}" for key "${file.key}" — falling back to ${fallback}`);
     });
     this.load.once(Phaser.Loader.Events.COMPLETE, () => this.scene.start('Title'));
 
     for (const entry of entries) {
       this.load.image(entry.key, `${assetBaseUrl()}assets/${entry.file}`);
     }
+    // Audio isn't part of the image manifest (assets.ts's header comment) — queued
+    // unconditionally alongside it, same graceful-fallback pattern as the loop above. This also
+    // means the loader always has at least this one file queued, so the old
+    // "entries.length === 0 -> skip straight to Title" early-return is gone: there's always
+    // something for load.start() to do now.
+    this.load.audio('title_theme', `${assetBaseUrl()}audio/title_theme.mp3`);
     this.load.start();
   }
 }

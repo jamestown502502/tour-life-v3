@@ -8,11 +8,27 @@
 <!-- Relative, matching vite.config's base: './' — the same portability choice src/core/assets.ts
      documents (dev server + static build today; a Capacitor file://-scheme WebView tomorrow). -->
 <link rel="manifest" href="./manifest.webmanifest" />
-<link rel="apple-touch-icon" href="./icons/icon-192.png" />
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon-180.png" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Tour Life: International Dates</title>
+<meta name="description" content="A cozy rhythm-adventure about an indie band's world tour — pick a route, live the story between shows, play every gig, end with a one-of-a-kind Tour Scrapbook. No hard fails." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Tour Life: International Dates" />
+<meta property="og:description" content="A cozy rhythm-adventure about an indie band's world tour — pick a route, live the story between shows, play every gig, end with a one-of-a-kind Tour Scrapbook." />
+<!-- Absolute, unlike the rest of this file's relative './' links (vite.config's base, for
+     Capacitor file:// portability) — the OG/Twitter spec requires an absolute image URL, and most
+     real-world scrapers (Slack, Discord, iMessage) don't reliably resolve a relative one. -->
+<meta property="og:image" content="https://tour-life-v3.vercel.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Tour Life: International Dates" />
+<meta name="twitter:description" content="A cozy rhythm-adventure about an indie band's world tour. No hard fails — every choice just makes a different story." />
+<meta name="twitter:image" content="https://tour-life-v3.vercel.app/og-image.png" />
+<!-- Real painted title background (public/assets/manifest.json) — BootScene loads it after this,
+     so preloading here means it's already in the HTTP cache by the time Title's own load.image
+     call for "bg_title" runs, instead of that being the first request for it. -->
+<link rel="preload" as="image" href="./assets/img/bg_title.webp" />
 <style>
   /* Self-hosted, no CDN hotlink. Variable fonts — a single file covers the weight range. */
   @font-face {

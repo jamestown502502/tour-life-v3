@@ -262,6 +262,44 @@ class AudioSystem {
     this.musicNodes?.stop();
     this.musicNodes = null;
   }
+
+  /** The one real (non-procedural) music track the design allows (DESIGN.md §15.17) — takes an
+   *  already-decoded AudioBuffer (from Phaser's Loader/cache, which decodes via its own
+   *  AudioContext; an AudioBuffer's PCM data is context-agnostic — only nodes aren't — so it can
+   *  be fed straight into a BufferSourceNode on this system's own ctx) and loops it through the
+   *  same musicGain bus playAmbience uses, crossfading out whatever was already playing the same
+   *  way switching songs already does. duckMusic/setVolume('music')/stopMusic all keep working
+   *  unchanged since they only ever touch musicGain, never the source feeding it. */
+  playMusicTrack(buffer: AudioBuffer): void {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const previous = this.musicNodes;
+    previous?.stop(0.8);
+
+    const trackGain = ctx.createGain();
+    trackGain.gain.value = 0;
+    trackGain.connect(this.musicGain);
+    trackGain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.8);
+
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    src.connect(trackGain);
+    src.start();
+
+    let stopped = false;
+    this.musicNodes = {
+      stop: (fadeSec = 0.4) => {
+        if (stopped) return;
+        stopped = true;
+        const t = ctx.currentTime;
+        trackGain.gain.cancelScheduledValues(t);
+        trackGain.gain.setValueAtTime(trackGain.gain.value, t);
+        trackGain.gain.linearRampToValueAtTime(0, t + fadeSec);
+        window.setTimeout(() => { try { src.stop(); } catch { /* already stopped */ } }, fadeSec * 1000 + 50);
+      },
+    };
+  }
 }
 
 export const audio = new AudioSystem();

@@ -6,6 +6,7 @@ import { addCoverBackground } from '../art/background';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { audio } from '../core/audio';
+import { hasTitleTheme } from '../core/assets';
 import { DEFAULT_AMBIENCE_BPM, DEFAULT_AMBIENCE_CHORDS } from '../core/musicTheory';
 import { dailySeed, generateSeed } from '../core/rng';
 import { State } from '../core/state';
@@ -32,7 +33,14 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     this.input.once('pointerdown', () => {
       audio.unlock();
-      audio.playAmbience(DEFAULT_AMBIENCE_CHORDS, DEFAULT_AMBIENCE_BPM);
+      // The real title theme (DESIGN.md §15.17's one allowed real-audio asset) replaces the
+      // procedural bed here only — Rhythm/City/Hub's own playAmbience calls are untouched. Falls
+      // back to the same procedural ambience Title always had if BootScene's load failed (the
+      // hasTitleTheme() flag only flips true on a successful FILE_COMPLETE) or if Phaser's own
+      // sound manager isn't Web Audio-backed for some reason (no decoded buffer in the cache).
+      const themeBuffer = hasTitleTheme() ? (this.cache.audio.get('title_theme') as AudioBuffer | undefined) : undefined;
+      if (themeBuffer instanceof AudioBuffer) audio.playMusicTrack(themeBuffer);
+      else audio.playAmbience(DEFAULT_AMBIENCE_CHORDS, DEFAULT_AMBIENCE_BPM);
     });
     fadeIn(this);
 
