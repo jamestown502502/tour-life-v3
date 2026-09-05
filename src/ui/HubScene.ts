@@ -18,6 +18,7 @@ import { textStyle } from './textStyles';
 import { DialogueBox } from './DialogueBox';
 import { addHelpButton } from './HelpButton';
 import { COMPLICATION_LABELS } from './RoutePlanScene';
+import { routeArcRole } from '../game/route';
 
 const ONBOARD_FLAG = 'onboard_hub_seen';
 const COMPLICATION_APPLIED_FLAG = 'mid_tour_complication_applied';
@@ -88,7 +89,16 @@ export class HubScene extends Phaser.Scene {
 
     if (stop) {
       const city = getCity(stop.cityId);
-      this.add.text(W / 2, 780, `Next stop: ${city.name}`, textStyle('body', { fontSize: '22px' })).setOrigin(0.5);
+      this.add.text(W / 2, 766, `Next stop: ${city.name}`, textStyle('body', { fontSize: '22px' })).setOrigin(0.5);
+      // Item D: mirrors RoutePlanScene's opener/midpoint/finale framing for this same route, so
+      // the city about to be traveled to reads as a specific point in this run's arc, not just
+      // the next item in a list.
+      const objective = this.objectiveLineFor(State.data.currentCityIndex);
+      if (objective) {
+        this.add.text(W / 2, 794, objective, textStyle('small', {
+          fontSize: '13px', color: PALETTE_HEX.gold, wordWrap: { width: W - 140 }, align: 'center',
+        })).setOrigin(0.5);
+      }
       createButton(this, W / 2 - 160, 820, 320, 66, `Travel to ${city.name}`, () => {
         State.setProgress({ screen: 'city', cityId: city.id });
         saveRun(State.data);
@@ -185,6 +195,17 @@ export class HubScene extends Phaser.Scene {
     State.applyStatDeltas(effects);
     saveRun(State.data);
     return COMPLICATION_LABELS[State.data.midTourComplication] ?? null;
+  }
+
+  /** Item D: the same opener/midpoint/finale framing RoutePlanScene draws for the whole route,
+   *  for just the one stop about to be traveled to — routeArcRole (src/game/route.ts) is the
+   *  single source for which index plays which role, so this and RoutePlanScene can't drift. */
+  private objectiveLineFor(index: number): string | null {
+    const role = routeArcRole(index, State.data.route.length);
+    if (role === 'opener') return 'The opener — get your legs under you.';
+    if (role === 'finale') return 'The one that matters.';
+    if (role === 'midpoint') return 'This is the one where things get complicated.';
+    return null;
   }
 
   private wrapTour(): void {

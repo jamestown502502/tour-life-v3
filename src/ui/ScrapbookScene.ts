@@ -82,11 +82,15 @@ export class ScrapbookScene extends Phaser.Scene {
     overlay.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event: { stopPropagation: () => void }) => event.stopPropagation());
     const bg = this.add.image(x, y, panelKey).setOrigin(0, 0).setDisplaySize(w, h);
     const title = this.add.text(x + w / 2, y + 40, 'Two Months Later', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5);
-    const body = this.add.text(x + 36, y + 90, text, textStyle('dialogue', {
+    // Item D: the why-tour pick's third and last grounding echo (after OpeningScene's closing
+    // line and RoutePlan's banner) — the reason the run started, next to how it ended.
+    const whyTourCaption = this.add.text(x + w / 2, y + 66, `Started because: "${State.data.band.whyTour}"`,
+      textStyle('small', { fontSize: '14px', color: PALETTE_HEX.terracotta, wordWrap: { width: w - 72 }, align: 'center' })).setOrigin(0.5);
+    const body = this.add.text(x + 36, y + 100, text, textStyle('dialogue', {
       fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: w - 72 }, lineSpacing: 8,
     }));
     const closeBtn = createButton(this, x + w / 2 - 110, y + h - 80, 220, 60, 'Close', () => this.toggleEpilogue(), { fillColor: 0x8fb7c9 });
-    panel.add([overlay, bg, title, body, closeBtn]);
+    panel.add([overlay, bg, title, whyTourCaption, body, closeBtn]);
   }
 
   /** Close-out item 4b: the card content (title/tags/route/setlist/souvenirs/relationships)

@@ -21,6 +21,7 @@ import { addTextScrim, textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
 import { addMenuButton } from './MenuButton';
 import { nextUnplayedMinigame } from '../game/minigame';
+import { routeArcRole } from '../game/route';
 import { WEATHER_EFFECTS, weatherAppliedFlag } from '../game/weather';
 
 // 'preshow-choices' (Addendum v2, Item 8a): the second minigame insertion point's resume/return
@@ -268,7 +269,17 @@ export class CityScene extends Phaser.Scene {
         State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'preshow-done' });
         saveRun(State.data);
         // Addendum v2, Item 9b: VN -> rhythm uses 'lights' — the show is about to start.
-        goTo(this, 'Rhythm', { cityId: this.city.id }, { transition: 'lights', line: this.city.name });
+        // Stuck-screen-hardening follow-up, Item D: the line used to be just the bare city name;
+        // routeArcRole (src/game/route.ts, the same source RoutePlanScene/HubScene use) names
+        // this stop's actual role in the run's arc when it has one, so "On stage" reads as this
+        // specific run's story turning a page, not a generic venue announcement.
+        const stopIndex = State.data.route.findIndex((s) => s.cityId === this.city.id);
+        const role = routeArcRole(stopIndex, State.data.route.length);
+        const arcLine = role === 'opener' ? `${this.city.name} — the opener`
+          : role === 'finale' ? `${this.city.name} — the one that matters`
+          : role === 'midpoint' ? `${this.city.name} — the complicated one`
+          : this.city.name;
+        goTo(this, 'Rhythm', { cityId: this.city.id }, { transition: 'lights', line: arcLine });
       }, { fontSize: '18px' });
       container.add(btn);
       // These sit directly on the painted city background, same as the location-picker header

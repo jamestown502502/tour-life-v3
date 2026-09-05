@@ -35,3 +35,18 @@ export function generateRoute(rng: RNG, cityPool: readonly CityDef[]): Generated
     midTourComplication: rng.pick(MID_TOUR_COMPLICATIONS),
   };
 }
+
+/** Stuck-screen-hardening follow-up, Item D: a route stop's role in this run's arc — the same
+ *  index math HubScene.ts's applyMidTourComplicationIfDue already uses to decide when the
+ *  seed-picked complication actually fires (floor(routeLength/2), the first Hub visit at or past
+ *  it), single-sourced here so RoutePlanScene, HubScene, and CityScene's transition line all
+ *  agree on which stop is "the opener," "the one that matters," and where the complication
+ *  lands, instead of three hand-rolled copies of the same three comparisons drifting apart. */
+export type RouteArcRole = 'opener' | 'midpoint' | 'finale';
+
+export function routeArcRole(index: number, routeLength: number): RouteArcRole | null {
+  if (routeLength >= 2 && index === routeLength - 1) return 'finale';
+  if (index === 0) return 'opener';
+  if (routeLength >= 2 && index === Math.floor(routeLength / 2)) return 'midpoint';
+  return null;
+}

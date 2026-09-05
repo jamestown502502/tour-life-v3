@@ -20,29 +20,75 @@ export interface GoToOptions {
 }
 
 const THEMED_DURATION_MS = 380;
+// Stuck-screen hardening (follow-up pass): a transition's own timer can be badly delayed under
+// this project's documented shared-machine timing jitter (docs/release-readiness.md's Item 1 —
+// scene.time.delayedCall confirmed taking several seconds instead of ~380ms under load, though it
+// always eventually fires). A watchdog at this multiple of the intended duration guarantees the
+// transition completes even if the primary timer is starved, so a slow clock degrades to "a
+// little late" instead of "stuck forever."
+const WATCHDOG_MULTIPLIER = 5;
+
+// Stuck-screen hardening: a rapid double-tap on a transitioned button used to call goTo() TWICE
+// on the same outgoing scene before the first tap's cover had even appeared — the overlay had no
+// input-blocking, so the tap passed straight through to whatever was underneath. Two overlays,
+// two delayedCalls, and once the first one's scene.start() stopped the outgoing scene, the second
+// delayedCall belonged to a now-stopped scene and its destroy/start could race the first — the
+// visible symptom (confirmed live) is a themed cover left on screen with no dialogue/buttons
+// underneath ever reachable again. This WeakSet makes a scene single-flight: once goTo() starts a
+// transition for it, any further goTo() call on that same scene instance is ignored until this
+// one finishes (or the scene shuts down) — so a double-tap fires the transition exactly once.
+const transitioning = new WeakSet<Phaser.Scene>();
 
 /** 250ms fade-to-black then start the target scene, passing data through. Pass `opts.transition`
  *  for a themed cover instead of the plain fade — automatically downgraded to plain fade when
  *  reducedMotion is on (every type) or noFlash is on and the type is 'lights' (its spotlight
- *  wipe reads flash-adjacent even though it's a soft radial, not a strobe). */
+ *  wipe reads flash-adjacent even though it's a soft radial, not a strobe). Ignored (a no-op) if
+ *  this scene is already mid-transition — see `transitioning` above. */
 export function goTo(scene: Phaser.Scene, key: string, data?: object, opts: GoToOptions = {}): void {
+  if (transitioning.has(scene)) return;
+  transitioning.add(scene);
+
   let type: TransitionType = opts.transition ?? 'fade';
   if (State.data.accessibility.reducedMotion) type = 'fade';
   if (type === 'lights' && State.data.accessibility.noFlash) type = 'fade';
 
+  // A full-screen, effectively-invisible input eater, present for the entire cover regardless of
+  // type — including plain 'fade', whose camera fade dims the view but never blocked input on its
+  // own. Depth 1000 sits above every themed overlay (500) and every screen's own UI, and Phaser's
+  // default input.topOnly means the topmost interactive object at a point wins the hit test — so
+  // this is always what a tap lands on during a transition, never the button/scene underneath.
+  const blocker = scene.add.rectangle(0, 0, W, H, 0x000000, 0.001).setOrigin(0, 0).setDepth(1000).setInteractive();
+  const overlay = type === 'fade' ? null : buildThemedOverlay(scene, type, opts.line);
+
+  let done = false;
+  const complete = () => {
+    if (done) return;
+    done = true;
+    blocker.destroy();
+    overlay?.destroy();
+    transitioning.delete(scene);
+    scene.scene.start(key, data);
+  };
+  // If this scene shuts down through some other path while a transition is still in flight (a
+  // test harness, an unexpected scene.stop()), clear the guard and any leftover overlay rather
+  // than leaking both for the lifetime of a now-dead scene object.
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    if (done) return;
+    done = true;
+    blocker.destroy();
+    overlay?.destroy();
+    transitioning.delete(scene);
+  });
+
   if (type === 'fade') {
     scene.cameras.main.fadeOut(SCREEN_FADE_MS, 43, 58, 85);
-    scene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-      scene.scene.start(key, data);
-    });
+    scene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, complete);
+    scene.time.delayedCall(SCREEN_FADE_MS * WATCHDOG_MULTIPLIER, complete);
     return;
   }
 
-  const overlay = buildThemedOverlay(scene, type, opts.line);
-  scene.time.delayedCall(THEMED_DURATION_MS, () => {
-    overlay.destroy();
-    scene.scene.start(key, data);
-  });
+  scene.time.delayedCall(THEMED_DURATION_MS, complete);
+  scene.time.delayedCall(THEMED_DURATION_MS * WATCHDOG_MULTIPLIER, complete);
 }
 
 export function fadeIn(scene: Phaser.Scene): void {
@@ -76,7 +122,13 @@ function buildThemedOverlay(scene: Phaser.Scene, type: TransitionType, line?: st
     scene.tweens.add({ targets: dark, alpha: 0.92, duration: THEMED_DURATION_MS, ease: 'Sine.easeIn' });
     scene.tweens.add({ targets: ring, radius: 40, duration: THEMED_DURATION_MS, ease: 'Cubic.easeIn' });
     if (line) {
-      const label = scene.add.text(W / 2, H / 2, `On stage — ${line}`, textStyle('h1', { color: '#D9A441' })).setOrigin(0.5).setAlpha(0);
+      // wordWrap added alongside Item D's arc-aware transition lines (CityScene.ts's preshow ->
+      // Rhythm handoff can now pass a composite like "Mexico City — the one that matters", longer
+      // than the plain city names this always fit on one line before) — same class of defensive
+      // fit the stuck-screen-hardening follow-up's Item A applied to Button.ts, applied here too.
+      const label = scene.add.text(W / 2, H / 2, `On stage — ${line}`, textStyle('h1', {
+        color: '#D9A441', align: 'center', wordWrap: { width: W - 120 },
+      })).setOrigin(0.5).setAlpha(0);
       container.add(label);
       scene.tweens.add({ targets: label, alpha: 1, delay: THEMED_DURATION_MS * 0.4, duration: THEMED_DURATION_MS * 0.5 });
     }

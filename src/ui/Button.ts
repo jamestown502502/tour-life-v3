@@ -62,15 +62,7 @@ export function createButton(
   const container = scene.add.container(x, y);
   const fill = opts.disabled ? 0x8a8a8a : (opts.fillColor ?? PALETTE.teal);
   const radius = opts.radius ?? UI_RADIUS.button;
-  const shapeKey = ensureRoundedRect(scene, w, h, radius);
-  const btnKey = ensureButtonTexture(scene, w, h, fill, !!opts.disabled, radius);
 
-  const shadow = scene.add.image(4, 8, shapeKey).setOrigin(0, 0).setTint(PALETTE.plum).setAlpha(0.18);
-  const hoverGlow = scene.add.image(w / 2, h / 2, shapeKey).setOrigin(0.5)
-    .setDisplaySize(w + 10, h + 10).setTint(PALETTE.gold).setAlpha(0);
-  const bg = scene.add.image(0, 0, btnKey).setOrigin(0, 0);
-  const selectedRing = scene.add.image(w / 2, h / 2, shapeKey).setOrigin(0.5)
-    .setDisplaySize(w + 6, h + 6).setTint(PALETTE.gold).setAlpha(0.9).setVisible(false);
   // Every call site used to hand this a single-line label with no wordWrap — fine for short
   // labels ("New Run"), silently overflowing for long sentence-style ones (a location name like
   // "A converted power-plant venue mid-soundcheck" on a 290px button, or an Interview minigame
@@ -79,21 +71,48 @@ export function createButton(
   // wordWrap turns that into a normal multi-line label; the shrink loop below is the second half
   // — a wrapped label can still be TALLER than its button (e.g. a 3-line wrap in a 54px-tall
   // button), so font size steps down until it actually fits rather than clipping/overlapping
-  // the button above or below it.
+  // the button above or below it. Text is measured and (if needed) grown into BEFORE the
+  // background textures are baked, since a grown button needs its bg/shadow/glow/ring baked at
+  // the new height, not the caller's original one — see the stuck-screen-hardening follow-up's
+  // Item A note below.
   const padX = 20, padY = 10;
   const wrapWidth = Math.max(20, w - padX * 2);
   let fontSize = parseInt((opts.fontSize ?? '22px').replace('px', ''), 10) || 22;
   const minFontSize = 12;
-  const text = scene.add.text(w / 2, h / 2, label, textStyle('button', {
+  const text = scene.add.text(0, 0, label, textStyle('button', {
     fontSize: `${fontSize}px`,
     color: labelColorForFill(fill),
     align: 'center',
     wordWrap: { width: wrapWidth, useAdvancedWrap: true },
   })).setOrigin(0.5);
-  while (text.height > h - padY * 2 && fontSize > minFontSize) {
+  // updateText() is called internally by both the constructor and setFontSize(), so text.height
+  // already reflects a fresh measurement at every step below — forced here too as cheap
+  // insurance against relying on that internal behavior implicitly. A live audit of every
+  // current button label (stuck-screen-hardening follow-up, Item A) found no case where this
+  // measurement disagreed with what actually rendered (checked at both desktop and 390x844
+  // viewports, including the specific reported screen) — the buffer and grow-fallback below are
+  // defense-in-depth for future content, not a fix for an observed live discrepancy.
+  text.updateText();
+  const measureBuffer = 4; // headroom against any font-metric rounding, not a correction for a measured gap
+  while (text.height + measureBuffer > h - padY * 2 && fontSize > minFontSize) {
     fontSize -= 1;
     text.setFontSize(fontSize);
+    text.updateText();
   }
+  // If even the 12px floor is still taller than the requested button, GROW the button rather than
+  // let the label clip — no label can ever render outside its own background this way.
+  const finalH = Math.max(h, Math.ceil(text.height + measureBuffer + padY * 2));
+  text.setPosition(w / 2, finalH / 2);
+
+  const shapeKey = ensureRoundedRect(scene, w, finalH, radius);
+  const btnKey = ensureButtonTexture(scene, w, finalH, fill, !!opts.disabled, radius);
+
+  const shadow = scene.add.image(4, 8, shapeKey).setOrigin(0, 0).setTint(PALETTE.plum).setAlpha(0.18);
+  const hoverGlow = scene.add.image(w / 2, finalH / 2, shapeKey).setOrigin(0.5)
+    .setDisplaySize(w + 10, finalH + 10).setTint(PALETTE.gold).setAlpha(0);
+  const bg = scene.add.image(0, 0, btnKey).setOrigin(0, 0);
+  const selectedRing = scene.add.image(w / 2, finalH / 2, shapeKey).setOrigin(0.5)
+    .setDisplaySize(w + 6, finalH + 6).setTint(PALETTE.gold).setAlpha(0.9).setVisible(false);
 
   container.add([shadow, hoverGlow, bg, selectedRing, text]);
   container.setData('selectedRing', selectedRing);
@@ -109,7 +128,7 @@ export function createButton(
     // comfort without risking a hit-area overlap. Closing that last gap on the smallest phones
     // needs a real spacing pass across the affected screens, not just a bigger pad here.
     const padX = 8, padY = 8;
-    bg.setInteractive(new Phaser.Geom.Rectangle(-padX, -padY, w + padX * 2, h + padY * 2), Phaser.Geom.Rectangle.Contains);
+    bg.setInteractive(new Phaser.Geom.Rectangle(-padX, -padY, w + padX * 2, finalH + padY * 2), Phaser.Geom.Rectangle.Contains);
     bg.input!.cursor = 'pointer';
     bg.on('pointerover', () => {
       scene.tweens.add({ targets: hoverGlow, alpha: 0.25, duration: 120 });

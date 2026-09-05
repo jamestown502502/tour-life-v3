@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CityDef } from '../../content/schema';
 import { makeRng } from '../core/rng';
-import { generateRoute } from '../game/route';
+import { generateRoute, routeArcRole } from '../game/route';
 import { CITIES } from '../game/content';
 
 function mockCity(id: string, weather: string[]): CityDef {
@@ -48,5 +48,31 @@ describe('route generation', () => {
 
   it('throws on an empty pool rather than silently returning nothing', () => {
     expect(() => generateRoute(makeRng('x'), [])).toThrow();
+  });
+});
+
+// Stuck-screen-hardening follow-up, Item D: routeArcRole is the single source RoutePlanScene,
+// HubScene, and CityScene's transition line all read from — these lock its exact behavior at the
+// project's real current route length (4 cities, per CITIES) and a couple of edge lengths.
+describe('routeArcRole (Item D: route framing)', () => {
+  it('the current 4-city route: index 0 opener, index 2 midpoint, index 3 finale', () => {
+    expect(routeArcRole(0, 4)).toBe('opener');
+    expect(routeArcRole(1, 4)).toBeNull();
+    expect(routeArcRole(2, 4)).toBe('midpoint');
+    expect(routeArcRole(3, 4)).toBe('finale');
+  });
+
+  it('a 2-stop route: the last stop wins over the opener/midpoint ties, never null and never double-labeled', () => {
+    expect(routeArcRole(0, 2)).toBe('opener');
+    expect(routeArcRole(1, 2)).toBe('finale');
+  });
+
+  it('a single-stop route: index 0 is the opener, not the finale (no real midpoint/finale distinction below 2 stops)', () => {
+    expect(routeArcRole(0, 1)).toBe('opener');
+  });
+
+  it('an out-of-range index returns null rather than throwing', () => {
+    expect(routeArcRole(-1, 4)).toBeNull();
+    expect(routeArcRole(99, 4)).toBeNull();
   });
 });
