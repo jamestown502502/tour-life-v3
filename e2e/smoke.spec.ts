@@ -133,6 +133,15 @@ test.describe('Settings is reachable from every resumable screen and Back return
     const errors = collectConsoleErrors(page);
     await skipFirstTimeOnboarding(page);
     await bootGame(page);
+    // bootGame() only waits for a scene to exist (true the instant BootScene itself starts),
+    // not for its own async manifest load to finish — Title only appears once that's genuinely
+    // done, so waiting for it here (rather than jumping straight to Rhythm) is what guarantees
+    // real assets like bg_rhythm_lisbon are already in the texture manager before RhythmScene's
+    // own ensureRhythmStageBackdrop checks for them. Confirmed live: skipping this wait let the
+    // code-drawn fallback and BootScene's own real-asset load race for the same texture key
+    // ("Texture key already in use: bg_rhythm_lisbon") — impossible in real play, where a player
+    // can never reach Rhythm before Title has already proven Boot fully finished.
+    await waitForActiveScene(page, 'Title');
     await startScene(page, 'Rhythm', { cityId: 'lisbon' });
     await page.waitForTimeout(500);
 
@@ -166,6 +175,11 @@ test.describe('dialogue tap-to-skip-typewriter must not soft-lock progression', 
     const errors = collectConsoleErrors(page);
     await skipFirstTimeOnboarding(page);
     await bootGame(page);
+    // See the "Rhythm has a Menu button" test's comment above: bootGame() resolves the instant
+    // BootScene exists, not once its own async manifest load finishes — jumping straight to City
+    // without waiting for Title first (Boot's real completion signal) risked exactly this test's
+    // own pre-existing flake, "Texture key already in use: bg_city_mexico_city".
+    await waitForActiveScene(page, 'Title');
     await startScene(page, 'City', { cityId: 'mexico_city', phase: 'arrival' });
     const hasDb = await waitForCondition(page, () => !!(window as any).__game.scene.getScene('City')?.dialogueBox);
     expect(hasDb, 'test setup: DialogueBox must exist').toBe(true);
@@ -194,6 +208,11 @@ test.describe('dialogue tap-to-skip-typewriter must not soft-lock progression', 
     const errors = collectConsoleErrors(page);
     await skipFirstTimeOnboarding(page);
     await bootGame(page);
+    // See the "Rhythm has a Menu button" test's comment above: bootGame() resolves the instant
+    // BootScene exists, not once its own async manifest load finishes — jumping straight to City
+    // without waiting for Title first (Boot's real completion signal) risked exactly this test's
+    // own pre-existing flake, "Texture key already in use: bg_city_mexico_city".
+    await waitForActiveScene(page, 'Title');
     await startScene(page, 'City', { cityId: 'mexico_city', phase: 'arrival' });
     const hasDb = await waitForCondition(page, () => !!(window as any).__game.scene.getScene('City')?.dialogueBox);
     expect(hasDb, 'test setup: DialogueBox must exist').toBe(true);

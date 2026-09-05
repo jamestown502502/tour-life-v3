@@ -165,6 +165,20 @@ export function ensureCityBackground(scene: Phaser.Scene, cityId: string, tint: 
   return key;
 }
 
+/** Addendum v2, Item 10: the rhythm playfield's stage backdrop, per city. Same seam as every
+ *  other background — register a real image under `bg_rhythm_<cityId>` and this fallback is
+ *  simply never called. Falls back to the original flat night rectangle (RhythmScene's look
+ *  before this pass) rather than inventing a new code-drawn stage scene, since the lanes/notes
+ *  themselves are already the whole visual focus in that fallback case. */
+export function ensureRhythmStageBackdrop(scene: Phaser.Scene, cityId: string): string {
+  const key = `bg_rhythm_${cityId}`;
+  withGraphics(scene, W, H, (g) => {
+    g.fillStyle(PALETTE.night, 1);
+    g.fillRect(0, 0, W, H);
+  }, key);
+  return key;
+}
+
 /** Code-drawn fallback backdrop for a minigame that has no real painted backdrop yet (or when
  *  one fails to load) — the same texture-key seam as every other background: register a real
  *  image under `bg_mini_<id>` and this function is simply never called. A soft gradient +

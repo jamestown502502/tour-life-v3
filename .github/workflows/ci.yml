@@ -17,6 +17,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: node scripts/text-fit-audit.mjs
       - run: npm run build
 
   # Workstream 3 of the UX/QA fix pass (docs/CROSS_PLATFORM_TESTING.md): device-emulation smoke

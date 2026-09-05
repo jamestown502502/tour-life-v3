@@ -34,7 +34,19 @@
   "storyGate": { "condition": "relationship.jun>=35", "unlock": "modular_trade" },
   "afterShowSceneId": "ber_aftershow",
   "journalSceneId": "ber_journal",
-  "minigames": [],
+  "minigames": [
+    {
+      "id": "ber_synth_check",
+      "type": "timing",
+      "title": "Synth Soundcheck",
+      "introText": "Lene's already patched half the rig. \"Give me a level before the room fills up.\"",
+      "outroText": "\"Clean,\" Lene says, already reaching for another cable. \"Same time tomorrow?\"",
+      "outroTextRough": "\"A little hot,\" Lene shrugs, \"but that's kind of the whole point of a modular rig.\"",
+      "reward": { "effects": { "inspiration": 4 }, "flags": ["synth_check_smooth"] },
+      "roughReward": { "effects": { "inspiration": 1 } },
+      "timingRoundsSec": [2.0, 1.5, 1.1]
+    }
+  ],
   "scenes": {
     "ber_arrival": {
       "id": "ber_arrival",
@@ -221,6 +233,12 @@
 
     "ber_journal": {
       "id": "ber_journal", "speaker": "narrator",
+      "text": "You write: Lene's rig never plays the same thing twice, and somehow the soundcheck was the cleanest read all week. Berlin never once cared whether we were there. We stayed anyway, and it let us. Onward.",
+      "condition": "flag:synth_check_smooth",
+      "fallback": "ber_journal_generic"
+    },
+    "ber_journal_generic": {
+      "id": "ber_journal_generic", "speaker": "narrator",
       "text": "You write: Berlin never once cared whether we were there. We stayed anyway, and it let us. Onward."
     }
   }

@@ -92,7 +92,8 @@ export class HubScene extends Phaser.Scene {
       createButton(this, W / 2 - 160, 820, 320, 66, `Travel to ${city.name}`, () => {
         State.setProgress({ screen: 'city', cityId: city.id });
         saveRun(State.data);
-        goTo(this, 'City', { cityId: city.id });
+        // Addendum v2, Item 9b: hub -> city travel uses 'drive'.
+        goTo(this, 'City', { cityId: city.id }, { transition: 'drive' });
       }, { fillColor: 0x3e7c7b });
       // Left-anchored (not centered) and clipped short of the corkboard's x-range (CORKBOARD_X
       // starts at W-190) so this can't visually collide with the souvenir chips beside it.

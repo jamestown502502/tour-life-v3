@@ -74,7 +74,7 @@ export class ScrapbookScene extends Phaser.Scene {
   private toggleEpilogue(): void {
     const existing = this.children.getByName('epiloguePanel');
     if (existing) { existing.destroy(); return; }
-    const text = getEpilogue(this.endingId, this.tags);
+    const text = getEpilogue(this.endingId, this.tags, State.data.flags);
     const panelKey = ensureDialoguePanel(this);
     const x = 40, y = 100, w = W - 80, h = 700;
     const panel = this.add.container(0, 0).setName('epiloguePanel').setDepth(160);

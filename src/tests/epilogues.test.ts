@@ -67,4 +67,34 @@ describe('epilogues (close-out item 7: written payoff per ending+tags)', () => {
     const b = getEpilogue('found_family_tour', ['Community-Minded', 'Tender']);
     expect(a).toBe(b);
   });
+
+  // Addendum v2, Item 8b(iii): minigame-outcome flags append one closing sentence — reuses the
+  // same generic reward.flags mechanism every minigame already writes to, no new schema field.
+  describe('minigame-outcome epilogue callbacks (Addendum v2, Item 8b)', () => {
+    it('a run with no minigame flags gets the plain epilogue, unchanged from before this pass', () => {
+      const withoutFlags = getEpilogue('found_family_tour', ['Tender', 'Community-Minded']);
+      const withEmptyFlags = getEpilogue('found_family_tour', ['Tender', 'Community-Minded'], []);
+      expect(withEmptyFlags).toBe(withoutFlags);
+    });
+
+    it.each([
+      'fast_load_out', 'synth_check_smooth', 'smooth_load_in', 'clean_soundcheck_tokyo', 'radio_callin_warm',
+    ])('flag "%s" appends a real callback sentence onto the base epilogue', (flag) => {
+      const base = getEpilogue('found_family_tour', ['Tender', 'Community-Minded']);
+      const withFlag = getEpilogue('found_family_tour', ['Tender', 'Community-Minded'], [flag]);
+      expect(withFlag.startsWith(base)).toBe(true);
+      expect(withFlag.length).toBeGreaterThan(base.length + 20);
+    });
+
+    it('multiple minigame flags still produce exactly one callback sentence, not a run-on paragraph', () => {
+      const base = getEpilogue('found_family_tour', ['Tender', 'Community-Minded']);
+      const allFlags = ['radio_callin_warm', 'fast_load_out', 'synth_check_smooth', 'smooth_load_in', 'clean_soundcheck_tokyo'];
+      const withAll = getEpilogue('found_family_tour', ['Tender', 'Community-Minded'], allFlags);
+      // Exactly one extra sentence appended: only one more '.' (or similar closing punctuation)
+      // than the base text, not one per matched flag.
+      const extraSentences = withAll.slice(base.length);
+      expect(extraSentences.length).toBeGreaterThan(0);
+      expect((withAll.match(/\. /g) ?? []).length).toBe((base.match(/\. /g) ?? []).length + 1);
+    });
+  });
 });

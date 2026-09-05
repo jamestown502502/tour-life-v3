@@ -54,6 +54,21 @@ const GENERIC_EPILOGUES: Record<string, string> = {
 
 const UNIVERSAL_FALLBACK = 'Two months later, the tour is over, and the band is somewhere new — carrying it with them, one way or another.';
 
-export function getEpilogue(endingId: string, tags: string[]): string {
-  return EPILOGUES[key(endingId, tags)] ?? GENERIC_EPILOGUES[endingId] ?? UNIVERSAL_FALLBACK;
+/** Addendum v2, Item 8b(iii): one extra sentence referencing a minigame's good-outcome flag,
+ *  appended to whichever epilogue paragraph the run actually got — reuses the SAME reward.flags
+ *  mechanism every minigame already writes to (no new schema field), so authoring a callback
+ *  here is the only new work. Checked in a fixed order and only the first match is used, so a
+ *  run that aced several cities' minigames still gets one closing beat, not a run-on paragraph. */
+const MINIGAME_EPILOGUE_CALLBACKS: [flag: string, line: string][] = [
+  ['fast_load_out', ' The band still tells the story about the Tokyo load-out — gear stowed in record time, growing a little more heroic with every retelling.'],
+  ['synth_check_smooth', " Lene's rig comes up more than it probably should, for a soundcheck that only took ten minutes."],
+  ['smooth_load_in', ' Someone still brings up the Lisbon stairs — every amp up in record time, no one quite sure how.'],
+  ['clean_soundcheck_tokyo', " Kenji's one-take Tokyo soundcheck is still the standard the band measures every other one against."],
+  ['radio_callin_warm', " The two-question radio spot Ximena talked them into is still saved somewhere, on a station nobody outside that block has ever heard of."],
+];
+
+export function getEpilogue(endingId: string, tags: string[], flags: string[] = []): string {
+  const base = EPILOGUES[key(endingId, tags)] ?? GENERIC_EPILOGUES[endingId] ?? UNIVERSAL_FALLBACK;
+  const callback = MINIGAME_EPILOGUE_CALLBACKS.find(([flag]) => flags.includes(flag));
+  return callback ? base + callback[1] : base;
 }

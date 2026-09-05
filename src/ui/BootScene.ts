@@ -30,6 +30,16 @@ export class BootScene extends Phaser.Scene {
       console.warn(`[assets] could not load "${file.src}" for key "${file.key}" — falling back to ${fallback}`);
     });
     this.load.once(Phaser.Loader.Events.COMPLETE, () => this.scene.start('Title'));
+    // Addendum v2, Item 7's 40 crowd sprites pushed the manifest past Phaser's default
+    // maxParallelDownloads (32) for the first time — confirmed live (a debug PROGRESS/
+    // FILE_COMPLETE trace): the loader silently stalled at ~50% (exactly the first 32-file
+    // batch) and never dispatched the rest — no FILE_LOAD_ERROR, nothing in the console, an
+    // indefinite blank-screen boot. Every one of those files loads instantly on its own
+    // (verified via a raw `new Image()` probe outside Phaser), so this was the loader's own
+    // queue-advance logic hitting its default cap, not a bad asset. Bumped well above the
+    // current ~65-entry manifest so this doesn't silently recur the next time a pass adds
+    // another batch of real assets.
+    this.load.maxParallelDownloads = 200;
 
     for (const entry of entries) {
       this.load.image(entry.key, `${assetBaseUrl()}assets/${entry.file}`);

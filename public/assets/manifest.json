@@ -1,11 +1,15 @@
 [
   {
-    "key": "bg_title",
-    "file": "img/bg_title.webp"
+    "key": "bg_city_berlin",
+    "file": "img/bg_city_berlin.webp"
   },
   {
     "key": "bg_city_lisbon",
     "file": "img/bg_city_lisbon.webp"
+  },
+  {
+    "key": "bg_city_mexico_city",
+    "file": "img/bg_city_mexico_city.webp"
   },
   {
     "key": "bg_city_tokyo",
@@ -16,87 +20,275 @@
     "file": "img/bg_hub.webp"
   },
   {
-    "key": "bg_city_mexico_city",
-    "file": "img/bg_city_mexico_city.webp"
+    "key": "bg_mini_ber_synth_check",
+    "file": "img/bg_mini_ber_synth_check.webp"
   },
   {
-    "key": "bg_city_berlin",
-    "file": "img/bg_city_berlin.webp"
+    "key": "bg_mini_lis_load_in",
+    "file": "img/bg_mini_lis_load_in.webp"
   },
   {
     "key": "bg_mini_lis_soundcheck",
     "file": "img/bg_mini_lis_soundcheck.webp"
   },
   {
-    "key": "bg_mini_tok_pack_van",
-    "file": "img/bg_mini_tok_pack_van.webp"
-  },
-  {
     "key": "bg_mini_mex_interview",
     "file": "img/bg_mini_mex_interview.webp"
   },
   {
-    "key": "portrait_mira_happy",
-    "file": "img/portrait_mira_happy.png"
+    "key": "bg_mini_mex_radio_callin",
+    "file": "img/bg_mini_mex_radio_callin.webp"
   },
   {
-    "key": "portrait_mira_worried",
-    "file": "img/portrait_mira_worried.png"
+    "key": "bg_mini_tok_pack_van",
+    "file": "img/bg_mini_tok_pack_van.webp"
   },
   {
-    "key": "portrait_mira_tense",
-    "file": "img/portrait_mira_tense.png"
+    "key": "bg_mini_tok_soundcheck",
+    "file": "img/bg_mini_tok_soundcheck.webp"
   },
   {
-    "key": "portrait_mira_inspired",
-    "file": "img/portrait_mira_inspired.png"
+    "key": "bg_rhythm_berlin",
+    "file": "img/bg_rhythm_berlin.webp"
   },
   {
-    "key": "portrait_theo_happy",
-    "file": "img/portrait_theo_happy.png"
+    "key": "bg_rhythm_lisbon",
+    "file": "img/bg_rhythm_lisbon.webp"
   },
   {
-    "key": "portrait_theo_worried",
-    "file": "img/portrait_theo_worried.png"
+    "key": "bg_rhythm_mexico_city",
+    "file": "img/bg_rhythm_mexico_city.webp"
   },
   {
-    "key": "portrait_theo_tense",
-    "file": "img/portrait_theo_tense.png"
+    "key": "bg_rhythm_tokyo",
+    "file": "img/bg_rhythm_tokyo.webp"
   },
   {
-    "key": "portrait_theo_inspired",
-    "file": "img/portrait_theo_inspired.png"
+    "key": "bg_title",
+    "file": "img/bg_title.webp"
+  },
+  {
+    "key": "crowd_berlin_m1_bad",
+    "file": "img/crowd_berlin_m1_bad.png"
+  },
+  {
+    "key": "crowd_berlin_m1_good",
+    "file": "img/crowd_berlin_m1_good.png"
+  },
+  {
+    "key": "crowd_berlin_m2_bad",
+    "file": "img/crowd_berlin_m2_bad.png"
+  },
+  {
+    "key": "crowd_berlin_m2_good",
+    "file": "img/crowd_berlin_m2_good.png"
+  },
+  {
+    "key": "crowd_berlin_m3_bad",
+    "file": "img/crowd_berlin_m3_bad.png"
+  },
+  {
+    "key": "crowd_berlin_m3_good",
+    "file": "img/crowd_berlin_m3_good.png"
+  },
+  {
+    "key": "crowd_berlin_m4_bad",
+    "file": "img/crowd_berlin_m4_bad.png"
+  },
+  {
+    "key": "crowd_berlin_m4_good",
+    "file": "img/crowd_berlin_m4_good.png"
+  },
+  {
+    "key": "crowd_berlin_m5_bad",
+    "file": "img/crowd_berlin_m5_bad.png"
+  },
+  {
+    "key": "crowd_berlin_m5_good",
+    "file": "img/crowd_berlin_m5_good.png"
+  },
+  {
+    "key": "crowd_lisbon_m1_bad",
+    "file": "img/crowd_lisbon_m1_bad.png"
+  },
+  {
+    "key": "crowd_lisbon_m1_good",
+    "file": "img/crowd_lisbon_m1_good.png"
+  },
+  {
+    "key": "crowd_lisbon_m2_bad",
+    "file": "img/crowd_lisbon_m2_bad.png"
+  },
+  {
+    "key": "crowd_lisbon_m2_good",
+    "file": "img/crowd_lisbon_m2_good.png"
+  },
+  {
+    "key": "crowd_lisbon_m3_bad",
+    "file": "img/crowd_lisbon_m3_bad.png"
+  },
+  {
+    "key": "crowd_lisbon_m3_good",
+    "file": "img/crowd_lisbon_m3_good.png"
+  },
+  {
+    "key": "crowd_lisbon_m4_bad",
+    "file": "img/crowd_lisbon_m4_bad.png"
+  },
+  {
+    "key": "crowd_lisbon_m4_good",
+    "file": "img/crowd_lisbon_m4_good.png"
+  },
+  {
+    "key": "crowd_lisbon_m5_bad",
+    "file": "img/crowd_lisbon_m5_bad.png"
+  },
+  {
+    "key": "crowd_lisbon_m5_good",
+    "file": "img/crowd_lisbon_m5_good.png"
+  },
+  {
+    "key": "crowd_mexico_city_m1_bad",
+    "file": "img/crowd_mexico_city_m1_bad.png"
+  },
+  {
+    "key": "crowd_mexico_city_m1_good",
+    "file": "img/crowd_mexico_city_m1_good.png"
+  },
+  {
+    "key": "crowd_mexico_city_m2_bad",
+    "file": "img/crowd_mexico_city_m2_bad.png"
+  },
+  {
+    "key": "crowd_mexico_city_m2_good",
+    "file": "img/crowd_mexico_city_m2_good.png"
+  },
+  {
+    "key": "crowd_mexico_city_m3_bad",
+    "file": "img/crowd_mexico_city_m3_bad.png"
+  },
+  {
+    "key": "crowd_mexico_city_m3_good",
+    "file": "img/crowd_mexico_city_m3_good.png"
+  },
+  {
+    "key": "crowd_mexico_city_m4_bad",
+    "file": "img/crowd_mexico_city_m4_bad.png"
+  },
+  {
+    "key": "crowd_mexico_city_m4_good",
+    "file": "img/crowd_mexico_city_m4_good.png"
+  },
+  {
+    "key": "crowd_mexico_city_m5_bad",
+    "file": "img/crowd_mexico_city_m5_bad.png"
+  },
+  {
+    "key": "crowd_mexico_city_m5_good",
+    "file": "img/crowd_mexico_city_m5_good.png"
+  },
+  {
+    "key": "crowd_tokyo_m1_bad",
+    "file": "img/crowd_tokyo_m1_bad.png"
+  },
+  {
+    "key": "crowd_tokyo_m1_good",
+    "file": "img/crowd_tokyo_m1_good.png"
+  },
+  {
+    "key": "crowd_tokyo_m2_bad",
+    "file": "img/crowd_tokyo_m2_bad.png"
+  },
+  {
+    "key": "crowd_tokyo_m2_good",
+    "file": "img/crowd_tokyo_m2_good.png"
+  },
+  {
+    "key": "crowd_tokyo_m3_bad",
+    "file": "img/crowd_tokyo_m3_bad.png"
+  },
+  {
+    "key": "crowd_tokyo_m3_good",
+    "file": "img/crowd_tokyo_m3_good.png"
+  },
+  {
+    "key": "crowd_tokyo_m4_bad",
+    "file": "img/crowd_tokyo_m4_bad.png"
+  },
+  {
+    "key": "crowd_tokyo_m4_good",
+    "file": "img/crowd_tokyo_m4_good.png"
+  },
+  {
+    "key": "crowd_tokyo_m5_bad",
+    "file": "img/crowd_tokyo_m5_bad.png"
+  },
+  {
+    "key": "crowd_tokyo_m5_good",
+    "file": "img/crowd_tokyo_m5_good.png"
   },
   {
     "key": "portrait_jun_happy",
     "file": "img/portrait_jun_happy.png"
   },
   {
-    "key": "portrait_jun_worried",
-    "file": "img/portrait_jun_worried.png"
+    "key": "portrait_jun_inspired",
+    "file": "img/portrait_jun_inspired.png"
   },
   {
     "key": "portrait_jun_tense",
     "file": "img/portrait_jun_tense.png"
   },
   {
-    "key": "portrait_jun_inspired",
-    "file": "img/portrait_jun_inspired.png"
+    "key": "portrait_jun_worried",
+    "file": "img/portrait_jun_worried.png"
+  },
+  {
+    "key": "portrait_mira_happy",
+    "file": "img/portrait_mira_happy.png"
+  },
+  {
+    "key": "portrait_mira_inspired",
+    "file": "img/portrait_mira_inspired.png"
+  },
+  {
+    "key": "portrait_mira_tense",
+    "file": "img/portrait_mira_tense.png"
+  },
+  {
+    "key": "portrait_mira_worried",
+    "file": "img/portrait_mira_worried.png"
   },
   {
     "key": "portrait_rowan_happy",
     "file": "img/portrait_rowan_happy.png"
   },
   {
-    "key": "portrait_rowan_worried",
-    "file": "img/portrait_rowan_worried.png"
+    "key": "portrait_rowan_inspired",
+    "file": "img/portrait_rowan_inspired.png"
   },
   {
     "key": "portrait_rowan_tense",
     "file": "img/portrait_rowan_tense.png"
   },
   {
-    "key": "portrait_rowan_inspired",
-    "file": "img/portrait_rowan_inspired.png"
+    "key": "portrait_rowan_worried",
+    "file": "img/portrait_rowan_worried.png"
+  },
+  {
+    "key": "portrait_theo_happy",
+    "file": "img/portrait_theo_happy.png"
+  },
+  {
+    "key": "portrait_theo_inspired",
+    "file": "img/portrait_theo_inspired.png"
+  },
+  {
+    "key": "portrait_theo_tense",
+    "file": "img/portrait_theo_tense.png"
+  },
+  {
+    "key": "portrait_theo_worried",
+    "file": "img/portrait_theo_worried.png"
   }
 ]

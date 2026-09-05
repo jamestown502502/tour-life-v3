@@ -46,6 +46,18 @@
       "reward": { "effects": { "harmony": 4 } },
       "roughReward": { "effects": { "harmony": 1 } },
       "timingRoundsSec": [2.2, 1.7, 1.3]
+    },
+    {
+      "id": "lis_load_in",
+      "type": "drag",
+      "title": "Load-In",
+      "introText": "Inês is already hauling amps up the fado house's narrow stairs. \"Faster if we split the load.\"",
+      "outroText": "Everything's in with time to spare. Inês nods, impressed despite herself.",
+      "outroTextRough": "Half the gear's still on the sidewalk when the doors open — you finish mid-apology.",
+      "reward": { "effects": { "energy": 4 }, "flags": ["smooth_load_in"] },
+      "roughReward": { "effects": { "energy": 1 } },
+      "dragItems": ["Amps", "Mic stands", "Cable snake", "Merch box", "Water jugs"],
+      "dragTimeSec": 22
     }
   ],
   "scenes": {
@@ -249,7 +261,13 @@
         { "id": "early_bus2", "label": "Head back to the bus early", "next": "lis_aftershow_b", "effects": { "energy": 5 } }
       ]
     },
-    "lis_aftershow_a": { "id": "lis_aftershow_a", "speaker": "narrator", "text": "Someone buys the band a round they can't really afford. Worth it." },
+    "lis_aftershow_a": {
+      "id": "lis_aftershow_a", "speaker": "narrator",
+      "text": "Inês buys the band a round, still impressed by how fast the gear came up those stairs. Someone else's tab, gladly.",
+      "condition": "flag:smooth_load_in",
+      "fallback": "lis_aftershow_a_generic"
+    },
+    "lis_aftershow_a_generic": { "id": "lis_aftershow_a_generic", "speaker": "narrator", "text": "Someone buys the band a round they can't really afford. Worth it." },
     "lis_aftershow_b": { "id": "lis_aftershow_b", "speaker": "narrator", "text": "The bus is quiet and dark and exactly what you needed." },
 
     "lis_journal": {

@@ -47,6 +47,17 @@
       "roughReward": { "effects": { "energy": 1 } },
       "dragItems": ["Amps", "Cables", "Pedalboard", "Merch box", "Suitcase", "Snacks"],
       "dragTimeSec": 25
+    },
+    {
+      "id": "tok_soundcheck",
+      "type": "timing",
+      "title": "Soundcheck",
+      "introText": "Kenji's already behind the kit. \"Give me a level, I'll match it.\"",
+      "outroText": "\"Tight,\" Kenji grins, sticks twirling. \"We're gonna have fun tonight.\"",
+      "outroTextRough": "\"Close enough,\" Kenji shrugs. \"The room'll eat some of it anyway.\"",
+      "reward": { "effects": { "harmony": 4 }, "flags": ["clean_soundcheck_tokyo"] },
+      "roughReward": { "effects": { "harmony": 1 } },
+      "timingRoundsSec": [2.1, 1.6, 1.2]
     }
   ],
   "scenes": {
@@ -255,6 +266,12 @@
 
     "tok_journal": {
       "id": "tok_journal", "speaker": "narrator",
+      "text": "You write: Kenji matched our level in one pass tonight, like he'd been playing with us for years. Tokyo never once slowed down for us. We kept up anyway.",
+      "condition": "flag:clean_soundcheck_tokyo",
+      "fallback": "tok_journal_generic"
+    },
+    "tok_journal_generic": {
+      "id": "tok_journal_generic", "speaker": "narrator",
       "text": "You write: Tokyo never once slowed down for us. We kept up anyway."
     }
   }

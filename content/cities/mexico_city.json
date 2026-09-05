@@ -49,6 +49,21 @@
         { "id": "q2", "prompt": "\"Any regrets so far?\"", "optionA": "\"None we'd say out loud\"", "optionB": "\"A few, but they're ours\"", "warmerOption": "B" },
         { "id": "q3", "prompt": "\"What happens when the tour ends?\"", "optionA": "\"We figure that out later\"", "optionB": "\"We're already writing the next one\"", "warmerOption": "B" }
       ]
+    },
+    {
+      "id": "mex_radio_callin",
+      "type": "choice",
+      "title": "Radio Call-In",
+      "introText": "Ximena's borrowed the community radio's mic for a two-question segment. \"Keep it short,\" she grins.",
+      "outroText": "\"That's a wrap,\" Ximena laughs, already coiling the mic cable. \"You're a natural.\"",
+      "outroTextRough": "\"A little stiff,\" Ximena teases, \"but nobody's checking.\"",
+      "reward": { "effects": { "funds": 15, "inspiration": 2 }, "flags": ["radio_callin_warm"] },
+      "roughReward": { "effects": { "funds": 5 } },
+      "questions": [
+        { "id": "q1", "prompt": "\"What's the tour taught you so far?\"", "optionA": "\"Slow down more than we thought\"", "optionB": "\"Say yes more than we thought\"", "warmerOption": "B" },
+        { "id": "q2", "prompt": "\"One word for tonight?\"", "optionA": "\"Nervous\"", "optionB": "\"Ready\"", "warmerOption": "B" },
+        { "id": "q3", "prompt": "\"Any shoutouts?\"", "optionA": "\"Just each other, honestly\"", "optionB": "\"Ximena — she got us this mic\"", "warmerOption": "B" }
+      ]
     }
   ],
   "scenes": {
@@ -253,6 +268,12 @@
 
     "mex_journal": {
       "id": "mex_journal", "speaker": "narrator",
+      "text": "You write: somewhere a community radio host still has our two-question segment saved, Ximena's idea. Mexico City never once stopped moving, and somehow that was the most restful place we've played.",
+      "condition": "flag:radio_callin_warm",
+      "fallback": "mex_journal_generic"
+    },
+    "mex_journal_generic": {
+      "id": "mex_journal_generic", "speaker": "narrator",
       "text": "You write: Mexico City never once stopped moving, not for a single second, and somehow that was the most restful place we've played all tour."
     }
   }

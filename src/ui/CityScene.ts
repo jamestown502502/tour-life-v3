@@ -23,8 +23,11 @@ import { addMenuButton } from './MenuButton';
 import { nextUnplayedMinigame } from '../game/minigame';
 import { WEATHER_EFFECTS, weatherAppliedFlag } from '../game/weather';
 
-export type CityPhase = 'arrival' | 'locations' | 'relationship' | 'preshow' | 'afterShow' | 'journal';
-const VALID_PHASES: CityPhase[] = ['arrival', 'locations', 'relationship', 'preshow', 'afterShow', 'journal'];
+// 'preshow-choices' (Addendum v2, Item 8a): the second minigame insertion point's resume/return
+// phase — the preshow dialogue has already played, only the choice buttons remain. Mirrors
+// 'locations' being the resume point after arrival's minigame slot.
+export type CityPhase = 'arrival' | 'locations' | 'relationship' | 'preshow' | 'preshow-choices' | 'afterShow' | 'journal';
+const VALID_PHASES: CityPhase[] = ['arrival', 'locations', 'relationship', 'preshow', 'preshow-choices', 'afterShow', 'journal'];
 const LOCATIONS_TO_VISIT = 2;
 
 // Per-location color grade over the shared city background, by location index. Every location
@@ -115,6 +118,7 @@ export class CityScene extends Phaser.Scene {
       case 'locations': this.startLocationPicker(); break;
       case 'relationship': this.startRelationship(); break;
       case 'preshow': this.startPreshow(); break;
+      case 'preshow-choices': this.renderPreShowChoices(); break;
       case 'afterShow': this.walk(this.city.afterShowSceneId, () => this.startJournal()); break;
       case 'journal': this.startJournal(); break;
     }
@@ -155,17 +159,31 @@ export class CityScene extends Phaser.Scene {
     );
   }
 
-  /** At most one minigame per city per run — the first one not yet played this run (checked via
-   *  a run-scoped flag, so it repeats gently on a later tour like the onboarding lines do, not
-   *  never again). If there is one, it plays between arrival and the location picker and hands
-   *  control straight back to 'locations' when done. If not, this is a no-op passthrough. */
-  private startMinigameOrLocations(): void {
+  /** Addendum v2, Item 8a: up to TWO minigames per city per run (was one), at two insertion
+   *  points — after arrival and before the preshow choices. `nextUnplayedMinigame` already finds
+   *  the first not-yet-played entry regardless of which call site asks, so a second call here
+   *  naturally reaches a city's second authored minigame once the first is flagged played; the
+   *  played-flag also prevents ever repeating the same one twice in a run. Shared by both
+   *  insertion points below — `returnPhase` is where MiniGameScene.finish() sends the player
+   *  back to, `fallback` is what runs immediately if there's nothing left to play. */
+  private tryMinigame(returnPhase: CityPhase, fallback: () => void): void {
     const next = nextUnplayedMinigame(this.city.minigames, (flag) => State.hasFlag(flag));
     if (next) {
-      goTo(this, 'MiniGame', { cityId: this.city.id, minigameId: next.id, returnPhase: 'locations' });
+      // Addendum v2, Item 9b: VN -> minigame uses 'card', the minigame's own diegetic intro
+      // line doubling as the transition's line so it reads as the story turning a page into the
+      // minigame, not a generic loading screen.
+      goTo(this, 'MiniGame', { cityId: this.city.id, minigameId: next.id, returnPhase }, { transition: 'card', line: next.introText });
     } else {
-      this.startLocationPicker();
+      fallback();
     }
+  }
+
+  private startMinigameOrLocations(): void {
+    this.tryMinigame('locations', () => this.startLocationPicker());
+  }
+
+  private startMinigameOrPreshowChoices(): void {
+    this.tryMinigame('preshow-choices', () => this.renderPreShowChoices());
   }
 
   private startLocationPicker(): void {
@@ -235,7 +253,7 @@ export class CityScene extends Phaser.Scene {
     this.phase = 'preshow';
     State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'preshow' });
     saveRun(State.data);
-    this.walk(this.city.preShowSceneId, () => this.renderPreShowChoices());
+    this.walk(this.city.preShowSceneId, () => this.startMinigameOrPreshowChoices());
   }
 
   private renderPreShowChoices(): void {
@@ -249,7 +267,8 @@ export class CityScene extends Phaser.Scene {
         State.addFlag(arrangementFlag(opt.arrangementId));
         State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'preshow-done' });
         saveRun(State.data);
-        goTo(this, 'Rhythm', { cityId: this.city.id });
+        // Addendum v2, Item 9b: VN -> rhythm uses 'lights' — the show is about to start.
+        goTo(this, 'Rhythm', { cityId: this.city.id }, { transition: 'lights', line: this.city.name });
       }, { fontSize: '18px' });
       container.add(btn);
       // These sit directly on the painted city background, same as the location-picker header
@@ -284,6 +303,7 @@ export class CityScene extends Phaser.Scene {
     State.data.currentCityIndex += 1;
     State.setProgress({ screen: 'hub' });
     saveRun(State.data);
-    goTo(this, 'Hub');
+    // Addendum v2, Item 9b: city -> hub travel uses 'drive', mirroring hub -> city.
+    goTo(this, 'Hub', undefined, { transition: 'drive' });
   }
 }

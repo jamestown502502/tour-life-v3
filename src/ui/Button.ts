@@ -71,10 +71,29 @@ export function createButton(
   const bg = scene.add.image(0, 0, btnKey).setOrigin(0, 0);
   const selectedRing = scene.add.image(w / 2, h / 2, shapeKey).setOrigin(0.5)
     .setDisplaySize(w + 6, h + 6).setTint(PALETTE.gold).setAlpha(0.9).setVisible(false);
+  // Every call site used to hand this a single-line label with no wordWrap — fine for short
+  // labels ("New Run"), silently overflowing for long sentence-style ones (a location name like
+  // "A converted power-plant venue mid-soundcheck" on a 290px button, or an Interview minigame
+  // option on a 600px one) — the overflow bled into whatever sat next to it (confirmed live: a
+  // 2-column location grid's overflowing labels visually garbled into the neighboring column).
+  // wordWrap turns that into a normal multi-line label; the shrink loop below is the second half
+  // — a wrapped label can still be TALLER than its button (e.g. a 3-line wrap in a 54px-tall
+  // button), so font size steps down until it actually fits rather than clipping/overlapping
+  // the button above or below it.
+  const padX = 20, padY = 10;
+  const wrapWidth = Math.max(20, w - padX * 2);
+  let fontSize = parseInt((opts.fontSize ?? '22px').replace('px', ''), 10) || 22;
+  const minFontSize = 12;
   const text = scene.add.text(w / 2, h / 2, label, textStyle('button', {
-    fontSize: opts.fontSize ?? '22px',
+    fontSize: `${fontSize}px`,
     color: labelColorForFill(fill),
+    align: 'center',
+    wordWrap: { width: wrapWidth, useAdvancedWrap: true },
   })).setOrigin(0.5);
+  while (text.height > h - padY * 2 && fontSize > minFontSize) {
+    fontSize -= 1;
+    text.setFontSize(fontSize);
+  }
 
   container.add([shadow, hoverGlow, bg, selectedRing, text]);
   container.setData('selectedRing', selectedRing);

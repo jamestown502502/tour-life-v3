@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import {
   H, PALETTE, PALETTE_HEX, W, RHYTHM_LEAD_MS, RHYTHM_HIT_LINE_Y, RHYTHM_SPAWN_Y, RHYTHM_LANE_W, RHYTHM_LANE_X_START,
 } from '../const';
-import { ensureCueIcon, ensureCrowdFigure, ensureHitLineGlow, ensureHoldRail, ensureLaneTextures } from '../art/sprites';
+import { ensureCueIcon, ensureCrowdFigure, ensureHitLineGlow, ensureHoldRail, ensureLaneTextures, ensureRhythmStageBackdrop } from '../art/sprites';
+import { addCoverBackground } from '../art/background';
 import { spawnPerfectSpark, comboPop, hitstop, shake, spawnRingPulse } from '../art/effects';
 import { goTo, fadeIn } from './transition';
 import { createButton } from './Button';
@@ -19,6 +20,7 @@ import { textStyle } from './textStyles';
 import { parseChordProgression } from '../core/musicTheory';
 import { addHelpButton } from './HelpButton';
 import { addMenuButton } from './MenuButton';
+import { hasRealAsset } from '../core/assets';
 import {
   hasSeenRhythmTutorial, markRhythmTutorialSeen, hasEverOpenedSettings,
   hasSeenHoldHint, markHoldHintSeen, hasSeenCueHint, markCueHintSeen,
@@ -28,6 +30,9 @@ import type { CityDef, SongDef } from '../../content/schema';
 
 const HIT_LINE_Y = RHYTHM_HIT_LINE_Y;
 const SPAWN_Y = RHYTHM_SPAWN_Y;
+// Addendum v2, Item 7: how many named crowd members each city's real asset set authors (also
+// the code-drawn fallback's figure count, unchanged from before this pass).
+const CROWD_MEMBER_COUNT = 5;
 const LANE_X_START = RHYTHM_LANE_X_START;
 const LANE_W = RHYTHM_LANE_W;
 const HOLD_RAIL_W = 82;
@@ -76,6 +81,7 @@ export class RhythmScene extends Phaser.Scene {
   private comboText!: Phaser.GameObjects.Text;
   private cityLabel!: Phaser.GameObjects.Text;
   private crowdFigures: Phaser.GameObjects.Image[] = [];
+  private hasRealCrowd = false;
   private laneFlashes: Phaser.GameObjects.Rectangle[] = [];
   private crowd = 40;
   private finished = false;
@@ -123,7 +129,12 @@ export class RhythmScene extends Phaser.Scene {
     this.leadMs = RHYTHM_LEAD_MS[this.currentRhythmMode()];
     this.pxPerMs = (HIT_LINE_Y - SPAWN_Y) / this.leadMs;
 
-    this.add.rectangle(0, 0, W, H, PALETTE.night, 1).setOrigin(0, 0);
+    // Addendum v2, Item 10: the city's painted stage replaces the flat navy rectangle when a
+    // real bg_rhythm_<cityId> asset exists (generated with a deliberately dark/low-contrast
+    // middle third so notes and judgement text stay legible over it); falls back to the
+    // original flat night rect otherwise — same graceful seam every other background uses.
+    const stageBgKey = ensureRhythmStageBackdrop(this, city.id);
+    addCoverBackground(this, stageBgKey);
     const tex = ensureLaneTextures(this, LANE_W);
     for (let l = 0; l < song.lanes; l++) {
       this.add.image(LANE_X_START + l * LANE_W, 0, tex.lane).setOrigin(0, 0);
@@ -154,10 +165,28 @@ export class RhythmScene extends Phaser.Scene {
     // this problem — it stops the audio outright (see SettingsScene.ts's Quit to Title handler).
     addMenuButton(this, 'Rhythm', 86);
 
-    this.add.text(W - 110, 50, 'Crowd', textStyle('small', { fontSize: '13px' })).setOrigin(1, 0).setDepth(50);
-    const downKey = ensureCrowdFigure(this, false);
-    for (let i = 0; i < 5; i++) {
-      this.crowdFigures.push(this.add.image(W - 240 + i * 26, 72, downKey).setOrigin(0, 0).setScale(0.7).setDepth(50));
+    // Addendum v2, Item 7: the crowd moved from a small top-right meter to real bodies standing
+    // at the very bottom of the screen, well clear of the falling notes/judgement text (which
+    // live between SPAWN_Y=160 and HIT_LINE_Y=980) — a non-interactive image here doesn't
+    // intercept taps meant for a lane's zone either way, so this is a pure visual placement
+    // choice, not a hit-testing one. Each of the 5 slots is a DIFFERENT authored crowd member for
+    // this city (crowd_<cityId>_m<1-5>_<good|bad>) when that city's set exists; the original
+    // code-drawn silhouette is the fallback for a city with no real set yet — same "real asset
+    // wins if registered, code-drawn otherwise" seam every other painted asset uses.
+    // setDisplaySize (not setScale) normalizes every figure to the same on-screen footprint
+    // regardless of the source image's own internal framing (the good/cheering pose was
+    // generated at a visibly wider framing than the bad/arms-crossed pose across every member —
+    // a real, measured quirk of this asset batch, not something worth re-generating 40 images
+    // over when normalizing the display size fixes it just as well).
+    this.hasRealCrowd = hasRealAsset(`crowd_${this.cityId}_m1_good`);
+    const crowdY = H - 40;
+    const crowdSpan = LANE_W * song.lanes - 80;
+    for (let i = 0; i < CROWD_MEMBER_COUNT; i++) {
+      const x = LANE_X_START + 40 + (crowdSpan / (CROWD_MEMBER_COUNT - 1)) * i;
+      const key = this.hasRealCrowd ? `crowd_${this.cityId}_m${i + 1}_bad` : ensureCrowdFigure(this, false);
+      const fig = this.add.image(x, crowdY, key).setOrigin(0.5, 1).setDepth(50);
+      if (this.hasRealCrowd) fig.setDisplaySize(60, 84); else fig.setDisplaySize(28, 37);
+      this.crowdFigures.push(fig);
     }
     this.updateCrowdFigures();
 
@@ -527,12 +556,17 @@ export class RhythmScene extends Phaser.Scene {
     });
   }
 
+  /** How many of the crowd figures currently read as "into it" — a live proxy for the crowd's
+   *  mood, not a flat 3-tier switch: at 0 crowd, nobody's up; at 100, everybody is; in between,
+   *  proportionally more figures flip as the run goes better. Real per-member good/bad art
+   *  (Item 7) swaps in on the same threshold the code-drawn silhouette fallback already used. */
   private updateCrowdFigures(): void {
     const raisedCount = Math.round((this.crowd / 100) * this.crowdFigures.length);
     const downKey = ensureCrowdFigure(this, false);
     const upKey = ensureCrowdFigure(this, true);
     this.crowdFigures.forEach((fig, i) => {
-      fig.setTexture(i < raisedCount ? upKey : downKey);
+      const good = i < raisedCount;
+      fig.setTexture(this.hasRealCrowd ? `crowd_${this.cityId}_m${i + 1}_${good ? 'good' : 'bad'}` : (good ? upKey : downKey));
     });
   }
 
