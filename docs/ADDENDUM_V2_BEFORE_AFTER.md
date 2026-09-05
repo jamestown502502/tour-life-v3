@@ -210,3 +210,37 @@ existing Title theme, no analytics/achievements/localization. Accessibility (red
 noFlash) respected in the new transition system. Painted-world/code-drawn-UI rule kept — the new
 transitions and stage art are all drawn via the same `art/` and `ui/` seams every existing asset
 uses, nothing new invented.
+
+## Deploy & CI — final confirmation
+
+- **Commit**: `b9aa5a6` (squash of the two Hermes-authored intermediate commits `9db2170`,
+  `6e066c8`, plus this session's own implementation work).
+- **CI** (`gh run` `33985655757`, GitHub Actions): **completed, 31 passed / 2 failed** — the exact
+  same 2 pre-existing, already-documented flakes named in the Testing section above (the
+  `fullrun.spec.ts` autoplay-to-Results budget and the Item 4b hold-rail grading-tier timing
+  sensitivity), independently confirmed on CI's own runner, not just this local machine. `npm run
+  typecheck`, `npm test` (116/116), and `scripts/text-fit-audit.mjs` (189/189) all green in the
+  same run.
+- **Vercel deploy**: `dpl_GLKwShqVUcGEDUdGqf31ya71RyWm`, confirmed `READY`/production for commit
+  `b9aa5a6` via `list_deployments`.
+- **Live URL** (`https://tour-life-v3.vercel.app/`): `200 OK`, correct
+  `<title>Tour Life: International Dates</title>`. All 4 spot-checked new asset URLs return `200`:
+  `assets/img/crowd_berlin_m1_good.png`, `assets/img/bg_rhythm_lisbon.webp`,
+  `assets/img/bg_mini_ber_synth_check.webp`, `assets/manifest.json`.
+- **Live browser check**: fresh page load, zero console errors. Visual: Title/onboarding renders
+  correctly in production (matching local dev-server screenshots taken during Item 6-10
+  verification). Note: `window.__game`/`window.__state` (used by this session's dev-server
+  screenshot verification and by the e2e suite) are gated behind `import.meta.env.DEV` in
+  `src/main.ts` and are correctly absent from the production bundle — by design, not a gap. The
+  production build is byte-identical Vite output to what the e2e suite exercises via real taps
+  against a dev server, and CI's own run confirms the same 31/33 result on a clean runner, so the
+  live site's gameplay correctness rests on that shared build artifact plus the asset/console spot
+  checks above, not a second manual click-through.
+
+## The honest remainder
+
+Nothing was skipped or deferred within the 5 items themselves — all DONE-WHEN criteria for items
+6 through 10 are met with evidence above. The only items **not** re-verified in this pass are
+carried over, pre-existing gaps already on the owner's checklist from the main Final Polish pass
+(`docs/release-readiness.md`'s "still needs a human or physical hardware" section) — real
+iPhone/Android hardware testing — which this addendum did not touch and was not asked to close.
