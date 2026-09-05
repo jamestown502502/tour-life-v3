@@ -6,7 +6,7 @@
 // the tap-to-skip-typewriter bug: it never taps anything). This is the "did I miss anything else"
 // check for Workstream 2's navigation-fix pass.
 import { test, expect } from '@playwright/test';
-import { bootGame, canvasClick, collectConsoleErrors, getActiveSceneKeys, skipFirstTimeOnboarding, waitForActiveScene, waitForCondition, walkDialogueToSceneChange } from './helpers';
+import { bootGame, canvasClick, collectConsoleErrors, playAnyPendingMinigame, skipFirstTimeOnboarding, waitForActiveScene, waitForCondition, walkDialogueToSceneChange } from './helpers';
 
 test('a full real playthrough of one city loop never gets stuck', async ({ page }) => {
   // 180s wasn't enough headroom for the whole chain in this sandboxed session — confirmed live
@@ -51,28 +51,9 @@ test('a full real playthrough of one city loop never gets stuck', async ({ page 
   let taps = await walkDialogueToSceneChange(page, 'City');
   expect(taps, 'arrival dialogue should not exhaust the tap budget (would mean it got stuck)').toBeLessThan(40);
 
-  // Lisbon has one "timing" minigame between arrival and the location picker — CityScene routes
-  // to MiniGameScene automatically if one hasn't been played yet this run.
-  const wentToMinigame = await waitForCondition(page, () => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('MiniGame'), 3000);
-  if (wentToMinigame) {
-    // Intro screen's "Start" button (MiniGameScene.ts: W/2-130, 500, 260, 66 — center 360, 533).
-    await canvasClick(page, 360, 533);
-    await page.waitForTimeout(400);
-    // Timing round: tap "Tap!" (W/2-130, 560, 260, 70 — center 360, 595) a few times; no-fail
-    // means a miss is fine, this just needs to reach the outro without hanging.
-    for (let i = 0; i < 5; i++) {
-      await canvasClick(page, 360, 595);
-      await page.waitForTimeout(700);
-      const stillMiniGame = (await getActiveSceneKeys(page)).includes('MiniGame');
-      if (!stillMiniGame) break;
-    }
-    // Outro's "Continue" (W/2-130, btnY, 260, 66) — poll back to City rather than guess btnY.
-    const backInCity = await waitForCondition(page, () => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('City'), 5000);
-    if (!backInCity) {
-      // Still on the outro card — MiniGameScene.ts: W/2-130, min(560, SAFE_BOTTOM_Y-66)=560,
-      // 260, 66, center (360, 593).
-      await canvasClick(page, 360, 593);
-    }
+  // Lisbon's first minigame, between arrival and the location picker — CityScene routes to
+  // MiniGameScene automatically if one hasn't been played yet this run.
+  if (await playAnyPendingMinigame(page, 'City')) {
     expect(await waitForActiveScene(page, 'City')).toContain('City');
   }
 
@@ -90,9 +71,26 @@ test('a full real playthrough of one city loop never gets stuck', async ({ page 
     expect(taps, `location ${loc + 1}'s dialogue (and, after the last one, any relationship scenes) should not exhaust the tap budget`).toBeLessThan(40);
   }
 
-  // Preshow choice (first of 3 — CityScene.ts: W/2-300, 960, 600, 66, center (360, 993)) -> Rhythm.
+  // Stuck-screen-hardening follow-up: Addendum v2's Item 8a added a SECOND minigame insertion
+  // point, right before preshow choices — Lisbon (this test's city) has one there
+  // (lis_load_in, a 'drag' type). This test never checked for it before, so the very next click
+  // (assumed to be the first preshow choice) silently landed on empty space on that minigame's
+  // intro card instead, and the test failed waiting on a Rhythm scene that was never coming.
+  if (await playAnyPendingMinigame(page, 'City')) {
+    expect(await waitForActiveScene(page, 'City')).toContain('City');
+  }
+
+  // Preshow choice (first of 3 — CityScene.ts: W/2-300, 960, 600, 66, center (360, 993)) -> Rhythm,
+  // via the 'lights' themed transition (Addendum v2, Item 9). This click surfaced a real crash
+  // (see transition.ts's destroyOverlay comment): the completion delayedCall and the overlay's
+  // own tweens raced at the same nominal duration, so destroying the overlay could null out a
+  // tween's target mid-update — an uncaught exception inside Phaser's own TweenManager.step()
+  // that recurred every frame afterward, silently stalling the scene forever (the apparent
+  // "stuck transition" this test kept failing on, at every wait length tried up to 60s, before
+  // the actual cause was found and fixed). 10s here is normal machine-load headroom, not a
+  // workaround for that bug.
   await canvasClick(page, 360, 993);
-  const reachedRhythm = await waitForCondition(page, () => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('Rhythm'), 5000);
+  const reachedRhythm = await waitForCondition(page, () => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('Rhythm'), 10000);
   expect(reachedRhythm, 'preshow choice should hand off to Rhythm').toBe(true);
 
   // Autoplay (set above) judges every note automatically — just wait for the song to finish and
@@ -100,9 +98,17 @@ test('a full real playthrough of one city loop never gets stuck', async ({ page 
   const reachedResults = await waitForCondition(page, () => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('Results'), 100000);
   expect(reachedResults, 'the song should reach Results on its own (no-fail, autoplay on)').toBe(true);
 
-  // Results -> City (afterShow). ResultsScene.ts: W/2-150, 620, 300, 64 — center (360, 652).
-  await canvasClick(page, 360, 652);
-  expect(await waitForActiveScene(page, 'City')).toContain('City');
+  // Results -> City (afterShow). ResultsScene.ts: W/2-150, 700, 300, 64 — center (360, 732).
+  // This test's own coordinate was stale (360, 652), left over from before Addendum v2's Item 7
+  // added the crowd strip (renderCrowdStrip, y=600) above the button and pushed it from wherever
+  // it used to be down to y=700 — the click was landing on the crowd strip's own text, not the
+  // button, and every failure here (even after generous wait increases) was this test tapping
+  // the wrong spot, not a stuck transition. This is fullrun.spec.ts's first successful run past
+  // this point since that content was added — nothing had exercised this exact click until the
+  // stuck-screen-hardening pass's own fixes upstream (the Item 8a second-minigame handling, the
+  // transition-overlay crash fix) finally let the test reach this far.
+  await canvasClick(page, 360, 732);
+  expect(await waitForActiveScene(page, 'City', 15000)).toContain('City');
   taps = await walkDialogueToSceneChange(page, 'City'); // afterShow
   expect(taps, 'afterShow dialogue should not exhaust the tap budget').toBeLessThan(40);
   taps = await walkDialogueToSceneChange(page, 'City'); // journal (if a separate dialogue leg)

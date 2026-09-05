@@ -143,6 +143,47 @@ export async function canvasClick(page: Page, logicalX: number, logicalY: number
   });
 }
 
+/** Plays out whichever minigame (any type — timing/drag/choice) is active right now, if any:
+ *  clicks Start, then a few real taps at the 'timing' type's "Tap!" spot (which also happens to
+ *  land on a 'choice' minigame's option-A button, advancing it too — 'drag' just ignores the taps
+ *  and rides out its own no-fail safety timer), waits generously for it to reach `returnSceneKey`
+ *  on its own, and clicks the outro's Continue as a fallback if it hasn't. Returns whether a
+ *  minigame was actually there to play at all. Stuck-screen-hardening follow-up: fullrun.spec.ts
+ *  only ever checked for a minigame right after arrival — Addendum v2's Item 8a added a SECOND
+ *  insertion point (before preshow choices), which this test never accounted for, so a city with
+ *  2 minigames (e.g. Lisbon) silently failed the very next click (the preshow choice) because the
+ *  screen showing was actually the second minigame's intro card, not preshow choices at all. */
+export async function playAnyPendingMinigame(page: Page, returnSceneKey: string, timeoutMs = 30000): Promise<boolean> {
+  const wentToMinigame = await waitForCondition(page, () => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('MiniGame'), 3000);
+  if (!wentToMinigame) return false;
+  // Intro screen's "Start" button (MiniGameScene.ts: W/2-130, 500, 260, 66 — center 360, 533).
+  await canvasClick(page, 360, 533);
+  for (let i = 0; i < 5; i++) {
+    await page.waitForTimeout(700);
+    const stillMiniGame = (await getActiveSceneKeys(page)).includes('MiniGame');
+    if (!stillMiniGame) break;
+    // 'timing' round's "Tap!" button (W/2-130, 560, 260, 70 — center 360, 595) — also lands on a
+    // 'choice' minigame's option-A button (540-606 vertically), advancing that type too.
+    await canvasClick(page, 360, 595);
+  }
+  // Not routed through waitForCondition — its check function is passed to page.evaluate with no
+  // arguments, so it can only reference literal values baked into its own source, not an outer
+  // TS variable like returnSceneKey. Passed explicitly as an evaluate() argument instead.
+  const deadline = Date.now() + timeoutMs;
+  let backAlready = false;
+  while (Date.now() < deadline) {
+    backAlready = await page.evaluate(
+      (key) => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes(key), returnSceneKey);
+    if (backAlready) break;
+    await page.waitForTimeout(100);
+  }
+  if (!backAlready) {
+    // Still on the outro card — MiniGameScene.ts finish(): W/2-130, min(560, SAFE_BOTTOM_Y-66)=560, 260, 66, center (360, 593).
+    await canvasClick(page, 360, 593);
+  }
+  return true;
+}
+
 /** A minimal-but-schema-valid RunState (see src/core/state.ts's freshRun/RunState) for seeding
  *  localStorage directly — lets a resume-state test start from "a save already exists with this
  *  exact progress" without having to play through the whole game to reach it. loadFromKey

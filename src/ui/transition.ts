@@ -60,12 +60,28 @@ export function goTo(scene: Phaser.Scene, key: string, data?: object, opts: GoTo
   const blocker = scene.add.rectangle(0, 0, W, H, 0x000000, 0.001).setOrigin(0, 0).setDepth(1000).setInteractive();
   const overlay = type === 'fade' ? null : buildThemedOverlay(scene, type, opts.line);
 
+  // Destroys the overlay safely — a real crash found via this pass's own e2e testing (a full
+  // playthrough, not the isolated double-tap test): the completion delayedCall and the overlay's
+  // own tweens (buildThemedOverlay's ring/dark/label fades) are BOTH scheduled for the exact same
+  // THEMED_DURATION_MS, so completion could destroy the overlay's children in the same tick the
+  // TweenManager was about to apply their tween's final update — "Cannot set properties of null
+  // (setting 'radius')" thrown from inside Phaser's own TweenManager.step(), which (confirmed
+  // live) recurs every frame thereafter since the dead tween is never cleaned up, silently
+  // stalling the whole scene's update loop — the actual mechanism behind an apparently "frozen"
+  // transition overlay. Killing any tweens still targeting the overlay's children before
+  // destroying them removes the race entirely.
+  const destroyOverlay = () => {
+    if (!overlay) return;
+    scene.tweens.killTweensOf(overlay.list);
+    overlay.destroy();
+  };
+
   let done = false;
   const complete = () => {
     if (done) return;
     done = true;
     blocker.destroy();
-    overlay?.destroy();
+    destroyOverlay();
     transitioning.delete(scene);
     scene.scene.start(key, data);
   };
@@ -76,7 +92,7 @@ export function goTo(scene: Phaser.Scene, key: string, data?: object, opts: GoTo
     if (done) return;
     done = true;
     blocker.destroy();
-    overlay?.destroy();
+    destroyOverlay();
     transitioning.delete(scene);
   });
 

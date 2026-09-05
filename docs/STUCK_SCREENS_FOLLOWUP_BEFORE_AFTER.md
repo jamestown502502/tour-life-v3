@@ -85,6 +85,47 @@ across several repeats.
   correct from the Addendum v2 pass, this is the first time it's been proven end-to-end in one
   place rather than assumed.
 
+### A second, more serious bug this pass's own testing surfaced
+
+Running the pre-existing `e2e/fullrun.spec.ts` (a real full city-loop playthrough) against the
+hardened `goTo()` above turned up a genuine crash, not a timing flake — caught only because this
+test finally got far enough to hit the exact click it had never reliably reached before (see
+below). The `'lights'` transition's own ring/dark/label tweens and the completion `delayedCall`
+were both scheduled for the *identical* `THEMED_DURATION_MS` — a real race: if the delayedCall's
+`complete()` destroyed the overlay's children in the same tick the `TweenManager` was about to
+apply their tween's final update, Phaser threw `Cannot set properties of null (setting 'radius')`
+from inside its own `TweenManager.step()`. Confirmed live via a temporary debug trace
+(`page.on('pageerror')`) that this **recurs every single frame afterward**, since the dead tween
+is never cleaned up — which is the actual mechanism behind an apparently "frozen forever"
+transition overlay, not merely a slow one. **Fixed** in `transition.ts`: `destroyOverlay()` now
+calls `scene.tweens.killTweensOf(overlay.list)` before destroying the overlay's children,
+removing the race entirely. This protects all three themed types (`'card'`/`'lights'`/`'drive'`)
+uniformly, not just `'lights'` — the race was structurally identical in the original,
+pre-this-pass code for every type, it just hadn't been hit by any existing test before.
+
+**How this was actually diagnosed** — worth recording since the first two hypotheses were wrong:
+a screenshot mid-failure showed the transition's ring still visibly animating over the correct
+screen, which first looked like "just needs a longer wait" (this project's well-documented
+shared-machine timing jitter). Raising the wait from 5s → 15s → 60s made no difference at all —
+the ring's radius was near-identical at both 15s and 60s, which is what a frozen tween looks like,
+not a slow one. Only instrumenting `page.on('pageerror')` surfaced the actual exception. The
+lesson applied here: when a generous timeout increase doesn't change the outcome, stop guessing
+at bigger numbers and go find the actual error.
+
+**Two more real, unrelated gaps `fullrun.spec.ts` itself had**, both from the *prior* Addendum v2
+pass and only now exposed because the crash fix above let the test run far enough to reach them:
+- It only ever checked for a minigame right after arrival. Addendum v2's Item 8a added a **second**
+  minigame insertion point (before preshow choices), which Lisbon (this test's city) uses — the
+  test's next click, assumed to be the first preshow choice, was silently landing on empty space
+  on that second minigame's intro card instead. Fixed by extracting `playAnyPendingMinigame()`
+  (`e2e/helpers.ts`) and calling it at both insertion points.
+- Its Results → City click used a stale coordinate (`360, 652`) left over from before Item 7 added
+  the crowd strip above the Continue button and pushed it from y=620 to y=700 — the click was
+  landing on the crowd strip's own text. Fixed to the button's real current position (`360, 732`).
+
+With all three fixed, `e2e/fullrun.spec.ts` passes cleanly end-to-end — confirmed on 3 consecutive
+full runs, including one that plays out a complete song and reaches the final Hub screen.
+
 ## Item C — Characters' faces at the beginning
 
 **Before**: `BandCreatorScene.ts` rendered the 4 bandmates as plain text lines
@@ -163,12 +204,17 @@ route framing (opener/midpoint/finale) is correct for the real 4-city route
 - **`e2e/stuck-screen-hardening.spec.ts`** (new): **9/9** — the double-tap race test and all 7
   `CityPhase` resume tests.
 - **Full local e2e suite** (`smoke` + `fullrun` + `verification` + `text-fit-sweep` +
-  `stuck-screen-hardening`, `--project="Pixel 7" --workers=1`): **39/41 passed.** The 2 failures
-  are the *exact same two pre-existing, already-documented* flakes from before this pass started —
-  `fullrun.spec.ts`'s song-autoplay-to-Results test budget and `verification.spec.ts`'s Item 4b
-  hold-rail grading-tier timing sensitivity (both named in `docs/ADDENDUM_V2_BEFORE_AFTER.md`'s own
-  Testing section) — neither touches code this pass changed, and both are attributable to this
-  specific shared machine's variable timing, not application defects.
+  `stuck-screen-hardening`, `--project="Pixel 7" --workers=1`): **40/41 passed**, after the
+  transition-crash fix and the two `fullrun.spec.ts` test-script fixes above (initially 39/41,
+  with `fullrun.spec.ts` itself failing — investigated properly rather than written off, see
+  Item B). The 1 remaining failure is `verification.spec.ts`'s Item 4b hold-rail grading-tier
+  timing sensitivity — this one genuinely is the same pre-existing, already-documented flake
+  (named in `docs/ADDENDUM_V2_BEFORE_AFTER.md` and `docs/release-readiness.md`'s Item 1 across
+  multiple prior sessions, with identical chart-position/timing numbers every run): it never
+  touches code this pass changed, doesn't crash, and is a measured real-dispatch-latency-vs-
+  grading-window margin issue on this specific machine, not a stuck-screen or a logic bug —
+  `src/tests/rhythm.test.ts`'s deterministic tests already cover the actual grading logic without
+  that timing dependency.
 
 ## Guardrails respected
 
