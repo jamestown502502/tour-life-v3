@@ -48,6 +48,14 @@ export const RHYTHM_LEAD_MS = {
   expert: 1400,
 } as const;
 
+// Wall-clock ceiling on the one-time rhythm practice pass before the real song is forced to
+// start anyway. The pass itself is ~14 beats (7-9s depending on bpm) but is scheduled entirely
+// with scene.time.delayedCall, which advances on clamped FRAME DELTA rather than real time — so
+// a low frame rate stretches it proportionally (measured at ~4fps: 6% of real speed) and leaves
+// a first-time player stranded on a note-less playfield. Generous enough that a normal-speed
+// pass always finishes on its own and never sees this.
+export const PRACTICE_PASS_WATCHDOG_MS = 20000;
+
 // Rhythm playfield geometry. Hit line sits well above the bottom edge: on a phone the canvas
 // scales to ~0.54x, and anything below ~1230 game px lands under the iOS home-indicator
 // gesture zone (viewport-fit=cover) — the old 1100 line put the tap zones' bottom at 1180,

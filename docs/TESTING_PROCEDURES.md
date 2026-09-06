@@ -130,3 +130,66 @@ a timing-precision issue, not a mechanism-correctness one). What actually works 
   covers the grading *logic* deterministically; `verification.spec.ts`'s Item 4b remains a known,
   already-documented flake on this specific shared machine (real-dispatch-latency vs. the grading
   window's margin), not a mechanism defect.
+
+## Rule: gameplay mechanics need REAL-INPUT e2e coverage (added after the drag/rhythm regressions)
+
+The live-regression pass of 2026-09-06 started from a genuinely uncomfortable fact: **CI was fully
+green while drag-and-drop was broken in every drag minigame in the game.** Not flaky-green —
+legitimately green, on the full 4-device matrix.
+
+The reason is simple and worth stating plainly: *nothing in the suite had ever performed a drag.*
+Minigame coverage clicked buttons and asserted outcomes; the closest thing to drag coverage
+(`playAnyPendingMinigame`) taps a fixed coordinate and rides the no-fail safety timer, which
+"passes" whether or not a single item was ever placed. A bug living entirely in the
+pointer-to-placement path was therefore invisible to a green suite, by construction.
+
+**The rule:** a change to a gameplay MECHANIC (drag, tap-to-hit, hold, a hit-test, a drop target,
+a hit area) requires an e2e test that drives the mechanic through **real input** —
+`page.mouse.down/move/up`, `keyboard.press`, `canvasClick` — and asserts the resulting **game
+state**. Logic-bypass tests (calling the scene's own methods, seeding state, asserting a
+resume target) remain correct and valuable for state/routing logic. They are not evidence that
+a mechanic works. `e2e/drag.spec.ts` is the reference shape.
+
+Corollary worth internalising: **the drop target must be asserted against what the player can
+see.** The drag bug was a mismatch between a slot's visible bounds and the region that accepted a
+drop; only a test aiming at the slot's *visible centre* could have caught it.
+
+### The harness is not a device — four false positives from one pass
+
+Timing- and GPU-sensitive claims made against this environment are unreliable in BOTH directions.
+In a single pass, four separate "reproductions" turned out to be artifacts:
+
+1. **Hidden browser pane** — `requestAnimationFrame` is throttled when the pane is hidden, so
+   Phaser's loop had stepped **zero frames**. Every scene looks frozen; a stuck transition overlay
+   appeared to be a real input-blocker leak.
+2. **~4 FPS rendering** (software WebGL, "GPU stall due to ReadPixels") — Phaser's `Clock`
+   advances timer events by the **clamped frame delta**, not wall-clock, so at 4fps timers ran at
+   ~6% speed (measured: 150ms of timer time per 2333ms real). Anything built on `delayedCall`
+   looks hung.
+3. **Texture-key collision** — starting a scene by hand before BootScene's loader finishes lets a
+   code-drawn fallback generate into a key the loader is about to add. Never happens in a natural
+   boot-to-play flow.
+4. **A leaked Title scene** — `helpers.startScene` uses the **SceneManager**, which (unlike every
+   real transition in `transition.ts`) does not stop the calling scene. Title stayed alive,
+   rendering its UI and its floating seed-input DOM element over whatever was started next, which
+   read convincingly as "stray elements appearing over gameplay".
+
+Practical guards, all applied in `drag.spec.ts` / `rhythm-entry.spec.ts` / `no-leftover-overlay.spec.ts`:
+
+- Measure elapsed time with the **scene's own clock** or an in-page `requestAnimationFrame` poll —
+  never a count of `waitForTimeout` iterations, since each `page.evaluate` costs a round-trip and
+  wall-clock loop counts badly understate real elapsed time.
+- Wait for `Title` to be active (boot finished) **and stop it** before starting a scene by hand.
+- Before calling a timing symptom a bug, check the frame rate (`game.loop.actualFps`) and compare
+  against the content's real duration (e.g. every song chart is 56-62s; a finish at ~62s is
+  correct, one at 3s is the bug).
+- Keep gestures cheap: every `mouse.move` is a round-trip, and an over-sampled drag can consume
+  more of an in-game timer than a real player ever would.
+
+### Transition-leak assertion pattern (for any future transition work)
+
+`goTo()` creates a full-screen interactive blocker at depth 1000 plus, for themed types, an
+overlay container at depth 500. If either outlives its transition, Phaser's `topOnly` hit-testing
+routes every tap to the leftover object and the screen underneath is permanently dead. Any change
+to `transition.ts` should keep `no-leftover-overlay.spec.ts` green: after every transition, assert
+no object at depth >= 500 with `input.enabled` remains alive on any active scene.

@@ -221,16 +221,26 @@ export class MiniGameScene extends Phaser.Scene {
       });
       chip.on('dragend', () => {
         if (placed || finished) return;
+        // Both the slot rects and the chips are origin (0,0) — `rect.x/y` is a TOP-LEFT corner,
+        // not a center. This used to test the chip's center against `rect.x +/- slotW/2`, i.e. a
+        // box centered on the slot's own top-left corner: it overlapped the visible slot only in
+        // its top-left quarter and extended 95px left / 30px above into empty space. Dropping on
+        // the middle of a slot — what a player actually aims at — was silently rejected and the
+        // chip tweened home, and the matching snap below placed a *successful* drop half a chip
+        // up-and-left of its slot (the leftmost column landed at x=-34, off-screen). Confirmed
+        // live on both drag minigames and reproduced by e2e/drag.spec.ts's real pointer drags.
         const cx = chip.x + chipW / 2, cy = chip.y + chipH / 2;
         const target = slots.find((s) => !s.filled &&
-          cx >= s.rect.x - slotW / 2 && cx <= s.rect.x + slotW / 2 && cy >= s.rect.y - slotH / 2 && cy <= s.rect.y + slotH / 2);
+          cx >= s.rect.x && cx <= s.rect.x + slotW && cy >= s.rect.y && cy <= s.rect.y + slotH);
         if (target) {
           target.filled = true;
           placed = true;
           placedCount++;
           audio.playSfx('pickup');
-          chip.setPosition(target.rect.x - chipW / 2, target.rect.y - chipH / 2);
-          label_.setPosition(target.rect.x, target.rect.y);
+          // Chip and slot are the same size, so aligning their top-left corners seats the chip
+          // exactly over the slot it was dropped on.
+          chip.setPosition(target.rect.x, target.rect.y);
+          label_.setPosition(target.rect.x + chipW / 2, target.rect.y + chipH / 2);
           chip.disableInteractive();
           if (placedCount >= items.length) this.time.delayedCall(300, finishOnce);
         } else {

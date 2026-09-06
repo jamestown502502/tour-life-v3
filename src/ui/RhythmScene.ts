@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import {
   H, PALETTE, PALETTE_HEX, W, RHYTHM_LEAD_MS, RHYTHM_HIT_LINE_Y, RHYTHM_SPAWN_Y, RHYTHM_LANE_W, RHYTHM_LANE_X_START,
+  PRACTICE_PASS_WATCHDOG_MS,
 } from '../const';
 import { ensureCueIcon, ensureCrowdFigure, ensureHitLineGlow, ensureHoldRail, ensureLaneTextures, ensureRhythmStageBackdrop } from '../art/sprites';
 import { addCoverBackground } from '../art/background';
@@ -90,6 +91,10 @@ export class RhythmScene extends Phaser.Scene {
   private activeHolds = new Map<number, NoteState>();
   private tutorialActive = false;
   private forceRelaxedFirstSong = false;
+  /** Practice-pass hand-off guard: see create()'s watchdog comment. 0 = no watchdog armed. */
+  private practiceWatchdogUntil = 0;
+  private practiceHandedOff = false;
+  private practiceHandOff: (() => void) | null = null;
   private holdHintShown = false;
   private cueHintShown = false;
 
@@ -109,6 +114,9 @@ export class RhythmScene extends Phaser.Scene {
     this.forceRelaxedFirstSong = false;
     this.holdHintShown = false;
     this.cueHintShown = false;
+    this.practiceWatchdogUntil = 0;
+    this.practiceHandedOff = false;
+    this.practiceHandOff = null;
     // Phaser reuses this scene instance across visits — images from the last visit are
     // destroyed on shutdown but the arrays themselves aren't cleared automatically, so a stale
     // reference here would crash the next updateCrowdFigures()/lane-flash call.
@@ -218,7 +226,25 @@ export class RhythmScene extends Phaser.Scene {
     // empty (set in init()) there is nothing for it to prematurely judge or finish() over.
     if (this.tutorialActive) {
       this.finished = true;
-      this.runPracticePass(song, () => this.beginRealSong(city, song));
+      // Wall-clock watchdog for the practice pass. Every beat of it is scheduled with
+      // scene.time.delayedCall, and a Phaser Clock advances its events by the CLAMPED FRAME
+      // DELTA, not by real time — so on a device rendering well below 60fps the whole pass
+      // stretches proportionally. Measured here: at ~4fps the timers advanced 150ms per 2.3s of
+      // real time (~6% speed), turning the 6.7s pass into minutes, and since `finished` is true
+      // throughout, the player just sits on lanes with no notes and no way forward. The real song
+      // has no such exposure (it times notes off this.time.now, i.e. wall clock), so only this
+      // one-time gate is frame-rate-bound. Same defensive shape as transition.ts's own watchdog
+      // for this project's documented timer starvation.
+      const startedAt = Date.now();
+      this.practiceWatchdogUntil = startedAt + PRACTICE_PASS_WATCHDOG_MS;
+      const handOff = () => {
+        if (this.practiceHandedOff) return;
+        this.practiceHandedOff = true;
+        this.practiceWatchdogUntil = 0;
+        this.beginRealSong(city, song);
+      };
+      this.practiceHandOff = handOff;
+      this.runPracticePass(song, handOff);
     } else {
       this.beginRealSong(city, song);
     }
@@ -342,6 +368,12 @@ export class RhythmScene extends Phaser.Scene {
   }
 
   update(): void {
+    // Checked BEFORE the `finished` early-return: `finished` is deliberately true for the whole
+    // practice pass, so a watchdog placed after this line could never fire during the exact
+    // window it exists to protect.
+    if (this.practiceWatchdogUntil > 0 && Date.now() > this.practiceWatchdogUntil) {
+      this.practiceHandOff?.();
+    }
     if (this.finished) return;
     const now = this.time.now;
     const t = (now - this.startTime) / 1000;
