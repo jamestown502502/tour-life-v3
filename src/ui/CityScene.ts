@@ -5,7 +5,7 @@ import { applyVignette, spawnFireflies, spawnRain, type WeatherHandle } from '..
 import { addCoverBackground } from '../art/background';
 import { CITY_TINTS, NIGHT_TINTS } from '../art/palette';
 import { createButton } from './Button';
-import { DialogueBox } from './DialogueBox';
+import { DialogueBox, DIALOGUE_PANEL_H, DIALOGUE_PANEL_X, DIALOGUE_PANEL_Y } from './DialogueBox';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
 import { saveRun } from '../core/save';
@@ -60,8 +60,18 @@ export class CityScene extends Phaser.Scene {
   /** A resumed mid-dialogue position (see Progress.dialogueNodeId) for one of the linear-walk
    *  phases — consumed once by create()'s switch, at whichever phase it was saved for. */
   private resumeDialogueNodeId: string | null = null;
+  /** Node ids walked since the last irreversible boundary (a choice application, or a fresh
+   *  top-level entry point — arrival's/preshow's/journal's/afterShow's own start, a new
+   *  location's scene, a new relationship-pool entry's scene) — see walk()'s own comment. Not
+   *  persisted across a save/resume: "back" is a within-session convenience, not a save-schema
+   *  concept. */
+  private walkHistory: string[] = [];
+  /** The onDone callback for the walk chain currently in progress — goBack() needs it to
+   *  re-render a previous node through the exact same walk() path forward navigation uses. */
+  private currentOnDone: (() => void) | null = null;
+  private backButton: Phaser.GameObjects.Container | null = null;
 
-  init(data: { cityId: string; phase?: string; dialogueNodeId?: string }): void {
+  init(data: { cityId: string; phase?: string; dialogueNodeId?: string; locationsVisited?: string[]; relationshipsPlayed?: string[] }): void {
     this.city = getCity(data.cityId);
     // 'preshow-done' (mid-transition to Rhythm) and any unrecognized value fall back to
     // 'arrival' — the only truly unsafe resume points are ones with no matching phase handler.
@@ -70,9 +80,19 @@ export class CityScene extends Phaser.Scene {
     // the save was written) falls back to null exactly like an unrecognized phase falls back to
     // 'arrival' above, rather than resolveNode() throwing on it later.
     this.resumeDialogueNodeId = data.dialogueNodeId && this.city.scenes[data.dialogueNodeId] ? data.dialogueNodeId : null;
-    this.locationsVisited = new Set();
-    this.relationshipsPlayed = new Set();
+    // Restored from a save so an interruption between two locations (or two relationship-pool
+    // entries) resumes the picker remembering what's already been played, instead of re-offering
+    // it — filtered against this city's real ids the same way resumeDialogueNodeId is, in case
+    // content was renamed/removed since the save was written. Harmless to restore regardless of
+    // `this.phase`: each Set is only ever read by its own phase's own logic.
+    const realLocationIds = new Set(this.city.locations.map((l) => l.id));
+    const realRelationshipIds = new Set(this.city.relationshipScenePool.map((e) => e.id));
+    this.locationsVisited = new Set((data.locationsVisited ?? []).filter((id) => realLocationIds.has(id)));
+    this.relationshipsPlayed = new Set((data.relationshipsPlayed ?? []).filter((id) => realRelationshipIds.has(id)));
     this.gradeOverlay = null;
+    this.walkHistory = [];
+    this.currentOnDone = null;
+    this.backButton = null;
   }
 
   /** Fade a location's color grade in (index >= 0) or out (index < 0). Fireflies are re-spawned
@@ -163,13 +183,26 @@ export class CityScene extends Phaser.Scene {
     return node;
   }
 
-  private walk(nodeId: string, onDone: () => void): void {
+  /** `isBack`: true only when goBack() is re-rendering an already-visited node — skips the
+   *  history push (the node is already in the stack) so going back doesn't grow it. */
+  private walk(nodeId: string, onDone: () => void, isBack = false): void {
+    this.currentOnDone = onDone;
+    if (!isBack) this.walkHistory.push(nodeId);
+    this.updateBackButton();
     // Fixes a real "text repeats" report: only the PHASE ('arrival'/'preshow'/etc.) used to be
     // persisted, not the specific node within it — an interruption (tab close, crash, refresh)
     // anywhere inside a long dialogue walk resumed the player at that phase's very FIRST line,
     // making them re-read (and re-choose through) everything they'd already seen. Saving the
     // exact node on every step lets a resume land back exactly where they left off instead.
-    State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: this.phase, dialogueNodeId: nodeId });
+    // setProgress REPLACES the whole object (not a merge) — locationsVisited/relationshipsPlayed
+    // must be carried forward here too, or a walk() call inside the locations/relationship phase
+    // (visitLocation's own location-scene walk, playNextRelationshipScene's entry walk) would
+    // immediately clobber the picker-progress just persisted right before it. Harmless to include
+    // during arrival/preshow/afterShow/journal — both Sets are simply empty there.
+    State.setProgress({
+      screen: 'city', cityId: this.city.id, nodeId: this.phase, dialogueNodeId: nodeId,
+      locationsVisited: [...this.locationsVisited], relationshipsPlayed: [...this.relationshipsPlayed],
+    });
     saveRun(State.data);
     const node: DialogueNode = resolveNode(this.city.scenes, nodeId);
     const filtered: DialogueNode = { ...node, choices: visibleChoices(node) };
@@ -180,10 +213,49 @@ export class CityScene extends Phaser.Scene {
         if (next) this.walk(next, onDone); else onDone();
       },
       (choice) => {
+        // A choice's effects (stats/relationships/flags) are applied immediately and are NOT
+        // reversible in general (State.applyStatDeltas clamps — subtracting the same delta back
+        // wouldn't undo a clamped change correctly) — history is cleared here so "back" can never
+        // cross this boundary. This is the entire safety argument for the feature: since a plain
+        // (non-choice) DialogueNode never carries its own effects (only DialogueChoice does, per
+        // content/schema.ts), every node "back" can ever re-show is guaranteed effect-free —
+        // there is nothing to undo, for any city's content, without a per-node audit.
+        this.walkHistory = [];
         const nextId = applyChoice(choice);
         this.walk(nextId, onDone);
       },
     );
+  }
+
+  /** Re-renders the previous node in the current walk chain, without re-triggering any effects
+   *  (there are none to re-trigger — see walk()'s own comment) and without pushing a new history
+   *  entry. Only ever reachable while updateBackButton() has shown the button, i.e. only when
+   *  there's genuinely somewhere to go back to. */
+  private goBack(): void {
+    if (this.walkHistory.length < 2 || !this.currentOnDone) return;
+    this.walkHistory.pop();
+    const prevId = this.walkHistory[this.walkHistory.length - 1];
+    this.walk(prevId, this.currentOnDone, true);
+  }
+
+  /** Shows/hides the "‹" back button based on whether walkHistory has anywhere to go — rather
+   *  than a toast for an attempted-but-blocked back tap, the button simply isn't there once
+   *  there's nothing reversible left (a choice was just made, or this is a walk chain's first
+   *  node), which is the more common pattern for this kind of affordance and needed no new toast
+   *  system. Mirrors DialogueBox's own chevron position (bottom-right of the panel) at
+   *  bottom-left, so it reads as part of the same panel without colliding with anything. */
+  private updateBackButton(): void {
+    const canGoBack = this.walkHistory.length > 1;
+    if (canGoBack && !this.backButton) {
+      this.backButton = createButton(
+        this, DIALOGUE_PANEL_X + 6, DIALOGUE_PANEL_Y + DIALOGUE_PANEL_H - 58, 56, 56, '‹',
+        () => this.goBack(), { fillColor: PALETTE.plum, fontSize: '28px' },
+      );
+      this.backButton.setDepth(110);
+    } else if (!canGoBack && this.backButton) {
+      this.backButton.destroy();
+      this.backButton = null;
+    }
   }
 
   /** Addendum v2, Item 8a: up to TWO minigames per city per run (was one), at two insertion
@@ -222,6 +294,9 @@ export class CityScene extends Phaser.Scene {
 
   private renderLocationButtons(): void {
     this.dialogueBox.setVisible(false);
+    // Leaving the dialogue walk entirely for picker UI — nothing left to "go back" into.
+    this.walkHistory = [];
+    this.updateBackButton();
     this.pickerContainer?.destroy();
     this.pickerContainer = this.add.container(0, 0).setDepth(80);
     const remaining = this.city.locations.filter((l) => !this.locationsVisited.has(l.id));
@@ -243,8 +318,15 @@ export class CityScene extends Phaser.Scene {
     this.pickerContainer?.destroy();
     this.pickerContainer = null;
     this.setLocationGrade(this.city.locations.indexOf(loc));
+    // A new top-level walk chain starts here — reset so "back" can't reach into whichever
+    // location (or the arrival dialogue) came before this one.
+    this.walkHistory = [];
     this.walk(loc.sceneId, () => {
       this.locationsVisited.add(loc.id);
+      // Persisted immediately, before rendering the next picker — an interruption right here
+      // (between two locations) is exactly the gap the old code left unprotected.
+      State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'locations', locationsVisited: [...this.locationsVisited] });
+      saveRun(State.data);
       this.setLocationGrade(-1);
       if (this.locationsVisited.size >= LOCATIONS_TO_VISIT || this.locationsVisited.size >= this.city.locations.length) {
         this.startRelationship();
@@ -273,6 +355,17 @@ export class CityScene extends Phaser.Scene {
     const entry = available[0] ?? (this.relationshipsPlayed.size === 0 ? pool[0] : undefined);
     if (!entry) { this.startPreshow(); return; }
     this.relationshipsPlayed.add(entry.id);
+    // Persisted immediately, before walking the entry's own dialogue — the SAME dialogueNodeId
+    // mechanism already covers an interruption mid-way through this specific entry's own scene
+    // graph; this covers the gap between two entries that dialogueNodeId alone couldn't (walk()
+    // saves nodeId:'relationship' + whichever node id, but not WHICH pool entries are already
+    // spent, so a resume mid-entry-N+1 without this would replay entry N from the picker's own
+    // "still available" list, even though it had already finished).
+    State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'relationship', relationshipsPlayed: [...this.relationshipsPlayed] });
+    saveRun(State.data);
+    // A new top-level walk chain per entry — "back" shouldn't reach into whichever
+    // relationship-pool entry (or location) came before this one.
+    this.walkHistory = [];
     this.walk(entry.sceneId, () => this.playNextRelationshipScene());
   }
 
@@ -280,11 +373,15 @@ export class CityScene extends Phaser.Scene {
     this.phase = 'preshow';
     State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'preshow' });
     saveRun(State.data);
+    this.walkHistory = [];
     this.walk(this.consumeResumeNode(this.city.preShowSceneId), () => this.startMinigameOrPreshowChoices());
   }
 
   private renderPreShowChoices(): void {
     this.dialogueBox.setVisible(false);
+    // Leaving the dialogue walk entirely for the choice buttons — nothing left to "go back" into.
+    this.walkHistory = [];
+    this.updateBackButton();
     const ctx = { stats: State.data.stats, relationships: State.data.relationships, localLove: State.data.localLove, flags: State.data.flags };
     const options = this.city.preShowChoices.filter((c) => evaluateCondition(c.condition, ctx));
     const container = this.add.container(0, 0).setDepth(80);
@@ -323,6 +420,7 @@ export class CityScene extends Phaser.Scene {
     this.phase = 'journal';
     State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'journal' });
     saveRun(State.data);
+    this.walkHistory = [];
     this.walk(this.consumeResumeNode(this.city.journalSceneId), () => this.finishCity());
   }
 

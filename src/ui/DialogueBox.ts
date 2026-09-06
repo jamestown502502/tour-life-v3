@@ -19,6 +19,12 @@ const PANEL_Y = 690;
 const PANEL_X = 30;
 const PANEL_W = W - PANEL_X * 2;
 const PANEL_H = 300;
+// Exported for CityScene.ts's back/rollback button, which mirrors the chevron's own bottom-right
+// panel position at bottom-left — no other consumer needs these, so kept as a narrow export
+// rather than a shared layout module.
+export const DIALOGUE_PANEL_X = PANEL_X;
+export const DIALOGUE_PANEL_Y = PANEL_Y;
+export const DIALOGUE_PANEL_H = PANEL_H;
 const AUTO_ADVANCE_MS = 4000;
 // Close-out item 3a (VN QoL: r/visualnovels' most-requested feature). Session-only, not saved —
 // a backlog surviving a save/reload is a "nice later," not what was asked for.

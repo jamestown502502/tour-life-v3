@@ -75,4 +75,26 @@ describe('resumeTarget (Workstream 2: every resume path lands playable)', () => 
     expect(target.key).toBe('City');
     expect((target.data as { dialogueNodeId?: string }).dialogueNodeId).toBeUndefined();
   });
+
+  // Same class of fix, one honest remainder closed: locationsVisited/relationshipsPlayed were
+  // run-scoped only (reset in CityScene.init()) — an interruption between two locations (or two
+  // relationship-pool entries) resumed the picker with no memory of what was already played,
+  // letting an already-seen location/relationship scene be picked and shown again.
+  it('city + saved locationsVisited/relationshipsPlayed forward through unchanged', () => {
+    const target = resumeTarget({
+      screen: 'city', cityId: 'lisbon', nodeId: 'locations',
+      locationsVisited: ['fado_house'], relationshipsPlayed: ['jun_letter'],
+    });
+    expect(target.key).toBe('City');
+    const data = target.data as { locationsVisited?: string[]; relationshipsPlayed?: string[] };
+    expect(data.locationsVisited).toEqual(['fado_house']);
+    expect(data.relationshipsPlayed).toEqual(['jun_letter']);
+  });
+
+  it('city + no saved locationsVisited/relationshipsPlayed (an older save) forwards undefined, not a crash', () => {
+    const target = resumeTarget({ screen: 'city', cityId: 'lisbon', nodeId: 'locations' });
+    const data = target.data as { locationsVisited?: string[]; relationshipsPlayed?: string[] };
+    expect(data.locationsVisited).toBeUndefined();
+    expect(data.relationshipsPlayed).toBeUndefined();
+  });
 });

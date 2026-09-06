@@ -43,6 +43,13 @@ export interface Progress {
    *  player left off instead of replaying that phase's dialogue from its first line. Optional and
    *  additive: an older save without it just falls back to the old "start of phase" behavior. */
   dialogueNodeId?: string;
+  /** screen:'city' + nodeId:'locations' only — which location ids this visit has already played,
+   *  so an interruption between two locations resumes the picker remembering what's already been
+   *  seen instead of re-offering (and letting the player re-play) an already-visited location. */
+  locationsVisited?: string[];
+  /** screen:'city' + nodeId:'relationship' only — same idea as locationsVisited, for which
+   *  relationship-scene-pool entries this visit has already played. */
+  relationshipsPlayed?: string[];
 }
 
 export type RhythmMode = 'relaxed' | 'standard' | 'expert';
