@@ -176,3 +176,24 @@ concerns (relative `base: './'` paths, portrait lock, storage/audio-unlock alrea
 The dist-smoke suite's offline-reload check is the closest current proxy for how a Capacitor
 WebView actually serves the app (a local scheme, not a real network fetch) — treat a failure
 there as a hard blocker for the port, not a "fix it later."
+
+### Does the canvas-centering fix (critical-issues follow-up) affect the port?
+
+No — and it's worth stating explicitly since it was reported as a layout bug. `src/main.ts`'s
+Phaser scale config previously used `autoCenter: Phaser.Scale.CENTER_BOTH`, which sets an inline
+`margin-left`/`margin-top` on the canvas to center it within its parent — compounding with
+`index.html`'s `#app`, which is *also* a flex-centered container (needed regardless, for the
+safe-area-inset padding). The two centering mechanisms stacked, pushing the canvas visibly right
+of center on any viewport wider than the game's own portrait aspect ratio (confirmed live at
+1366×768: canvas `x=700.5` instead of the correct `x=467`). Fixed with
+`autoCenter: Phaser.Scale.NO_CENTER` — Phaser's own documented pattern when a correctly-sized
+flex parent is already doing the centering — leaving exactly one mechanism responsible for it.
+
+A Capacitor WebView loads this exact same `index.html` and its CSS unmodified — nothing about the
+port needs its own centering logic, and nothing about the port caused or masked this bug (it was
+reproducible in a plain desktop browser the whole time; it just happened to be least visible on a
+narrow *portrait* viewport close to the game's own 720×1280 aspect ratio, which is most of what
+earlier passes tested against). New regression coverage:
+`e2e/critical-issues-followup.spec.ts`'s centering test asserts the canvas center is within 2px of
+the viewport center on every device profile this suite already runs — it would have caught this
+on the very first CI run it existed for.

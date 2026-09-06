@@ -37,6 +37,12 @@ export interface Progress {
   screen: ScreenName;
   cityId?: string;
   nodeId?: string;
+  /** The exact dialogue-graph node currently showing, within screen:'city' + one of the linear-
+   *  walk phases (arrival/preshow/afterShow/journal) — CityScene.ts's walk() sets this on every
+   *  node shown so an interrupted session (tab close, crash, refresh) resumes exactly where the
+   *  player left off instead of replaying that phase's dialogue from its first line. Optional and
+   *  additive: an older save without it just falls back to the old "start of phase" behavior. */
+  dialogueNodeId?: string;
 }
 
 export type RhythmMode = 'relaxed' | 'standard' | 'expert';

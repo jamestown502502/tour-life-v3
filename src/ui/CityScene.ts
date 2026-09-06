@@ -57,12 +57,19 @@ export class CityScene extends Phaser.Scene {
   private gradeOverlay: Phaser.GameObjects.Rectangle | null = null;
   private baseFireflyColor: number = PALETTE.cream;
   private relationshipsPlayed = new Set<string>();
+  /** A resumed mid-dialogue position (see Progress.dialogueNodeId) for one of the linear-walk
+   *  phases — consumed once by create()'s switch, at whichever phase it was saved for. */
+  private resumeDialogueNodeId: string | null = null;
 
-  init(data: { cityId: string; phase?: string }): void {
+  init(data: { cityId: string; phase?: string; dialogueNodeId?: string }): void {
     this.city = getCity(data.cityId);
     // 'preshow-done' (mid-transition to Rhythm) and any unrecognized value fall back to
     // 'arrival' — the only truly unsafe resume points are ones with no matching phase handler.
     this.phase = data.phase && (VALID_PHASES as string[]).includes(data.phase) ? (data.phase as CityPhase) : 'arrival';
+    // Validated against this city's real scene graph — a stale id (renamed/removed content since
+    // the save was written) falls back to null exactly like an unrecognized phase falls back to
+    // 'arrival' above, rather than resolveNode() throwing on it later.
+    this.resumeDialogueNodeId = data.dialogueNodeId && this.city.scenes[data.dialogueNodeId] ? data.dialogueNodeId : null;
     this.locationsVisited = new Set();
     this.relationshipsPlayed = new Set();
     this.gradeOverlay = null;
@@ -115,12 +122,12 @@ export class CityScene extends Phaser.Scene {
     saveRun(State.data);
 
     switch (this.phase) {
-      case 'arrival': this.walk(this.city.arrivalSceneId, () => this.startMinigameOrLocations()); break;
+      case 'arrival': this.walk(this.consumeResumeNode(this.city.arrivalSceneId), () => this.startMinigameOrLocations()); break;
       case 'locations': this.startLocationPicker(); break;
       case 'relationship': this.startRelationship(); break;
       case 'preshow': this.startPreshow(); break;
       case 'preshow-choices': this.renderPreShowChoices(); break;
-      case 'afterShow': this.walk(this.city.afterShowSceneId, () => this.startJournal()); break;
+      case 'afterShow': this.walk(this.consumeResumeNode(this.city.afterShowSceneId), () => this.startJournal()); break;
       case 'journal': this.startJournal(); break;
     }
 
@@ -144,7 +151,26 @@ export class CityScene extends Phaser.Scene {
     saveRun(State.data);
   }
 
+  /** this.resumeDialogueNodeId, when present, applies to exactly ONE of the linear-walk phases
+   *  (arrival/preshow/afterShow/journal) — whichever it was saved under (Progress.dialogueNodeId
+   *  is written fresh on every walk() call under the CURRENT phase, so it can't point into the
+   *  wrong graph). Consumed (cleared) on first read so a later phase in this same scene lifetime
+   *  — reached through normal forward play, not a resume — starts from its own real entry node
+   *  instead of accidentally reusing a stale id left over from an earlier phase's resume. */
+  private consumeResumeNode(fallback: string): string {
+    const node = this.resumeDialogueNodeId ?? fallback;
+    this.resumeDialogueNodeId = null;
+    return node;
+  }
+
   private walk(nodeId: string, onDone: () => void): void {
+    // Fixes a real "text repeats" report: only the PHASE ('arrival'/'preshow'/etc.) used to be
+    // persisted, not the specific node within it — an interruption (tab close, crash, refresh)
+    // anywhere inside a long dialogue walk resumed the player at that phase's very FIRST line,
+    // making them re-read (and re-choose through) everything they'd already seen. Saving the
+    // exact node on every step lets a resume land back exactly where they left off instead.
+    State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: this.phase, dialogueNodeId: nodeId });
+    saveRun(State.data);
     const node: DialogueNode = resolveNode(this.city.scenes, nodeId);
     const filtered: DialogueNode = { ...node, choices: visibleChoices(node) };
     this.dialogueBox.show(
@@ -254,7 +280,7 @@ export class CityScene extends Phaser.Scene {
     this.phase = 'preshow';
     State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'preshow' });
     saveRun(State.data);
-    this.walk(this.city.preShowSceneId, () => this.startMinigameOrPreshowChoices());
+    this.walk(this.consumeResumeNode(this.city.preShowSceneId), () => this.startMinigameOrPreshowChoices());
   }
 
   private renderPreShowChoices(): void {
@@ -297,7 +323,7 @@ export class CityScene extends Phaser.Scene {
     this.phase = 'journal';
     State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'journal' });
     saveRun(State.data);
-    this.walk(this.city.journalSceneId, () => this.finishCity());
+    this.walk(this.consumeResumeNode(this.city.journalSceneId), () => this.finishCity());
   }
 
   private finishCity(): void {

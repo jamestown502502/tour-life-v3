@@ -57,4 +57,22 @@ describe('resumeTarget (Workstream 2: every resume path lands playable)', () => 
   it('scrapbook resolves to Scrapbook', () => {
     expect(resumeTarget({ screen: 'scrapbook' }).key).toBe('Scrapbook');
   });
+
+  // Critical-issues follow-up: "text repeating" was root-caused to progress only persisting the
+  // PHASE ('arrival'/'preshow'/etc.), not the exact dialogue node within it — an interruption
+  // (tab close, crash, refresh) mid-walk resumed the player at that phase's first line, forcing
+  // a replay of everything already seen. dialogueNodeId (CityScene.ts's walk(), saved on every
+  // node shown) is the fix; this is the pure-logic half of it — the threading through
+  // resumeTarget — CityScene.ts's own consumeResumeNode is what actually uses it.
+  it('city + a saved dialogueNodeId forwards it through to CityScene\'s data unchanged', () => {
+    const target = resumeTarget({ screen: 'city', cityId: 'berlin', nodeId: 'arrival', dialogueNodeId: 'ber_arrival_gear' });
+    expect(target.key).toBe('City');
+    expect((target.data as { dialogueNodeId?: string }).dialogueNodeId).toBe('ber_arrival_gear');
+  });
+
+  it('city + no saved dialogueNodeId (an older save, or a phase that never sets one) forwards undefined, not a crash', () => {
+    const target = resumeTarget({ screen: 'city', cityId: 'berlin', nodeId: 'locations' });
+    expect(target.key).toBe('City');
+    expect((target.data as { dialogueNodeId?: string }).dialogueNodeId).toBeUndefined();
+  });
 });

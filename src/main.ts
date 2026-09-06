@@ -57,7 +57,17 @@ async function boot(): Promise<void> {
     input: { activePointers: 4 },
     scale: {
       mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
+      // NO_CENTER, not CENTER_BOTH: index.html's #app is already a flex container with
+      // align-items/justify-content: center (needed regardless, to host the safe-area-inset
+      // padding around the canvas). Phaser's own CENTER_BOTH sets an inline margin-left/margin-top
+      // on the canvas to center it WITHIN its parent — stacked on top of a parent that's already
+      // centering it, the two compound: confirmed live at a wide desktop viewport (1366x768), the
+      // canvas rendered at x=700.5 instead of the correct x=467, using getBoundingClientRect() —
+      // exactly what you get when a flexbox centers an item that itself carries a `margin-left`
+      // equal to the correct centering offset (the item's larger effective margin-box gets
+      // centered, then the margin pushes the actual content further right again). One centering
+      // mechanism only; the CSS flexbox already does the job correctly on its own.
+      autoCenter: Phaser.Scale.NO_CENTER,
       width: W,
       height: H,
     },

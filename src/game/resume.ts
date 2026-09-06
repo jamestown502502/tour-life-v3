@@ -17,7 +17,7 @@ export function resumeTarget(progress: Progress): { key: string; data?: object }
       // transition instead of landing anywhere. Validated here, before the throw can happen, so
       // the fallback is Hub instead of a frozen screen.
       return progress.cityId && hasCity(progress.cityId)
-        ? { key: 'City', data: { cityId: progress.cityId, phase: progress.nodeId } }
+        ? { key: 'City', data: { cityId: progress.cityId, phase: progress.nodeId, dialogueNodeId: progress.dialogueNodeId } }
         : { key: 'Hub' };
     // Rhythm/Results need live in-flight data we don't persist — safest resume is the Hub.
     case 'hub': case 'rhythm': case 'results': case 'settings': default:
