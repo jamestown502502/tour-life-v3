@@ -305,6 +305,56 @@ test.describe('Rhythm entry via the real pre-show path (live-regression repro)',
     expect(r.scoreAfter, 'a scoring hit must increase the score').toBeGreaterThan(r.scoreBefore);
   });
 
+  // THE LIVE BUG, as a regression guard. Reported symptom: every rhythm song and every minigame
+  // "appears for a second and leaves" straight back to the VN, with no gameplay at all and an
+  // all-miss result. Mechanism: init() reset notes=[] and finished=false but NOT startTime, and
+  // longestNoteEndSeconds() returns 0 for an empty chart — so a single update() tick reaching
+  // `t > 0 + 1.5` before beginRealSong() ran ended the song on its first frame. t there is the
+  // whole elapsed game clock, so the condition is true immediately and always.
+  //
+  // This drives that exact state directly (empty chart + a song that never started) rather than
+  // hoping a texture failure reproduces it, because the trigger is environmental — in production
+  // a stale service-worker-cached asset manifest can throw out of create() before beginRealSong.
+  // The invariant is what matters and it is unconditional: a song that never started cannot end.
+  test('a song that never started can never finish itself', async ({ page }) => {
+    test.setTimeout(90000);
+    await seedReturningRhythmPlayer(page);
+    await bootGame(page);
+    await waitForActiveScene(page, 'Title', 20000);
+    await page.evaluate(() => (window as any).__game.scene.stop('Title'));
+    await startScene(page, 'Rhythm', { cityId: 'berlin' });
+    await waitForActiveScene(page, 'Rhythm', 10000);
+    await page.waitForTimeout(1200);
+
+    const outcome = await page.evaluate(async () => {
+      const g: any = (window as any).__game;
+      const s: any = g.scene.getScene('Rhythm');
+      // Reproduce the pre-beginRealSong state on a live scene: no chart, nothing started.
+      s.notes = [];
+      s.cues = [];
+      s.finished = false;
+      s.startTime = 0;
+      s.songStarted = false;
+      const before = g.scene.getScenes(true).map((x: any) => x.scene.key);
+      await new Promise((r) => setTimeout(r, 2500));
+      return {
+        before,
+        after: g.scene.getScenes(true).map((x: any) => x.scene.key),
+        finished: s.finished,
+      };
+    });
+
+    console.log('[never-started]', JSON.stringify(outcome));
+    expect(
+      outcome.finished,
+      'an empty, never-started song finished itself — this is the live "appears for a second and leaves" bug',
+    ).toBe(false);
+    expect(
+      outcome.after,
+      `Rhythm bailed to [${outcome.after.join(',')}] without ever starting a song`,
+    ).toContain('Rhythm');
+  });
+
   test('the lane tap zones actually respond after entering through the pre-show', async ({ page }) => {
     test.setTimeout(90000);
     await seedReturningRhythmPlayer(page);

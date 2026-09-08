@@ -76,6 +76,9 @@ export class RhythmScene extends Phaser.Scene {
   private comboMilestonesShown = new Set<number>();
   private score = 0;
   private startTime = 0;
+  /** False until beginRealSong() has actually loaded a chart and set startTime. update() must not
+   *  be able to END a song that never STARTED — see the guard in update() for why it could. */
+  private songStarted = false;
   private leadMs: number = RHYTHM_LEAD_MS.standard;
   private pxPerMs = (HIT_LINE_Y - SPAWN_Y) / RHYTHM_LEAD_MS.standard;
   private scoreText!: Phaser.GameObjects.Text;
@@ -109,6 +112,14 @@ export class RhythmScene extends Phaser.Scene {
     this.score = 0;
     this.crowd = Math.round(State.data.stats.harmony * 0.4 + 20);
     this.finished = false;
+    // startTime was NEVER reset here. Combined with notes=[] above (so
+    // longestNoteEndSeconds() returns 0) and finished=false, a single update() tick before
+    // beginRealSong() runs computes t from a STALE-or-zero startTime — t is then the whole
+    // elapsed game clock — and t > 0 + 1.5 fires finish() instantly. That is a song ending
+    // before it ever began: the scene appears for well under a second and hands straight back
+    // to the VN with an all-miss result.
+    this.startTime = 0;
+    this.songStarted = false;
     this.activeHolds = new Map();
     this.tutorialActive = false;
     this.forceRelaxedFirstSong = false;
@@ -273,6 +284,7 @@ export class RhythmScene extends Phaser.Scene {
     if (State.data.accessibility.audioAssist) this.startMetronome(song.bpm);
     this.startTime = this.time.now + 1200;
     this.finished = false;
+    this.songStarted = true;
   }
 
   private laneCenterX(l: number): number {
@@ -429,7 +441,11 @@ export class RhythmScene extends Phaser.Scene {
       }
     }
 
-    if (t > this.longestNoteEndSeconds() + 1.5 && !this.finished) {
+    // A song that never started cannot be over. Without this, ANY path that reaches update()
+    // before beginRealSong() — a throw earlier in create() (a missing texture key from a stale
+    // cached asset manifest will do it in production), or any future early return — ends the
+    // song on its first frame instead of surfacing the real failure.
+    if (t > this.longestNoteEndSeconds() + 1.5 && !this.finished && this.songStarted) {
       this.finish();
     }
   }

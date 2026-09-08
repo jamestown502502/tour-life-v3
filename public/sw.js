@@ -5,7 +5,7 @@
 // immutable per deploy — a cache-first miss just falls through to network and caches the
 // result). CACHE_NAME is bumped whenever the caching *strategy* itself changes, not per
 // content change — content changes are covered by cache-first's network fallback.
-const CACHE_NAME = 'tourlife-v2'; // v1 -> v2: the offline-shell-caching fix below is a strategy change
+const CACHE_NAME = 'tourlife-v3'; // v2 -> v3: non-hashed assets move from cache-first to stale-while-revalidate (a strategy change), AND the bump itself evicts every stale manifest/art a v2 client is pinned to
 // The navigation document itself was never actually cached anywhere — the fetch handler below
 // only ever READ from caches.match('/index.html') as an offline fallback, so "offline reload"
 // could never work (confirmed live: e2e/dist-smoke.spec.ts's offline test failed with
@@ -49,14 +49,30 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.pathname.startsWith('/assets/')) {
+    // Cache-first is only safe for files whose NAME changes when their CONTENT changes. Vite's
+    // bundle output is content-hashed (name.<hash>.js) and qualifies. Everything copied verbatim
+    // from public/ does NOT: /assets/manifest.json and the painted art keep the same URL forever,
+    // so cache-first pinned a returning player to the manifest they happened to cache first —
+    // through every subsequent redeploy, permanently, because CACHE_NAME only changes when the
+    // caching STRATEGY changes. New code then ran against an old asset manifest, and a texture
+    // key the manifest never loaded can throw out of a scene's create().
+    //
+    // Hashed files stay cache-first (they can never be stale). Everything else is
+    // stale-while-revalidate: instant from cache, but always refetched in the background so the
+    // next load is current, and still fully offline-capable.
+    const isContentHashed = /\.[0-9a-f]{8,}\.[a-z0-9]+$/i.test(url.pathname);
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) =>
         cache.match(request).then((cached) => {
-          if (cached) return cached;
-          return fetch(request).then((res) => {
-            if (res.ok) cache.put(request, res.clone());
-            return res;
-          });
+          const network = fetch(request)
+            .then((res) => {
+              if (res.ok) cache.put(request, res.clone());
+              return res;
+            })
+            .catch(() => cached);
+          if (cached && isContentHashed) return cached;
+          if (cached) { network.catch(() => {}); return cached; }
+          return network;
         }),
       ),
     );
