@@ -38,6 +38,9 @@
   "minigames": [
     {
       "id": "tok_pack_van",
+      "chordProgression": "Am-F-C-G",
+      "bpm": 92,
+      "waveform": "triangle",
       "type": "drag",
       "title": "Pack the Van",
       "introText": "Load-out's fast here — everything back in the van before the next act's gear shows up.",
@@ -50,6 +53,9 @@
     },
     {
       "id": "tok_soundcheck",
+      "chordProgression": "Em-Bm-C-G",
+      "bpm": 104,
+      "waveform": "square",
       "type": "timing",
       "title": "Soundcheck",
       "introText": "Kenji's already behind the kit. \"Give me a level, I'll match it.\"",

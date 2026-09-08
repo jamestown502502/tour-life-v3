@@ -17,9 +17,30 @@ import { SCREEN_FADE_MS } from '../const';
  *  reported problems in those systems. Polish that cannot be made reliable is not worth the
  *  systems it breaks, so the themed layer is OFF rather than patched again — see
  *  docs/TESTING_PROCEDURES.md for what bringing it back safely would require. */
+// Single-flight, re-added 2026-09-08 after a live report of duplicate dialogue in the intro and
+// after minigames. This is ONLY the guard — no themed overlays, no input blocker, no watchdog;
+// the simple fade above stays exactly as it is.
+//
+// Without it, two taps on the same button call goTo twice: fadeOut restarts and TWO completion
+// listeners are registered against the same fade, so when it completes scene.start runs twice.
+// Phaser stops and restarts the target, its create() runs a second time, and whatever that scene
+// says plays again from the top — the intro replaying its bandmate beats, or the city replaying
+// the phase you just finished. Measured before this guard: a double-tap on New Run started
+// BandCreator x2, and on a minigame's Continue started City x2.
+//
+// Note it takes real taps on a real device to see this: a slow test harness resolves pointer
+// state once per frame, so two fast clicks collapse into one pointerdown and the bug hides.
+const transitioning = new WeakSet<Phaser.Scene>();
+
 export function goTo(scene: Phaser.Scene, key: string, data?: object): void {
+  if (transitioning.has(scene)) return;
+  transitioning.add(scene);
+  // Cleared if this scene is stopped by some other path mid-fade, so the guard can never outlive
+  // its transition and wedge a reused scene instance shut.
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => transitioning.delete(scene));
   scene.cameras.main.fadeOut(SCREEN_FADE_MS, 43, 58, 85);
   scene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+    transitioning.delete(scene);
     scene.scene.start(key, data);
   });
 }

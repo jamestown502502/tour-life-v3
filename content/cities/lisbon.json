@@ -38,6 +38,9 @@
   "minigames": [
     {
       "id": "lis_soundcheck",
+      "chordProgression": "C-G-Am-F",
+      "bpm": 96,
+      "waveform": "triangle",
       "type": "timing",
       "title": "Soundcheck",
       "introText": "The house engineer waves you up. \"Give me a level check — tap when the needle's hot.\"",
@@ -49,6 +52,9 @@
     },
     {
       "id": "lis_load_in",
+      "chordProgression": "Dm-Gm-C-F",
+      "bpm": 88,
+      "waveform": "triangle",
       "type": "drag",
       "title": "Load-In",
       "introText": "Inês is already hauling amps up the fado house's narrow stairs. \"Faster if we split the load.\"",

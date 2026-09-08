@@ -37,6 +37,9 @@
   "minigames": [
     {
       "id": "ber_synth_check",
+      "chordProgression": "Am-Am-E-E",
+      "bpm": 112,
+      "waveform": "square",
       "type": "timing",
       "title": "Synth Soundcheck",
       "introText": "Lene's already patched half the rig. \"Give me a level before the room fills up.\"",

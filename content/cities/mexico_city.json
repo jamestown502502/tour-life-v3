@@ -37,6 +37,9 @@
   "minigames": [
     {
       "id": "mex_interview",
+      "chordProgression": "Fmaj7-Cmaj7",
+      "bpm": 72,
+      "waveform": "sine",
       "type": "choice",
       "title": "Interview",
       "introText": "A local zine caught wind of the show and wants five minutes before soundcheck.",
@@ -52,6 +55,9 @@
     },
     {
       "id": "mex_radio_callin",
+      "chordProgression": "Gmaj7-Dmaj7",
+      "bpm": 76,
+      "waveform": "sine",
       "type": "choice",
       "title": "Radio Call-In",
       "introText": "Ximena's borrowed the community radio's mic for a two-question segment. \"Keep it short,\" she grins.",

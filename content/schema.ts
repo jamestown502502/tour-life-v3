@@ -119,6 +119,12 @@ export interface MiniGameDef {
   dragTimeSec?: number;
   /** 'choice' only: exactly 3 questions. */
   questions?: MiniGameQuestion[];
+  /** Optional music bed for this minigame, in the same "Dm-Bb-F-C" shape SongDef uses. Omit and
+   *  the minigame simply keeps playing the city's own ambience, exactly as before — every one of
+   *  these three is additive, so older content and saves are unaffected. */
+  chordProgression?: string;
+  bpm?: number;
+  waveform?: 'triangle' | 'square' | 'sine';
 }
 
 export interface CityDef {
@@ -281,6 +287,16 @@ function validateMiniGames(minigames: unknown, path: string, errors: string[]): 
     if (!isString(mg.id) || !isString(mg.title) || !isString(mg.introText) ||
         !isString(mg.outroText) || !isString(mg.outroTextRough)) {
       fail(errors, `${p}: id/title/introText/outroText/outroTextRough must all be strings`);
+    }
+    // Music is optional, but a half-specified bed (a progression with no tempo) would silently
+    // play at the wrong speed, so require the pair when either is present.
+    if (mg.chordProgression !== undefined || mg.bpm !== undefined) {
+      if (!isString(mg.chordProgression) || !isNumber(mg.bpm) || mg.bpm! <= 0) {
+        fail(errors, `${p}: chordProgression needs a matching positive bpm (and vice versa)`);
+      }
+    }
+    if (mg.waveform !== undefined && !['triangle', 'square', 'sine'].includes(mg.waveform)) {
+      fail(errors, `${p}: waveform must be triangle, square or sine`);
     }
     if (mg.type === 'timing') {
       if (!isArray(mg.timingRoundsSec) || mg.timingRoundsSec.length < 1) {

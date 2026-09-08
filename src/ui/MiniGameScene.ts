@@ -12,6 +12,7 @@ import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
 import { audio } from '../core/audio';
+import { parseChordProgression } from '../core/musicTheory';
 import { saveRun } from '../core/save';
 import { getCity } from '../game/content';
 import { addTextScrim, textStyle } from './textStyles';
@@ -114,6 +115,15 @@ export class MiniGameScene extends Phaser.Scene {
 
   private beginGame(): void {
     this.clearContent();
+    // Each minigame can carry its own music bed (content/schema.ts MiniGameDef). Without one a
+    // minigame just keeps playing the city's ambience — which is what every minigame did before,
+    // and is still the fallback for any entry that omits these fields. Started here rather than
+    // in create() so the intro card stays under the city's bed and the switch lands with the
+    // first round. The city's own ambience is restored on the way out by CityScene.create(),
+    // which calls playAmbience unconditionally when the return transition lands.
+    if (this.mg.chordProgression && this.mg.bpm) {
+      audio.playAmbience(parseChordProgression(this.mg.chordProgression), this.mg.bpm, this.mg.waveform ?? 'triangle');
+    }
     if (this.mg.type === 'timing') this.runTimingRound();
     else if (this.mg.type === 'drag') this.runDrag();
     else this.runChoiceQuestion();
