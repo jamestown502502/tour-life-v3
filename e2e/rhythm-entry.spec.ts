@@ -205,6 +205,106 @@ test.describe('Rhythm entry via the real pre-show path (live-regression repro)',
     });
   }
 
+  // THE DISCRIMINATING TEST for the live report "the rhythm game ends in a bad grade and moves
+  // on". No-fail design means a totally broken rhythm system is indistinguishable, to the player,
+  // from playing badly — so the question is whether a tap that IS on time actually scores.
+  //
+  // Every existing rhythm assertion in this repo only ever checked that *a judgement was
+  // recorded*, never that it was a HIT. Both logged "miss" and passed:
+  //   [Item 4a] {"D":"PASS (miss, score 0 -> 0)", ...}   [Item 4b] hold ... graded: miss
+  // Those are satisfied by update()'s own auto-miss safety net firing, with the tap contributing
+  // nothing — exactly the hole that lets "no input ever registers" ship green.
+  //
+  // Timed and judged ENTIRELY IN-PAGE: attemptHit() reads this.time.now, which only advances once
+  // per rendered frame, so a tap dispatched over CDP (~1s latency here) can never land in a 160ms
+  // window. Tapping on the frame closest to the note's hit time removes the transport from the
+  // measurement; the assertion is then conditioned on the delta actually achieved, so a harness
+  // too slow to land in-window reports inconclusive instead of failing a correct game.
+  test('a tap landing inside the timing window scores a HIT, not a miss', async ({ page }) => {
+    test.setTimeout(120000);
+    await seedReturningRhythmPlayer(page);
+    await bootGame(page);
+    await waitForActiveScene(page, 'Title', 20000);
+    await page.evaluate(() => (window as any).__game.scene.stop('Title'));
+    await startScene(page, 'Rhythm', { cityId: 'berlin' });
+    await waitForActiveScene(page, 'Rhythm', 10000);
+    await page.waitForTimeout(1500);
+
+    const shot = await page.evaluate(async () => {
+      const s: any = (window as any).__game.scene.getScene('Rhythm');
+      if (!s.notes.length) return { error: 'no chart loaded' };
+
+      // Measure this device's frame interval so we can tap on the frame NEAREST the hit time
+      // rather than the first frame past it (which at 4fps could be 250ms late on its own).
+      const frameMs: number = await new Promise((resolve) => {
+        let last = 0, n = 0, total = 0;
+        const tick = (ts: number) => {
+          if (last) { total += ts - last; n++; }
+          last = ts;
+          if (n >= 5) { resolve(total / n); return; }
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+
+      // A plain tap note far enough ahead that we can still get in front of it.
+      const target = s.notes
+        .filter((ns: any) => !ns.judged && ns.note.type !== 'hold')
+        .map((ns: any) => ({ ns, hitMs: s.hitMsFor(ns.note.t) }))
+        .filter((c: any) => c.hitMs > s.time.now + Math.max(1200, frameMs * 4))
+        .sort((a: any, b: any) => a.hitMs - b.hitMs)[0];
+      if (!target) return { error: 'no reachable tap note', frameMs };
+
+      const before = s.judgements.length;
+      const scoreBefore = s.score;
+      // Fire on the first frame whose clock is within half a frame of the hit time — the closest
+      // sample this device can offer.
+      await new Promise<void>((resolve) => {
+        const tick = () => {
+          if (s.time.now + frameMs / 2 >= target.hitMs) { resolve(); return; }
+          requestAnimationFrame(tick);
+        };
+        tick();
+      });
+      const tappedAt = s.time.now;
+      s.attemptHit(target.ns.note.l);
+
+      return {
+        frameMs: Math.round(frameMs),
+        lane: target.ns.note.l,
+        deltaMs: Math.round(tappedAt - target.hitMs),
+        judgementsBefore: before,
+        judgementsAfter: s.judgements.length,
+        lastJudgement: s.judgements[s.judgements.length - 1] ?? null,
+        judgedFlag: target.ns.judged,
+        scoreBefore,
+        scoreAfter: s.score,
+      };
+    });
+
+    console.log('[timed-tap]', JSON.stringify(shot));
+    expect((shot as any).error, `could not run the timed tap: ${(shot as any).error}`).toBeUndefined();
+    const r = shot as any;
+
+    // 160ms is the STANDARD 'ok' window (src/const.ts RHYTHM_WINDOWS.ok, scale 1.0); relaxed and
+    // wiggleRoom only widen it, so a tap inside 160ms must score under any settings.
+    if (Math.abs(r.deltaMs) > 160) {
+      // Frame granularity beat us. Say so plainly rather than reporting a pass or a failure.
+      console.log(`[timed-tap] INCONCLUSIVE: closest frame was ${r.deltaMs}ms off at ${r.frameMs}ms/frame`);
+      test.skip(true, `harness could not land a tap inside 160ms (best ${r.deltaMs}ms at ${r.frameMs}ms/frame)`);
+      return;
+    }
+    expect(
+      r.judgementsAfter,
+      `a tap ${r.deltaMs}ms from the note recorded NO judgement at all — attemptHit found no note in range`,
+    ).toBeGreaterThan(r.judgementsBefore);
+    expect(
+      r.lastJudgement,
+      `a tap only ${r.deltaMs}ms from the note was judged "${r.lastJudgement}" — inside the window, this must score`,
+    ).not.toBe('miss');
+    expect(r.scoreAfter, 'a scoring hit must increase the score').toBeGreaterThan(r.scoreBefore);
+  });
+
   test('the lane tap zones actually respond after entering through the pre-show', async ({ page }) => {
     test.setTimeout(90000);
     await seedReturningRhythmPlayer(page);

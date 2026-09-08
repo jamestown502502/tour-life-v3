@@ -9,7 +9,7 @@
 import { test, expect } from '@playwright/test';
 import {
   bootGame, skipFirstTimeOnboarding, startScene, canvasClick, collectConsoleErrors,
-  waitForCondition, waitForActiveScene, LOGICAL_W, LOGICAL_H,
+  waitForCondition, waitForActiveScene, getActiveSceneKeys, walkDialogueToSceneChange, LOGICAL_W, LOGICAL_H,
 } from './helpers';
 
 /** Reads the live drag-minigame layout straight off the scene: every chip's current top-left and
@@ -202,4 +202,74 @@ test.describe('Drag minigame — real pointer gestures (live-regression repro)',
     expect(landed, `${landed}/${attempted} drops onto a slot actually placed their chip`).toBe(attempted);
   });
   }
+
+  // THE GAP THIS SUITE ORIGINALLY MISSED. Every test above enters MiniGame with startScene(),
+  // i.e. the SceneManager — which skips goTo() and the whole transition layer. That verifies the
+  // minigame's own internals and nothing about how a player actually gets there. The live report
+  // is precisely about that journey ("loads in, immediately disappears, then dies"), so it was
+  // invisible here by construction, exactly as a green CI was invisible to broken drag.
+  //
+  // This one walks the real city loop: arrival dialogue -> CityScene's own goTo('MiniGame') ->
+  // and then WAITS, because "it appeared" is not the claim under test — "it is still there,
+  // interactive, several seconds later" is.
+  test('reached the real way (city loop -> goTo), a minigame loads AND STAYS', async ({ page }) => {
+    test.setTimeout(180000);
+    const pageErrors: string[] = [];
+    page.on('pageerror', (e) => pageErrors.push(e.message));
+    await bootGame(page);
+    await waitForActiveScene(page, 'Title', 20000);
+    await page.evaluate(() => (window as any).__game.scene.stop('Title'));
+
+    // Tokyo's arrival leads into "Pack the Van" — the drag minigame from the live screenshot.
+    await startScene(page, 'City', { cityId: 'tokyo', phase: 'arrival' });
+    await waitForActiveScene(page, 'City', 10000);
+    await page.waitForTimeout(600);
+
+    // Walk the arrival dialogue with real taps until the city hands off to the minigame.
+    await walkDialogueToSceneChange(page, 'City', 40);
+    const reached = await waitForCondition(
+      page,
+      () => (window as any).__game.scene.getScenes(true).some((s: any) => s.scene.key === 'MiniGame'),
+      20000,
+    );
+    expect(reached, `the city loop never handed off to MiniGame; active = ${(await getActiveSceneKeys(page)).join(',')}`).toBe(true);
+
+    // The reported failure mode is not "never appears" — it is "appears, then dies". Sample the
+    // scene repeatedly and require it to still be alive, still interactive, at every check.
+    for (let i = 0; i < 5; i++) {
+      await page.waitForTimeout(1500);
+      const state = await page.evaluate(() => {
+        const g: any = (window as any).__game;
+        const s: any = g.scene.getScene('MiniGame');
+        const active = g.scene.getScenes(true).map((x: any) => x.scene.key);
+        // MUST recurse: MiniGameScene parents nearly everything to `contentLayer`, and a
+        // container's children are not in scene.children.list. A flat count reports 0 interactive
+        // objects on a perfectly healthy scene.
+        const countInteractive = (list: any[]): number => list.reduce((n: number, o: any) => (
+          n + (o.input?.enabled ? 1 : 0) + (Array.isArray(o.list) ? countInteractive(o.list) : 0)
+        ), 0);
+        const top = s?.children?.list ?? [];
+        return {
+          active,
+          present: active.includes('MiniGame'),
+          children: top.length,
+          contentLayer: s?.contentLayer?.list?.length ?? -1,
+          interactive: countInteractive(top),
+          // Anything left covering the screen from a transition would show up here.
+          highDepth: top.filter((o: any) => (o.depth ?? 0) >= 500).length,
+        };
+      });
+      console.log(`[minigame-alive ${(i + 1) * 1.5}s]`, JSON.stringify(state));
+      expect(
+        state.present,
+        `MiniGame vanished ${(i + 1) * 1.5}s after loading — landed on [${state.active.join(',')}]`,
+      ).toBe(true);
+      expect(state.children, 'the minigame rendered nothing').toBeGreaterThan(0);
+      expect(state.interactive, 'the minigame has no interactive objects — nothing to tap or drag').toBeGreaterThan(0);
+      expect(state.highDepth, 'a transition cover is sitting on top of the minigame').toBe(0);
+    }
+
+    await page.screenshot({ path: 'docs/polish-before-after/minigame-real-path-alive.png' });
+    expect(pageErrors, `page errors while reaching/playing the minigame:\n${pageErrors.join('\n')}`).toEqual([]);
+  });
 });
