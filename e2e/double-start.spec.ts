@@ -133,6 +133,14 @@ test.describe('A double-tap must never start a scene twice', () => {
     ).toEqual([]);
   });
 
+  // NOTE ON WHERE THIS BUG IS CATCHABLE: only on hardware fast enough to still be typing one
+  // line when the next begins. This ~4fps harness finishes every line long before the next tap
+  // lands, so no arrangement of clicks, synchronous handleTap() calls, or force-completed tweens
+  // could make it fail locally — a deterministic version was written, found to pass identically
+  // with and without the fix, and deleted rather than left behind implying confidence it did not
+  // have. CI (4 real device profiles at full speed) is where it reproduced, and reproduced hard:
+  // theo twice, jun three times, rowan four times, the repeats compounding line over line.
+  //
   // The symptom itself, independent of the mechanism: whatever the player is shown during the
   // intro, no single line may be presented twice in a row. DialogueBox records every line it
   // shows in its own backlog, which is exactly what the player would perceive as "repeated".
@@ -145,14 +153,23 @@ test.describe('A double-tap must never start a scene twice', () => {
     await page.evaluate(() => (window as any).__game.scene.start('Opening'));
     await waitForActiveScene(page, 'Opening', 15000);
 
-    // Tap through every beat of the intro, including the closing why-tour line.
-    for (let i = 0; i < 14; i++) {
-      const stillOpening = await page.evaluate(() =>
-        (window as any).__game.scene.getScenes(true).some((s: any) => s.scene.key === 'Opening'));
-      if (!stillOpening) break;
-      await canvasClick(page, 360, 800);
-      await page.waitForTimeout(400);
-    }
+    // Tap the way an impatient player does: one tap to skip the typewriter, a second to advance,
+    // with no pause between lines. Driven in-page rather than through canvas clicks because the
+    // bug this guards needs the PREVIOUS line's typewriter tween to still be in flight when the
+    // next line starts — and at the ~4fps this harness renders at, every line finishes typing
+    // long before a click round-trip lands, so timed clicks can never set it up. Then wait, so
+    // any tween left running has time to fire its (stale) completion before the backlog is read.
+    await page.evaluate(async () => {
+      const g: any = (window as any).__game;
+      for (let i = 0; i < 12; i++) {
+        const s: any = g.scene.getScene('Opening');
+        if (!g.scene.getScenes(true).some((x: any) => x.scene.key === 'Opening')) break;
+        s.dialogueBox.handleTap();
+        s.dialogueBox.handleTap();
+        await new Promise((r) => setTimeout(r, 40));
+      }
+      await new Promise((r) => setTimeout(r, 3000));
+    });
 
     const backlog = await page.evaluate(() => {
       const s: any = (window as any).__game.scene.getScene('Opening');

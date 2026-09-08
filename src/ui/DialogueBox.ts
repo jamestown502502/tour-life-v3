@@ -66,6 +66,9 @@ export class DialogueBox {
   private onSkippedOrAdvance: (() => void) | null = null;
   private pendingComplete: (() => void) | null = null;
   private autoTimer: Phaser.Time.TimerEvent | null = null;
+  /** The in-flight typewriter tween. Held so it can be STOPPED — see show()'s comment: a tween
+   *  left running past its own line resurrects that line's advance callback. */
+  private typeTween: Phaser.Tweens.Tween | null = null;
   private keyHandler: () => void;
   private backlog: { speaker: string; text: string }[] = [];
   private backlogPanel: Phaser.GameObjects.Container | null = null;
@@ -211,6 +214,17 @@ export class DialogueBox {
     this.backlog.push({ speaker: node.speaker, text: node.text });
     if (this.backlog.length > BACKLOG_CAP) this.backlog.shift();
     this.onSkippedOrAdvance = null;
+    // Kill the PREVIOUS line's typewriter before starting this one. It used to be left running:
+    // tapping to skip a line only sets `typing = false`, so the old tween kept counting, and its
+    // onComplete guard (`if (this.typing) complete()`) reads a flag SHARED across lines — which
+    // is true again the moment the next line starts typing. The stale tween then ran the OLD
+    // line's complete(), re-installing the OLD line's advance callback, and the next tap replayed
+    // that line. Every skipped line left another live tween, so the repeats compounded: measured
+    // in CI, the intro showed theo twice, jun three times and rowan four times. It never
+    // reproduced locally because this harness renders at ~4fps, where a line finishes typing
+    // before the next tap arrives and no tween is ever left in flight.
+    this.typeTween?.stop();
+    this.typeTween = null;
     const complete = () => { this.finishTyping(); this.afterTypeComplete(node, onAdvance, onChoice); };
     this.pendingComplete = complete;
 
@@ -224,7 +238,7 @@ export class DialogueBox {
     this.startPortraitBob();
     const totalMs = (node.text.length / TYPEWRITER_CHARS_PER_SEC) * 1000;
     let lastTick = 0;
-    this.scene.tweens.addCounter({
+    this.typeTween = this.scene.tweens.addCounter({
       from: 0, to: node.text.length, duration: totalMs,
       onUpdate: (tw) => {
         if (!this.typing) return;
@@ -237,11 +251,14 @@ export class DialogueBox {
           audio.playSfx('typewriter');
         }
       },
-      onComplete: () => { if (this.typing) complete(); },
+      onComplete: () => { this.typeTween = null; if (this.typing) complete(); },
     });
   }
 
   private finishTyping(): void {
+    // Stop the tween as well as clearing the flag, so a skipped line leaves nothing in flight.
+    this.typeTween?.stop();
+    this.typeTween = null;
     this.typing = false;
     this.stopPortraitBob();
     this.bodyText.setText(this.fullText);
