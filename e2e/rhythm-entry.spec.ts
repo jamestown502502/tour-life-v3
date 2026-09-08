@@ -355,6 +355,69 @@ test.describe('Rhythm entry via the real pre-show path (live-regression repro)',
     ).toContain('Rhythm');
   });
 
+  // THE LIVE BUG, reproduced by the one variable every previous test held constant: HOW LONG
+  // THE SESSION HAS BEEN RUNNING before rhythm is entered.
+  //
+  // beginRealSong() sets `startTime = this.time.now + 1200`, but a Phaser Clock's `now` is only
+  // written during update() ticks — so inside create() it is STALE: 0 on a scene's first ever
+  // run, or the value from the last time that scene ran (Phaser reuses scene instances). The
+  // first update() then sets now to the true elapsed game time, and t = (now - startTime)/1000
+  // becomes the WHOLE session length. Once that exceeds the chart length + 1.5s, the guard
+  // `t > longestNoteEndSeconds() + 1.5` is true on the very first frame and finish() fires
+  // instantly — the song ends before a single note falls, every note auto-misses, Results shows
+  // a bad grade, and the run advances. Under a second, no gameplay.
+  //
+  // Every rhythm test in this repo entered within seconds of boot, where t is small and the bug
+  // is invisible. A real player reaches their first song minutes in, where it is guaranteed.
+  test('a song entered LATE in a session still plays (the clock is not the session length)', async ({ page }) => {
+    test.setTimeout(180000);
+    await seedReturningRhythmPlayer(page);
+    await bootGame(page);
+    await waitForActiveScene(page, 'Title', 20000);
+    await page.evaluate(() => (window as any).__game.scene.stop('Title'));
+
+    // Let the session age past the longest chart (56-62s) + the 1.5s tail, the way real play does.
+    await page.waitForFunction(() => (window as any).__game.loop.time > 70000, undefined, { timeout: 150000, polling: 500 });
+
+    await startScene(page, 'Rhythm', { cityId: 'berlin' });
+    await waitForActiveScene(page, 'Rhythm', 15000);
+    await page.waitForTimeout(2500);
+
+    const state = await page.evaluate(() => {
+      const g: any = (window as any).__game;
+      const s: any = g.scene.getScene('Rhythm');
+      const active = g.scene.getScenes(true).map((x: any) => x.scene.key);
+      return {
+        active,
+        present: active.includes('Rhythm'),
+        loopTime: Math.round(g.loop.time),
+        clockNow: Math.round(s?.time?.now ?? -1),
+        startTime: Math.round(s?.startTime ?? -1),
+        tSeconds: s ? Math.round(((s.time.now - s.startTime) / 1000) * 10) / 10 : null,
+        notes: s?.notes?.length ?? 0,
+        finished: s?.finished ?? null,
+      };
+    });
+
+    console.log('[late-entry]', JSON.stringify(state));
+    expect(
+      state.present,
+      `entering rhythm ${Math.round(state.loopTime / 1000)}s into the session bailed to ` +
+      `[${state.active.join(',')}] — t was ${state.tSeconds}s on a chart of ~61s, so the song ` +
+      'ended before it began. This is the live "disappears immediately" bug.',
+    ).toBe(true);
+    expect(state.finished, 'the song finished itself immediately on a late entry').toBe(false);
+    // The invariant: the SONG clock must measure time since the song started, never the age of
+    // the session. Before the fix these were the same number (t=73.2s at a 102s session age, on
+    // a ~61s chart). Asserted against the chart's own length rather than a small constant,
+    // because scene startup on a slow harness can legitimately consume several seconds of song.
+    expect(
+      state.tSeconds,
+      `song clock read ${state.tSeconds}s ${Math.round(state.loopTime / 1000)}s into the session ` +
+      '— startTime is tracking session age, not song start',
+    ).toBeLessThan(60);
+  });
+
   test('the lane tap zones actually respond after entering through the pre-show', async ({ page }) => {
     test.setTimeout(90000);
     await seedReturningRhythmPlayer(page);

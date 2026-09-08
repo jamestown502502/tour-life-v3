@@ -282,7 +282,19 @@ export class RhythmScene extends Phaser.Scene {
     }
 
     if (State.data.accessibility.audioAssist) this.startMetronome(song.bpm);
-    this.startTime = this.time.now + 1200;
+    // this.game.loop.time, NOT this.time.now. A Phaser Clock only writes `now` during its
+    // update() ticks, so inside create() it is STALE — 0 on a scene's first ever run, or the
+    // value from the last time this (reused) scene ran. Reading it here set startTime to ~1200
+    // instead of the real current time; the first update() then wrote the true elapsed session
+    // time into now, so t = (now - startTime)/1000 became THE WHOLE LENGTH OF THE SESSION.
+    // Once that exceeded the chart (56-62s) + 1.5s, `t > longestNoteEndSeconds() + 1.5` was true
+    // on the very first frame: finish() fired before a single note fell, every note auto-missed,
+    // and the run advanced on a bad grade. Measured live: startTime=1200, first tick now=74365,
+    // t=73.2s on a 61s chart. It reproduces only once a session has been running longer than the
+    // song — which every real player has by their first show, and no test here ever had, because
+    // they all entered rhythm seconds after boot. game.loop.time is the same clock the Clock is
+    // about to be given, read correctly at create() time.
+    this.startTime = this.game.loop.time + 1200;
     this.finished = false;
     this.songStarted = true;
   }
@@ -374,7 +386,9 @@ export class RhythmScene extends Phaser.Scene {
     const beatMs = (60 / bpm) * 1000;
     let beatCount = 0;
     this.metronomeEvent = this.time.addEvent({
-      delay: beatMs, startAt: beatMs - ((this.time.now + 1200) % beatMs), loop: true,
+      // Same stale-Clock reason as startTime above — this runs from create() too, and a wrong
+      // phase here would put the metronome off-beat against the song it is meant to track.
+      delay: beatMs, startAt: beatMs - ((this.game.loop.time + 1200) % beatMs), loop: true,
       callback: () => { audio.playSfx(beatCount % 4 === 0 ? 'metronomeAccent' : 'metronome'); beatCount++; },
     });
   }

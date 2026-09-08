@@ -9,7 +9,7 @@ import { defineConfig, devices } from '@playwright/test';
 // before a Capacitor port" step from the cross-platform doc.
 export default defineConfig({
   testDir: './e2e',
-  testMatch: ['smoke.spec.ts', 'fullrun.spec.ts', 'verification.spec.ts', 'text-fit-sweep.spec.ts', 'stuck-screen-hardening.spec.ts', 'critical-issues-followup.spec.ts', 'drag.spec.ts', 'rhythm-entry.spec.ts', 'no-leftover-overlay.spec.ts'],
+  testMatch: ['smoke.spec.ts', 'fullrun.spec.ts', 'verification.spec.ts', 'text-fit-sweep.spec.ts', 'stuck-screen-hardening.spec.ts', 'critical-issues-followup.spec.ts', 'drag.spec.ts', 'rhythm-entry.spec.ts', 'no-leftover-overlay.spec.ts', 'texture-resilience.spec.ts'],
   timeout: 60000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
