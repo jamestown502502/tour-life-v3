@@ -19,7 +19,7 @@ automated and are the two genuine gaps in this project's verification.
 | # | Gate | Status | Evidence |
 |---|---|---|---|
 | 1 | Unit tests green | ✅ | **174/174** (was 128 at the start of this pass); `tsc --noEmit` clean |
-| 2 | Full e2e suite green, all 4 device profiles | ⏳ | CI runs `34356147306` (Part A), `34358244717` (Part B) |
+| 2 | Full e2e suite green, all 4 device profiles | ✅ | CI `34378844886` (regression pass, 1h37m) and `34381965080` (first-run fix, 1h58m) both **green** across all four profiles |
 | 3 | A1 background audit complete | ✅ | Table in `BAIS_TourLife_CloseOutPlan_2026-09-09.md`; corrected the brief twice |
 | 4 | No barren screens | ✅ | All 10 full-screen scenes render their painted texture — `e2e/no-barren-screens.spec.ts` |
 | 5 | Overlays dim rather than hide | ✅ | Settings 0.82, HowToPlay 0.78 (were 0.98 / 0.85) |
@@ -38,6 +38,23 @@ automated and are the two genuine gaps in this project's verification.
 | 21 | Every label legible on its real backdrop | ✅ | `e2e/text-legibility.spec.ts` — WCAG contrast measured from actual rendered pixels, 3.0:1 minimum, 11 checks over 8 scenes + 3 minigames |
 | 22 | All 10 minigames have painted art | ✅ | The three new types were shipped without backdrops; generated, measured seam-free, 1440x2560 |
 | 23 | First-run overlay dims the painted title, not a blank screen | ✅ | `e2e/first-run-title.spec.ts` — backdrop standard deviation, measured below the card. Was **0.00** (flat) on the live deploy |
+
+### One job is blocked on account billing, not on code
+
+The final commit (`5c8c3de`, a 16px label-spacing change) has `build-and-test` green — typecheck,
+unit tests, production build — but its `e2e-smoke` job never ran. GitHub returned:
+
+> *The job was not started because recent account payments have failed or your spending limit needs
+> to be increased.*
+
+That is an Actions billing state on the account, not a defect in the change, and it is yours to
+resolve in **Billing & plans** — nobody else can. Until it is, no further CI e2e evidence can be
+produced for this repository.
+
+What stands in for it on that one commit: the immediately preceding commit ran the **full** e2e
+suite green across all four device profiles, and the spacing change itself was verified locally
+(`text-legibility` 11, `no-barren-screens`, `text-fit-sweep` — 21 green) and then confirmed on the
+live deploy by eye. That is weaker evidence than CI and is recorded here as such.
 
 ## Owner — the two gaps no test can close
 
