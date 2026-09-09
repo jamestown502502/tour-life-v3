@@ -1,146 +1,99 @@
-# Tour Life v3 — Final Polish Insights & Close-Out (Pre-Public)
+# Tour Life: International Dates — Pre-Public Close-Out (v2)
 
-**Date:** 2026-09-08 · **Live:** https://tour-life-v3.vercel.app
-**Grounded in:** the before/after doc + 4 final research rounds (launch checklists, playtesting best practices, real-device testing, accessibility standards — cited inline).
-
----
-
-## Part 1 — Where the game is (the honest launch position)
-
-**Genuinely near-done:** 162 unit tests, full 4-device CI matrix green, return leg with social feed, 6 minigame types, three-beat scenes with a working back button, relationship arcs, van beats, tour promises, regenerated backdrops, a written launch kit. **This is the strongest state the game has been in.**
-
-**The three named remainders, triaged:**
-| Remainder | Verdict |
-|---|---|
-| Arc = 1 gate, not 3 stages | **Ship as-is.** The mechanism exists; more stages is pure content, a post-launch add. Not a blocker. |
-| New minigames in 3 cities, not 4 | **Ship as-is.** Mexico City's original three are a deliberate identity choice. Not a bug. |
-| 3 backdrops not eyeballed | **Close it — 10 minutes.** The identical corrected prompt produced them; a full-size eyeball per city is the one real QA gap left in this list. |
-
-**The real remaining risk is not code — it's the two things no automated test can do:** real-device behavior and fresh eyes. The project's own history proves it: the clock bug hid for weeks because every test entered rhythm seconds after boot; the harness can't reproduce production. The close-out is built around exactly those two gaps.
-
-## Part 2 — Final polish suggestions, per pillar (verify-don't-build)
-
-**Research basis:** Snoop Game + presskit.gg launch checklists (functionality → performance → compatibility, freeze features, final QA before publish); firstlook.gg + r/gamedev playtesting (observe without leading questions, note spontaneous struggles, structured forms, "reward participation and quality, never positivity"); TestMu/qawerk (cover ≥1 device per major manufacturer incl. a mid-range Android); WCAG + Access-Ability 2025 (verify the shipped accessibility set on real hardware; high-contrast, reduced motion, custom difficulty are the 2025 baseline — this game already ships most of it).
-
-**Rule: nothing here is a new feature. Every item is a verification or a 30-minute fix.**
-
-1. **Feature freeze.** The launch kit is written; adding anything new now risks the exact regression cycle this project just escaped. Tag the current commit `release-candidate`. The only code changes allowed before public: the 3-backdrop eyeball fix (if it reveals an issue) and blocker bugs from real-device/fresh-eyes testing.
-2. **First impression / FTUE (verify):** fresh profile → auto How-to-Play → New Run → band creator → night-before → route promise. Does the first 60 seconds read as intentional? Screenshot each step; if any step stalls or confuses, fix the copy/flow — this is what a new player's "should I stay?" decision is made on.
-3. **VN (verify):** the back button is now reachable (chains ≥2 post-choice) — verify it appears in real play and restores the prior line without re-applying effects; backlog reachable; autoAdvance/skipReadText defaults feel right.
-4. **Minigames (verify per type):** all 6 types — each intro line teaches the mechanic ("am I doing this right?" test). The 3 new types (sequence/sustain/pressure) have never been felt on a real device — that's the feel check.
-5. **Rhythm (verify on device):** latency calibration + tap-sound toggle exist — on a real phone, calibrate once and play a song; the audio-vs-touch offset is exactly what calibration fixes and only a real device exposes it. Per-difficulty lead feel.
-6. **Transitions (verify):** post-revert plain 250ms fade everywhere, no themed remnants; smooth on a mid phone (the starved-clock lesson — simple fade degrades gracefully).
-7. **Accessibility (verify the shipped set live):** reducedMotion, noFlash, autoplay, wiggle room, easy scoring, visual assist, metronome, split volumes, contrast (the text-fit gate + contrast audit are in CI — verify the live feel). 2025 baseline is high-contrast + reduced-motion + custom difficulty; this game meets or exceeds it.
-8. **The launch link itself (verify):** OG tags/title/description/image live and previewable in iMessage/X/WhatsApp; PWA installs on a real phone; offline works after one load; scrapbook PNG export works on a real device.
-
-## Part 3 — How to test it (the two gaps + the gate)
-
-**Gap 1 — real devices (the single most missing verification):** a structured on-device pass on the owner's iPhone + one Android (ideally mid-range): full run (band creator → route → promise → 4 cities + return leg → scrapbook → epilogue), all 6 minigames, one calibrated rhythm song, PWA install + offline, share-preview, scrapbook export, zero console errors. Documented as a checklist the owner can actually run.
-
-**Gap 2 — fresh eyes:** 3–5 people, blind (no hints, no leading questions), structured form:
-- First impression (first 60 seconds): confusing / clear / delightful?
-- Where did you get stuck or want a "back" that wasn't there?
-- What did you want to do that you couldn't?
-- Did the rhythm feel fair? Which minigame confused you at first?
-- Would you play again / share it? (Yes/Maybe/No + why)
-Rule per the research: **reward participation, never positivity.** Triage: fix blockers before public; log non-blockers for post-launch. This is what catches "missing things" that no test can.
-
-**The release gate:** a checklist doc that must be fully green before the URL is shared publicly: CI green on the release candidate · 3 backdrops eyeballed · real-device pass done · fresh-eyes feedback triaged (blockers fixed) · launch link verified · feature freeze in effect.
+**Date:** 2026-09-09 · **Live:** https://tour-life-v3.vercel.app
+**This version leads with two new workstreams** (no barren screens; two songs per city), then keeps the full pre-public close-out from v1 (polish insights, real-device + fresh-eyes protocols, release gate).
 
 ---
 
-# RESUME PROMPT — paste this to Claude Code for the final close-out
+## Part A — No Barren Screens: background audit + Gemini backdrops for every scene
 
-```text
-FINAL CLOSE-OUT before public release of "Tour Life: International Dates" (tour-life-v3).
-The game is feature-complete: 162 unit tests, full CI matrix green, return leg + social feed,
-6 minigame types, launch kit written (BAIS_TourLife_BeforeAfter_PublicRelease_20260908.md).
-This pass: feature freeze, close the 3-backdrop eyeball gap, write the real-device + fresh-eyes
-test protocols, verify the per-pillar checks, verify the launch link, and produce the release
-gate verdict. NO new features, NO new systems, NO new content beyond fixing a backdrop if the
-eyeball finds an issue. Keep it lean and evidence-first.
+**The problem:** some scenes render without a real background — the intro, the epilogue, and others — leaving them bare on the plain navy. Research backs this as a real quality gap: visual-novel art direction is *cohesion* (Ari Made's "100 VNs" review: UI, character art and backgrounds must read as one world), and a barren screen breaks that contract exactly at the moments players linger on (intro, epilogue, Results). Every screen should feel like part of the same painted world.
 
-STEP 1 — FREEZE + CLOSE THE REMAINDERS:
- 1a. Tag the current HEAD release-candidate (git tag + push). From this commit on, the only
-     allowed changes before public are: the backdrop eyeball fix and blocker bugs from the
-     real-device/fresh-eyes passes.
- 1b. Eyeball the 3 unexamined rhythm backdrops (lisbon, mexico_city, berlin) at full size in a
-     browser — one continuous room per city, no hard seams (Tokyo was already confirmed). If
-     any shows seams/zones, regenerate via the corrected prompt (the one that never mentions
-     thirds/bands/top/bottom) and re-measure seam positions. Screenshot all 4 as evidence.
- 1c. Confirm the themed-transition revert is complete: grep for transition:'card'/'lights'/
-     'drive' / buildThemedOverlay / TransitionType across src/ — zero remnants (the plain
-     250ms fade is the only transition).
- DONE-WHEN: release-candidate tag pushed; 4 backdrops verified with screenshots; no themed
- remnants.
+### A1 — Audit every scene (ground truth first)
 
-STEP 2 — REAL-DEVICE TEST PROTOCOL (the #1 missing verification):
- 2a. Write docs/REAL_DEVICE_TESTING.md — a structured checklist the owner runs on their
-     iPhone + one Android (mid-range if available): fresh load (ALL tabs closed — the old
-     service worker can serve the stale manifest once), full run (band creator -> route ->
-     promise -> 4 cities incl. return leg with social feed -> scrapbook -> epilogue), all 6
-     minigame types played to completion, one rhythm song AFTER using the latency calibration
-     (confirm the offset fixes feel), PWA install (add-to-home-screen), offline reload after
-     one load, share-preview of the URL in iMessage/X/WhatsApp, scrapbook PNG export, zero
-     console errors (how to open the console on each device). Keep it to ~2 pages, copy-paste
-     usable, with a PASS/FAIL column per item.
- 2b. Add a "report back" section: the owner pastes the PASS/FAIL list + any console errors.
- DONE-WHEN: the doc exists and is committed; you cannot run it yourself (no hardware) — it is
- the owner's checklist, stated honestly as such.
+Walk every scene class in `src/ui/` and record whether it has a full painted background today:
 
-STEP 3 — FRESH-EYES PLAYTEST PROTOCOL:
- 3a. Write docs/FRESH_EYES_PLAYTEST.md — the protocol + feedback form for 3-5 blind testers:
-     the exact 5 questions (first 60s impression; where did you get stuck / want a back;
-     what did you want to do that you couldn't; did the rhythm feel fair / which minigame
-     confused you first; would you play again or share it — yes/maybe/no + why). NO hints, NO
-     leading questions, observe-don't-teach. Reward participation, never positivity.
- 3b. Include a triage rule: blockers (game can't be played/enjoyed) get fixed before public;
-     non-blockers logged for post-launch in a PLAYTEST_TRIAGE.md.
- DONE-WHEN: the protocol + form are committed and shareable as-is.
+- **Known to have one:** Title (`bg_title`), City (`bg_city_<id>`), Hub (`bg_hub`), Rhythm (`bg_rhythm_<id>`), MiniGame (`bg_mini_<id>`).
+- **Suspect bare (verify each with a screenshot):** BandCreator (night-before scene), RoutePlan (route screen), Results (grade plate), Scrapbook + Epilogue ("Two Months Later" page), HowToPlay, Settings overlay, Saves/Gallery panels, the van-travel beats, the return-leg social feed, and the opening scene.
+- **Output:** a table — scene / has-background? / what it shows today / what it needs.
 
-STEP 4 — PER-PILLAR VERIFICATION (each = screenshot + one-line result, no building):
- 4a. FTUE: fresh profile -> auto How-to-Play -> New Run -> band creator -> night-before ->
-     route promise; screenshot each step; any stall/confusion = fix the copy/flow (small
-     change only).
- 4b. VN: back button appears in real play (chains >=2 post-choice) and restores the prior line
-     without re-applying effects; backlog reachable; autoAdvance/skipReadText sane.
- 4c. Minigames: each of the 6 types — intro line teaches the mechanic; play each to
-     completion; screenshot each.
- 4d. Rhythm: latency calibration path + tap-sound toggle functional; a real song plays >=20s
-     with notes judged; grade from real hits (not auto-miss).
- 4e. Transitions: plain fade at every seam, no dead frames, smooth on an emulated mid phone.
- 4f. Accessibility: reducedMotion, noFlash, autoplay, wiggle room, easy scoring, visual
-     assist, metronome, split volumes — each toggles and visibly does its thing; contrast
-     (the text-fit gate + contrast audit are in CI — spot-check live).
- DONE-WHEN: per-item evidence (screenshot + result) in the final report; only the small fixes
- listed above allowed.
+### A2 — Generate what's missing (the rule: no screen is barren)
 
-STEP 5 — LAUNCH LINK VERIFICATION:
- 5a. Live URL: curl 200 + title "Tour Life: International Dates"; OG tags (og:title,
-     og:description, og:image) present and the image 200s; theme-color; apple-touch-icon;
-     manifest.webmanifest 200; sw.js serves the current CACHE_NAME.
- 5b. Fresh-profile full run on the live URL (devtools clean console): boot -> onboarding ->
-     first city -> minigame -> rhythm -> return leg social feed -> scrapbook export (PNG
-     downloads). Screenshot the scrapbook export.
- DONE-WHEN: the link previews correctly and a fresh-profile run is console-clean.
+- **Rule:** every full-screen scene renders a painted Gemini background. Overlay scenes and panels (Settings, Saves, modals) may sit over a dimmed version of the underlying scene's background — that's the industry standard for overlays; only genuinely standalone screens need their own asset.
+- **Generate via the established pipeline** (the "new correct way" — HANDOFF §11.1): `generate_image.py --resolution 2K` with the style block from `docs/asset-probes/lisbon_bg_probe.png` (soft gouache, cozy, city palette, portrait 9:16, no text) + a per-scene description; then `scripts/process-bg.sh` (6% inset crop, 9:16 normalize, WebP q82); then add `{key, file}` to `public/assets/manifest.json`; load through `BootScene`. **Code-drawn fallback stays** — a missing file degrades, never crashes (the resilience rule).
+- **Backdrops to generate** (final list from the A1 audit; expect roughly): intro/night-before (bus dusk interior), route/promise (map room with a corkboard), Results (backstage/curtain), epilogue ("Two Months Later" — a quiet home window, rain, warm light), plus any bare screen the audit finds.
+- Wire each into its scene with `addCoverBackground` + `applyVignette`; verify text legibility over the new art (scrim where needed).
 
-STEP 6 — RELEASE GATE + VERDICT:
- 6a. Write RELEASE_GATE.md: the checklist that must be fully green before the URL is shared
-     publicly (CI green on release-candidate; 4 backdrops verified; REAL_DEVICE_TESTING done;
-     FRESH_EYES triage done with blockers fixed; launch link verified; feature freeze in
-     effect; the honest deferred list: arc stages, 4th-city minigames, Part 3 reality layer,
-     5th+ city — each with why).
- 6b. Push the release-candidate + docs; confirm CI green on the full matrix; confirm the live
-     URL is serving the release-candidate commit.
- 6c. Final verdict in one line: "READY TO SHARE: yes/no" with the URL and the gate checklist
-     status.
+### A3 — Verify
 
-GUARDRAILS: NO new features/systems/content (except backdrop fixes + the small FTUE copy
-fixes); no Part 3 reality layer; no audio changes; accessibility + no-fail intact; painted-
-world/code-drawn-UI rule; the themed transitions stay OFF. Evidence-first: every claim needs
-a screenshot, console log, or CI link; anything you cannot verify (real devices, fresh eyes)
-goes on the owner's checklist, never in the "verified" column.
+- Screenshot every scene at 390×844 and desktop; a "barren screen" check: no scene shows bare navy behind its content.
+- Fresh-load console: zero missing-texture warnings (BootScene already lists MISSING textures loudly).
+- **Done when:** the audit table shows every scene with a background or a deliberate dimmed-overlay treatment; screenshots committed to `docs/polish-before-after/`.
 
-FINISH with: release-candidate tag + CI result, 4-backdrop evidence, both protocol docs,
-per-pillar verification table, launch-link proof, RELEASE_GATE.md, and the one-line verdict.
-```
+---
+
+## Part B — Two Songs per City: Gemini tracks, first-visit vs return-leg variety
+
+**The problem:** the game plays essentially the same song over and over — every city has one song, so a full run hears the same 4 tracks, and the return leg plays the same song as the first night. Research backs the fix: r/rhythmgames ("DO NOT repeat the same songs… add variety in your gameplay") treats setlist variety as genre-core; Indie Games Clinic's "Balancing Repetition and Variation" warns that habituation — the "same song for breakfast, lunch, and dinner" effect — is exactly what makes repetition feel stale, and to be generous with variety within a coherent world. This also upgrades the return leg (already built): the second night in a city now plays a *different song* — the town remembers you, and your setlist changes too.
+
+### B1 — Two songs per city (design)
+
+- Each city gets a **second song** — a distinct `content/songs/<city>_<n>.json` with its own bpm, chord progression, waveform, and chart (via a new `SongConfig` entry in `chartGen.ts`, matching the city's tone but clearly different in tempo/energy: e.g. Lisbon's second song a faster, fuller band cut; Tokyo's second a slower, sparse one; Mexico City's second a different groove; Berlin's second a colder ambient piece).
+- **Pick logic — guaranteed variety per run:** each city's JSON gains `songs: [songA, songB]` (additive, validated). First visit plays a song selected by the run seed (so different runs may open a city with a different song); the **return leg always plays the OTHER song** — the second night is never the same song as the first night of that city. Fallback: if a song's audio file is missing, fall back to the other song, then to procedural ambience — never crash.
+- Surface the choice everywhere it matters: RoutePlan ("tonight: <song>"), Results (song name on the grade plate), Scrapbook setlist (which songs actually played, in order), and the epilogue (the return-night song referenced).
+
+### B2 — Generate the tracks (Gemini/Lyria, the verified pipeline)
+
+- `generate_music.mjs --model pro` (pro = up to 184s with structure; these songs are 55–70s, so `clip`'s 30s is too short). Per-city prompt: genre/energy/chord feel matching the city's tint and the first song's identity, so the pair reads as the same band's two sides. Self-host into `public/audio/` (the title theme already lives there — same pattern).
+- **Key gotcha (documented):** the API key lives in the Windows *user* env, not the shell — load via `KEY=$(powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable('GEMINI_API_KEY','User')")` and pass `--api-key "$KEY"`; native Windows paths for native tools.
+
+### B3 — Wire into the rhythm engine (carefully — this touches the game's most-bugged system)
+
+- `SongDef` gains an optional `audioFile?: string` (additive schema). 
+- **Chart must match the track:** the new `SongConfig` bpm/bar count must produce a chart whose duration lands in the 55–70s window the tests enforce, matching the generated track's actual length (generate the track first, then set the chart config to its tempo/duration — mind the documented tempo-vs-bar-count trap).
+- **RhythmScene:** when `audioFile` is present, load the audio (BootScene), schedule it to start precisely at `startTime` (which must keep the fixed `this.game.loop.time` clock read — the recent Clock fix must not regress), and use it as the backing track instead of procedural ambience; **procedural ambience stays as the fallback** when the file is missing. Latency calibration's `audioOffsetMs` applies to hit times regardless; the tap-sound toggle still works; the all-miss no-fail run still reaches Results.
+- **Done when:** every city has 2 songs; the return leg plays a different song than the first visit (proven by a test); a full run has 8 distinct song plays (4 first visits + 4 return legs, no repeat within a city); charts match track durations; fallback verified; all tests green.
+
+### B4 — Variety regression tests
+
+- `src/tests/songVariety.test.ts`: every city has ≥2 songs; first-visit vs return-leg picks differ; the seed affects which song opens a city; the fallback chain works (audio missing → other song → procedural).
+- e2e: a full run plays ≥2 distinct songs per city; the return leg's rhythm scene uses the other song.
+- **Done when:** tests green — the "same song over and over" complaint is structurally impossible.
+
+---
+
+## Part C — The Pre-Public Close-Out (kept from v1, freeze adjusted)
+
+### C1 — Feature freeze (adjusted)
+
+After Parts A and B ship, tag the current HEAD `release-candidate`. From then on, the only allowed changes before public: fixes to the new backgrounds/songs the audit or tests reveal, and blocker bugs from the real-device/fresh-eyes passes. **Parts A and B are the last content additions before public.**
+
+### C2 — Remaining verifications (from v1, unchanged)
+
+- **Eyeball the 3 unexamined rhythm backdrops** (lisbon, mexico_city, berlin) at full size — one continuous room per city, no hard seams (Tokyo confirmed). Regenerate via the corrected prompt if any show seams; screenshot all 4.
+- **Themed-transition revert complete:** grep for `transition: 'card'/'lights'/'drive'`, `buildThemedOverlay`, `TransitionType` across `src/` — zero remnants (plain 250ms fade only).
+- **Per-pillar verification** (screenshot + one-line result each): FTUE (first 60s reads intentional); VN (back button reachable in real play, restores prior line without re-applying effects; backlog; auto/skip sane); minigames (all 6 types, intro line teaches the mechanic); rhythm (latency calibration + tap-sound toggle functional; a real song ≥20s with real hits); transitions (plain fade at every seam, smooth on an emulated mid phone); accessibility (all toggles visibly work; contrast spot-check).
+- **Launch link:** curl 200 + title; OG tags present and og:image 200s; theme-color; apple-touch-icon; manifest.webmanifest 200; sw.js serving the current CACHE_NAME; fresh-profile run console-clean; scrapbook PNG export works.
+
+### C3 — The two gaps no automated test can close (from v1)
+
+- **`docs/REAL_DEVICE_TESTING.md`** — the owner's structured pass on their iPhone + one Android (mid-range if possible): full run, all 6 minigames, rhythm AFTER latency calibration, PWA install, offline reload, share-preview, scrapbook export, console check. PASS/FAIL columns, ~2 pages.
+- **`docs/FRESH_EYES_PLAYTEST.md`** — 3–5 blind testers, 5 structured questions (first-60s impression; stuck / wanted a back; wanted-to-do-but-couldn't; rhythm fairness + which minigame confused you; would-you-play-again/share — yes/maybe/no + why). **Reward participation, never positivity.** Triage blockers-to-fix vs non-blockers-to-log (`PLAYTEST_TRIAGE.md`).
+
+### C4 — Release gate (`RELEASE_GATE.md`)
+
+Must be fully green before the URL is shared publicly: CI green on release-candidate · A1–A3 barren-screen audit complete (no bare scenes) · B1–B4 two-songs-per-city complete (return leg plays a different song) · backdrops eyeballed · REAL_DEVICE_TESTING done · FRESH_EYES triage done, blockers fixed · launch link verified · freeze in effect · the honest deferred list (arc stages, 4th-city minigame types, Part 3 reality layer, 5th+ city — each with why). Final verdict, one line: **"READY TO SHARE: yes/no"** + URL.
+
+---
+
+## Part D — Research Grounding (new items; prior citations unchanged)
+
+- **r/rhythmgames** ("How do people even process what's going on…"): *"DO NOT repeat the same songs, add variety in your gameplay"* — setlist variety is genre-core; the same chart on repeat is the fastest way to lose a rhythm player.
+- **Indie Games Clinic / cobble.games** ("Balancing Repetition and Variation in Game Design"): repetition builds the confidence loop; variety sustains interest and prevents stagnation — *"be generous with variety"* within a coherent world. Habituation is precisely the player-reported boredom.
+- **Ari Made ("I played over 100 visual novels…")**: art direction = cohesion across UI, character art, and backgrounds; a barren screen breaks that. Every screen should read as the same world.
+
+---
+
+## Guardrails
+
+No new systems (song variety = additive schema + content + one RhythmScene audio path; backgrounds = assets + manifest), no Part 3 reality layer, no themed transitions, accessibility + no-fail intact (**re-verify the all-miss run after ANY RhythmScene change — the song/audio change touches RhythmScene**), painted-world/code-drawn-UI rule, constants in `src/const.ts`, scene array/Map/Set fields reset in `init()`, DialogueBox scenes un-duck in SHUTDOWN, no `fillGradientStyle` in cached textures, dialogue nodes ≤40 words, additive save schema only, evidence-first (every claim: screenshot/console/test). **New CACHE_NAME consideration:** new assets ship under the same manifest path — the SW's stale-while-revalidate already refreshes non-hashed files, so no SW change needed, but confirm the live load picks up the new manifest (fresh load, all tabs closed).
