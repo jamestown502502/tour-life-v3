@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
-import { PALETTE_HEX, W } from '../const';
-import { ensureDialoguePanel, ensureScrapbookCard } from '../art/sprites';
-import { spawnConfetti } from '../art/effects';
+import { addCoverBackground } from '../art/background';
+import { PALETTE, PALETTE_HEX, W } from '../const';
+import { ensureDialoguePanel, ensureScrapbookCard, ensureSceneBackdrop } from '../art/sprites';
+import { spawnConfetti, applyVignette } from '../art/effects';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
@@ -32,7 +33,11 @@ export class ScrapbookScene extends Phaser.Scene {
 
   create(): void {
     fadeIn(this);
-    this.add.rectangle(0, 0, W, this.cameras.main.height, 0x2b3a55, 1).setOrigin(0, 0);
+    // Painted backdrop (pre-public "no barren screens" pass) — the scrapbook and its "Two Months
+    // Later" epilogue are the screens a player sits with longest, and they were bare navy. Falls
+    // back to a code-drawn gradient if the asset is missing.
+    const bgKey = ensureSceneBackdrop(this, 'scrapbook', PALETTE.plum);
+    applyVignette(addCoverBackground(this, bgKey));
     spawnConfetti(this);
     addHelpButton(this, 'This is your Tour Scrapbook — a record of the run you just played. Start a new tour any time.');
 

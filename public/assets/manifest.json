@@ -64,6 +64,26 @@
     "file": "img/bg_rhythm_tokyo.webp"
   },
   {
+    "key": "bg_scene_bandcreator",
+    "file": "img/bg_scene_bandcreator.webp"
+  },
+  {
+    "key": "bg_scene_opening",
+    "file": "img/bg_scene_opening.webp"
+  },
+  {
+    "key": "bg_scene_routeplan",
+    "file": "img/bg_scene_routeplan.webp"
+  },
+  {
+    "key": "bg_scene_scrapbook",
+    "file": "img/bg_scene_scrapbook.webp"
+  },
+  {
+    "key": "bg_scene_van",
+    "file": "img/bg_scene_van.webp"
+  },
+  {
     "key": "bg_title",
     "file": "img/bg_title.webp"
   },

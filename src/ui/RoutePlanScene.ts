@@ -1,4 +1,7 @@
 import Phaser from 'phaser';
+import { ensureSceneBackdrop } from '../art/sprites';
+import { addCoverBackground } from '../art/background';
+import { applyVignette } from '../art/effects';
 import { PALETTE_HEX, W, PALETTE } from '../const';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
@@ -29,7 +32,10 @@ export class RoutePlanScene extends Phaser.Scene {
 
   create(): void {
     fadeIn(this);
-    this.add.rectangle(0, 0, W, this.cameras.main.height, 0x2b3a55, 1).setOrigin(0, 0);
+    // Painted backdrop (pre-public "no barren screens" pass). Falls back to a code-drawn
+    // gradient if the asset is missing — ensureSceneBackdrop keeps that seam.
+    const bgKey = ensureSceneBackdrop(this, 'routeplan', PALETTE.terracotta);
+    applyVignette(addCoverBackground(this, bgKey));
 
     if (!State.hasFlag(ONBOARD_FLAG)) {
       const box = new DialogueBox(this);

@@ -5,6 +5,9 @@
 // skipping it is missing a small moment. That is also why HubScene can route through it safely
 // without touching the resume matrix.
 import Phaser from 'phaser';
+import { ensureSceneBackdrop } from '../art/sprites';
+import { addCoverBackground } from '../art/background';
+import { applyVignette } from '../art/effects';
 import { PALETTE, W } from '../const';
 import { DialogueBox } from './DialogueBox';
 import { goTo, fadeIn } from './transition';
@@ -42,7 +45,10 @@ export class VanScene extends Phaser.Scene {
 
   create(): void {
     fadeIn(this);
-    this.add.rectangle(0, 0, W, this.cameras.main.height, PALETTE.night, 1).setOrigin(0, 0);
+    // Painted backdrop (pre-public "no barren screens" pass). Falls back to a code-drawn
+    // gradient if the asset is missing — ensureSceneBackdrop keeps that seam.
+    const bgKey = ensureSceneBackdrop(this, 'van', PALETTE.sky);
+    applyVignette(addCoverBackground(this, bgKey));
     const city = getCity(this.cityId);
     this.add.text(W / 2, 70, `On the way to ${city.name}`, textStyle('h1')).setOrigin(0.5);
 

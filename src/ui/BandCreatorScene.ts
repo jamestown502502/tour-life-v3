@@ -1,4 +1,7 @@
 import Phaser from 'phaser';
+import { ensureSceneBackdrop } from '../art/sprites';
+import { addCoverBackground } from '../art/background';
+import { applyVignette } from '../art/effects';
 import { PALETTE, W } from '../const';
 import { createButton, setButtonSelected } from './Button';
 import { goTo, fadeIn } from './transition';
@@ -22,7 +25,10 @@ export class BandCreatorScene extends Phaser.Scene {
 
   create(): void {
     fadeIn(this);
-    this.add.rectangle(0, 0, W, this.cameras.main.height, 0x2b3a55, 1).setOrigin(0, 0);
+    // Painted backdrop (pre-public "no barren screens" pass). Falls back to a code-drawn
+    // gradient if the asset is missing — ensureSceneBackdrop keeps that seam.
+    const bgKey = ensureSceneBackdrop(this, 'bandcreator', PALETTE.teal);
+    applyVignette(addCoverBackground(this, bgKey));
     this.add.text(W / 2, 70, 'Name your band', textStyle('h1')).setOrigin(0.5);
     // Pre-Hub setup screens (this one and RoutePlan) had no way out at all before this — only
     // forward. "Quit to Title" from here is the actual "back out of setup" path.

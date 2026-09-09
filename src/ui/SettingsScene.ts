@@ -41,7 +41,12 @@ export class SettingsScene extends Phaser.Scene {
 
   create(): void {
     markSettingsOpened();
-    this.add.rectangle(0, 0, W, this.cameras.main.height, 0x2b3a55, 0.98).setOrigin(0, 0);
+    // 0.82, not the old 0.98. Settings is an OVERLAY (scene.launch keeps the scene beneath
+    // rendering — pause stops update, not render), so a near-opaque fill threw away the painted
+    // world behind it and made the panel read as one more barren navy screen. Dimming instead of
+    // hiding is the standard overlay treatment, and it keeps the game visible behind its own
+    // menu. Still dark enough for the cream-on-navy contrast the audit measured.
+    this.add.rectangle(0, 0, W, this.cameras.main.height, 0x2b3a55, 0.82).setOrigin(0, 0);
     this.add.text(W / 2, 50, 'Settings', textStyle('h1')).setOrigin(0.5);
     this.add.text(W / 2, 90, 'Rhythm score never gates the story. No-fail mode is always on.',
       textStyle('small', { fontSize: '13px', wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);

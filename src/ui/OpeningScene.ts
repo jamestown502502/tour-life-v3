@@ -6,6 +6,9 @@
 // what grounds it), with a "Skip intro" button appearing after the first beat so a returning
 // player isn't forced through all 4 again just to reach the why-tour line and RoutePlan.
 import Phaser from 'phaser';
+import { ensureSceneBackdrop } from '../art/sprites';
+import { addCoverBackground } from '../art/background';
+import { applyVignette } from '../art/effects';
 import { PALETTE, W } from '../const';
 import { DialogueBox } from './DialogueBox';
 import { goTo, fadeIn } from './transition';
@@ -23,7 +26,10 @@ export class OpeningScene extends Phaser.Scene {
 
   create(): void {
     fadeIn(this);
-    this.add.rectangle(0, 0, W, this.cameras.main.height, PALETTE.night, 1).setOrigin(0, 0);
+    // Painted backdrop (pre-public "no barren screens" pass). Falls back to a code-drawn
+    // gradient if the asset is missing — ensureSceneBackdrop keeps that seam.
+    const bgKey = ensureSceneBackdrop(this, 'opening', PALETTE.plum);
+    applyVignette(addCoverBackground(this, bgKey));
     this.add.text(W / 2, 70, 'The night before', textStyle('h1')).setOrigin(0.5);
     this.dialogueBox = new DialogueBox(this);
     this.beatsShown = 0;

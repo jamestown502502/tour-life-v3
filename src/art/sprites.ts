@@ -601,3 +601,20 @@ export function ensurePixelTexture(scene: Phaser.Scene, key: string, color: numb
   }, key);
   return key;
 }
+
+/** Backdrop for a standalone non-city scene (opening, band creation, route plan, scrapbook, van).
+ *
+ *  Pre-public "no barren screens" pass: these five scenes drew a flat navy rectangle, which read as
+ *  unfinished next to the painted cities — and they are exactly the screens a player lingers on
+ *  (the intro and the epilogue most of all). Each now has a real painted asset under bg_scene_<id>.
+ *
+ *  Same seam as every other painted asset: if the real file registered, withGraphics early-returns
+ *  and the painting wins; if it is missing, the code-drawn gradient below draws instead and nothing
+ *  crashes. The tint keeps each fallback distinguishable rather than four identical navy fields. */
+export function ensureSceneBackdrop(scene: Phaser.Scene, id: string, tint: number): string {
+  const key = `bg_scene_${id}`;
+  withGraphics(scene, W, H, (g) => {
+    fillVerticalGradient(g, 0, 0, W, H, PALETTE.night, tint, 1, 20);
+  }, key);
+  return key;
+}

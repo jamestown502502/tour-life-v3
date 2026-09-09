@@ -48,7 +48,9 @@ export class HowToPlayScene extends Phaser.Scene {
 
   create(): void {
     markHowToPlaySeen();
-    this.add.rectangle(0, 0, W, this.cameras.main.height, PALETTE.night, 0.85).setOrigin(0, 0);
+    // Same overlay reasoning as SettingsScene: dim the scene behind rather than hide it, so the
+    // how-to-play card sits over the painted Title art instead of flat navy.
+    this.add.rectangle(0, 0, W, this.cameras.main.height, PALETTE.night, 0.78).setOrigin(0, 0);
 
     const shadowKey = ensureRoundedRect(this, CARD_W, CARD_H, 26);
     this.add.image(CARD_X + 5, CARD_Y + 10, shadowKey).setOrigin(0, 0).setTint(PALETTE.plum).setAlpha(0.25);
