@@ -18,7 +18,7 @@ automated and are the two genuine gaps in this project's verification.
 
 | # | Gate | Status | Evidence |
 |---|---|---|---|
-| 1 | Unit tests green | ✅ | **174/174** (was 128 at the start of this pass); `tsc --noEmit` clean |
+| 1 | Unit tests green | ✅ | **194/194** (was 128 at the start of this pass); `tsc --noEmit` clean |
 | 2 | Full e2e suite green, all 4 device profiles | ✅ | CI `34378844886` (regression pass, 1h37m) and `34381965080` (first-run fix, 1h58m) both **green** across all four profiles |
 | 3 | A1 background audit complete | ✅ | Table in `BAIS_TourLife_CloseOutPlan_2026-09-09.md`; corrected the brief twice |
 | 4 | No barren screens | ✅ | All 10 full-screen scenes render their painted texture — `e2e/no-barren-screens.spec.ts` |
@@ -26,8 +26,9 @@ automated and are the two genuine gaps in this project's verification.
 | 6 | Backdrops seam-free — **measured** | ✅ | New scenes 4.2–10.2; rhythm 3.4–9.5; broken original was **53.2** |
 | 7 | Rhythm backdrops eyeballed (close-out C2) | ✅ | All four measured; Tokyo also inspected at full size |
 | 8 | Two songs per city | ✅ | 8 songs, 4 cities × 2 — `songVariety.test.ts` |
+| 8b | **Every** song has a real recorded track | ✅ | Was 4 of 8 — the four originals fell back to the oscillator bed. Now 8 of 8, whole soundtrack 6.6MB → **6.47MB** (192→96 kbps) — `soundtrack.test.ts` |
 | 9 | Return leg never replays the first night | ✅ | Live: Hallenbad 71 notes → Kreuzberg Static 84 notes |
-| 10 | Backing tracks with procedural fallback | ✅ | 4 tracks cached; `Item 4c` cold-boot audio guard still passes |
+| 10 | Backing tracks with procedural fallback | ✅ | All 8 fetched on a live cold load, zero failed requests; fallback still asserted per song (progression + tempo + waveform) |
 | 11 | Themed transitions fully reverted | ✅ | grep for `transition:'card'/'lights'/'drive'`, `buildThemedOverlay`, `TransitionType` → **0 hits**; `transition.ts` is 50 lines |
 | 12 | No-fail intact after RhythmScene changes | ✅ | All-miss run still reaches Results — `verification.spec.ts` 12/12 |
 | 13 | Launch link | ✅ | root **200**, og-image **200**, manifest **200**, `sw.js` serving `tourlife-v3` |
@@ -35,26 +36,33 @@ automated and are the two genuine gaps in this project's verification.
 | 18 | Boots on Microsoft Edge | ✅ | Built `dist` driven in Edge at 412x915: Title reached, zero console errors, zero failed requests. Was an indefinite blank screen. |
 | 19 | Loading screen while assets load | ✅ | `BootScene.buildLoadingScreen()` — title, progress bar, percentage. Boot payload 15.4MB → 9.6MB (backing tracks deferred to a post-Title loader pass) |
 | 20 | Asset manifest never served stale | ✅ | `manifest.json` network-first in `public/sw.js`; `CACHE_NAME` bumped to `tourlife-v4` to evict every pinned v3 copy |
-| 21 | Every label legible on its real backdrop | ✅ | `e2e/text-legibility.spec.ts` — WCAG contrast measured from actual rendered pixels, 3.0:1 minimum, 11 checks over 8 scenes + 3 minigames |
+| 21 | Every label legible on its real backdrop | ✅ | `e2e/text-legibility.spec.ts` — WCAG contrast from actual rendered pixels, 3.0:1 minimum, **12 checks** over 9 scenes + 3 minigames (Results added after it shipped unreadable) |
 | 22 | All 10 minigames have painted art | ✅ | The three new types were shipped without backdrops; generated, measured seam-free, 1440x2560 |
-| 23 | First-run overlay dims the painted title, not a blank screen | ✅ | `e2e/first-run-title.spec.ts` — backdrop standard deviation, measured below the card. Was **0.00** (flat) on the live deploy |
+| 23 | First-run overlay dims the painted title, not a blank screen | ✅ | `e2e/first-run-title.spec.ts` — backdrop standard deviation, measured below the card. Was **0.00** (flat) on the live deploy; live now **2.49** in Edge and Chrome |
+| 24 | The letter grade is reachable by an ordinary player | ✅ | Autoplay proves the pipeline (ratio **1.0**, top grade). Landing every note as `good` scored 0.60 against a 0.70 floor for B — C was the *ceiling*, not a bad night. Thresholds recalibrated; `rhythm.test.ts` asserts the intent, not the numbers |
+| 25 | A score is explainable, not just a letter | ✅ | Results reports the judgement breakdown — a ratio cannot distinguish "hit everything late" from "missed half the chart", and those need opposite fixes |
+| 26 | No scene inherits the previous screen's music | ✅ | Six scenes set no bed at all (Van, Results, Scrapbook, RoutePlan, BandCreator, Opening); Hub played one fixed default regardless of destination. `src/game/ambience.ts` — seeded, so a replayed seed reproduces the soundtrack |
+| 27 | A replay draws material the player has not seen | ✅ | Draws were seeded per run with no memory *across* runs. Unseen-first now, recorded on display not on draw — `runVariety.test.ts` |
+| 28 | Minigames give real feedback, not a text label | ✅ | `MiniGameScene` imported **none** of the effect helpers `RhythmScene` uses. Ring pulse / spark + hitstop / shake, all reduced-motion safe |
+| 29 | Characters' faces match their lines | ✅ | 108 of 503 nodes author a mood; the fallback was a flat `'happy'`, so the cast smiled through 79% of every conversation. `mood.ts` + `mood.test.ts` |
 
-### One job is blocked on account billing, not on code
+### The Actions billing block, and how it was cleared
 
-The final commit (`5c8c3de`, a 16px label-spacing change) has `build-and-test` green — typecheck,
-unit tests, production build — but its `e2e-smoke` job never ran. GitHub returned:
+Two commits mid-pass could not produce CI e2e evidence: the account had spent 100% of its included
+Actions minutes, because the four-profile matrix costs ~110 minutes per push and a day of work
+exhausted the 2,000-minute monthly allowance. GitHub refused to start the job.
 
-> *The job was not started because recent account payments have failed or your spending limit needs
-> to be increased.*
+**Resolved by making the repository public**, which is the free answer — public repos get unlimited
+standard-runner minutes. No subscription was needed, and a subscription would have been the wrong
+purchase anyway: GitHub Pro adds 1,000 minutes, which at this suite's cost is nine more runs.
 
-That is an Actions billing state on the account, not a defect in the change, and it is yours to
-resolve in **Billing & plans** — nobody else can. Until it is, no further CI e2e evidence can be
-produced for this repository.
+Before recommending it, all 80 commits were scanned: no `.env`, key, credential or `.pem` file ever
+committed, no key-shaped strings anywhere in history, and `.env` already gitignored.
 
-What stands in for it on that one commit: the immediately preceding commit ran the **full** e2e
-suite green across all four device profiles, and the spacing change itself was verified locally
-(`text-legibility` 11, `no-barren-screens`, `text-fit-sweep` — 21 green) and then confirmed on the
-live deploy by eye. That is weaker evidence than CI and is recorded here as such.
+One cost fix remains **unapplied**: cutting the per-push matrix to a single profile (~110 min → ~28)
+with the full four running nightly and on `workflow_dispatch`. It is written but unpushed — the
+OAuth token in use lacks the `workflow` scope required to modify `.github/workflows/`. It matters
+much less now that minutes are free.
 
 ## Owner — the two gaps no test can close
 
@@ -64,7 +72,7 @@ live deploy by eye. That is weaker evidence than CI and is recorded here as such
 | 16 | Fresh-eyes playtest, 3–5 blind testers | ⬜ **owner** | `docs/FRESH_EYES_PLAYTEST.md` |
 | 17 | Blockers from 15–16 fixed | ⬜ | `PLAYTEST_TRIAGE.md` (create when 16 returns) |
 
-**Why these matter more than the fourteen above.** This project has now produced four separate
+**Why these matter more than the twenty-nine above.** This project has now produced four separate
 "reproductions" that turned out to be the ~4fps test harness rather than the game, and its worst
 bug — a song that ended before it began — hid for weeks because every test entered the rhythm scene
 seconds after boot while every real player arrives minutes in. Automated green is necessary and has
@@ -91,6 +99,9 @@ Written down rather than quietly dropped. Each with why.
 | A fifth city | The most expensive way to add length. Second visits already extend a run using existing art. |
 | Themed transitions | Reverted after being the origin or neighbour of every regression for weeks. They return only as an isolated feature with their own real-input tests, if ever. |
 | Only Tokyo's regenerated backdrop eyeballed at full size | The other three were measured for seams (3.4–9.5) and load correctly, but not visually inspected one by one. |
+| Whether "Rough night" means missed notes or imprecise ones | **Open.** Autoplay proves the pipeline works, so the sub-0.30 result reported live is either genuine misses or a device-latency problem. The new judgement breakdown answers it on the next real run rather than by guessing. |
+| Portrait mood inference is a heuristic, not comprehension | Accepted. It replaces a fixed smile, which is a lower bar than being right every time. Authoring moods on the remaining 395 nodes is the better long-term fix. |
+| Per-push CI matrix reduction | Written, unpushed — the token lacks `workflow` scope. Low priority now that public repos have free minutes. |
 
 ---
 
@@ -98,7 +109,7 @@ Written down rather than quietly dropped. Each with why.
 
 **READY TO SHARE: not yet** — https://tour-life-v3.vercel.app
 
-Twenty of twenty-three gates are green with evidence. The three open ones are gates 15–17: the
+Twenty-seven of thirty gates are green with evidence. The three open ones are gates 15–17: the
 real-device pass and the fresh-eyes playtest, plus fixing whatever they surface. Those are yours to
 run, and they are the two checks this project's history says matter most.
 
