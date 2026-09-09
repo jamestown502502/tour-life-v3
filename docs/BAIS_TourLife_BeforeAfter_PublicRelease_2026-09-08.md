@@ -312,6 +312,26 @@ false positive that was the harness rather than the game: `game.scene.start` is 
 which does not stop the calling scene, so Title stayed live underneath and its floating HTML seed
 input covered a Scrapbook button. Three false alarms, one test, before it was trustworthy.
 
+**The first screen a new player ever sees was blank — found after the redeploy**
+Worth writing down in full, because it is the clearest example this project has produced of a test
+that passes for the wrong reason.
+
+`TitleScene` auto-opens How to Play on a first run, and that overlay is supposed to *dim* the
+painted title at 0.78 rather than hide it. It did not. `openHowToPlay()` calls `scene.pause()` in
+the same tick that `create()` starts the camera's fade-in, and a paused Phaser scene still renders
+while it stops updating — so the fade froze at alpha 0 and the title never appeared behind the
+card. A brand-new player opening a shared link saw a bare navy rectangle. Measured on the live
+deploy at standard deviation **0.00** across the backdrop strip: perfectly flat.
+
+The first version of the test that found it **passed**, reporting sd=24.72. It sampled the top of
+the screen — where the overlay's own "How to Play" heading sits. Glyph edges are variation. The
+test was measuring the thing drawn *on top of* the blank backdrop and calling the backdrop
+textured. Moving the sample below the card, to the one strip that is pure backdrop, turned 24.72
+into 0.00 and the pass into a failure.
+
+Fixed by deferring the auto-open until the fade completes, so the title screen is seen first and
+then dimmed under the card — which is what the overlay contract was supposed to mean.
+
 **"New mini-games need clearer instructions and better input."**
 Sequence pads 140 → 150px. Sustain faders 48 → 72px, with a 132px hit area so the grab does not
 demand precision. Hint text is now phase-specific rather than one generic line.

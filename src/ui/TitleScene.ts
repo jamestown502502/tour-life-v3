@@ -136,7 +136,20 @@ export class TitleScene extends Phaser.Scene {
     // Small, non-primary — sits below the seed-entry UI, not competing with New Run/Continue.
     createButton(this, W / 2 - 120, 1060, 240, 44, 'How to Play', () => this.openHowToPlay(), { fillColor: 0x8a6fa3, fontSize: '17px' });
 
-    if (!hasSeenHowToPlay()) this.openHowToPlay();
+    // First run auto-opens How to Play — but NOT in this tick. openHowToPlay() pauses Title, and a
+    // paused scene still renders while it stops updating, so the camera fade-in started at the top
+    // of create() would freeze at alpha 0 forever: a brand-new player's first impression of the
+    // game would be the overlay on a bare navy rectangle, with the painted title never appearing
+    // behind it at all. Measured on the live site at standard deviation 0.00 across the backdrop.
+    //
+    // Waiting on the camera's own FADE_IN_COMPLETE, not a timer. `this.time.delayedCall` advances
+    // on CLAMPED FRAME DELTA rather than wall clock — the same mechanism behind the stale-clock
+    // rhythm bug — so at the test harness's ~4fps a 700ms delay took over five real seconds and
+    // the overlay missed its 8s wait entirely. The event fires exactly when the title has finished
+    // becoming visible, which is the actual condition being waited on, at any frame rate.
+    if (!hasSeenHowToPlay()) {
+      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => this.openHowToPlay());
+    }
 
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
       fadeIn(this);

@@ -37,6 +37,7 @@ automated and are the two genuine gaps in this project's verification.
 | 20 | Asset manifest never served stale | ✅ | `manifest.json` network-first in `public/sw.js`; `CACHE_NAME` bumped to `tourlife-v4` to evict every pinned v3 copy |
 | 21 | Every label legible on its real backdrop | ✅ | `e2e/text-legibility.spec.ts` — WCAG contrast measured from actual rendered pixels, 3.0:1 minimum, 11 checks over 8 scenes + 3 minigames |
 | 22 | All 10 minigames have painted art | ✅ | The three new types were shipped without backdrops; generated, measured seam-free, 1440x2560 |
+| 23 | First-run overlay dims the painted title, not a blank screen | ✅ | `e2e/first-run-title.spec.ts` — backdrop standard deviation, measured below the card. Was **0.00** (flat) on the live deploy |
 
 ## Owner — the two gaps no test can close
 
@@ -80,7 +81,7 @@ Written down rather than quietly dropped. Each with why.
 
 **READY TO SHARE: not yet** — https://tour-life-v3.vercel.app
 
-Nineteen of twenty-two gates are green with evidence. The three open ones are gates 15–17: the
+Twenty of twenty-three gates are green with evidence. The three open ones are gates 15–17: the
 real-device pass and the fresh-eyes playtest, plus fixing whatever they surface. Those are yours to
 run, and they are the two checks this project's history says matter most.
 
