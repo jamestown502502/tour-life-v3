@@ -26,6 +26,14 @@ export function generateRoute(rng: RNG, cityPool: readonly CityDef[]): Generated
   const chosen = rng.shuffle(cityPool).slice(0, targetCount);
 
   const stops: CityStop[] = chosen.map((c) => ({ cityId: c.id, visited: false }));
+  // THE RETURN LEG. One city from the first half of the tour gets booked a second time, near the
+  // end. It costs no new art, song or location content — the second night draws from the same
+  // city but arrives after that town has formed an opinion, which is what makes it different.
+  // Seeded like everything else, so a replayed seed books the same return.
+  if (stops.length >= 3) {
+    const returnTo = stops[rng.int(0, Math.max(1, Math.floor(stops.length / 2)))];
+    stops.push({ cityId: returnTo.cityId, visited: false, revisit: true });
+  }
   const weatherByCity: Record<string, string> = {};
   for (const c of chosen) weatherByCity[c.id] = rng.pick(c.weather);
 
@@ -49,4 +57,20 @@ export function routeArcRole(index: number, routeLength: number): RouteArcRole |
   if (index === 0) return 'opener';
   if (routeLength >= 2 && index === Math.floor(routeLength / 2)) return 'midpoint';
   return null;
+}
+
+/** The route stop the band is standing in RIGHT NOW.
+ *
+ *  Not `route.find(s => s.cityId === id)`. Since the return leg books one city twice, an id
+ *  lookup silently resolves to the FIRST booking — which meant the second night's "visited" flag
+ *  landed on the first night's stop and the tour could never finish. `currentCityIndex` is the
+ *  authoritative pointer (HubScene advances it, TitleScene resumes from it); the id lookup
+ *  survives only as a fallback for a save whose index and city have drifted apart, and it prefers
+ *  an unvisited booking so a resumed return leg still resolves to the right one. */
+export function currentStopFor(
+  route: CityStop[], currentCityIndex: number, cityId: string,
+): CityStop | undefined {
+  const byIndex = route[currentCityIndex];
+  if (byIndex && byIndex.cityId === cityId) return byIndex;
+  return route.find((s) => s.cityId === cityId && !s.visited) ?? route.find((s) => s.cityId === cityId);
 }

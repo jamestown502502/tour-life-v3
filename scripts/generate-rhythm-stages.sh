@@ -9,9 +9,18 @@ export GEMINI_API_KEY=$(powershell -NoProfile -Command "[Environment]::GetEnviro
 GEN="C:/Users/Jbthi/.claude/skills/threejs-image-generator/scripts/generate_image.py"
 OUT="public/assets/img"
 STYLE="Soft gouache painting, cozy storybook illustration style, portrait orientation 9:16."
-# The vertical middle band is where notes fall and get judged — asked explicitly to stay dark/
-# low-contrast there so gameplay text and falling notes stay legible over the art.
-SUFFIX="View from the audience looking at the stage. The vertical middle third of the image is dim and low-contrast, kept deliberately darker and simpler than the top and bottom so text and game elements placed there stay readable. Painterly brushwork, warm inviting palette, no text, no border, no frame."
+# PROMPT REWRITE 2026-09-08. The previous suffix asked for "the vertical middle third ... darker
+# and simpler than the top and bottom", and the model read that as THREE ZONES: every city came
+# back as three stacked bands joined by hard horizontal seams (a sharp stage, a blurry middle, a
+# separate floor-and-crowd shot), which read as three photos taped together. Measured seam
+# positions differed per city, so it could not even be masked generically in code.
+#
+# This version never mentions thirds, bands, top or bottom. It asks for ONE continuous room from
+# ONE viewpoint and gets the dark middle from something the model renders coherently anyway:
+# depth. A room naturally falls into shadow between a lit stage and a foreground crowd.
+# RhythmScene also veils the backdrop at runtime for legibility, so the art no longer has to
+# carry that job alone.
+SUFFIX="A single continuous scene painted from one fixed viewpoint in the audience looking toward the stage. One unbroken room with natural depth: the stage lit at the far end, the air between dim and hazy, the nearest foreground in shadow. Absolutely no panels, no split composition, no horizontal divisions or bands, no collage, no separate framed sections. Painterly brushwork, warm inviting palette, no text, no border, no frame."
 
 gen_bg() {
   local id="$1" scene="$2"

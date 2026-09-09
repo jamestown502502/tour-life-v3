@@ -19,10 +19,10 @@
     { "id": "mira_no_one_knows_us", "bandmate": "mira", "sceneId": "ber_rel_mira" },
     { "id": "theo_the_city_that_never_sleeps", "bandmate": "theo", "sceneId": "ber_rel_theo" },
     { "id": "jun_break_it_on_purpose", "bandmate": "jun", "sceneId": "ber_rel_jun" },
-    { "id": "jun_the_synth_builder", "bandmate": "jun", "sceneId": "ber_rel_jun2" },
+    { "id": "jun_the_synth_builder", "bandmate": "jun", "sceneId": "ber_rel_jun2", "minRelationship": 32 },
     { "id": "rowan_someone_elses_scene", "bandmate": "rowan", "sceneId": "ber_rel_rowan" },
-    { "id": "mira_busking_for_the_sound", "bandmate": "mira", "sceneId": "ber_rel_mira2" },
-    { "id": "rowan_the_alley_jam", "bandmate": "rowan", "sceneId": "ber_rel_rowan2" }
+    { "id": "mira_busking_for_the_sound", "bandmate": "mira", "sceneId": "ber_rel_mira2", "minRelationship": 32 },
+    { "id": "rowan_the_alley_jam", "bandmate": "rowan", "sceneId": "ber_rel_rowan2", "minRelationship": 32 }
   ],
   "collaborator": { "npcName": "Lene", "role": "modular synth artist", "gift": "a patch cable, still coiled the way she left it" },
   "preShowChoices": [
@@ -35,6 +35,36 @@
   "afterShowSceneId": "ber_aftershow",
   "journalSceneId": "ber_journal",
   "minigames": [
+    {
+          "id": "ber_modular_check",
+          "type": "sequence",
+          "title": "Modular Check",
+          "introText": "Jun's rig is four boxes deep and none of them are labelled. \"Just play back what you hear,\" she says, entirely unhelpfully.",
+          "outroText": "Four patterns, no notes written down. Jun looks personally vindicated by the whole exercise.",
+          "outroTextRough": "You lose the thread halfway through and Jun patches around it, unbothered, already onto the next idea.",
+          "reward": {
+                "effects": {
+                      "inspiration": 4
+                },
+                "flags": [
+                      "modular_locked_in"
+                ]
+          },
+          "roughReward": {
+                "effects": {
+                      "inspiration": 1
+                }
+          },
+          "sequenceRounds": [
+                3,
+                4,
+                5,
+                6
+          ],
+          "chordProgression": "Am-Am-E-E",
+          "bpm": 118,
+          "waveform": "square"
+    },
     {
       "id": "ber_synth_check",
       "chordProgression": "Am-Am-E-E",
@@ -73,8 +103,10 @@
         { "id": "help", "label": "Offer to help carry cases", "next": "ber_loc_powerplant_help", "relationshipEffects": { "jun": 4 } }
       ]
     },
-    "ber_loc_powerplant_watch": { "id": "ber_loc_powerplant_watch", "speaker": "narrator", "text": "Their bassist nods at you once, like a password quietly exchanged between strangers who understand exactly what the other one is carrying." },
-    "ber_loc_powerplant_help": { "id": "ber_loc_powerplant_help", "speaker": "jun", "portrait": "happy", "text": "\"This whole place used to run half the city,\" Jun says, hauling a case, grinning like it's somehow Christmas morning." },
+    "ber_loc_powerplant_watch": { "id": "ber_loc_powerplant_watch", "speaker": "narrator", "text": "Their bassist nods at you once, like a password quietly exchanged between strangers who understand exactly what the other one is carrying.", "next": "ber_loc_powerplant_watch_after" },
+    "ber_loc_powerplant_watch_after": { "id": "ber_loc_powerplant_watch_after", "speaker": "narrator", "text": "You never speak to them. You never need to. Two bands, one night, the same nerves in different clothes." },
+    "ber_loc_powerplant_help": { "id": "ber_loc_powerplant_help", "speaker": "jun", "portrait": "happy", "text": "\"This whole place used to run half the city,\" Jun says, hauling a case, grinning like it's somehow Christmas morning.", "next": "ber_loc_powerplant_help_after" },
+    "ber_loc_powerplant_help_after": { "id": "ber_loc_powerplant_help_after", "speaker": "narrator", "text": "The cases are heavier than they look. Jun carries three anyway, talking the entire time about turbines." },
 
     "ber_loc_records": {
       "id": "ber_loc_records", "speaker": "narrator",
@@ -84,8 +116,10 @@
         { "id": "ask", "label": "Ask the owner for a recommendation", "next": "ber_loc_records_ask", "effects": { "funds": -15 }, "relationshipEffects": { "mira": 3 } }
       ]
     },
-    "ber_loc_records_dig": { "id": "ber_loc_records_dig", "speaker": "narrator", "text": "No label, no year, no country listed anywhere on the sleeve. You buy it purely on the strength of the cover art alone." },
-    "ber_loc_records_ask": { "id": "ber_loc_records_ask", "speaker": "mira", "portrait": "happy", "text": "\"He just handed me something with no cover at all,\" Mira says, delighted, already turning the blank sleeve over in her hands." },
+    "ber_loc_records_dig": { "id": "ber_loc_records_dig", "speaker": "narrator", "text": "No label, no year, no country listed anywhere on the sleeve. You buy it purely on the strength of the cover art alone.", "next": "ber_loc_records_dig_after" },
+    "ber_loc_records_dig_after": { "id": "ber_loc_records_dig_after", "speaker": "narrator", "text": "It plays as badly as it looks. Track four is the best thing you have heard in a month." },
+    "ber_loc_records_ask": { "id": "ber_loc_records_ask", "speaker": "mira", "portrait": "happy", "text": "\"He just handed me something with no cover at all,\" Mira says, delighted, already turning the blank sleeve over in her hands.", "next": "ber_loc_records_ask_after" },
+    "ber_loc_records_ask_after": { "id": "ber_loc_records_ask_after", "speaker": "narrator", "text": "She won't let anyone else touch it until she has heard it through once, alone, with the door shut." },
 
     "ber_loc_biergarten": {
       "id": "ber_loc_biergarten", "speaker": "narrator",
@@ -95,8 +129,10 @@
         { "id": "quiet", "label": "Find the quietest corner and just breathe", "next": "ber_loc_biergarten_quiet", "effects": { "energy": 4 } }
       ]
     },
-    "ber_loc_biergarten_toast": { "id": "ber_loc_biergarten_toast", "speaker": "narrator", "text": "Glasses clink around the table. Nobody actually asks what for. That's apparently just how it's done here, no explanation required." },
-    "ber_loc_biergarten_quiet": { "id": "ber_loc_biergarten_quiet", "speaker": "narrator", "text": "For twenty whole minutes, the only job in the world is existing quietly in a plastic chair. You turn out to be surprisingly good at it." },
+    "ber_loc_biergarten_toast": { "id": "ber_loc_biergarten_toast", "speaker": "narrator", "text": "Glasses clink around the table. Nobody actually asks what for. That's apparently just how it's done here, no explanation required.", "next": "ber_loc_biergarten_toast_after" },
+    "ber_loc_biergarten_toast_after": { "id": "ber_loc_biergarten_toast_after", "speaker": "narrator", "text": "The table beside yours toasts too, for reasons of their own. You never find out what. It does not matter." },
+    "ber_loc_biergarten_quiet": { "id": "ber_loc_biergarten_quiet", "speaker": "narrator", "text": "For twenty whole minutes, the only job in the world is existing quietly in a plastic chair. You turn out to be surprisingly good at it.", "next": "ber_loc_biergarten_quiet_after" },
+    "ber_loc_biergarten_quiet_after": { "id": "ber_loc_biergarten_quiet_after", "speaker": "narrator", "text": "Theo falls asleep sitting upright. Nobody wakes him. The chair holds. The evening holds." },
 
     "ber_loc_tower": {
       "id": "ber_loc_tower", "speaker": "narrator",
@@ -106,8 +142,10 @@
         { "id": "rowan", "label": "Rowan's already sitting against the base, not talking", "next": "ber_loc_tower_rowan", "relationshipEffects": { "rowan": 3 } }
       ]
     },
-    "ber_loc_tower_climb": { "id": "ber_loc_tower_climb", "speaker": "narrator", "text": "Four flights up, a locked gate stops you cold. The view from that landing is still, somehow, entirely worth the climb." },
-    "ber_loc_tower_rowan": { "id": "ber_loc_tower_rowan", "speaker": "rowan", "portrait": "worried", "text": "\"I like it better from down here,\" Rowan says. \"Less obvious that you're the one being looked at, for once.\"" },
+    "ber_loc_tower_climb": { "id": "ber_loc_tower_climb", "speaker": "narrator", "text": "Four flights up, a locked gate stops you cold. The view from that landing is still, somehow, entirely worth the climb.", "next": "ber_loc_tower_climb_after" },
+    "ber_loc_tower_climb_after": { "id": "ber_loc_tower_climb_after", "speaker": "narrator", "text": "Coming down takes longer than going up. It always does, and you always forget that going up." },
+    "ber_loc_tower_rowan": { "id": "ber_loc_tower_rowan", "speaker": "rowan", "portrait": "worried", "text": "\"I like it better from down here,\" Rowan says. \"Less obvious that you're the one being looked at, for once.\"", "next": "ber_loc_tower_rowan_after" },
+    "ber_loc_tower_rowan_after": { "id": "ber_loc_tower_rowan_after", "speaker": "narrator", "text": "You sit down beside them. The tower keeps blinking. Neither of you says anything else for a while." },
 
     "ber_loc_doner": {
       "id": "ber_loc_doner", "speaker": "narrator",
@@ -117,8 +155,10 @@
         { "id": "people", "label": "People-watch instead of ordering anything", "next": "ber_loc_doner_people", "effects": { "inspiration": 2 } }
       ]
     },
-    "ber_loc_doner_order": { "id": "ber_loc_doner_order", "speaker": "narrator", "text": "It's exactly as good as the line outside promised it would be. Worth every minute of the wait, barely." },
-    "ber_loc_doner_people": { "id": "ber_loc_doner_people", "speaker": "narrator", "text": "Nobody in this line looks like they're actually from anywhere in particular. Somehow, for once, you fit right in." },
+    "ber_loc_doner_order": { "id": "ber_loc_doner_order", "speaker": "narrator", "text": "It's exactly as good as the line outside promised it would be. Worth every minute of the wait, barely.", "next": "ber_loc_doner_order_after" },
+    "ber_loc_doner_order_after": { "id": "ber_loc_doner_order_after", "speaker": "narrator", "text": "You eat standing up, in the cold, at one in the morning. It goes straight into the permanent record." },
+    "ber_loc_doner_people": { "id": "ber_loc_doner_people", "speaker": "narrator", "text": "Nobody in this line looks like they're actually from anywhere in particular. Somehow, for once, you fit right in.", "next": "ber_loc_doner_people_after" },
+    "ber_loc_doner_people_after": { "id": "ber_loc_doner_people_after", "speaker": "narrator", "text": "Four people from four places, in a line at a counter, none of them explaining themselves to anyone." },
 
     "ber_loc_wall": {
       "id": "ber_loc_wall", "speaker": "narrator",
@@ -128,8 +168,10 @@
         { "id": "read_layers", "label": "Try to read the layers underneath", "next": "ber_loc_wall_read", "effects": { "energy": 2 } }
       ]
     },
-    "ber_loc_wall_add": { "id": "ber_loc_wall_add", "speaker": "narrator", "text": "A single stray line, gone within the week probably, painted over by someone who'll never know it was yours to begin with. Somehow that feels exactly right." },
-    "ber_loc_wall_read": { "id": "ber_loc_wall_read", "speaker": "narrator", "text": "A date from decades ago, half a name, a phone number that surely doesn't ring anymore. History here doesn't get preserved so much as simply outlived." },
+    "ber_loc_wall_add": { "id": "ber_loc_wall_add", "speaker": "narrator", "text": "A single stray line, gone within the week probably, painted over by someone who'll never know it was yours to begin with. Somehow that feels exactly right.", "next": "ber_loc_wall_add_after" },
+    "ber_loc_wall_add_after": { "id": "ber_loc_wall_add_after", "speaker": "narrator", "text": "You photograph it badly, on purpose, so the memory has to do most of the work later." },
+    "ber_loc_wall_read": { "id": "ber_loc_wall_read", "speaker": "narrator", "text": "A date from decades ago, half a name, a phone number that surely doesn't ring anymore. History here doesn't get preserved so much as simply outlived.", "next": "ber_loc_wall_read_after" },
+    "ber_loc_wall_read_after": { "id": "ber_loc_wall_read_after", "speaker": "narrator", "text": "Mira reads one out loud. Nobody laughs. It wasn't funny, and it wasn't meant to be." },
 
     "ber_rel_mira": {
       "id": "ber_rel_mira", "speaker": "mira", "portrait": "tense",

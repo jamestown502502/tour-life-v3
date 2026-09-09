@@ -29,6 +29,9 @@ export function migrate(raw: any): RunState | null {
   const defaults = freshAccessibility();
   const saved = raw.accessibility ?? {};
   raw.accessibility = { ...defaults, ...saved, volumes: { ...defaults.volumes, ...(saved.volumes ?? {}) } };
+  // Additive backfill, same shape as every other optional field: a save from before return legs
+  // existed simply has no memories, and the return-leg feed treats that as "nothing to report".
+  if (!Array.isArray(raw.cityMemories)) raw.cityMemories = [];
   return raw as RunState;
 }
 

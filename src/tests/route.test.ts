@@ -17,7 +17,8 @@ describe('route generation', () => {
   it('includes every city when the pool is small (v1: 2-city pool)', () => {
     const route = generateRoute(makeRng('a'), CITIES);
     const ids = route.stops.map((s) => s.cityId).sort();
-    expect(ids).toEqual(CITIES.map((c) => c.id).sort());
+    // Every city once, plus the return leg's repeat of one of them.
+    expect(ids).toEqual([...CITIES.map((c) => c.id), ids.find((id, i) => ids.indexOf(id) !== i)!].sort());
   });
 
   it('picks a weather value that belongs to that city', () => {
@@ -30,10 +31,13 @@ describe('route generation', () => {
   it('picks 6-8 cities from a larger pool', () => {
     const pool = Array.from({ length: 12 }, (_, i) => mockCity(`city${i}`, ['sunny']));
     const route = generateRoute(makeRng('pool-seed'), pool);
-    expect(route.stops.length).toBeGreaterThanOrEqual(6);
-    expect(route.stops.length).toBeLessThanOrEqual(8);
+    // 6-8 cities, PLUS the return leg's second booking of one of them.
+    expect(route.stops.length).toBeGreaterThanOrEqual(7);
+    expect(route.stops.length).toBeLessThanOrEqual(9);
     const ids = route.stops.map((s) => s.cityId);
-    expect(new Set(ids).size).toBe(ids.length); // no duplicates
+    // Exactly one city appears twice — the return leg — and nothing else repeats.
+    expect(new Set(ids).size).toBe(ids.length - 1);
+    expect(route.stops.filter((s) => s.revisit)).toHaveLength(1);
   });
 
   it('is deterministic for the same seed and non-deterministic across seeds (usually)', () => {

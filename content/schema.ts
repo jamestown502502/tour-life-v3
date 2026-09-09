@@ -52,6 +52,15 @@ export interface RelationshipScenePoolEntry {
   bandmate: BandmateId;
   sceneId: string;
   condition?: ConditionExpr;
+  /** RELATIONSHIP ARC GATE. The minimum standing with this bandmate before the entry can be
+   *  played. Entries without one are the opening beats and are always eligible; a gated entry is
+   *  a later beat in that person's arc, and only surfaces once you have actually got there.
+   *
+   *  Checked when the scene is about to PLAY, not when the pool is drawn at route generation —
+   *  relationships move during a run, so a gate evaluated up front would be judging a number that
+   *  no longer exists by the time the scene comes up. Optional and additive: content written
+   *  before arcs existed behaves exactly as it always did. */
+  minRelationship?: number;
 }
 
 export interface PreShowChoiceDef {
@@ -78,7 +87,7 @@ export interface CollaboratorDef {
 // interactive beat that uses one of the tour's own verbs. Every type always reaches an outcome
 // — 'timing'/'drag' have a graded-but-never-failing result, 'choice' has no wrong answer, only
 // a warmer or cooler one — matching the same no-fail philosophy as the rhythm minigame.
-export type MiniGameType = 'timing' | 'drag' | 'choice';
+export type MiniGameType = 'timing' | 'drag' | 'choice' | 'sequence' | 'sustain' | 'pressure';
 
 export interface MiniGameReward {
   effects?: StatDeltas;
@@ -117,8 +126,16 @@ export interface MiniGameDef {
   dragItems?: string[];
   /** 'drag' only: seconds allowed to place every item. */
   dragTimeSec?: number;
-  /** 'choice' only: exactly 3 questions. */
+  /** 'choice' and 'pressure': exactly 3 questions. */
   questions?: MiniGameQuestion[];
+  /** 'sequence' only: how many pads light per round. Each entry is one round, and the rounds get
+   *  longer — a call-and-response soundcheck that actually tests memory rather than reflexes. */
+  sequenceRounds?: number[];
+  /** 'sustain' only: seconds the two faders must be held inside their drifting target zone. */
+  sustainSeconds?: number;
+  /** 'pressure' only: seconds per question before the silence answers for you. Shorter than
+   *  'choice''s forgiving 6.5s soft timer — that is the whole difficulty. */
+  pressureSeconds?: number;
   /** Optional music bed for this minigame, in the same "Dm-Bb-F-C" shape SongDef uses. Omit and
    *  the minigame simply keeps playing the city's own ambience, exactly as before — every one of
    *  these three is additive, so older content and saves are unaffected. */
@@ -309,7 +326,20 @@ function validateMiniGames(minigames: unknown, path: string, errors: string[]): 
       if (!isNumber(mg.dragTimeSec) || mg.dragTimeSec! <= 0) {
         fail(errors, `${p}: drag type needs a positive dragTimeSec`);
       }
-    } else if (mg.type === 'choice') {
+    } else if (mg.type === 'sequence') {
+      if (!isArray(mg.sequenceRounds) || mg.sequenceRounds.length < 1) {
+        fail(errors, `${p}: sequence type needs sequenceRounds with >= 1 entry`);
+      } else if ((mg.sequenceRounds as number[]).some((n) => !isNumber(n) || n < 2)) {
+        fail(errors, `${p}: every sequenceRounds entry must be a number >= 2`);
+      }
+    } else if (mg.type === 'sustain') {
+      if (!isNumber(mg.sustainSeconds) || mg.sustainSeconds! <= 0) {
+        fail(errors, `${p}: sustain type needs a positive sustainSeconds`);
+      }
+    } else if (mg.type === 'choice' || mg.type === 'pressure') {
+      if (mg.type === 'pressure' && (!isNumber(mg.pressureSeconds) || mg.pressureSeconds! <= 0)) {
+        fail(errors, `${p}: pressure type needs a positive pressureSeconds`);
+      }
       if (!isArray(mg.questions) || mg.questions.length !== 3) {
         fail(errors, `${p}: choice type needs exactly 3 questions`);
       } else {

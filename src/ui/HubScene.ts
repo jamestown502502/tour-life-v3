@@ -103,7 +103,9 @@ export class HubScene extends Phaser.Scene {
         State.setProgress({ screen: 'city', cityId: city.id });
         saveRun(State.data);
         // Addendum v2, Item 9b: hub -> city travel uses 'drive'.
-        goTo(this, 'City', { cityId: city.id });
+        // Via the van: a two-beat travel scene on the way in (VanScene), which sets no progress
+        // and gates nothing, so an interruption there still resumes at the Hub.
+        goTo(this, 'Van', { cityId: city.id });
       }, { fillColor: 0x3e7c7b });
       // Left-anchored (not centered) and clipped short of the corkboard's x-range (CORKBOARD_X
       // starts at W-190) so this can't visually collide with the souvenir chips beside it.

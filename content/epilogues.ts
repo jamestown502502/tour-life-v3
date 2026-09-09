@@ -65,10 +65,35 @@ const MINIGAME_EPILOGUE_CALLBACKS: [flag: string, line: string][] = [
   ['smooth_load_in', ' Someone still brings up the Lisbon stairs — every amp up in record time, no one quite sure how.'],
   ['clean_soundcheck_tokyo', " Kenji's one-take Tokyo soundcheck is still the standard the band measures every other one against."],
   ['radio_callin_warm', " The two-question radio spot Ximena talked them into is still saved somewhere, on a station nobody outside that block has ever heard of."],
+  ['warm_interview', ' Somebody still has the clipping from that interview, folded into a case pocket, going soft at the creases.'],
+  ['lisbon_soundcheck_clean', ' The Lisbon soundcheck is the one they describe to sound engineers who ask what they are going for.'],
 ];
 
-export function getEpilogue(endingId: string, tags: string[], flags: string[] = []): string {
+// The return leg — the tour books one city twice, and coming back to a room that already has an
+// opinion of you is the biggest single story a run can generate. Ranked above the minigame
+// callback because a redemption night outweighs a fast load-out.
+import { PROMISE_EPILOGUE } from './promises';
+
+const RETURN_LEG_CALLBACKS: [flag: string, line: string][] = [
+  ['return_redeemed', ' They still bring up the second night in the city that had already seen them at their worst — the same room, the same people, and a completely different band walking off it.'],
+  ['return_slipped', ' Nobody brings up the second night in the city they went back to. It happens. The first one was the one worth having.'],
+  ['return_held', ' The city they played twice got the same band both times, which is its own kind of achievement — no fluke either night, just the thing they actually are.'],
+];
+
+/** Base epilogue, plus up to three earned additions, in descending order of how much of the run
+ *  they speak for: the promise the band made itself, the return leg, then the minigame flourish.
+ *  All three are optional and every one of them is driven by something the player did. */
+export function getEpilogue(
+  endingId: string,
+  tags: string[],
+  flags: string[] = [],
+  promise?: { flag: string; kept: boolean } | null,
+): string {
   const base = EPILOGUES[key(endingId, tags)] ?? GENERIC_EPILOGUES[endingId] ?? UNIVERSAL_FALLBACK;
-  const callback = MINIGAME_EPILOGUE_CALLBACKS.find(([flag]) => flags.includes(flag));
-  return callback ? base + callback[1] : base;
+  const promiseLine = promise && PROMISE_EPILOGUE[promise.flag]
+    ? PROMISE_EPILOGUE[promise.flag][promise.kept ? 'kept' : 'missed']
+    : '';
+  const returnLeg = RETURN_LEG_CALLBACKS.find(([flag]) => flags.includes(flag));
+  const minigame = MINIGAME_EPILOGUE_CALLBACKS.find(([flag]) => flags.includes(flag));
+  return base + promiseLine + (returnLeg ? returnLeg[1] : '') + (minigame ? minigame[1] : '');
 }

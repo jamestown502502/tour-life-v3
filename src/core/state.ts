@@ -12,6 +12,35 @@ export interface CityStop {
   cityId: string;
   visited: boolean;
   weather?: string;
+  /** True for the tour's return leg — a city the route deliberately books twice. The second
+   *  booking is where the town's reaction to the FIRST show comes back at you. Optional so any
+   *  save written before return legs existed simply has no revisit stops. */
+  revisit?: boolean;
+}
+
+/** What the tour remembers about a city after playing it once. Written when the show ends, read
+ *  when the route brings the band back — the whole basis of the return-leg social feed, and the
+ *  reason a second night in a city can feel earned or awkward rather than identical.
+ *
+ *  Deliberately small: a band, not a transcript. Everything here is derived from things the
+ *  player did, never from a random roll. */
+export interface CityMemory {
+  cityId: string;
+  /** The FIRST show, banded from the performance result's grade. Never overwritten — the return
+   *  leg's whole point is comparing tonight to that night. */
+  show: 'triumph' | 'solid' | 'rough';
+  /** The return leg's show, once it has been played. Absent until then. */
+  secondShow?: 'triumph' | 'solid' | 'rough';
+  /** True once a real show has been recorded here. A memory can exist before that — the city's
+   *  minigame resolves first and creates one — so `show` (which carries a default) cannot be used
+   *  to tell "played a show" from "played the minigame only". */
+  firstShowRecorded?: boolean;
+  /** How the town felt about the band when they left (localLove at departure). */
+  love: number;
+  /** Whether the city's minigame went well, and which one it was — so the callback can be
+   *  specific ("they still talk about that load-out") instead of generic. */
+  minigameGood?: boolean;
+  minigameTitle?: string;
 }
 
 export interface RunHistoryEntry {
@@ -88,6 +117,8 @@ export interface RunState {
   flags: string[];
   inventory: Item[];
   route: CityStop[];
+  /** Additive: absent on any save written before return legs existed, backfilled by migrate(). */
+  cityMemories?: CityMemory[];
   log: string[];
   currentCityIndex: number;
   midTourComplication: string;
@@ -131,6 +162,7 @@ export function freshRun(seed: string, meta: MetaProgress, accessibility: Access
     flags: [],
     inventory: [],
     route: [],
+    cityMemories: [],
     log: [],
     currentCityIndex: 0,
     midTourComplication: '',

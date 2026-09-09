@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PALETTE_HEX, W } from '../const';
+import { PALETTE_HEX, W, PALETTE } from '../const';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
@@ -9,6 +9,7 @@ import { generateRoute, MID_TOUR_COMPLICATIONS, routeArcRole } from '../game/rou
 import { drawScenePoolFlags } from '../game/scenePool';
 import { saveRun } from '../core/save';
 import { textStyle } from './textStyles';
+import { TOUR_PROMISES } from '../../content/promises';
 import { DialogueBox } from './DialogueBox';
 import { addMenuButton } from './MenuButton';
 
@@ -91,7 +92,29 @@ export class RoutePlanScene extends Phaser.Scene {
     // needs h>=66 — (66+16)*0.5417=44.4 CSS px — to actually clear the 44px floor including
     // Button.ts's own 8px-each-side pad. 64 measured at 43.3, just under; don't round down from
     // 66 without re-measuring live, the margin here is thin.
-    createButton(this, W / 2 - 150, buttonY + 40, 300, 66, 'Confirm route', () => {
+    // THE PROMISE. One line about what this tour is actually for, chosen before the first city and
+    // answered in the epilogue (content/promises.ts). A route used to be a sequence of stops with
+    // no stated intent, so the ending could only summarise what happened, never whether it was
+    // what you set out to do. Purely additive: a run with no promise flag simply gets no promise
+    // paragraph, which is what every save written before this did.
+    this.add.text(W / 2, buttonY - 8, 'What is this tour for?', textStyle('h2')).setOrigin(0.5);
+    let promiseChosen: string | null = null;
+    const promiseButtons: Phaser.GameObjects.Container[] = [];
+    const promiseLine = this.add.text(W / 2, buttonY + 34 + TOUR_PROMISES.length * 74, '', textStyle('small', {
+      color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center',
+    })).setOrigin(0.5);
+    TOUR_PROMISES.forEach((promise, i) => {
+      const btn = createButton(this, 40, buttonY + 24 + i * 74, W - 80, 62, promise.label, () => {
+        promiseChosen = promise.flag;
+        promiseLine.setText(promise.line);
+        // Re-tint so the current pick is obvious without adding a selection widget.
+        promiseButtons.forEach((b, j) => b.setAlpha(j === i ? 1 : 0.55));
+      }, { fillColor: PALETTE.plum, fontSize: '17px' });
+      promiseButtons.push(btn);
+    });
+
+    createButton(this, W / 2 - 150, buttonY + 60 + TOUR_PROMISES.length * 74, 300, 66, 'Confirm route', () => {
+      if (promiseChosen) State.addFlag(promiseChosen);
       State.data.route = generated.stops;
       State.data.midTourComplication = generated.midTourComplication;
       for (const stop of generated.stops) {

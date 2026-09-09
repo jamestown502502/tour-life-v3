@@ -20,7 +20,7 @@
     { "id": "mira_after_the_encore", "bandmate": "mira", "sceneId": "tok_rel_mira" },
     { "id": "jun_gear_swap", "bandmate": "jun", "sceneId": "tok_rel_jun" },
     { "id": "theo_the_only_quiet_room", "bandmate": "theo", "sceneId": "tok_rel_theo" },
-    { "id": "mira_running_on_empty", "bandmate": "mira", "sceneId": "tok_rel_mira2" },
+    { "id": "mira_running_on_empty", "bandmate": "mira", "sceneId": "tok_rel_mira2", "minRelationship": 32 },
     { "id": "jun_letter_from_home", "bandmate": "jun", "sceneId": "tok_rel_jun_letter" },
     { "id": "rowan_why_hes_here", "bandmate": "rowan", "sceneId": "tok_rel_rowan_why" },
     { "id": "rowan_letter_from_home", "bandmate": "rowan", "sceneId": "tok_rel_rowan_letter" }
@@ -36,6 +36,31 @@
   "afterShowSceneId": "tok_aftershow",
   "journalSceneId": "tok_journal",
   "minigames": [
+    {
+          "id": "tok_mix_hold",
+          "type": "sustain",
+          "title": "Hold the Mix",
+          "introText": "The house desk has two faders that will not stay where you put them. \"Old board,\" the engineer says. \"It has opinions.\"",
+          "outroText": "You hold it steady long enough that the engineer stops hovering and goes to find a coffee.",
+          "outroTextRough": "It drifts more than it holds. The engineer rides the faders himself all night and never mentions it.",
+          "reward": {
+                "effects": {
+                      "harmony": 4
+                },
+                "flags": [
+                      "mix_held_steady"
+                ]
+          },
+          "roughReward": {
+                "effects": {
+                      "harmony": 1
+                }
+          },
+          "sustainSeconds": 12,
+          "chordProgression": "Em-Bm-C-G",
+          "bpm": 100,
+          "waveform": "triangle"
+    },
     {
       "id": "tok_pack_van",
       "chordProgression": "Am-F-C-G",
@@ -89,8 +114,10 @@
         { "id": "watch", "label": "Just watch the pros play", "next": "tok_loc_arcade_watch", "effects": { "inspiration": 2 } }
       ]
     },
-    "tok_loc_arcade_win": { "id": "tok_loc_arcade_win", "speaker": "narrator", "text": "You lose badly and learn something about timing anyway." },
-    "tok_loc_arcade_watch": { "id": "tok_loc_arcade_watch", "speaker": "narrator", "text": "Their hands move faster than the notes should allow." },
+    "tok_loc_arcade_win": { "id": "tok_loc_arcade_win", "speaker": "narrator", "text": "You lose badly and learn something about timing anyway.", "next": "tok_loc_arcade_win_after" },
+    "tok_loc_arcade_win_after": { "id": "tok_loc_arcade_win_after", "speaker": "narrator", "text": "Theo asks what you learned. You say “timing.” He waits for more. There isn't more, and somehow that's the useful part." },
+    "tok_loc_arcade_watch": { "id": "tok_loc_arcade_watch", "speaker": "narrator", "text": "Their hands move faster than the notes should allow.", "next": "tok_loc_arcade_watch_after" },
+    "tok_loc_arcade_watch_after": { "id": "tok_loc_arcade_watch_after", "speaker": "narrator", "text": "You think about it again during soundcheck. Not the speed of her hands. The stillness underneath them." },
 
     "tok_loc_ramen": {
       "id": "tok_loc_ramen", "speaker": "narrator",
@@ -100,8 +127,10 @@
         { "id": "quiet", "label": "Eat in comfortable silence", "next": "tok_loc_ramen_quiet", "effects": { "energy": 3 } }
       ]
     },
-    "tok_loc_ramen_toast": { "id": "tok_loc_ramen_toast", "speaker": "narrator", "text": "The owner laughs and refuses to let you pay full price." },
-    "tok_loc_ramen_quiet": { "id": "tok_loc_ramen_quiet", "speaker": "narrator", "text": "Nobody needs to fill the air. That's its own kind of closeness." },
+    "tok_loc_ramen_toast": { "id": "tok_loc_ramen_toast", "speaker": "narrator", "text": "The owner laughs and refuses to let you pay full price.", "next": "tok_loc_ramen_toast_after" },
+    "tok_loc_ramen_toast_after": { "id": "tok_loc_ramen_toast_after", "speaker": "narrator", "text": "Mira tries to leave the difference under a bowl. He finds it before you reach the door and refuses that too." },
+    "tok_loc_ramen_quiet": { "id": "tok_loc_ramen_quiet", "speaker": "narrator", "text": "Nobody needs to fill the air. That's its own kind of closeness.", "next": "tok_loc_ramen_quiet_after" },
+    "tok_loc_ramen_quiet_after": { "id": "tok_loc_ramen_quiet_after", "speaker": "narrator", "text": "Four people, one counter, no conversation. Nobody checks the time. The bowls empty at almost the same moment." },
 
     "tok_loc_shrine": {
       "id": "tok_loc_shrine", "speaker": "narrator",
@@ -111,8 +140,10 @@
         { "id": "sit", "label": "Just sit with the quiet", "next": "tok_loc_shrine_sit", "effects": { "energy": 3 } }
       ]
     },
-    "tok_loc_shrine_ritual": { "id": "tok_loc_shrine_ritual", "speaker": "narrator", "text": "You don't know if you did it right. It felt right anyway." },
-    "tok_loc_shrine_sit": { "id": "tok_loc_shrine_sit", "speaker": "narrator", "text": "For once, nobody's phone buzzes. Nobody checks." },
+    "tok_loc_shrine_ritual": { "id": "tok_loc_shrine_ritual", "speaker": "narrator", "text": "You don't know if you did it right. It felt right anyway.", "next": "tok_loc_shrine_ritual_after" },
+    "tok_loc_shrine_ritual_after": { "id": "tok_loc_shrine_ritual_after", "speaker": "narrator", "text": "Rowan copies you exactly, a half-step behind, taking it more seriously than either of you would admit to later." },
+    "tok_loc_shrine_sit": { "id": "tok_loc_shrine_sit", "speaker": "narrator", "text": "For once, nobody's phone buzzes. Nobody checks.", "next": "tok_loc_shrine_sit_after" },
+    "tok_loc_shrine_sit_after": { "id": "tok_loc_shrine_sit_after", "speaker": "narrator", "text": "Somewhere past the wall the city keeps going without you. It's a relief to be briefly unnecessary." },
 
     "tok_loc_karaoke": {
       "id": "tok_loc_karaoke", "speaker": "narrator",
@@ -122,8 +153,10 @@
         { "id": "dj", "label": "Let Jun DJ the whole session", "next": "tok_loc_karaoke_dj", "relationshipEffects": { "jun": 4 } }
       ]
     },
-    "tok_loc_karaoke_sing": { "id": "tok_loc_karaoke_sing", "speaker": "narrator", "text": "It's terrible. It's perfect. Nobody films it, which somehow makes it better." },
-    "tok_loc_karaoke_dj": { "id": "tok_loc_karaoke_dj", "speaker": "jun", "portrait": "happy", "text": "Jun's setlist makes no sense and works completely." },
+    "tok_loc_karaoke_sing": { "id": "tok_loc_karaoke_sing", "speaker": "narrator", "text": "It's terrible. It's perfect. Nobody films it, which somehow makes it better.", "next": "tok_loc_karaoke_sing_after" },
+    "tok_loc_karaoke_sing_after": { "id": "tok_loc_karaoke_sing_after", "speaker": "narrator", "text": "Jun claims not to remember the chorus. Jun sang every word of the chorus. This will come up again later." },
+    "tok_loc_karaoke_dj": { "id": "tok_loc_karaoke_dj", "speaker": "jun", "portrait": "happy", "text": "Jun's setlist makes no sense and works completely.", "next": "tok_loc_karaoke_dj_after" },
+    "tok_loc_karaoke_dj_after": { "id": "tok_loc_karaoke_dj_after", "speaker": "narrator", "text": "He queues one more, insists it is the last, and is lying. Nobody minds. Nobody stops him either." },
 
     "tok_loc_pachinko": {
       "id": "tok_loc_pachinko", "speaker": "narrator",
@@ -133,8 +166,10 @@
         { "id": "watch_gran", "label": "Just watch the grandmother work", "next": "tok_loc_pachinko_watch", "effects": { "inspiration": 2 } }
       ]
     },
-    "tok_loc_pachinko_try": { "id": "tok_loc_pachinko_try", "speaker": "narrator", "text": "You lose every coin in under a minute and somehow leave grinning." },
-    "tok_loc_pachinko_watch": { "id": "tok_loc_pachinko_watch", "speaker": "narrator", "text": "She never once looks at the balls. Forty years of muscle memory, still ringing." },
+    "tok_loc_pachinko_try": { "id": "tok_loc_pachinko_try", "speaker": "narrator", "text": "You lose every coin in under a minute and somehow leave grinning.", "next": "tok_loc_pachinko_try_after" },
+    "tok_loc_pachinko_try_after": { "id": "tok_loc_pachinko_try_after", "speaker": "narrator", "text": "Theo does the math on the walk out and stops halfway through. Some numbers are better left unfinished." },
+    "tok_loc_pachinko_watch": { "id": "tok_loc_pachinko_watch", "speaker": "narrator", "text": "She never once looks at the balls. Forty years of muscle memory, still ringing.", "next": "tok_loc_pachinko_watch_after" },
+    "tok_loc_pachinko_watch_after": { "id": "tok_loc_pachinko_watch_after", "speaker": "narrator", "text": "You catch yourself counting her rhythm against the song in your head. It fits. Of course it fits." },
 
     "tok_loc_vending": {
       "id": "tok_loc_vending", "speaker": "narrator",
@@ -144,8 +179,10 @@
         { "id": "hot_coffee", "label": "Get a hot can and just stand there", "next": "tok_loc_vending_coffee", "effects": { "energy": 3 } }
       ]
     },
-    "tok_loc_vending_mystery": { "id": "tok_loc_vending_mystery", "speaker": "narrator", "text": "It tastes like melon and static electricity. Nobody can explain it and everybody wants another." },
-    "tok_loc_vending_coffee": { "id": "tok_loc_vending_coffee", "speaker": "narrator", "text": "The can's too hot to hold bare-handed and exactly the right temperature to drink. Small, perfect machine." },
+    "tok_loc_vending_mystery": { "id": "tok_loc_vending_mystery", "speaker": "narrator", "text": "It tastes like melon and static electricity. Nobody can explain it and everybody wants another.", "next": "tok_loc_vending_mystery_after" },
+    "tok_loc_vending_mystery_after": { "id": "tok_loc_vending_mystery_after", "speaker": "narrator", "text": "Everyone buys a second one. Nobody finishes it. The empty cans ride in the van for three cities." },
+    "tok_loc_vending_coffee": { "id": "tok_loc_vending_coffee", "speaker": "narrator", "text": "The can's too hot to hold bare-handed and exactly the right temperature to drink. Small, perfect machine.", "next": "tok_loc_vending_coffee_after" },
+    "tok_loc_vending_coffee_after": { "id": "tok_loc_vending_coffee_after", "speaker": "narrator", "text": "You keep the can in your pocket long after it goes cold, the way you keep most small good things." },
 
     "tok_rel_rowan": {
       "id": "tok_rel_rowan", "speaker": "rowan", "portrait": "worried",

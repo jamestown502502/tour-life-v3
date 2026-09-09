@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { State, freshMeta, freshAccessibility, freshRun } from '../core/state';
 import { makeRng } from '../core/rng';
 import { CITIES, getCity, getSong } from '../game/content';
-import { generateRoute } from '../game/route';
+import { generateRoute, currentStopFor } from '../game/route';
 import { drawScenePoolFlags, availabilityFlag } from '../game/scenePool';
 import { resolveNode, visibleChoices, applyChoice, advanceTarget } from '../game/dialogue';
 import { evaluateCondition } from '../game/condition';
@@ -67,7 +67,9 @@ function playCity(city: CityDef, seed: string): void {
   walkToLeaf(city.scenes, city.journalSceneId);
 
   State.addItem({ id: `${city.id}_gift`, name: city.collaborator.gift, description: 'gift', cityId: city.id });
-  const stop = State.data.route.find((s) => s.cityId === city.id);
+  // By index, matching the game (CityScene uses currentStopFor): the return leg books one city
+  // twice, so an id lookup would mark the FIRST booking and leave the second forever unvisited.
+  const stop = currentStopFor(State.data.route, State.data.currentCityIndex, city.id);
   if (stop) stop.visited = true;
   State.data.currentCityIndex += 1;
 }
@@ -128,7 +130,7 @@ describe('headless bot playtest (golden path)', () => {
       expect(result.grade).toBeDefined(); // never throws, never gates
       walkToLeaf(city.scenes, city.afterShowSceneId);
       walkToLeaf(city.scenes, city.journalSceneId);
-      const stop2 = State.data.route.find((s) => s.cityId === city.id);
+      const stop2 = currentStopFor(State.data.route, State.data.currentCityIndex, city.id);
       if (stop2) stop2.visited = true;
       State.data.currentCityIndex += 1;
     }

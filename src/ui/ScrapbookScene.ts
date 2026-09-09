@@ -11,6 +11,7 @@ import { clearSave } from '../core/save';
 import { textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
 import { getEpilogue } from '../../content/epilogues';
+import { keptPromise } from '../game/promise';
 
 export class ScrapbookScene extends Phaser.Scene {
   constructor() { super('Scrapbook'); }
@@ -74,7 +75,10 @@ export class ScrapbookScene extends Phaser.Scene {
   private toggleEpilogue(): void {
     const existing = this.children.getByName('epiloguePanel');
     if (existing) { existing.destroy(); return; }
-    const text = getEpilogue(this.endingId, this.tags, State.data.flags);
+    // The promise the band made itself at the route screen, judged once here against the run's
+    // real numbers (src/game/promise.ts). Null for any run that never chose one — including every
+    // save written before promises existed.
+    const text = getEpilogue(this.endingId, this.tags, State.data.flags, keptPromise(State.data));
     const panelKey = ensureDialoguePanel(this);
     const x = 40, y = 100, w = W - 80, h = 700;
     const panel = this.add.container(0, 0).setName('epiloguePanel').setDepth(160);

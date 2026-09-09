@@ -14,6 +14,7 @@ import { State } from '../core/state';
 import { audio } from '../core/audio';
 import { parseChordProgression } from '../core/musicTheory';
 import { saveRun } from '../core/save';
+import { recordMinigame } from '../game/memory';
 import { getCity } from '../game/content';
 import { addTextScrim, textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
@@ -26,6 +27,9 @@ const HELP_TEXT: Record<MiniGameDef['type'], string> = {
   timing: 'Tap the button when the needle is inside the gold zone. A few rounds, no penalty for missing.',
   drag: 'Drag each item into any open slot before the timer runs out.',
   choice: 'Pick whichever answer feels right — there\'s no wrong one, just different flavor.',
+  sequence: 'Watch the pads light up, then tap them back in the same order. Each round is one longer.',
+  sustain: 'Hold BOTH faders inside the moving gold zone. Drag them up and down to keep them there.',
+  pressure: 'Answer fast. Stay quiet long enough and the silence answers for you — which is also an answer.',
 };
 
 export class MiniGameScene extends Phaser.Scene {
@@ -41,6 +45,10 @@ export class MiniGameScene extends Phaser.Scene {
   private timingHits = 0;
   private needle: Phaser.GameObjects.Arc | null = null;
   private needleTween: Phaser.Tweens.Tween | null = null;
+  // sequence
+  private sequenceRound = 0;
+  private sequenceHits = 0;
+  private sequenceRng = makeRng('placeholder');
   // choice
   private questionIndex = 0;
   private warmerCount = 0;
@@ -67,6 +75,11 @@ export class MiniGameScene extends Phaser.Scene {
     this.needleTween = null;
     this.questionIndex = 0;
     this.warmerCount = 0;
+    this.sequenceRound = 0;
+    this.sequenceHits = 0;
+    // Seeded per minigame like every other per-run variance, so a replayed seed drills the same
+    // pattern instead of a fresh random one.
+    this.sequenceRng = makeRng(State.data.seed + ':sequence:' + data.minigameId);
 
     const rng = makeRng(`${State.data.seed}:minigame:${this.mg.id}`);
     this.timingRoundsSec = timingRoundsForHarmony(this.mg.timingRoundsSec ?? [2.2, 1.7, 1.3], State.data.stats.harmony);
@@ -126,6 +139,8 @@ export class MiniGameScene extends Phaser.Scene {
     }
     if (this.mg.type === 'timing') this.runTimingRound();
     else if (this.mg.type === 'drag') this.runDrag();
+    else if (this.mg.type === 'sequence') this.runSequenceRound();
+    else if (this.mg.type === 'sustain') this.runSustain();
     else this.runChoiceQuestion();
   }
 
@@ -285,13 +300,157 @@ export class MiniGameScene extends Phaser.Scene {
       this.questionIndex++;
       this.time.delayedCall(250, () => this.runChoiceQuestion());
     };
-    this.time.delayedCall(6500, () => advance(null)); // soft timer — silence still advances, never blocks
+    // 'choice' stays forgiving (6.5s, no visible clock). 'pressure' is the same interview with
+    // the clock turned up AND shown, because knowing it is running is most of the difficulty.
+    // Both still advance on silence — a no-fail game does not get to punish hesitation.
+    const limitMs = this.mg.type === 'pressure' ? (this.mg.pressureSeconds ?? 4) * 1000 : 6500;
+    if (this.mg.type === 'pressure') {
+      const clock = this.add.text(W / 2, 508, '', textStyle('h2', { color: PALETTE_HEX.gold })).setOrigin(0.5);
+      this.contentLayer.add(clock);
+      const startedAt = this.time.now;
+      const tick = this.time.addEvent({
+        delay: 100,
+        loop: true,
+        callback: () => {
+          const left = Math.max(0, limitMs - (this.time.now - startedAt));
+          clock.setText(left > 0 ? (left / 1000).toFixed(1) : '');
+          if (left <= 0 || answered) tick.remove();
+        },
+      });
+    }
+    this.time.delayedCall(limitMs, () => advance(null)); // silence still advances, never blocks
 
     this.contentLayer.add(createButton(this, W / 2 - 300, 540, 600, 66, q.optionA, () => advance('A'), { fillColor: PALETTE.terracotta, fontSize: '19px' }));
     this.contentLayer.add(createButton(this, W / 2 - 300, 622, 600, 66, q.optionB, () => advance('B'), { fillColor: PALETTE.teal, fontSize: '19px' }));
   }
 
+  // ---- sequence: pads light in a pattern; play it back. Each round is one step longer. ----
+  //
+  // Deliberately the hardest of the six: it tests MEMORY, which none of the original three asked
+  // for, and call-and-response is how bands actually check a room. Still structurally no-fail —
+  // getting it wrong ends the round, never the minigame.
+  private runSequenceRound(): void {
+    const rounds = this.mg.sequenceRounds ?? [3, 4, 5];
+    if (this.sequenceRound >= rounds.length) {
+      this.finish(this.sequenceHits >= Math.ceil(rounds.length / 2));
+      return;
+    }
+    this.clearContent();
+    const pattern = Array.from({ length: rounds[this.sequenceRound] }, () => this.sequenceRng.int(0, 4));
+
+    this.contentLayer.add(addTextScrim(this, W / 2, 300, 420, 48));
+    const label = this.add.text(W / 2, 300, 'Listen...', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
+    this.contentLayer.add(label);
+
+    const padW = 140, padH = 140, gap = 24, padY = 430;
+    const startX = (W - (padW * 4 + gap * 3)) / 2;
+    const colors = [PALETTE.terracotta, PALETTE.teal, PALETTE.plum, PALETTE.gold];
+    const pads: Phaser.GameObjects.Rectangle[] = [];
+    for (let i = 0; i < 4; i++) {
+      const pad = this.add.rectangle(startX + i * (padW + gap), padY, padW, padH, colors[i], 0.45).setOrigin(0, 0);
+      this.contentLayer.add(pad);
+      pads.push(pad);
+    }
+
+    const flash = (i: number): void => {
+      pads[i].setAlpha(1);
+      audio.playSfx(i % 2 === 0 ? 'perfect' : 'ok');
+      this.time.delayedCall(240, () => pads[i].setAlpha(0.45));
+    };
+    const nextRound = (): void => { this.sequenceRound++; this.runSequenceRound(); };
+
+    pattern.forEach((pad, i) => this.time.delayedCall(500 + i * 520, () => flash(pad)));
+
+    this.time.delayedCall(500 + pattern.length * 520 + 250, () => {
+      label.setText('Your turn');
+      let expected = 0;
+      let settled = false;
+      for (let i = 0; i < 4; i++) {
+        pads[i].setInteractive();
+        pads[i].on('pointerdown', () => {
+          if (settled || expected >= pattern.length) return;
+          flash(i);
+          if (i !== pattern[expected]) {
+            settled = true;
+            label.setText('Not quite');
+            this.time.delayedCall(700, nextRound);
+            return;
+          }
+          expected++;
+          if (expected === pattern.length) {
+            settled = true;
+            this.sequenceHits++;
+            label.setText('Got it');
+            this.time.delayedCall(700, nextRound);
+          }
+        });
+      }
+      // No-fail safety net: the round ends on its own if the player never touches a pad.
+      this.time.delayedCall(4000 + pattern.length * 1400, () => { if (!settled) { settled = true; nextRound(); } });
+    });
+  }
+
+  // ---- sustain: hold two drifting faders inside a moving gold zone. ----
+  //
+  // The only minigame that asks for sustained attention rather than one correct action, and the
+  // only one needing two pointers at once — activePointers is already 4 (set for rhythm chords),
+  // so this needs no input config of its own.
+  private runSustain(): void {
+    this.clearContent();
+    const seconds = this.mg.sustainSeconds ?? 12;
+    const trackY = 300, trackH = 420, trackW = 90, zoneH = 150;
+    const xs = [W / 2 - 150, W / 2 + 60];
+
+    this.contentLayer.add(addTextScrim(this, W / 2, 240, 460, 48));
+    this.contentLayer.add(this.add.text(W / 2, 240, 'Hold the mix', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
+
+    const zone = this.add.rectangle(W / 2 - 210, trackY + 110, 420, zoneH, PALETTE.gold, 0.25).setOrigin(0, 0);
+    this.contentLayer.add(zone);
+    this.tweens.add({
+      targets: zone, y: trackY + trackH - zoneH - 30, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+    });
+
+    const faders: Phaser.GameObjects.Rectangle[] = [];
+    for (const x of xs) {
+      this.contentLayer.add(this.add.rectangle(x, trackY, trackW, trackH, PALETTE.night, 0.35).setOrigin(0, 0));
+      const fader = this.add.rectangle(x, trackY + trackH / 2 - 24, trackW, 48, PALETTE.cream, 0.95).setOrigin(0, 0);
+      fader.setInteractive({ draggable: true });
+      this.input.setDraggable(fader);
+      fader.on('drag', (_p: Phaser.Input.Pointer, _dx: number, dy: number) => {
+        fader.y = Phaser.Math.Clamp(dy - 24, trackY, trackY + trackH - 48);
+      });
+      this.contentLayer.add(fader);
+      faders.push(fader);
+    }
+
+    const totalMs = seconds * 1000;
+    let held = 0;
+    let done = false;
+    const meter = this.add.text(W / 2, trackY + trackH + 44, '', textStyle('h2', { color: PALETTE_HEX.gold })).setOrigin(0.5);
+    this.contentLayer.add(meter);
+
+    const end = (good: boolean): void => { if (!done) { done = true; this.finish(good); } };
+    const timer = this.time.addEvent({
+      delay: 100,
+      loop: true,
+      callback: () => {
+        if (done) { timer.remove(); return; }
+        const inZone = faders.every((f) => f.y + 24 >= zone.y && f.y + 24 <= zone.y + zoneH);
+        if (inZone) held += 100;
+        meter.setText(`${(held / 1000).toFixed(1)}s / ${seconds}s`);
+        for (const f of faders) f.setFillStyle(inZone ? PALETTE.gold : PALETTE.cream, 0.95);
+        if (held >= totalMs) { timer.remove(); end(true); }
+      },
+    });
+    // No-fail ceiling: however the mix went, the round always resolves. Half the target still
+    // counts as a good outcome — this is a cozy game, not a mixing exam.
+    this.time.delayedCall(totalMs * 2.4, () => { timer.remove(); end(held >= totalMs * 0.5); });
+  }
+
   private finish(good: boolean): void {
+    // Remembered for the return leg's social feed — the concrete callback ("they still talk about
+    // that load-out") rather than a generic one about the show.
+    recordMinigame(this.cityId, good, this.mg.title);
     this.outcomeGood = good;
     this.clearContent();
     this.card(300, 260);

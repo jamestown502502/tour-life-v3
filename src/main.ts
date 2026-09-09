@@ -3,6 +3,7 @@ import { H, PALETTE_HEX, W } from './const';
 import { TitleScene } from './ui/TitleScene';
 import { BandCreatorScene } from './ui/BandCreatorScene';
 import { OpeningScene } from './ui/OpeningScene';
+import { VanScene } from './ui/VanScene';
 import { RoutePlanScene } from './ui/RoutePlanScene';
 import { HubScene } from './ui/HubScene';
 import { CityScene } from './ui/CityScene';
@@ -72,7 +73,7 @@ async function boot(): Promise<void> {
       height: H,
     },
     // BootScene loads real painted assets (if present) then starts Title.
-    scene: [BootScene, TitleScene, BandCreatorScene, OpeningScene, RoutePlanScene, HubScene, CityScene, RhythmScene, ResultsScene, ScrapbookScene, SettingsScene, HowToPlayScene, MiniGameScene],
+    scene: [BootScene, TitleScene, BandCreatorScene, OpeningScene, RoutePlanScene, HubScene, VanScene, CityScene, RhythmScene, ResultsScene, ScrapbookScene, SettingsScene, HowToPlayScene, MiniGameScene],
   });
 
   if (import.meta.env.DEV) { (window as any).__game = game; (window as any).__audio = audio; (window as any).__state = State; }

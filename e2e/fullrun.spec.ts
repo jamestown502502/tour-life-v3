@@ -43,8 +43,13 @@ test('a full real playthrough of one city loop never gets stuck', async ({ page 
   });
   expect(await waitForActiveScene(page, 'Hub')).toContain('Hub');
 
-  // Hub -> City: "Travel to Lisbon" button (HubScene.ts: W/2-160, 820, 320, 66 — center 360, 853).
+  // Hub -> Van -> City: "Travel to Lisbon" button (HubScene.ts: W/2-160, 820, 320, 66 — center
+  // 360, 853). Travel now routes through the van (VanScene): a two-beat travel scene on the way
+  // into every city. This test asserted Hub -> City directly and correctly caught the new step —
+  // a real player taps through those two beats, so this walks them the same way.
   await canvasClick(page, 360, 853);
+  expect(await waitForActiveScene(page, 'Van')).toContain('Van');
+  await walkDialogueToSceneChange(page, 'Van');
   expect(await waitForActiveScene(page, 'City')).toContain('City');
 
   // Arrival dialogue, walked with real taps (this is the exact path the tap-to-skip bug broke).

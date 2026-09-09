@@ -20,7 +20,7 @@
     { "id": "theo_rest_day", "bandmate": "theo", "sceneId": "lis_rel_theo" },
     { "id": "jun_new_sound", "bandmate": "jun", "sceneId": "lis_rel_jun" },
     { "id": "rowan_watching_the_room", "bandmate": "rowan", "sceneId": "lis_rel_rowan" },
-    { "id": "jun_old_and_new", "bandmate": "jun", "sceneId": "lis_rel_jun2" },
+    { "id": "jun_old_and_new", "bandmate": "jun", "sceneId": "lis_rel_jun2", "minRelationship": 32 },
     { "id": "mira_letter_from_home", "bandmate": "mira", "sceneId": "lis_rel_mira_letter" },
     { "id": "theo_why_hes_here", "bandmate": "theo", "sceneId": "lis_rel_theo_why" },
     { "id": "jun_why_hes_here", "bandmate": "jun", "sceneId": "lis_rel_jun_why" }
@@ -37,6 +37,52 @@
   "journalSceneId": "lis_journal",
   "minigames": [
     {
+          "id": "lis_live_radio",
+          "type": "pressure",
+          "title": "Live on Air",
+          "introText": "\"Two minutes, live, no edit,\" the producer says, already counting down on her fingers. The mic light goes red.",
+          "outroText": "Quick, warm, and nobody said anything they'll regret. The producer gives you a thumbs up through the glass.",
+          "outroTextRough": "Two long silences and one answer that trailed off. It airs unedited, exactly as promised.",
+          "reward": {
+                "effects": {
+                      "harmony": 3,
+                      "funds": 20
+                },
+                "flags": [
+                      "radio_quick_witted"
+                ]
+          },
+          "roughReward": {
+                "effects": {
+                      "harmony": 1
+                }
+          },
+          "pressureSeconds": 4,
+          "questions": [
+                {
+                      "id": "q_who", "prompt": "\"So — who are you, in one sentence?\"",
+                      "optionA": "\"Four people who like the same three chords.\"",
+                      "optionB": "\"Ask us again after tonight.\"",
+                      "warmerOption": "A"
+                },
+                {
+                      "id": "q_tour", "prompt": "\"What's the tour been like so far?\"",
+                      "optionA": "\"Long. Good long.\"",
+                      "optionB": "\"We're still speaking to each other, which is a win.\"",
+                      "warmerOption": "B"
+                },
+                {
+                      "id": "q_city", "prompt": "\"Anything you want to say to the city?\"",
+                      "optionA": "\"Come early, the room sounds better when it's full.\"",
+                      "optionB": "\"Thanks for having us. Genuinely.\"",
+                      "warmerOption": "A"
+                }
+          ],
+          "chordProgression": "C-G-Am-F",
+          "bpm": 92,
+          "waveform": "sine"
+    },
+    {
       "id": "lis_soundcheck",
       "chordProgression": "C-G-Am-F",
       "bpm": 96,
@@ -46,7 +92,7 @@
       "introText": "The house engineer waves you up. \"Give me a level check — tap when the needle's hot.\"",
       "outroText": "\"Clean signal, good levels,\" the engineer says. \"You're set for tonight.\"",
       "outroTextRough": "\"A little hot in places,\" the engineer shrugs, \"but it'll read fine from the back.\"",
-      "reward": { "effects": { "harmony": 4 } },
+      "reward": { "effects": { "harmony": 4 } , "flags": ["lisbon_soundcheck_clean"] },
       "roughReward": { "effects": { "harmony": 1 } },
       "timingRoundsSec": [2.2, 1.7, 1.3]
     },
@@ -89,8 +135,10 @@
         { "id": "buy_round", "label": "Buy the house a round", "next": "lis_loc_fado_round", "effects": { "funds": -20, "harmony": 2 } }
       ]
     },
-    "lis_loc_fado_listen": { "id": "lis_loc_fado_listen", "speaker": "narrator", "text": "You leave humming a melody that isn't yours yet." },
-    "lis_loc_fado_round": { "id": "lis_loc_fado_round", "speaker": "narrator", "text": "The bartender remembers your face now. Small victories." },
+    "lis_loc_fado_listen": { "id": "lis_loc_fado_listen", "speaker": "narrator", "text": "You leave humming a melody that isn't yours yet.", "next": "lis_loc_fado_listen_after" },
+    "lis_loc_fado_listen_after": { "id": "lis_loc_fado_listen_after", "speaker": "narrator", "text": "It is still in your head at soundcheck. You play four bars of it by accident and Jun immediately steals them." },
+    "lis_loc_fado_round": { "id": "lis_loc_fado_round", "speaker": "narrator", "text": "The bartender remembers your face now. Small victories.", "next": "lis_loc_fado_round_after" },
+    "lis_loc_fado_round_after": { "id": "lis_loc_fado_round_after", "speaker": "narrator", "text": "She waves off the thanks and pours one more anyway. You will think about this bar for years." },
 
     "lis_loc_records": {
       "id": "lis_loc_records", "speaker": "narrator",
@@ -100,8 +148,10 @@
         { "id": "wander", "label": "Wander off alone", "next": "lis_loc_records_wander", "effects": { "inspiration": 2 } }
       ]
     },
-    "lis_loc_records_dig": { "id": "lis_loc_records_dig", "speaker": "jun", "portrait": "happy", "text": "\"Listen to this bassline,\" Jun says, for the fourth record in a row." },
-    "lis_loc_records_wander": { "id": "lis_loc_records_wander", "speaker": "narrator", "text": "You find a 7-inch with no label at all and buy it on principle." },
+    "lis_loc_records_dig": { "id": "lis_loc_records_dig", "speaker": "jun", "portrait": "happy", "text": "\"Listen to this bassline,\" Jun says, for the fourth record in a row.", "next": "lis_loc_records_dig_after" },
+    "lis_loc_records_dig_after": { "id": "lis_loc_records_dig_after", "speaker": "narrator", "text": "By the fourth he has stopped asking whether you are listening. He is right that you are." },
+    "lis_loc_records_wander": { "id": "lis_loc_records_wander", "speaker": "narrator", "text": "You find a 7-inch with no label at all and buy it on principle.", "next": "lis_loc_records_wander_after" },
+    "lis_loc_records_wander_after": { "id": "lis_loc_records_wander_after", "speaker": "narrator", "text": "No label, no artist, no year. You play it once at home and never manage to find it again." },
 
     "lis_loc_miradouro": {
       "id": "lis_loc_miradouro", "speaker": "narrator",
@@ -111,8 +161,10 @@
         { "id": "sketch", "label": "Sketch the skyline", "next": "lis_loc_miradouro_sketch", "effects": { "inspiration": 3 } }
       ]
     },
-    "lis_loc_miradouro_breathe": { "id": "lis_loc_miradouro_breathe", "speaker": "narrator", "text": "For five minutes, nothing is due and no one needs you. The list of things that usually matter gets quietly, temporarily shorter." },
-    "lis_loc_miradouro_sketch": { "id": "lis_loc_miradouro_sketch", "speaker": "narrator", "text": "The lines come out crooked. You keep the page anyway." },
+    "lis_loc_miradouro_breathe": { "id": "lis_loc_miradouro_breathe", "speaker": "narrator", "text": "For five minutes, nothing is due and no one needs you. The list of things that usually matter gets quietly, temporarily shorter.", "next": "lis_loc_miradouro_breathe_after" },
+    "lis_loc_miradouro_breathe_after": { "id": "lis_loc_miradouro_breathe_after", "speaker": "narrator", "text": "The list comes back on the walk down. It is shorter than you remember leaving it." },
+    "lis_loc_miradouro_sketch": { "id": "lis_loc_miradouro_sketch", "speaker": "narrator", "text": "The lines come out crooked. You keep the page anyway.", "next": "lis_loc_miradouro_sketch_after" },
+    "lis_loc_miradouro_sketch_after": { "id": "lis_loc_miradouro_sketch_after", "speaker": "narrator", "text": "It ends up folded in a case pocket, going soft at the creases, outlasting most of the tour’s better ideas." },
 
     "lis_loc_market": {
       "id": "lis_loc_market", "speaker": "narrator",
@@ -122,8 +174,10 @@
         { "id": "watch", "label": "Just watch the crowd", "next": "lis_loc_market_watch", "effects": { "harmony": 2 } }
       ]
     },
-    "lis_loc_market_tape": { "id": "lis_loc_market_tape", "speaker": "narrator", "text": "The tape is warped and wonderful. You'll never find out who they were." },
-    "lis_loc_market_watch": { "id": "lis_loc_market_watch", "speaker": "narrator", "text": "A hundred small lives happening at once, none of them checking a set time." },
+    "lis_loc_market_tape": { "id": "lis_loc_market_tape", "speaker": "narrator", "text": "The tape is warped and wonderful. You'll never find out who they were.", "next": "lis_loc_market_tape_after" },
+    "lis_loc_market_tape_after": { "id": "lis_loc_market_tape_after", "speaker": "narrator", "text": "Side B is a different band entirely, recorded over badly. Somehow that makes it better." },
+    "lis_loc_market_watch": { "id": "lis_loc_market_watch", "speaker": "narrator", "text": "A hundred small lives happening at once, none of them checking a set time.", "next": "lis_loc_market_watch_after" },
+    "lis_loc_market_watch_after": { "id": "lis_loc_market_watch_after", "speaker": "narrator", "text": "Nobody here is going anywhere in particular. You leave envying that more than you expected to." },
 
     "lis_rel_mira": {
       "id": "lis_rel_mira", "speaker": "mira", "portrait": "worried",
@@ -166,8 +220,10 @@
         { "id": "write", "label": "Write a line in your notebook", "next": "lis_loc_docks_write", "effects": { "inspiration": 3 } }
       ]
     },
-    "lis_loc_docks_watch": { "id": "lis_loc_docks_watch", "speaker": "narrator", "text": "A fisherman nods at you like you've always been here. You nod back like it's true." },
-    "lis_loc_docks_write": { "id": "lis_loc_docks_write", "speaker": "narrator", "text": "One line becomes four. You cross out two and keep the rest." },
+    "lis_loc_docks_watch": { "id": "lis_loc_docks_watch", "speaker": "narrator", "text": "A fisherman nods at you like you've always been here. You nod back like it's true.", "next": "lis_loc_docks_watch_after" },
+    "lis_loc_docks_watch_after": { "id": "lis_loc_docks_watch_after", "speaker": "narrator", "text": "You come back next morning before load-in. He is there. He nods again. That is the whole friendship." },
+    "lis_loc_docks_write": { "id": "lis_loc_docks_write", "speaker": "narrator", "text": "One line becomes four. You cross out two and keep the rest.", "next": "lis_loc_docks_write_after" },
+    "lis_loc_docks_write_after": { "id": "lis_loc_docks_write_after", "speaker": "narrator", "text": "Two of the crossed-out lines turn up in a song eight months later, unchanged, having waited patiently." },
 
     "lis_loc_azulejo": {
       "id": "lis_loc_azulejo", "speaker": "narrator",
@@ -177,8 +233,10 @@
         { "id": "buy_tile", "label": "Buy a cracked reject tile, cheap", "next": "lis_loc_azulejo_buy", "effects": { "funds": -6, "harmony": 1 } }
       ]
     },
-    "lis_loc_azulejo_watch": { "id": "lis_loc_azulejo_watch", "speaker": "narrator", "text": "Six hundred years of the same nine patterns, she says, and nobody's bored of them yet. You believe her." },
-    "lis_loc_azulejo_buy": { "id": "lis_loc_azulejo_buy", "speaker": "narrator", "text": "The crack runs straight through the pattern's center. She wraps it anyway, like the flaw is the whole point." },
+    "lis_loc_azulejo_watch": { "id": "lis_loc_azulejo_watch", "speaker": "narrator", "text": "Six hundred years of the same nine patterns, she says, and nobody's bored of them yet. You believe her.", "next": "lis_loc_azulejo_watch_after" },
+    "lis_loc_azulejo_watch_after": { "id": "lis_loc_azulejo_watch_after", "speaker": "narrator", "text": "You count nine patterns on the walk back and find a tenth she did not mention. You decide not to tell her." },
+    "lis_loc_azulejo_buy": { "id": "lis_loc_azulejo_buy", "speaker": "narrator", "text": "The crack runs straight through the pattern's center. She wraps it anyway, like the flaw is the whole point.", "next": "lis_loc_azulejo_buy_after" },
+    "lis_loc_azulejo_buy_after": { "id": "lis_loc_azulejo_buy_after", "speaker": "narrator", "text": "It survives the whole tour wrapped in a jumper, and the crack never once gets any worse." },
 
     "lis_rel_rowan": {
       "id": "lis_rel_rowan", "speaker": "rowan", "portrait": "worried",

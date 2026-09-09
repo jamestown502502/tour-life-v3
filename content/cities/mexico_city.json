@@ -20,7 +20,7 @@
     { "id": "theo_the_citys_backbeat", "bandmate": "theo", "sceneId": "mex_rel_theo" },
     { "id": "jun_mic_everything", "bandmate": "jun", "sceneId": "mex_rel_jun" },
     { "id": "rowan_ximena_asked_for_me", "bandmate": "rowan", "sceneId": "mex_rel_rowan" },
-    { "id": "rowan_the_lesson", "bandmate": "rowan", "sceneId": "mex_rel_rowan2" },
+    { "id": "rowan_the_lesson", "bandmate": "rowan", "sceneId": "mex_rel_rowan2", "minRelationship": 32 },
     { "id": "theo_letter_from_home", "bandmate": "theo", "sceneId": "mex_rel_theo_letter" },
     { "id": "mira_why_shes_here", "bandmate": "mira", "sceneId": "mex_rel_mira_why" }
   ],
@@ -45,7 +45,7 @@
       "introText": "A local zine caught wind of the show and wants five minutes before soundcheck.",
       "outroText": "\"Great stuff,\" the writer says, already typing. \"This'll run before the weekend.\"",
       "outroTextRough": "The writer nods, polite but unconvinced. \"I'll see what I can do with this.\"",
-      "reward": { "effects": { "funds": 20, "inspiration": 3 } },
+      "reward": { "effects": { "funds": 20, "inspiration": 3 } , "flags": ["warm_interview"] },
       "roughReward": { "effects": { "funds": 5 } },
       "questions": [
         { "id": "q1", "prompt": "\"What's the tour actually about?\"", "optionA": "\"Chasing something honest\"", "optionB": "\"Just seeing the world, mostly\"", "warmerOption": "A" },
@@ -96,9 +96,12 @@
         { "id": "ask_recipe", "label": "Ask what makes hers different", "next": "mex_loc_taqueria_ask", "effects": { "harmony": 1 } }
       ]
     },
-    "mex_loc_taqueria_order": { "id": "mex_loc_taqueria_order", "speaker": "narrator", "text": "Five tacos in, someone at the table finally admits defeat and pushes their plate away. It wasn't you, and you're quietly, unreasonably proud of that fact." },
-    "mex_loc_taqueria_watch": { "id": "mex_loc_taqueria_watch", "speaker": "narrator", "text": "No wasted motion anywhere — hands, tongs, the flick of salsa, the exact half-turn of the wrist. You could set a metronome to the rhythm of her hands and never once lose the beat." },
-    "mex_loc_taqueria_ask": { "id": "mex_loc_taqueria_ask", "speaker": "narrator", "text": "\"Thirty years of practice,\" she says, not even glancing up from the grill. \"Also, don't tell anyone, but it's the onions.\" She winks like it's a secret worth actually keeping." },
+    "mex_loc_taqueria_order": { "id": "mex_loc_taqueria_order", "speaker": "narrator", "text": "Five tacos in, someone at the table finally admits defeat and pushes their plate away. It wasn't you, and you're quietly, unreasonably proud of that fact.", "next": "mex_loc_taqueria_order_after" },
+    "mex_loc_taqueria_order_after": { "id": "mex_loc_taqueria_order_after", "speaker": "narrator", "text": "The pride lasts until the van, where it becomes a stomachache, which somehow does not diminish it at all." },
+    "mex_loc_taqueria_watch": { "id": "mex_loc_taqueria_watch", "speaker": "narrator", "text": "No wasted motion anywhere — hands, tongs, the flick of salsa, the exact half-turn of the wrist. You could set a metronome to the rhythm of her hands and never once lose the beat.", "next": "mex_loc_taqueria_watch_after" },
+    "mex_loc_taqueria_watch_after": { "id": "mex_loc_taqueria_watch_after", "speaker": "narrator", "text": "You mention it to Theo, who nods slowly and says “that’s the gig” — meaning hers, meaning also yours." },
+    "mex_loc_taqueria_ask": { "id": "mex_loc_taqueria_ask", "speaker": "narrator", "text": "\"Thirty years of practice,\" she says, not even glancing up from the grill. \"Also, don't tell anyone, but it's the onions.\" She winks like it's a secret worth actually keeping.", "next": "mex_loc_taqueria_ask_after" },
+    "mex_loc_taqueria_ask_after": { "id": "mex_loc_taqueria_ask_after", "speaker": "narrator", "text": "You do tell someone. Immediately. It is the first thing out of your mouth back at the van." },
 
     "mex_loc_plaza": {
       "id": "mex_loc_plaza", "speaker": "narrator",
@@ -109,9 +112,12 @@
         { "id": "just_listen", "label": "Sit on the curb and just listen", "next": "mex_loc_plaza_listen", "effects": { "energy": 2 } }
       ]
     },
-    "mex_loc_plaza_tip": { "id": "mex_loc_plaza_tip", "speaker": "narrator", "text": "They play the whole song again, just for you this time, a little louder and considerably showier than before. Worth every peso, and then some." },
-    "mex_loc_plaza_learn": { "id": "mex_loc_plaza_learn", "speaker": "narrator", "text": "Your fingers won't cooperate no matter how slowly he plays it. The trumpeter laughs, not unkindly, and shows you the fingering one more patient time." },
-    "mex_loc_plaza_listen": { "id": "mex_loc_plaza_listen", "speaker": "narrator", "text": "Nobody asks you to move along. You stay long enough to learn the shape of the song without ever meaning to memorize a single note of it." },
+    "mex_loc_plaza_tip": { "id": "mex_loc_plaza_tip", "speaker": "narrator", "text": "They play the whole song again, just for you this time, a little louder and considerably showier than before. Worth every peso, and then some.", "next": "mex_loc_plaza_tip_after" },
+    "mex_loc_plaza_tip_after": { "id": "mex_loc_plaza_tip_after", "speaker": "narrator", "text": "They wave the second time you pass. Being recognised in a city you leave tomorrow is its own small ache." },
+    "mex_loc_plaza_learn": { "id": "mex_loc_plaza_learn", "speaker": "narrator", "text": "Your fingers won't cooperate no matter how slowly he plays it. The trumpeter laughs, not unkindly, and shows you the fingering one more patient time.", "next": "mex_loc_plaza_learn_after" },
+    "mex_loc_plaza_learn_after": { "id": "mex_loc_plaza_learn_after", "speaker": "narrator", "text": "You get it wrong all the way home and keep trying anyway, badly, on the edge of the van seat." },
+    "mex_loc_plaza_listen": { "id": "mex_loc_plaza_listen", "speaker": "narrator", "text": "Nobody asks you to move along. You stay long enough to learn the shape of the song without ever meaning to memorize a single note of it.", "next": "mex_loc_plaza_listen_after" },
+    "mex_loc_plaza_listen_after": { "id": "mex_loc_plaza_listen_after", "speaker": "narrator", "text": "You hum it wrong at soundcheck. Jun corrects you. Neither of you knows the name of it." },
 
     "mex_loc_lucha": {
       "id": "mex_loc_lucha", "speaker": "narrator",
@@ -122,9 +128,12 @@
         { "id": "buy_mask", "label": "Buy a cheap replica mask at the door", "next": "mex_loc_lucha_mask", "effects": { "funds": -8, "harmony": 1 } }
       ]
     },
-    "mex_loc_lucha_cheer": { "id": "mex_loc_lucha_cheer", "speaker": "narrator", "text": "You lose your voice a full day before soundcheck, hoarse and grinning anyway, throat raw for the rest of the week. Worth it, probably — you'll find out for certain tomorrow." },
-    "mex_loc_lucha_study": { "id": "mex_loc_lucha_study", "speaker": "narrator", "text": "Two thousand strangers, breathing on exactly the same beat without ever once being asked to or rehearsing it. You want that sound onstage tonight, whatever it costs you." },
-    "mex_loc_lucha_mask": { "id": "mex_loc_lucha_mask", "speaker": "narrator", "text": "The mask smells like plastic and somebody else's cologne. You wear it for the rest of the walk home anyway, unreasonably pleased with the whole purchase." },
+    "mex_loc_lucha_cheer": { "id": "mex_loc_lucha_cheer", "speaker": "narrator", "text": "You lose your voice a full day before soundcheck, hoarse and grinning anyway, throat raw for the rest of the week. Worth it, probably — you'll find out for certain tomorrow.", "next": "mex_loc_lucha_cheer_after" },
+    "mex_loc_lucha_cheer_after": { "id": "mex_loc_lucha_cheer_after", "speaker": "narrator", "text": "You sing anyway that night. It costs you the top of your range and you do not regret one note." },
+    "mex_loc_lucha_study": { "id": "mex_loc_lucha_study", "speaker": "narrator", "text": "Two thousand strangers, breathing on exactly the same beat without ever once being asked to or rehearsing it. You want that sound onstage tonight, whatever it costs you.", "next": "mex_loc_lucha_study_after" },
+    "mex_loc_lucha_study_after": { "id": "mex_loc_lucha_study_after", "speaker": "narrator", "text": "You do not get that sound tonight. You get about a third of it, which is more than you had yesterday." },
+    "mex_loc_lucha_mask": { "id": "mex_loc_lucha_mask", "speaker": "narrator", "text": "The mask smells like plastic and somebody else's cologne. You wear it for the rest of the walk home anyway, unreasonably pleased with the whole purchase.", "next": "mex_loc_lucha_mask_after" },
+    "mex_loc_lucha_mask_after": { "id": "mex_loc_lucha_mask_after", "speaker": "narrator", "text": "It hangs from the van’s rearview for the rest of the tour, swaying through three more cities." },
 
     "mex_loc_terraza": {
       "id": "mex_loc_terraza", "speaker": "narrator",
@@ -135,9 +144,12 @@
         { "id": "call_home", "label": "Call home before the signal drops", "next": "mex_loc_terraza_call", "effects": { "harmony": 2 } }
       ]
     },
-    "mex_loc_terraza_storm": { "id": "mex_loc_terraza_storm", "speaker": "narrator", "text": "Lightning finds the cathedral spire twice in under a minute. You count the seconds after each strike, out of an old childhood habit you never quite dropped." },
-    "mex_loc_terraza_in": { "id": "mex_loc_terraza_in", "speaker": "narrator", "text": "You make it inside one drop ahead of the downpour. Below, the entire street breaks into a run for cover, laughing, all at once." },
-    "mex_loc_terraza_call": { "id": "mex_loc_terraza_call", "speaker": "narrator", "text": "The call drops twice before it finally connects. \"We're fine,\" you say, over a crack of thunder. \"Better than fine, actually. Really good, even.\"" },
+    "mex_loc_terraza_storm": { "id": "mex_loc_terraza_storm", "speaker": "narrator", "text": "Lightning finds the cathedral spire twice in under a minute. You count the seconds after each strike, out of an old childhood habit you never quite dropped.", "next": "mex_loc_terraza_storm_after" },
+    "mex_loc_terraza_storm_after": { "id": "mex_loc_terraza_storm_after", "speaker": "narrator", "text": "Four seconds. Then three. Then the rain arrives and settles the argument about whether to run." },
+    "mex_loc_terraza_in": { "id": "mex_loc_terraza_in", "speaker": "narrator", "text": "You make it inside one drop ahead of the downpour. Below, the entire street breaks into a run for cover, laughing, all at once.", "next": "mex_loc_terraza_in_after" },
+    "mex_loc_terraza_in_after": { "id": "mex_loc_terraza_in_after", "speaker": "narrator", "text": "You watch from the doorway, dry, slightly guilty, entirely delighted. The street empties in under a minute." },
+    "mex_loc_terraza_call": { "id": "mex_loc_terraza_call", "speaker": "narrator", "text": "The call drops twice before it finally connects. \"We're fine,\" you say, over a crack of thunder. \"Better than fine, actually. Really good, even.\"", "next": "mex_loc_terraza_call_after" },
+    "mex_loc_terraza_call_after": { "id": "mex_loc_terraza_call_after", "speaker": "narrator", "text": "You mean it when you say it. That is the part that surprises you afterwards." },
 
     "mex_loc_mercado": {
       "id": "mex_loc_mercado", "speaker": "narrator",
@@ -148,9 +160,12 @@
         { "id": "get_lost", "label": "Get pleasantly, deliberately lost", "next": "mex_loc_mercado_lost", "effects": { "inspiration": 2 } }
       ]
     },
-    "mex_loc_mercado_haggle": { "id": "mex_loc_mercado_haggle", "speaker": "narrator", "text": "You get it for half price and a promise to come back tomorrow with the whole band in tow. You will not, in fact, come back tomorrow." },
-    "mex_loc_mercado_rowan": { "id": "mex_loc_mercado_rowan", "speaker": "rowan", "portrait": "happy", "text": "\"Every single stall has a different beat,\" Rowan says, delighted, tapping along on an overturned bucket someone's using as a stool, completely lost to it." },
-    "mex_loc_mercado_lost": { "id": "mex_loc_mercado_lost", "speaker": "narrator", "text": "You take four wrong turns on purpose and find a courtyard nobody mentioned in any guidebook you've ever read, on any tour, in any city." },
+    "mex_loc_mercado_haggle": { "id": "mex_loc_mercado_haggle", "speaker": "narrator", "text": "You get it for half price and a promise to come back tomorrow with the whole band in tow. You will not, in fact, come back tomorrow.", "next": "mex_loc_mercado_haggle_after" },
+    "mex_loc_mercado_haggle_after": { "id": "mex_loc_mercado_haggle_after", "speaker": "narrator", "text": "You think about it again three cities later and feel briefly, genuinely bad about the promise." },
+    "mex_loc_mercado_rowan": { "id": "mex_loc_mercado_rowan", "speaker": "rowan", "portrait": "happy", "text": "\"Every single stall has a different beat,\" Rowan says, delighted, tapping along on an overturned bucket someone's using as a stool, completely lost to it.", "next": "mex_loc_mercado_rowan_after" },
+    "mex_loc_mercado_rowan_after": { "id": "mex_loc_mercado_rowan_after", "speaker": "narrator", "text": "They keep the rhythm all the way to the van. It turns up in the second song that night, quietly." },
+    "mex_loc_mercado_lost": { "id": "mex_loc_mercado_lost", "speaker": "narrator", "text": "You take four wrong turns on purpose and find a courtyard nobody mentioned in any guidebook you've ever read, on any tour, in any city.", "next": "mex_loc_mercado_lost_after" },
+    "mex_loc_mercado_lost_after": { "id": "mex_loc_mercado_lost_after", "speaker": "narrator", "text": "You could not find it again if you tried. You do try, an hour later, and you cannot." },
 
     "mex_loc_mural": {
       "id": "mex_loc_mural", "speaker": "narrator",
@@ -160,8 +175,10 @@
         { "id": "hold_ladder", "label": "Steady the ladder for her", "next": "mex_loc_mural_help", "effects": { "harmony": 2 } }
       ]
     },
-    "mex_loc_mural_ask": { "id": "mex_loc_mural_ask", "speaker": "narrator", "text": "\"Everyone who left and came back,\" she says, not looking down. \"There's more of us than you'd think.\"" },
-    "mex_loc_mural_help": { "id": "mex_loc_mural_help", "speaker": "narrator", "text": "She finishes a wing in half the time, unbothered, like the extra hand was expected all along." },
+    "mex_loc_mural_ask": { "id": "mex_loc_mural_ask", "speaker": "narrator", "text": "\"Everyone who left and came back,\" she says, not looking down. \"There's more of us than you'd think.\"", "next": "mex_loc_mural_ask_after" },
+    "mex_loc_mural_ask_after": { "id": "mex_loc_mural_ask_after", "speaker": "narrator", "text": "You look for longer than you meant to. Mira waits without saying anything about it." },
+    "mex_loc_mural_help": { "id": "mex_loc_mural_help", "speaker": "narrator", "text": "She finishes a wing in half the time, unbothered, like the extra hand was expected all along.", "next": "mex_loc_mural_help_after" },
+    "mex_loc_mural_help_after": { "id": "mex_loc_mural_help_after", "speaker": "narrator", "text": "Your line is the crooked one, third from the left. She leaves it exactly as you painted it." },
 
     "mex_rel_mira": {
       "id": "mex_rel_mira", "speaker": "mira", "portrait": "happy",

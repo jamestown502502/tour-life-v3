@@ -17,6 +17,8 @@ import {
 } from '../game/rhythm';
 import type { ChartCue, ChartNote, ChoiceCueType } from '../../content/schema';
 import { saveRun } from '../core/save';
+import { recordShow } from '../game/memory';
+import { showBandFor } from '../game/social';
 import { textStyle } from './textStyles';
 import { parseChordProgression } from '../core/musicTheory';
 import { addHelpButton } from './HelpButton';
@@ -154,6 +156,7 @@ export class RhythmScene extends Phaser.Scene {
     // original flat night rect otherwise — same graceful seam every other background uses.
     const stageBgKey = ensureRhythmStageBackdrop(this, city.id);
     addCoverBackground(this, stageBgKey);
+    if (hasRealAsset(stageBgKey)) this.veilStageBackdrop();
     const tex = ensureLaneTextures(this, LANE_W);
     for (let l = 0; l < song.lanes; l++) {
       this.add.image(LANE_X_START + l * LANE_W, 0, tex.lane).setOrigin(0, 0);
@@ -464,6 +467,24 @@ export class RhythmScene extends Phaser.Scene {
     }
   }
 
+  /** A light legibility veil over the painted stage backdrop.
+   *
+   *  History worth keeping: the original four backdrops came back as three stacked bands joined by
+   *  hard horizontal seams, because the generation prompt asked for "the vertical middle third
+   *  ... darker and simpler than the top and bottom" and the model painted that instruction
+   *  literally. Seam positions differed per city (tokyo .321/.679, berlin .321/.652,
+   *  lisbon .268/.487), so they could not be masked with shared constants, and this veil ran at
+   *  0.5 purely to crush the brightness steps out of them.
+   *
+   *  The assets have since been regenerated from a prompt that never mentions thirds or bands and
+   *  instead asks for one continuous room with natural depth — a lit stage at the far end, haze
+   *  between, foreground in shadow. They are coherent now, and already dark exactly where the
+   *  notes fall, so the veil is back to doing its only real job: guaranteeing a contrast floor
+   *  under the notes and judgement text on any city, without dulling the art it sits on. */
+  private veilStageBackdrop(): void {
+    this.add.rectangle(0, 0, W, H, PALETTE.night, 0.28).setOrigin(0, 0);
+  }
+
   private longestNoteEndSeconds(): number {
     let max = 0;
     for (const ns of this.notes) max = Math.max(max, ns.note.t + (ns.note.dur ?? 0.2));
@@ -685,6 +706,9 @@ export class RhythmScene extends Phaser.Scene {
     for (const flag of result.unlockedFlags) State.addFlag(flag);
     State.applyStatDeltas({ inspiration: Math.round(result.crowdConnection / 20), energy: -4 });
     State.addLocalLove(this.cityId, Math.round(result.crowdConnection / 10));
+    // Remember the night. The route can book this city again on the return leg, and when it does
+    // the town's reaction to THIS show is what the social feed is built from.
+    recordShow(this.cityId, showBandFor(result.grade), State.data.localLove[this.cityId] ?? 0);
     saveRun(State.data);
     goTo(this, 'Results', { cityId: this.cityId, result });
   }

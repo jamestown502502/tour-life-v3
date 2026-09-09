@@ -3,6 +3,7 @@ import { validateCity } from '../../content/schema';
 import lisbonRaw from '../../content/cities/lisbon.json';
 import tokyoRaw from '../../content/cities/tokyo.json';
 import mexicoRaw from '../../content/cities/mexico_city.json';
+import berlinRaw from '../../content/cities/berlin.json';
 import { minigamePlayedFlag, nextUnplayedMinigame, timingRoundsForHarmony } from '../game/minigame';
 
 function baseCity(minigames: unknown) {
@@ -12,16 +13,20 @@ function baseCity(minigames: unknown) {
 }
 
 describe('MiniGameDef schema validation', () => {
-  it('the 3 shipped city minigames (one of each type) all validate', () => {
+  it('every shipped city minigame validates, across all six types', () => {
     expect(validateCity(lisbonRaw).errors).toEqual([]);
     expect(validateCity(tokyoRaw).errors).toEqual([]);
     expect(validateCity(mexicoRaw).errors).toEqual([]);
-    const lisbon = lisbonRaw as { minigames?: { type: string }[] };
-    const tokyo = tokyoRaw as { minigames?: { type: string }[] };
-    const mexico = mexicoRaw as { minigames?: { type: string }[] };
-    expect(lisbon.minigames?.[0].type).toBe('timing');
-    expect(tokyo.minigames?.[0].type).toBe('drag');
-    expect(mexico.minigames?.[0].type).toBe('choice');
+    expect(validateCity(berlinRaw).errors).toEqual([]);
+
+    // By type, not by array position: minigames are inserted and reordered as content grows, and
+    // an index-based assertion breaks on that without anything actually being wrong.
+    const typesIn = (raw: unknown): string[] =>
+      ((raw as { minigames?: { type: string }[] }).minigames ?? []).map((m) => m.type);
+    const all = [...typesIn(lisbonRaw), ...typesIn(tokyoRaw), ...typesIn(mexicoRaw), ...typesIn(berlinRaw)];
+    for (const t of ['timing', 'drag', 'choice', 'sequence', 'sustain', 'pressure']) {
+      expect(all, `no city ships a "${t}" minigame`).toContain(t);
+    }
   });
 
   it('a city with no minigames field at all is still valid (optional)', () => {

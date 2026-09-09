@@ -21,7 +21,12 @@ import { addTextScrim, textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
 import { addMenuButton } from './MenuButton';
 import { nextUnplayedMinigame } from '../game/minigame';
+import { memoryFor, returnFeedFlag } from '../game/memory';
+import { buildFeed } from '../game/social';
+import { showSocialFeed } from './SocialFeed';
+import { makeRng } from '../core/rng';
 import { WEATHER_EFFECTS, weatherAppliedFlag } from '../game/weather';
+import { currentStopFor } from '../game/route';
 
 // 'preshow-choices' (Addendum v2, Item 8a): the second minigame insertion point's resume/return
 // phase — the preshow dialogue has already played, only the choice buttons remain. Mirrors
@@ -117,7 +122,7 @@ export class CityScene extends Phaser.Scene {
     applyVignette(bg);
     const song = getSong(this.city.songId);
     audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm * 0.5, song.waveform);
-    const stop = State.data.route.find((s) => s.cityId === this.city.id);
+    const stop = currentStopFor(State.data.route, State.data.currentCityIndex, this.city.id);
     if (stop?.weather && /rain|drizzle/.test(stop.weather)) {
       this.rain = spawnRain(this, 0.3);
     } else {
@@ -141,7 +146,7 @@ export class CityScene extends Phaser.Scene {
     saveRun(State.data);
 
     switch (this.phase) {
-      case 'arrival': this.walk(this.consumeResumeNode(this.city.arrivalSceneId), () => this.startMinigameOrLocations()); break;
+      case 'arrival': this.startArrival(); break;
       case 'locations': this.startLocationPicker(); break;
       case 'relationship': this.startRelationship(); break;
       case 'preshow': this.startPreshow(); break;
@@ -184,6 +189,25 @@ export class CityScene extends Phaser.Scene {
 
   /** `isBack`: true only when goBack() is re-rendering an already-visited node — skips the
    *  history push (the node is already in the stack) so going back doesn't grow it. */
+  /** Arrival, with the return leg's social feed in front of it when this is a second night.
+   *
+   *  The feed is shown ONCE per return, before the night's dialogue, and only when the tour
+   *  actually remembers playing here — a resumed save that already got past it, or a first visit,
+   *  goes straight to the arrival scene exactly as before. */
+  private startArrival(): void {
+    const memory = memoryFor(this.city.id);
+    const isReturn = !!memory && !State.data.flags.includes(returnFeedFlag(this.city.id));
+    const toArrival = () => this.walk(this.consumeResumeNode(this.city.arrivalSceneId), () => this.startMinigameOrLocations());
+    if (!isReturn) { toArrival(); return; }
+
+    // Seeded off the run seed AND the city, so a replayed seed produces this town's exact feed,
+    // and two cities in one run never draw the same posts.
+    const rng = makeRng(`${State.data.seed}:social:${this.city.id}`);
+    State.addFlag(returnFeedFlag(this.city.id));
+    saveRun(State.data);
+    showSocialFeed(this, this.city.name, buildFeed(memory!, this.city.name, rng), toArrival);
+  }
+
   private walk(nodeId: string, onDone: () => void, isBack = false): void {
     this.currentOnDone = onDone;
     if (!isBack) this.walkHistory.push(nodeId);
@@ -350,7 +374,12 @@ export class CityScene extends Phaser.Scene {
    *  just never repeated on the second call. */
   private playNextRelationshipScene(): void {
     const pool = this.city.relationshipScenePool;
-    const available = pool.filter((e) => State.hasFlag(availabilityFlag(e.id)) && !this.relationshipsPlayed.has(e.id));
+    // The arc gate (RelationshipScenePoolEntry.minRelationship) is applied HERE rather than at
+    // pool-draw time: standing with a bandmate moves across a run, so a later beat becomes
+    // eligible partway through, and an ungated opening beat is always there as the fallback.
+    const available = pool.filter((e) => State.hasFlag(availabilityFlag(e.id))
+      && !this.relationshipsPlayed.has(e.id)
+      && (e.minRelationship === undefined || (State.data.relationships[e.bandmate] ?? 0) >= e.minRelationship));
     const entry = available[0] ?? (this.relationshipsPlayed.size === 0 ? pool[0] : undefined);
     if (!entry) { this.startPreshow(); return; }
     this.relationshipsPlayed.add(entry.id);
@@ -425,7 +454,8 @@ export class CityScene extends Phaser.Scene {
       State.addItem({ id: 'cassette', name: 'Warped cassette tape', description: 'From a night market stranger, origin unknown.' });
       State.appendLog('cassette_collected');
     }
-    const stop = State.data.route.find((s) => s.cityId === this.city.id);
+    // By index, not by id — the return leg books one city twice (see currentStopFor).
+    const stop = currentStopFor(State.data.route, State.data.currentCityIndex, this.city.id);
     if (stop) stop.visited = true;
     State.data.currentCityIndex += 1;
     State.setProgress({ screen: 'hub' });
