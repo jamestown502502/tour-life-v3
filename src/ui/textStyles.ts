@@ -73,5 +73,15 @@ export function textStyle(
 export function addTextScrim(
   scene: Phaser.Scene, x: number, y: number, w: number, h: number, alpha = 0.72,
 ): Phaser.GameObjects.Rectangle {
-  return scene.add.rectangle(x, y, w, h, PALETTE.night, alpha).setOrigin(0.5).setDepth(40);
+  // NO explicit depth. This used to force depth 40, which put the scrim ABOVE any text that did
+  // not itself set a higher depth — i.e. it covered the very text it exists to back. Only
+  // CityScene's city-name label happened to set depth 50 and escape it; the Title screen's
+  // "Tour Life" and every MiniGame instruction label rendered *behind* a 72%-opaque navy
+  // rectangle, which is exactly the "title screen text is broken" and "minigames need clearer
+  // instructions" reported live.
+  //
+  // Every caller adds the scrim immediately BEFORE the text it backs, so plain insertion order
+  // already puts the text on top — and keeps the scrim above the background, which was added
+  // earlier still. Inside a container the same ordering applies.
+  return scene.add.rectangle(x, y, w, h, PALETTE.night, alpha).setOrigin(0.5);
 }

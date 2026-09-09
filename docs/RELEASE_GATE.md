@@ -4,7 +4,13 @@ Every line must be green before the URL is shared publicly. Items marked **owner
 automated and are the two genuine gaps in this project's verification.
 
 **Live:** https://tour-life-v3.vercel.app
-**Release candidate:** Part A `e2cd345` · Part B `197ce8d`
+**Release candidate:** Part A `e2cd345` · Part B `197ce8d` · post-deploy regression pass (2026-09-09)
+
+> **The freeze was lifted once, deliberately.** The candidate shipped, was played on real browsers,
+> and failed: no boot on Edge, a slow blank boot on Chrome, and — once a stale-manifest bug was
+> fixed — labels that turned out to have been authored against flat fallback backgrounds all along.
+> Gates 18–22 below are that pass. This is exactly the outcome gates 15–16 exist to produce, arriving
+> the hard way instead.
 
 ---
 
@@ -12,7 +18,7 @@ automated and are the two genuine gaps in this project's verification.
 
 | # | Gate | Status | Evidence |
 |---|---|---|---|
-| 1 | Unit tests green | ✅ | **174/174** (was 128 at the start of this pass) |
+| 1 | Unit tests green | ✅ | **174/174** (was 128 at the start of this pass); `tsc --noEmit` clean |
 | 2 | Full e2e suite green, all 4 device profiles | ⏳ | CI runs `34356147306` (Part A), `34358244717` (Part B) |
 | 3 | A1 background audit complete | ✅ | Table in `BAIS_TourLife_CloseOutPlan_2026-09-09.md`; corrected the brief twice |
 | 4 | No barren screens | ✅ | All 10 full-screen scenes render their painted texture — `e2e/no-barren-screens.spec.ts` |
@@ -26,6 +32,11 @@ automated and are the two genuine gaps in this project's verification.
 | 12 | No-fail intact after RhythmScene changes | ✅ | All-miss run still reaches Results — `verification.spec.ts` 12/12 |
 | 13 | Launch link | ✅ | root **200**, og-image **200**, manifest **200**, `sw.js` serving `tourlife-v3` |
 | 14 | Clock fix not regressed | ✅ | `startTime = this.game.loop.time + 1200` verified present; audio scheduled on the AudioContext clock, never a scene timer |
+| 18 | Boots on Microsoft Edge | ✅ | Built `dist` driven in Edge at 412x915: Title reached, zero console errors, zero failed requests. Was an indefinite blank screen. |
+| 19 | Loading screen while assets load | ✅ | `BootScene.buildLoadingScreen()` — title, progress bar, percentage. Boot payload 15.4MB → 9.6MB (backing tracks deferred to a post-Title loader pass) |
+| 20 | Asset manifest never served stale | ✅ | `manifest.json` network-first in `public/sw.js`; `CACHE_NAME` bumped to `tourlife-v4` to evict every pinned v3 copy |
+| 21 | Every label legible on its real backdrop | ✅ | `e2e/text-legibility.spec.ts` — WCAG contrast measured from actual rendered pixels, 3.0:1 minimum, 11 checks over 8 scenes + 3 minigames |
+| 22 | All 10 minigames have painted art | ✅ | The three new types were shipped without backdrops; generated, measured seam-free, 1440x2560 |
 
 ## Owner — the two gaps no test can close
 
@@ -69,7 +80,7 @@ Written down rather than quietly dropped. Each with why.
 
 **READY TO SHARE: not yet** — https://tour-life-v3.vercel.app
 
-Fourteen of seventeen gates are green with evidence. The three open ones are gates 15–17: the
+Nineteen of twenty-two gates are green with evidence. The three open ones are gates 15–17: the
 real-device pass and the fresh-eyes playtest, plus fixing whatever they surface. Those are yours to
 run, and they are the two checks this project's history says matter most.
 

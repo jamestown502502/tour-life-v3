@@ -270,7 +270,7 @@ class AudioSystem {
    *  same musicGain bus playAmbience uses, crossfading out whatever was already playing the same
    *  way switching songs already does. duckMusic/setVolume('music')/stopMusic all keep working
    *  unchanged since they only ever touch musicGain, never the source feeding it. */
-  playMusicTrack(buffer: AudioBuffer, delaySeconds = 0, loop = true): void {
+  playMusicTrack(buffer: AudioBuffer, delaySeconds = 0, loop = true, fadeInSeconds = 0.8): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const previous = this.musicNodes;
@@ -279,7 +279,7 @@ class AudioSystem {
     const trackGain = ctx.createGain();
     trackGain.gain.value = 0;
     trackGain.connect(this.musicGain);
-    trackGain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.8);
+    trackGain.gain.linearRampToValueAtTime(1, ctx.currentTime + fadeInSeconds);
 
     const src = ctx.createBufferSource();
     src.buffer = buffer;

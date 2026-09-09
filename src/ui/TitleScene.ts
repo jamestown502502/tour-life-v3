@@ -39,7 +39,11 @@ export class TitleScene extends Phaser.Scene {
       // hasTitleTheme() flag only flips true on a successful FILE_COMPLETE) or if Phaser's own
       // sound manager isn't Web Audio-backed for some reason (no decoded buffer in the cache).
       const themeBuffer = hasTitleTheme() ? (this.cache.audio.get('title_theme') as AudioBuffer | undefined) : undefined;
-      if (themeBuffer instanceof AudioBuffer) audio.playMusicTrack(themeBuffer);
+      // A long fade in. Autoplay policy means the theme cannot start until the player's first
+      // tap, and that tap is often the one that also presses a button — reported live as the music
+      // "coming out of nowhere". 0.8s (the default, tuned for crossfading between rhythm tracks)
+      // is abrupt when it is the first sound the game has made. 2.6s reads as the room arriving.
+      if (themeBuffer instanceof AudioBuffer) audio.playMusicTrack(themeBuffer, 0, true, 2.6);
       else audio.playAmbience(DEFAULT_AMBIENCE_CHORDS, DEFAULT_AMBIENCE_BPM);
     });
     fadeIn(this);

@@ -20,8 +20,16 @@
     "file": "img/bg_hub.webp"
   },
   {
+    "key": "bg_mini_ber_modular_check",
+    "file": "img/bg_mini_ber_modular_check.webp"
+  },
+  {
     "key": "bg_mini_ber_synth_check",
     "file": "img/bg_mini_ber_synth_check.webp"
+  },
+  {
+    "key": "bg_mini_lis_live_radio",
+    "file": "img/bg_mini_lis_live_radio.webp"
   },
   {
     "key": "bg_mini_lis_load_in",
@@ -38,6 +46,10 @@
   {
     "key": "bg_mini_mex_radio_callin",
     "file": "img/bg_mini_mex_radio_callin.webp"
+  },
+  {
+    "key": "bg_mini_tok_mix_hold",
+    "file": "img/bg_mini_tok_mix_hold.webp"
   },
   {
     "key": "bg_mini_tok_pack_van",

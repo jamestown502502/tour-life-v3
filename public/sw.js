@@ -5,7 +5,7 @@
 // immutable per deploy — a cache-first miss just falls through to network and caches the
 // result). CACHE_NAME is bumped whenever the caching *strategy* itself changes, not per
 // content change — content changes are covered by cache-first's network fallback.
-const CACHE_NAME = 'tourlife-v3'; // v2 -> v3: non-hashed assets move from cache-first to stale-while-revalidate (a strategy change), AND the bump itself evicts every stale manifest/art a v2 client is pinned to
+const CACHE_NAME = 'tourlife-v4'; // v3 -> v4: manifest.json becomes network-first (a strategy change), AND the bump evicts every stale manifest a v3 client is pinned to
 // The navigation document itself was never actually cached anywhere — the fetch handler below
 // only ever READ from caches.match('/index.html') as an offline fallback, so "offline reload"
 // could never work (confirmed live: e2e/dist-smoke.spec.ts's offline test failed with
@@ -44,6 +44,28 @@ self.addEventListener('fetch', (event) => {
             .then((r) => r || caches.match('./index.html'))
             .then((r) => r || caches.match('./')),
         ),
+    );
+    return;
+  }
+
+  // THE ASSET INDEX IS NEVER SERVED STALE. manifest.json lists every painted asset the game
+  // loads; BootScene queues exactly what it names and nothing else. Served stale-while-revalidate
+  // like the art it indexes, a client boots against the PREVIOUS deploy's manifest, never requests
+  // the new assets at all, and every scene that gained art silently renders its code-drawn
+  // fallback instead — reported live as "most backgrounds are jacked up" one deploy after five new
+  // backdrops shipped, with the files themselves returning 200 the whole time. Note the app asking
+  // for `cache: 'no-cache'` cannot fix this: once a service worker handles a request, its
+  // respondWith decides, and the fetch's own cache hint is ignored.
+  //
+  // Network-first with a cache fallback: current whenever online, still offline-capable.
+  if (url.pathname.endsWith('/assets/manifest.json')) {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res.ok) caches.open(CACHE_NAME).then((cache) => cache.put(request, res.clone()));
+          return res;
+        })
+        .catch(() => caches.match(request)),
     );
     return;
   }

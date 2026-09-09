@@ -251,6 +251,71 @@ Verified live: first night **Hallenbad, 71 notes** → return leg **Kreuzberg St
 already an exception; four backing tracks make it policy. Procedural remains the fallback
 everywhere, so the rule's intent — never depend on an asset that might not load — still holds.
 
+### 13. The post-deploy regression pass (live report, 2026-09-09)
+
+The release candidate shipped and then failed in the hands of a real player, on real browsers, in
+ways no green suite had predicted. Every item below is a fix for something reported live.
+
+**"Didn't load on Microsoft Edge. On Chrome it loads slowly."**
+`BootScene` waited on the entire manifest — 81 images plus four backing tracks, **15.4MB** — before
+starting the Title scene, and rendered *nothing at all* while it did. The original reasoning ("a
+handful of local WebP files takes a fraction of a second") had quietly stopped being true as the
+manifest grew. On a cold cache that is a long stare at an empty navy screen, which reads as a
+broken game rather than a loading one.
+
+Two changes. The 6.6MB of backing tracks moved to a **second loader pass that runs after Title is
+already up** — none of them is needed until a rhythm scene starts, minutes away, and `RhythmScene`
+already falls back to its procedural bed for any track that has not arrived. And the boot now shows
+a **real loading screen**: the game's title, a progress bar, a percentage. Boot payload 15.4MB →
+9.6MB; a CI boot that was timing out past 60s now completes in **14.9s**. Verified in Edge
+specifically, from a built `dist`, at a 412x915 mobile viewport.
+
+**"Most background assets are now corrupted."**
+The assets were fine. The *index* was stale. `manifest.json` lists every painted asset the game
+loads, and the service worker served it stale-while-revalidate like the art it indexes — so a
+returning player booted against the **previous** deploy's manifest, never requested the new
+backdrops at all, and every scene that had gained art silently rendered its code-drawn fallback.
+The files themselves returned 200 the entire time. `manifest.json` is now network-first with a
+cache fallback: current whenever online, still offline-capable.
+
+Worth recording, because it cost real time: the app asking for `cache: 'no-cache'` cannot fix this.
+Once a service worker handles a request, its `respondWith` decides and the fetch's own cache hint
+is ignored.
+
+**"The title screen text is broken."**
+`addTextScrim` forced `depth 40`, which put the scrim *above* any text that did not itself set a
+higher depth — it covered the very text it exists to back. Only `CityScene`'s city-name label
+happened to set depth 50 and escape. The Title's "Tour Life" and every minigame instruction label
+were rendering behind a 72%-opaque navy rectangle.
+
+**"The intro is missing its background." / unreadable labels**
+Three of the ten minigames — the sequence, sustain and pressure types added last pass — had never
+had backdrops painted at all. They have them now, measured seam-free at 1440x2560 like the rest.
+
+The deeper problem was subtler, and is the one worth learning from. Every label in the game was
+authored **while the stale manifest meant the flat code-drawn fallback was what actually
+rendered**. Cream and teal read fine on a flat dark gradient. The moment the real art arrived, the
+same labels sat on lit wood, a bright window and flyers — and became unreadable. Fixing the
+manifest is what *exposed* this.
+
+`e2e/text-legibility.spec.ts` now measures it directly: read every label's bounds and colour, hide
+the labels, screenshot the canvas, and compute the **WCAG contrast ratio** against the pixels that
+were actually behind each one. 3.0:1 minimum, across 8 scenes and 3 minigames. It found the band
+creator's entire cast roster (name, instrument, want — 14 labels on lit wood) and the opening
+beat's heading at **1.84:1**.
+
+The first version of that test asserted "every label has a scrim rectangle behind it" and produced
+**two false failures out of three** — the Scrapbook's text sits on an opaque cream card and the
+Van's heading is gold on a dark sky, both perfectly legible with no scrim in sight. Measuring real
+pixels is the only version of this test that cannot lie in either direction. It then caught a third
+false positive that was the harness rather than the game: `game.scene.start` is `SceneManager.start`,
+which does not stop the calling scene, so Title stayed live underneath and its floating HTML seed
+input covered a Scrapbook button. Three false alarms, one test, before it was trustworthy.
+
+**"New mini-games need clearer instructions and better input."**
+Sequence pads 140 → 150px. Sustain faders 48 → 72px, with a 132px hit area so the grab does not
+demand precision. Hint text is now phase-specific rather than one generic line.
+
 # PART THREE — WHAT REMAINS
 
 All six outstanding items from the depth proposal are built: multi-node chains, relationship arcs,
@@ -263,13 +328,13 @@ Honest remainder, small and named:
   populated. Adding more is now purely content.
 - **New minigames are in three cities, not four.** Mexico City still runs the original three
   types — deliberate, so each city keeps a distinct identity.
-- **Backdrops: Tokyo verified by eye** and by the same seam measurement that found the original
-  problem. The other three came from the identical corrected prompt and load correctly, but were
-  not individually eyeballed at full size.
+- **Backdrops: all 25 now measured, and the three new minigame ones eyeballed at full size.** The
+  earlier "only Tokyo verified by eye" gap is closed for the new art; the original rhythm set is
+  measured but not each individually re-inspected.
 
 ## Verification
 
-- **162/162** unit tests (was 128)
+- **174/174** unit tests (was 128), TypeScript strict clean
 - Full e2e suite across all four device profiles in CI
 - New coverage: `src/tests/social.test.ts` (feed determinism, tone balance, return-leg comparison,
   epilogue layering), `src/tests/depth.test.ts` (chains, arc gates, promises, van beats, new
@@ -277,6 +342,9 @@ Honest remainder, small and named:
   absent on a first visit)
 - Live checks: sequence and sustain minigames rendering, van scene selecting the correct bandmate,
   social feed on a return visit
+- **Regression pass:** `e2e/text-legibility.spec.ts` (11 checks, WCAG contrast measured from real
+  pixels across 8 scenes + 3 minigames); Edge boot verified from a built `dist`; all 25 painted
+  backgrounds re-measured for seams and confirmed 1440x2560
 
 ## A note on how this month went
 

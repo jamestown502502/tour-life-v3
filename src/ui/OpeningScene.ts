@@ -15,7 +15,7 @@ import { goTo, fadeIn } from './transition';
 import { createButton } from './Button';
 import { State } from '../core/state';
 import { OPENING_GRAPH, OPENING_START } from '../../content/opening';
-import { textStyle } from './textStyles';
+import { addTextScrim, textStyle } from './textStyles';
 
 export class OpeningScene extends Phaser.Scene {
   constructor() { super('Opening'); }
@@ -30,6 +30,10 @@ export class OpeningScene extends Phaser.Scene {
     // gradient if the asset is missing — ensureSceneBackdrop keeps that seam.
     const bgKey = ensureSceneBackdrop(this, 'opening', PALETTE.plum);
     applyVignette(addCoverBackground(this, bgKey));
+    // Measured 1.84:1 against the painted backdrop's lit upper third — see
+    // e2e/text-legibility.spec.ts. Cream on the flat code-drawn fallback was fine, which is
+    // exactly why this survived until the real art started loading.
+    addTextScrim(this, W / 2, 70, 440, 66);
     this.add.text(W / 2, 70, 'The night before', textStyle('h1')).setOrigin(0.5);
     this.dialogueBox = new DialogueBox(this);
     this.beatsShown = 0;

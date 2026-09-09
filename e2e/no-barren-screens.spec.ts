@@ -62,19 +62,30 @@ test.describe('No barren screens', () => {
 
       // A real backdrop is an Image whose texture is the expected key AND which is big enough to
       // cover the screen — that is exactly what addCoverBackground produces.
+      // THE KEY ALONE PROVES NOTHING. ensureSceneBackdrop GENERATES a code-drawn texture under the
+      // same key when the painted file is absent, so "the key exists" is true either way — the
+      // first version of this test asserted exactly that and passed while production was rendering
+      // flat gradient fallbacks on five screens. The painted assets are 1440x2560; every
+      // code-drawn fallback is generated at the 720x1280 canvas size. Source width is what
+      // actually distinguishes them.
       const found = await page.evaluate(({ key, expectKey }) => {
         const s: any = (window as any).__game.scene.getScene(key);
         const covers = (s?.children?.list ?? []).filter((o: any) =>
           o.type === 'Image' && o.displayWidth >= 700 && o.displayHeight >= 1200);
+        const match = covers.find((o: any) => o.texture?.key === expectKey);
+        const sourceW = match?.texture?.source?.[0]?.width ?? 0;
         return {
           keys: covers.map((o: any) => o.texture?.key),
-          hasExpected: covers.some((o: any) => o.texture?.key === expectKey),
+          hasExpected: !!match,
+          sourceW,
+          isPainted: sourceW > 720,
           count: covers.length,
         };
       }, { key: scene.key, expectKey: scene.expectKey });
 
       console.log(`[barren] ${scene.key}: ${JSON.stringify(found)}`);
-      if (!found.hasExpected) bare.push(`${scene.key} (expected ${scene.expectKey}, saw ${found.keys.join(',') || 'nothing'})`);
+      if (!found.hasExpected) bare.push(`${scene.key}: expected ${scene.expectKey}, saw ${found.keys.join(',') || 'nothing'}`);
+      else if (!found.isPainted) bare.push(`${scene.key}: rendering the CODE-DRAWN FALLBACK for ${scene.expectKey} (source ${found.sourceW}px wide, painted assets are 1440)`);
       await page.screenshot({ path: `docs/polish-before-after/scene-${scene.key.toLowerCase()}.png` });
     }
 

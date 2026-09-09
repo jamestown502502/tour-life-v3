@@ -9,7 +9,7 @@ import { State } from '../core/state';
 import { BANDMATES, GENRES, WHY_TOUR_BEATS } from '../../content/bands';
 import { saveRun } from '../core/save';
 import { createFloatingInput, type FloatingInput } from './htmlOverlay';
-import { textStyle } from './textStyles';
+import { addTextScrim, textStyle } from './textStyles';
 import { addMenuButton } from './MenuButton';
 import { DialogueBox } from './DialogueBox';
 import { OPENING_GRAPH } from '../../content/opening';
@@ -29,6 +29,11 @@ export class BandCreatorScene extends Phaser.Scene {
     // gradient if the asset is missing — ensureSceneBackdrop keeps that seam.
     const bgKey = ensureSceneBackdrop(this, 'bandcreator', PALETTE.teal);
     applyVignette(addCoverBackground(this, bgKey));
+    // Every loose label on this screen sits directly on the painted backdrop — lit wood, a bright
+    // window, flyers. All of them were authored while a stale service-worker manifest meant the
+    // code-drawn FLAT gradient was what actually rendered, where cream and teal read fine. Scrims
+    // are what make them survive the real art. See addTextScrim for why insertion order matters.
+    addTextScrim(this, W / 2, 70, 420, 66);
     this.add.text(W / 2, 70, 'Name your band', textStyle('h1')).setOrigin(0.5);
     // Pre-Hub setup screens (this one and RoutePlan) had no way out at all before this — only
     // forward. "Quit to Title" from here is the actual "back out of setup" path.
@@ -45,6 +50,7 @@ export class BandCreatorScene extends Phaser.Scene {
     const GRID_ROW_H = 70;
     const GRID_INCREMENT = 78;
 
+    addTextScrim(this, W / 2, 200, 220, 52);
     this.add.text(W / 2, 200, 'Genre', textStyle('h2')).setOrigin(0.5);
     const genres = [...GENRES, ...State.data.meta.unlockedGenres.map((id) => ({ id, label: id.replace(/_/g, ' ') }))];
     const genreLabels: Phaser.GameObjects.Container[] = [];
@@ -59,6 +65,7 @@ export class BandCreatorScene extends Phaser.Scene {
     });
 
     const whyY = 240 + Math.ceil(genres.length / 2) * GRID_INCREMENT + 40;
+    addTextScrim(this, W / 2, whyY, 320, 52);
     this.add.text(W / 2, whyY, 'Why this tour?', textStyle('h2')).setOrigin(0.5);
     const whyLabels: Phaser.GameObjects.Container[] = [];
     WHY_TOUR_BEATS.forEach((beat, i) => {
@@ -77,8 +84,12 @@ export class BandCreatorScene extends Phaser.Scene {
     // a preview/callback, not a duplicate system) so a player who wants to meet the band before
     // committing to a name/genre can, without gating anything on it.
     const membersY = whyY + 40 + WHY_TOUR_BEATS.length * GRID_INCREMENT + 30;
+    addTextScrim(this, W / 2, membersY, 260, 52);
     this.add.text(W / 2, membersY, 'The band', textStyle('h2')).setOrigin(0.5);
     const castY = membersY + 100;
+    // One strip behind the whole roster: four columns of name/instrument/want plus the tap hint.
+    // Per-column scrims would leave the busiest part of the backdrop showing between them.
+    addTextScrim(this, W / 2, castY + 108, W - 40, 122);
     const castStep = W / (BANDMATES.length + 1);
     BANDMATES.forEach((b, i) => {
       const cx = castStep * (i + 1);

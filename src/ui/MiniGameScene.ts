@@ -338,11 +338,19 @@ export class MiniGameScene extends Phaser.Scene {
     this.clearContent();
     const pattern = Array.from({ length: rounds[this.sequenceRound] }, () => this.sequenceRng.int(0, 4));
 
-    this.contentLayer.add(addTextScrim(this, W / 2, 300, 420, 48));
-    const label = this.add.text(W / 2, 300, 'Listen...', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
+    this.contentLayer.add(addTextScrim(this, W / 2, 300, 520, 96));
+    const label = this.add.text(W / 2, 284, 'Watch the pattern...', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
     this.contentLayer.add(label);
+    // A second, quieter line that spells out what to DO. The help button explains the rules once;
+    // this is on screen while you play, which is where a first-timer actually needs it.
+    const hint = this.add.text(W / 2, 320, `Round ${this.sequenceRound + 1} of ${rounds.length} — don't tap yet`,
+      textStyle('small', { color: PALETTE_HEX.gold })).setOrigin(0.5);
+    this.contentLayer.add(hint);
 
-    const padW = 140, padH = 140, gap = 24, padY = 430;
+    // 150px pads at the measured 0.5417x phone scale are ~81 CSS px — comfortably over the 44px
+    // touch floor, and bigger than the 140 they started at, because a memory game punishes a
+    // mis-tap far more harshly than a timing one does.
+    const padW = 150, padH = 150, gap = 18, padY = 430;
     const startX = (W - (padW * 4 + gap * 3)) / 2;
     const colors = [PALETTE.terracotta, PALETTE.teal, PALETTE.plum, PALETTE.gold];
     const pads: Phaser.GameObjects.Rectangle[] = [];
@@ -363,6 +371,7 @@ export class MiniGameScene extends Phaser.Scene {
 
     this.time.delayedCall(500 + pattern.length * 520 + 250, () => {
       label.setText('Your turn');
+      hint.setText('Tap them back in the same order');
       let expected = 0;
       let settled = false;
       for (let i = 0; i < 4; i++) {
@@ -373,6 +382,7 @@ export class MiniGameScene extends Phaser.Scene {
           if (i !== pattern[expected]) {
             settled = true;
             label.setText('Not quite');
+            hint.setText('No penalty — next round coming up');
             this.time.delayedCall(700, nextRound);
             return;
           }
@@ -381,6 +391,7 @@ export class MiniGameScene extends Phaser.Scene {
             settled = true;
             this.sequenceHits++;
             label.setText('Got it');
+            hint.setText('Nice — one longer next time');
             this.time.delayedCall(700, nextRound);
           }
         });
@@ -401,8 +412,12 @@ export class MiniGameScene extends Phaser.Scene {
     const trackY = 300, trackH = 420, trackW = 90, zoneH = 150;
     const xs = [W / 2 - 150, W / 2 + 60];
 
-    this.contentLayer.add(addTextScrim(this, W / 2, 240, 460, 48));
-    this.contentLayer.add(this.add.text(W / 2, 240, 'Hold the mix', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
+    this.contentLayer.add(addTextScrim(this, W / 2, 240, 560, 96));
+    this.contentLayer.add(this.add.text(W / 2, 224, 'Hold the mix', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
+    // Reported live as needing clearer instruction: the mechanic is not guessable from two
+    // rectangles, so the screen says it outright while you play.
+    this.contentLayer.add(this.add.text(W / 2, 262, 'Drag BOTH bars into the gold zone and keep them there',
+      textStyle('small', { color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5));
 
     const zone = this.add.rectangle(W / 2 - 210, trackY + 110, 420, zoneH, PALETTE.gold, 0.25).setOrigin(0, 0);
     this.contentLayer.add(zone);
@@ -413,11 +428,15 @@ export class MiniGameScene extends Phaser.Scene {
     const faders: Phaser.GameObjects.Rectangle[] = [];
     for (const x of xs) {
       this.contentLayer.add(this.add.rectangle(x, trackY, trackW, trackH, PALETTE.night, 0.35).setOrigin(0, 0));
-      const fader = this.add.rectangle(x, trackY + trackH / 2 - 24, trackW, 48, PALETTE.cream, 0.95).setOrigin(0, 0);
-      fader.setInteractive({ draggable: true });
+      // 72px tall (was 48) with a hit area padded well beyond the visual: a drifting target that
+      // must be held is far more frustrating to grab than a one-shot drag, and this was reported
+      // as needing better input before anything else about it.
+      const fader = this.add.rectangle(x, trackY + trackH / 2 - 36, trackW, 72, PALETTE.cream, 0.95).setOrigin(0, 0);
+      fader.setInteractive(new Phaser.Geom.Rectangle(-30, -30, trackW + 60, 72 + 60), Phaser.Geom.Rectangle.Contains);
+      fader.input!.draggable = true;
       this.input.setDraggable(fader);
       fader.on('drag', (_p: Phaser.Input.Pointer, _dx: number, dy: number) => {
-        fader.y = Phaser.Math.Clamp(dy - 24, trackY, trackY + trackH - 48);
+        fader.y = Phaser.Math.Clamp(dy - 36, trackY, trackY + trackH - 72);
       });
       this.contentLayer.add(fader);
       faders.push(fader);
@@ -435,7 +454,7 @@ export class MiniGameScene extends Phaser.Scene {
       loop: true,
       callback: () => {
         if (done) { timer.remove(); return; }
-        const inZone = faders.every((f) => f.y + 24 >= zone.y && f.y + 24 <= zone.y + zoneH);
+        const inZone = faders.every((f) => f.y + 36 >= zone.y && f.y + 36 <= zone.y + zoneH);
         if (inZone) held += 100;
         meter.setText(`${(held / 1000).toFixed(1)}s / ${seconds}s`);
         for (const f of faders) f.setFillStyle(inZone ? PALETTE.gold : PALETTE.cream, 0.95);
