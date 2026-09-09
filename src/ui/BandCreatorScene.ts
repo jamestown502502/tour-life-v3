@@ -89,7 +89,7 @@ export class BandCreatorScene extends Phaser.Scene {
     const castY = membersY + 100;
     // One strip behind the whole roster: four columns of name/instrument/want plus the tap hint.
     // Per-column scrims would leave the busiest part of the backdrop showing between them.
-    addTextScrim(this, W / 2, castY + 108, W - 40, 122);
+    addTextScrim(this, W / 2, castY + 112, W - 40, 142);
     const castStep = W / (BANDMATES.length + 1);
     BANDMATES.forEach((b, i) => {
       const cx = castStep * (i + 1);
@@ -108,9 +108,11 @@ export class BandCreatorScene extends Phaser.Scene {
         fontSize: '13px', wordWrap: { width: castStep - 10 }, align: 'center',
       })).setOrigin(0.5, 0);
     });
-    this.add.text(W / 2, castY + 150, 'Tap a face to say hi.', textStyle('small', { fontSize: '14px' })).setOrigin(0.5);
+    // castY+166, not +150: one bandmate's want ("wants sonic experimentation") wraps to two lines,
+    // whose second line ended ~3px above this hint. Not an overlap by bounds, but visibly crowded.
+    this.add.text(W / 2, castY + 166, 'Tap a face to say hi.', textStyle('small', { fontSize: '14px' })).setOrigin(0.5);
 
-    createButton(this, W / 2 - 150, castY + 190, 300, GRID_ROW_H, "Hit the road", () => {
+    createButton(this, W / 2 - 150, castY + 200, 300, GRID_ROW_H, "Hit the road", () => {
       const name = this.nameInput.el.value.trim() || 'The Unnamed';
       const genre = this.genre || GENRES[0].id;
       const whyTour = this.whyTour || WHY_TOUR_BEATS[0];
