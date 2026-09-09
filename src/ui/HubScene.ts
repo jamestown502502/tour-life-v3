@@ -7,6 +7,7 @@ import { hasRealAsset } from '../core/assets';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
+import { bedForCity } from '../game/ambience';
 import { getCity } from '../game/content';
 import { saveRun } from '../core/save';
 import { audio } from '../core/audio';
@@ -45,7 +46,15 @@ export class HubScene extends Phaser.Scene {
 
   create(): void {
     fadeIn(this);
-    audio.playAmbience(DEFAULT_AMBIENCE_CHORDS, DEFAULT_AMBIENCE_BPM);
+    // The bus bed is the NEXT city's song, slowed right down — the sound of heading somewhere
+    // specific rather than one fixed loop played between every pair of cities.
+    const nextStop = State.data.route[State.data.currentCityIndex];
+    if (nextStop) {
+      const bed = bedForCity(nextStop.cityId, State.data.seed, (State.data.cityMemories ?? []).filter((m) => m.firstShowRecorded).map((m) => m.cityId), 0.34);
+      audio.playAmbience(bed.chords, bed.bpm, bed.waveform);
+    } else {
+      audio.playAmbience(DEFAULT_AMBIENCE_CHORDS, DEFAULT_AMBIENCE_BPM);
+    }
     const bgKey = ensureBusHubBackground(this);
     const bg = addCoverBackground(this, bgKey);
     applyVignette(bg);

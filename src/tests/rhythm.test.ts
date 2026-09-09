@@ -125,10 +125,30 @@ describe('audio offset calibration (Settings "Audio sync")', () => {
 describe('letter grade (Results plate)', () => {
   it('maps the timing ratio to S/A/B/C with C as the no-fail floor', () => {
     expect(letterGrade(1)).toBe('S');
-    expect(letterGrade(0.95)).toBe('S');
-    expect(letterGrade(0.9)).toBe('A');
-    expect(letterGrade(0.7)).toBe('B');
+    expect(letterGrade(0.9)).toBe('S');
+    expect(letterGrade(0.8)).toBe('A');
+    expect(letterGrade(0.72)).toBe('A');
+    expect(letterGrade(0.5)).toBe('B');
     expect(letterGrade(0.3)).toBe('C');
     expect(letterGrade(0)).toBe('C');
+  });
+
+  // The thresholds exist to be reachable, which is a claim about the SCORING, not about the
+  // numbers in letterGrade. Reported live as "why always C?": the ratio is measured against a run
+  // where every note is 'perfect' (100 pts) and 'good' is worth 60, so a player who landed every
+  // single note in the good window scored 0.60 and sat under the old 0.70 floor for B. C was the
+  // ceiling for anyone not hitting the +/-50ms window nearly every time, in a game whose premise
+  // is that there are no wrong answers.
+  it('a player who lands every note in the good window earns at least a B', () => {
+    const judgements = Array.from({ length: 60 }, () => 'good' as const);
+    const result = buildPerformanceResult(judgements, [], { cityId: 'berlin', songId: 'test_song', arrangement: { id: 'base', label: '', description: '', noteDensity: 1, notes: [], cues: [] }, bandHarmony: 50, energy: 50, audienceMood: 50, storyFlags: [] });
+    expect(result.ratio).toBeCloseTo(0.6, 1);
+    expect(letterGrade(result.ratio)).not.toBe('C');
+  });
+
+  it('reports the judgement breakdown so a score is explainable, not just a letter', () => {
+    const judgements = ['perfect', 'good', 'good', 'ok', 'miss', 'miss'] as const;
+    const result = buildPerformanceResult([...judgements], [], { cityId: 'berlin', songId: 'test_song', arrangement: { id: 'base', label: '', description: '', noteDensity: 1, notes: [], cues: [] }, bandHarmony: 50, energy: 50, audienceMood: 50, storyFlags: [] });
+    expect(result.judgementCounts).toEqual({ perfect: 1, good: 2, ok: 1, miss: 2 });
   });
 });

@@ -93,16 +93,30 @@ export interface PerformanceResult {
   expressionChoices: ChoiceCueType[];
   crowdConnection: number;
   unlockedFlags: string[];
+  /** How the run actually broke down. The ratio alone cannot distinguish "hit everything slightly
+   *  late" from "missed half the chart" — both can land in the same letter — and that is exactly
+   *  the question a player asking "why always C?" needs answered. Additive and presentational. */
+  judgementCounts: Record<HitJudgement, number>;
 }
 
 export type LetterGrade = 'S' | 'A' | 'B' | 'C';
 
 /** Results-screen letter from the timing ratio. Purely presentational — like `grade`, it never
- *  gates anything. 'C' is the floor: a no-input run still gets a letter, not a blank. */
+ *  gates anything. 'C' is the floor: a no-input run still gets a letter, not a blank.
+ *
+ *  RECALIBRATED after "why always C?" from a live player. The ratio is scored against a run where
+ *  EVERY note is 'perfect' (100 pts); 'good' is worth 60. So a player who lands every single note
+ *  in the good window — a genuinely competent performance — scored 0.60 and fell under the old
+ *  0.70 floor for B. C was not an occasional bad night, it was the ceiling for anyone not hitting
+ *  the +/-50ms perfect window almost every time. In a game whose whole premise is "no wrong
+ *  answers, no fail states", the letter was the one place still quietly telling players they were
+ *  bad at it.
+ *
+ *  Now: landing the notes at all earns B, precision earns A, near-flawless earns S. */
 export function letterGrade(ratio: number): LetterGrade {
-  if (ratio >= 0.95) return 'S';
-  if (ratio >= 0.85) return 'A';
-  if (ratio >= 0.7) return 'B';
+  if (ratio >= 0.90) return 'S';
+  if (ratio >= 0.72) return 'A';
+  if (ratio >= 0.50) return 'B';
   return 'C';
 }
 
@@ -129,5 +143,8 @@ export function buildPerformanceResult(
   if (grade === 'perfect') unlockedFlags.push(`show_${ctx.cityId}_triumphant`);
   if (expressionChoices.includes('invite_crowd')) unlockedFlags.push(`show_${ctx.cityId}_crowd_moment`);
 
-  return { timingScore, ratio, grade, expressionChoices, crowdConnection, unlockedFlags };
+  const judgementCounts: Record<HitJudgement, number> = { perfect: 0, good: 0, ok: 0, miss: 0 };
+  for (const j of judgements) judgementCounts[j]++;
+
+  return { timingScore, ratio, grade, expressionChoices, crowdConnection, unlockedFlags, judgementCounts };
 }

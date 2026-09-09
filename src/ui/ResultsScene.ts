@@ -4,8 +4,10 @@ import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { getCity } from '../game/content';
 import { letterGrade, type PerformanceResult } from '../game/rhythm';
-import { textStyle } from './textStyles';
+import { addTextScrim, textStyle } from './textStyles';
 import { State } from '../core/state';
+import { audio } from '../core/audio';
+import { bedForCity } from '../game/ambience';
 import { hasRealAsset } from '../core/assets';
 import { ensureCrowdFigure, ensureRhythmStageBackdrop } from '../art/sprites';
 import { addCoverBackground } from '../art/background';
@@ -39,6 +41,12 @@ export class ResultsScene extends Phaser.Scene {
     const stageBgKey = ensureRhythmStageBackdrop(this, city.id);
     addCoverBackground(this, stageBgKey);
 
+    // The room after the show still sounds like the song that was just played, a little slower.
+    // This scene set no bed at all before, so it kept whatever RhythmScene left running — which,
+    // when the show used a real backing track, meant the full track carried on under the results.
+    const bed = bedForCity(city.id, State.data.seed, (State.data.cityMemories ?? []).filter((m) => m.firstShowRecorded).map((m) => m.cityId), 0.45);
+    audio.playAmbience(bed.chords, bed.bpm, bed.waveform);
+
     // Letter plate: stamps in from oversized-and-transparent to settled. Presentational only —
     // like everything else on this screen, it never gates the story.
     const letter = letterGrade(this.result.ratio ?? 0);
@@ -50,11 +58,27 @@ export class ResultsScene extends Phaser.Scene {
       this.tweens.add({ targets: plate, alpha: 1, scale: 1, duration: 420, ease: 'Back.easeOut', delay: 150 });
     }
 
+    // One scrim behind the whole readout. This screen draws straight onto the city's rhythm-stage
+    // art — neon signage, stage wash, a lit window — and every line below was authored back when
+    // a stale asset manifest meant the flat code-drawn fallback was what actually rendered. Sent
+    // in live as an unreadable results screen.
+    addTextScrim(this, W / 2, 400, W - 40, 300);
+
     this.add.text(W / 2, 290, city.name, textStyle('h1')).setOrigin(0.5);
     this.add.text(W / 2, 350, GRADE_LABELS[this.result.grade],
       textStyle('body', { fontSize: '22px', wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5);
-    this.add.text(W / 2, 430, `Timing score: ${this.result.timingScore}`, textStyle('small', { fontSize: '18px' })).setOrigin(0.5);
-    this.add.text(W / 2, 470, `Crowd connection: ${this.result.crowdConnection}`, textStyle('small', { fontSize: '18px' })).setOrigin(0.5);
+
+    // The breakdown, not just the total. "Why always C?" is unanswerable from a ratio: hitting
+    // every note slightly late and missing half the chart can land the same letter, and they need
+    // opposite things from the player. Naming the counts turns the score into feedback.
+    const jc = this.result.judgementCounts ?? { perfect: 0, good: 0, ok: 0, miss: 0 };
+    const landed = jc.perfect + jc.good + jc.ok;
+    this.add.text(W / 2, 420, `${landed} of ${landed + jc.miss} notes landed`,
+      textStyle('small', { fontSize: '18px' })).setOrigin(0.5);
+    this.add.text(W / 2, 452, `Perfect ${jc.perfect}  ·  Good ${jc.good}  ·  Close ${jc.ok}  ·  Missed ${jc.miss}`,
+      textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold })).setOrigin(0.5);
+    this.add.text(W / 2, 486, `Timing score: ${this.result.timingScore}  ·  Crowd: ${this.result.crowdConnection}`,
+      textStyle('small', { fontSize: '16px' })).setOrigin(0.5);
     if (this.result.expressionChoices.length > 0) {
       this.add.text(W / 2, 520, `Moments: ${this.result.expressionChoices.map((c) => c.replace(/_/g, ' ')).join(', ')}`,
         textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5);

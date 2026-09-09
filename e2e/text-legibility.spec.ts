@@ -30,6 +30,11 @@ const SCENES: { key: string; data?: object }[] = [
   { key: 'Van', data: { cityId: 'berlin' } },
   { key: 'City', data: { cityId: 'berlin', phase: 'arrival' } },
   { key: 'Scrapbook', data: {} },
+  { key: 'Results', data: { cityId: 'berlin', result: {
+      timingScore: 4200, ratio: 0.55, grade: 'good', expressionChoices: ['invite_crowd'],
+      crowdConnection: 62, unlockedFlags: [],
+      judgementCounts: { perfect: 12, good: 30, ok: 9, miss: 6 },
+    } } },
   { key: 'MiniGame', data: { cityId: 'berlin', minigameId: 'ber_modular_check', returnPhase: 'locations' } },
   { key: 'MiniGame', data: { cityId: 'tokyo', minigameId: 'tok_mix_hold', returnPhase: 'locations' } },
   { key: 'MiniGame', data: { cityId: 'lisbon', minigameId: 'lis_live_radio', returnPhase: 'locations' } },

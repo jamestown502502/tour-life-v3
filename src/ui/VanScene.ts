@@ -12,9 +12,11 @@ import { PALETTE, W } from '../const';
 import { DialogueBox } from './DialogueBox';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
+import { audio } from '../core/audio';
 import { makeRng } from '../core/rng';
 import { textStyle } from './textStyles';
 import { getCity } from '../game/content';
+import { bedForCity } from '../game/ambience';
 import { VAN_BEATS, VAN_OPENERS } from '../../content/van';
 import type { BandmateId } from '../../content/schema';
 
@@ -50,6 +52,12 @@ export class VanScene extends Phaser.Scene {
     const bgKey = ensureSceneBackdrop(this, 'van', PALETTE.sky);
     applyVignette(addCoverBackground(this, bgKey));
     const city = getCity(this.cityId);
+
+    // The van rolls toward a specific city, so it hums that city's song at a travelling tempo.
+    // This scene set no bed at all before and simply kept looping whatever the previous screen
+    // had started.
+    const vanBed = bedForCity(city.id, State.data.seed, (State.data.cityMemories ?? []).filter((m) => m.firstShowRecorded).map((m) => m.cityId), 0.30);
+    audio.playAmbience(vanBed.chords, vanBed.bpm, vanBed.waveform);
     this.add.text(W / 2, 70, `On the way to ${city.name}`, textStyle('h1')).setOrigin(0.5);
 
     this.dialogueBox = new DialogueBox(this);
