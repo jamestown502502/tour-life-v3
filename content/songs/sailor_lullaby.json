@@ -5,6 +5,7 @@
   "lanes": 4,
   "chordProgression": "Am7-Fmaj7-Cmaj7-G6",
   "waveform": "triangle",
+  "audioFile": "lisbon_first.mp3",
   "arrangements": [
     {
       "id": "acoustic",

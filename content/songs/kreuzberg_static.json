@@ -5,6 +5,7 @@
   "lanes": 4,
   "chordProgression": "Dm-Bb-F-C",
   "waveform": "square",
+  "audioFile": "berlin_first.mp3",
   "arrangements": [
     {
       "id": "loose_wire",

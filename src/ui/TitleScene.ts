@@ -142,13 +142,16 @@ export class TitleScene extends Phaser.Scene {
     // game would be the overlay on a bare navy rectangle, with the painted title never appearing
     // behind it at all. Measured on the live site at standard deviation 0.00 across the backdrop.
     //
-    // Waiting on the camera's own FADE_IN_COMPLETE, not a timer. `this.time.delayedCall` advances
-    // on CLAMPED FRAME DELTA rather than wall clock — the same mechanism behind the stale-clock
-    // rhythm bug — so at the test harness's ~4fps a 700ms delay took over five real seconds and
-    // the overlay missed its 8s wait entirely. The event fires exactly when the title has finished
-    // becoming visible, which is the actual condition being waited on, at any frame rate.
+    // Do not WAIT for the fade — cancel it. Both earlier attempts here tied the overlay to elapsed
+    // time (a 700ms delayedCall, then FADE_IN_COMPLETE) and both were flaky for the same reason:
+    // a Phaser camera fade and a scene timer BOTH advance on clamped frame delta, not wall clock,
+    // so on a frame-starved machine a 250ms fade can take many real seconds and the overlay misses
+    // the test's 8s window. There is nothing to fade FROM on a first run anyway — this is the first
+    // screen after boot. resetFX() drops the camera straight to fully visible, so the title renders
+    // painted and the card opens over it in the same tick, identically at 4fps and at 120fps.
     if (!hasSeenHowToPlay()) {
-      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => this.openHowToPlay());
+      this.cameras.main.resetFX();
+      this.openHowToPlay();
     }
 
     this.events.on(Phaser.Scenes.Events.RESUME, () => {

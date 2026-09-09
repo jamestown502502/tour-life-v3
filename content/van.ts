@@ -43,3 +43,30 @@ export const VAN_BEATS: Record<BandmateId, { warm: string; cool: string }> = {
     cool: '"Do you think anyone would notice," Rowan says, half asleep, "if I just played the same note the whole set." Nobody answers. Rowan smiles anyway.',
   },
 };
+
+/** The line that makes one stop lead into the next.
+ *
+ *  The van used to open on a generic motorway image no matter what had just happened — a triumph
+ *  in Berlin and a rough night in Berlin produced the identical drive, so the tour read as a list
+ *  of separate cities rather than one continuous trip. Reported live as the stops needing to feel
+ *  "seamless and connected".
+ *
+ *  Keyed by how the LAST city's show actually went (CityMemory.show), `{city}` filled with its
+ *  name. Additive and non-gating like every other van line, and still under 40 words. */
+export const VAN_CARRY: Record<'triumph' | 'solid' | 'rough', string[]> = {
+  triumph: [
+    'Nobody says it out loud, but {city} is still in the van somewhere — in how easily everyone found their seat, in the fact that the playlist argument never started.',
+    'Someone keeps almost mentioning {city} and then not. The good ones are harder to talk about than the bad ones.',
+    'The merch box is lighter than it was leaving {city}. Everyone has noticed. Nobody wants to be the one to say it.',
+  ],
+  solid: [
+    'They got through {city}. That is the whole review, and on a tour it is a better one than it sounds.',
+    'Somebody asks what the crowd in {city} was like and gets three different answers, all of them roughly "fine".',
+    '{city} already sounds like it happened a while ago. Two hours of motorway does that.',
+  ],
+  rough: [
+    'Nobody has brought up {city}. The not-bringing-it-up is taking a lot of effort.',
+    'The set from {city} gets replayed in at least two heads on this drive, with edits.',
+    '"We were tired," somebody offers, about {city}. It goes unchallenged, which is its own kind of answer.',
+  ],
+};

@@ -5,6 +5,7 @@
   "lanes": 4,
   "chordProgression": "Am-F-C-G",
   "waveform": "square",
+  "audioFile": "tokyo_first.mp3",
   "arrangements": [
     {
       "id": "tight",

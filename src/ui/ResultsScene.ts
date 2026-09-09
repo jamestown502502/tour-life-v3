@@ -79,6 +79,16 @@ export class ResultsScene extends Phaser.Scene {
       textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold })).setOrigin(0.5);
     this.add.text(W / 2, 486, `Timing score: ${this.result.timingScore}  ·  Crowd: ${this.result.crowdConnection}`,
       textStyle('small', { fontSize: '16px' })).setOrigin(0.5);
+    // Landing an entire chart without dropping a note is the one performance milestone worth
+    // naming outright. The game tracked it in the combo counter and then threw it away at the end,
+    // so the achievement rhythm players actually chase left no trace on the results screen.
+    if (landed > 0 && jc.miss === 0) {
+      const fc = this.add.text(W / 2, 552, 'FULL COMBO — not one note dropped',
+        textStyle('body', { fontSize: '19px', color: PALETTE_HEX.gold })).setOrigin(0.5);
+      if (!State.data.accessibility.reducedMotion) {
+        this.tweens.add({ targets: fc, scale: { from: 0.86, to: 1 }, duration: 380, ease: 'Back.easeOut', delay: 500 });
+      }
+    }
     if (this.result.expressionChoices.length > 0) {
       this.add.text(W / 2, 520, `Moments: ${this.result.expressionChoices.map((c) => c.replace(/_/g, ' ')).join(', ')}`,
         textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5);

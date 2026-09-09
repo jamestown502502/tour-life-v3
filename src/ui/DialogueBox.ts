@@ -10,6 +10,7 @@ import { textStyle } from './textStyles';
 import { createButton } from './Button';
 import { audio } from '../core/audio';
 import { State } from '../core/state';
+import { moodForNode } from '../game/mood';
 
 // Panel sits low on the 720x1280 canvas. PANEL_Y is chosen so that the panel plus up to 4
 // choice rows stays above SAFE_BOTTOM_Y (1230) — on a phone the canvas scales to ~0.54x and
@@ -208,7 +209,10 @@ export class DialogueBox {
     this.speakerText.setColor(hex);
     this.nameBar.setVisible(!isNarrator).setFillStyle(color, 0.9).setSize(Math.max(40, this.speakerText.width), 3);
     for (const g of this.nameGlow) g.setVisible(!isNarrator).setFillStyle(color, g.radius > 60 ? 0.09 : 0.14);
-    this.setPortrait(node.speaker, node.portrait);
+    // An authored mood always wins; otherwise the line itself picks the face. Only 108 of the
+    // game's 503 nodes author one, and the old fallback was a flat 'happy' -- so the cast smiled
+    // through arguments, exhaustion and empty rooms. See game/mood.ts.
+    this.setPortrait(node.speaker, moodForNode(node.portrait, node.text));
     this.fullText = node.text;
     this.bodyText.setText('');
     this.backlog.push({ speaker: node.speaker, text: node.text });

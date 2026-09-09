@@ -126,7 +126,8 @@ export class RoutePlanScene extends Phaser.Scene {
       for (const stop of generated.stops) {
         State.data.localLove[stop.cityId] = 0;
         const city = getCity(stop.cityId);
-        for (const flag of drawScenePoolFlags(makeRng(`${State.data.seed}:${city.id}:pool`), city)) {
+        for (const flag of drawScenePoolFlags(makeRng(`${State.data.seed}:${city.id}:pool`), city,
+          State.data.meta.seenSceneIds ?? [])) {
           State.addFlag(flag);
         }
       }

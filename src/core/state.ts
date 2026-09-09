@@ -56,6 +56,11 @@ export interface MetaProgress {
   unlockedGenres: string[];
   unlockedDecor: string[];
   runHistory: RunHistoryEntry[];
+  /** Relationship scenes this player has already been shown, across every run. The scene-pool
+   *  draw prefers material they have never seen, so a replay is new writing rather than a
+   *  reshuffle of the same two beats. Optional: a save written before this existed simply has no
+   *  history, which reads as "nothing seen yet" and behaves exactly like the old draw. */
+  seenSceneIds?: string[];
 }
 
 export type ScreenName =
@@ -128,7 +133,7 @@ export interface RunState {
 }
 
 export function freshMeta(): MetaProgress {
-  return { completedRuns: 0, unlockedGenres: [], unlockedDecor: [], runHistory: [] };
+  return { completedRuns: 0, unlockedGenres: [], unlockedDecor: [], runHistory: [], seenSceneIds: [] };
 }
 
 export function freshAccessibility(): AccessibilitySettings {
@@ -217,6 +222,15 @@ class GameState {
 
   hasFlag(flag: string): boolean {
     return this.data.flags.includes(flag);
+  }
+
+  /** Records that a relationship scene has actually been SHOWN to this player, so future runs can
+   *  draw fresh material first (see scenePool.drawScenePoolFlags). Recorded on display rather than
+   *  on draw: a run abandoned before reaching a city should not burn that city's unseen scenes. */
+  markSceneSeen(sceneId: string): void {
+    const meta = this.data.meta;
+    if (!meta.seenSceneIds) meta.seenSceneIds = [];
+    if (!meta.seenSceneIds.includes(sceneId)) meta.seenSceneIds.push(sceneId);
   }
 
   addItem(item: Item): void {

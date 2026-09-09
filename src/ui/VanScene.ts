@@ -17,7 +17,7 @@ import { makeRng } from '../core/rng';
 import { textStyle } from './textStyles';
 import { getCity } from '../game/content';
 import { bedForCity } from '../game/ambience';
-import { VAN_BEATS, VAN_OPENERS } from '../../content/van';
+import { VAN_BEATS, VAN_CARRY, VAN_OPENERS } from '../../content/van';
 import type { BandmateId } from '../../content/schema';
 
 const BANDMATES: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
@@ -67,14 +67,40 @@ export class VanScene extends Phaser.Scene {
     const beat = VAN_BEATS[focus.id];
 
     const toCity = (): void => goTo(this, 'City', { cityId: this.cityId });
-    this.dialogueBox.show(
-      { id: 'van_open', speaker: 'narrator', text: rng.pick(VAN_OPENERS) },
-      () => this.dialogueBox.show(
+    const playBandmateBeat = (): void => {
+      this.dialogueBox.show(
         { id: 'van_beat', speaker: focus.id, text: focus.warm ? beat.warm : beat.cool },
         toCity,
         () => {},
-      ),
+      );
+    };
+    // The carry line: what the LAST city's show actually did to this van. Without it a triumph and
+    // a disaster produced the identical drive, and the tour read as a list of separate cities
+    // rather than one trip. Only shown when there IS a previous stop with a real show behind it.
+    const carry = this.carryBeat(rng);
+    const afterOpener = carry
+      ? (): void => this.dialogueBox.show({ id: 'van_carry', speaker: 'narrator', text: carry }, playBandmateBeat, () => {})
+      : playBandmateBeat;
+
+    this.dialogueBox.show(
+      { id: 'van_open', speaker: 'narrator', text: rng.pick(VAN_OPENERS) },
+      afterOpener,
       () => {},
     );
+  }
+
+  /** The previous stop's show, phrased for the drive. Null on the very first leg (nothing to carry
+   *  yet) or if that city somehow has no recorded show. */
+  private carryBeat(rng: ReturnType<typeof makeRng>): string | null {
+    const route = State.data.route;
+    const here = route.findIndex((s) => s.cityId === this.cityId);
+    const previous = here > 0 ? route[here - 1] : undefined;
+    if (!previous) return null;
+    const memory = (State.data.cityMemories ?? []).find(
+      (m) => m.cityId === previous.cityId && m.firstShowRecorded,
+    );
+    if (!memory) return null;
+    const outcome = memory.secondShow ?? memory.show;
+    return rng.pick(VAN_CARRY[outcome]).replace('{city}', getCity(previous.cityId).name);
   }
 }

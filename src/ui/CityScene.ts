@@ -387,6 +387,9 @@ export class CityScene extends Phaser.Scene {
     const entry = available[0] ?? (this.relationshipsPlayed.size === 0 ? pool[0] : undefined);
     if (!entry) { this.startPreshow(); return; }
     this.relationshipsPlayed.add(entry.id);
+    // Cross-run freshness: this scene has now genuinely been shown, so later runs draw around it
+    // while this city still has material this player has never read (see scenePool).
+    State.markSceneSeen(entry.id);
     // Persisted immediately, before walking the entry's own dialogue — the SAME dialogueNodeId
     // mechanism already covers an interruption mid-way through this specific entry's own scene
     // graph; this covers the gap between two entries that dialogueNodeId alone couldn't (walk()

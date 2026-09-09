@@ -93,21 +93,30 @@ describe('a full run hears real variety', () => {
 });
 
 describe('backing tracks, with the procedural bed still underneath', () => {
-  it('every second song declares a real backing track', () => {
-    const withAudio = SONGS.filter((s) => s.audioFile);
-    expect(withAudio.length, 'expected the four second songs to carry audio').toBe(4);
-    for (const s of withAudio) expect(s.audioFile).toMatch(/\.mp3$/);
+  it('every song declares a real backing track', () => {
+    // Was four of eight. Part B generated tracks for each city's SECOND song and left the four
+    // originals -- the ones a first visit is most likely to open with -- on the procedural
+    // oscillator bed, so half of every playthrough's shows had no recorded music. All eight now
+    // carry one; see scripts/generate-first-songs.sh.
+    const silent = SONGS.filter((s) => !s.audioFile).map((s) => s.id);
+    expect(silent, `songs still with no recorded audio: ${silent.join(', ')}`).toEqual([]);
+    for (const s of SONGS) expect(s.audioFile).toMatch(/\.mp3$/);
   });
 
-  it('a song without a backing track is still fully playable', () => {
-    // The original four have no audioFile and must keep working on procedural ambience alone —
-    // that is the fallback RhythmScene relies on when a track is missing or fails to decode.
-    const procedural = SONGS.filter((s) => !s.audioFile);
-    expect(procedural.length).toBe(4);
-    for (const s of procedural) {
+  it('a song is STILL fully playable with its track stripped away', () => {
+    // The procedural bed is not dead code just because every song now ships audio: RhythmScene
+    // falls back to it whenever a track has not finished downloading (they load in the background,
+    // after Title) or fails to decode. Every song must therefore keep the material that bed needs.
+    for (const s of SONGS) {
       expect(s.chordProgression.length, `${s.id} has no progression to fall back to`).toBeGreaterThan(0);
-      expect(s.bpm).toBeGreaterThan(0);
+      expect(s.bpm, `${s.id} has no tempo to fall back to`).toBeGreaterThan(0);
+      expect(s.waveform, `${s.id} has no voice to fall back to`).toBeTruthy();
     }
+  });
+
+  it('no two songs share a backing track', () => {
+    const files = SONGS.map((s) => s.audioFile);
+    expect(new Set(files).size, `duplicates in ${files.join(', ')}`).toBe(files.length);
   });
 
   it('every song charts inside the 55-70s window the tracks were written for', () => {

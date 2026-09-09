@@ -17,6 +17,11 @@ import { saveRun } from '../core/save';
 import { recordMinigame } from '../game/memory';
 import { getCity } from '../game/content';
 import { addTextScrim, textStyle } from './textStyles';
+// The same feedback vocabulary RhythmScene has always had. Minigames shipped with NONE of it:
+// no spark on a correct answer, no shake on a wrong one, no hitstop on the moment that matters.
+// Half the game's interactions confirmed themselves with a text label changing, which is why they
+// read as flat next to the rhythm sections. Every one of these no-ops under reduced motion.
+import { spawnPerfectSpark, spawnRingPulse, hitstop, shake } from '../art/effects';
 import { addHelpButton } from './HelpButton';
 import { addMenuButton } from './MenuButton';
 import type { MiniGameDef, MiniGameQuestion, MiniGameReward } from '../../content/schema';
@@ -265,6 +270,7 @@ export class MiniGameScene extends Phaser.Scene {
           // Chip and slot are the same size, so aligning their top-left corners seats the chip
           // exactly over the slot it was dropped on.
           chip.setPosition(target.rect.x, target.rect.y);
+          spawnRingPulse(this, target.rect.x + slotW / 2, target.rect.y + slotH / 2);
           label_.setPosition(target.rect.x + chipW / 2, target.rect.y + chipH / 2);
           chip.disableInteractive();
           if (placedCount >= items.length) this.time.delayedCall(300, finishOnce);
@@ -382,6 +388,7 @@ export class MiniGameScene extends Phaser.Scene {
           if (i !== pattern[expected]) {
             settled = true;
             label.setText('Not quite');
+            shake(this, 3);
             hint.setText('No penalty — next round coming up');
             this.time.delayedCall(700, nextRound);
             return;
@@ -391,6 +398,8 @@ export class MiniGameScene extends Phaser.Scene {
             settled = true;
             this.sequenceHits++;
             label.setText('Got it');
+            spawnPerfectSpark(this, W / 2, 430);
+            hitstop(this, 40);
             hint.setText('Nice — one longer next time');
             this.time.delayedCall(700, nextRound);
           }

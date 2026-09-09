@@ -154,7 +154,7 @@ export function buildSong(config: SongConfig): SongDef {
 // ---------------------------------------------------------------------------------------------
 
 export const SAILOR_LULLABY: SongConfig = {
-  id: 'sailor_lullaby', name: 'Sailor Lullaby', bpm: 92, lanes: 4, chordProgression: 'Am7-Fmaj7-Cmaj7-G6', waveform: 'triangle',
+  id: 'sailor_lullaby', name: 'Sailor Lullaby', bpm: 92, lanes: 4, chordProgression: 'Am7-Fmaj7-Cmaj7-G6', waveform: 'triangle', audioFile: 'lisbon_first.mp3',
   patterns: {
     // Hero (duet): a sung phrase ("call") answered by the second voice ("response").
     call: [k(0), s(2)],
@@ -195,7 +195,7 @@ export const SAILOR_LULLABY: SongConfig = {
 };
 
 export const NEON_RAIN: SongConfig = {
-  id: 'neon_rain', name: 'Neon Rain', bpm: 118, lanes: 4, chordProgression: 'Am-F-C-G', waveform: 'square',
+  id: 'neon_rain', name: 'Neon Rain', bpm: 118, lanes: 4, chordProgression: 'Am-F-C-G', waveform: 'square', audioFile: 'tokyo_first.mp3',
   patterns: {
     // Hero (bass_forward): Rowan's bassline — long sustained roots, then a walking line.
     bassline: [o(0), k(2), s(3)],
@@ -232,7 +232,7 @@ export const NEON_RAIN: SongConfig = {
 };
 
 export const CALLEJON_GROOVE: SongConfig = {
-  id: 'callejon_groove', name: 'Callejón Groove', bpm: 104, lanes: 4, chordProgression: 'Am-Dm-E7-Am', waveform: 'triangle',
+  id: 'callejon_groove', name: 'Callejón Groove', bpm: 104, lanes: 4, chordProgression: 'Am-Dm-E7-Am', waveform: 'triangle', audioFile: 'mexico_first.mp3',
   patterns: {
     // 3-2 son-clave feel, and the hero (duet_percussion) trading chords with Ximena's hands.
     clave: [k(0), s(1.5), k(2), s(3), o(3.5)],
@@ -275,7 +275,7 @@ export const CALLEJON_GROOVE: SongConfig = {
 };
 
 export const KREUZBERG_STATIC: SongConfig = {
-  id: 'kreuzberg_static', name: 'Kreuzberg Static', bpm: 126, lanes: 4, chordProgression: 'Dm-Bb-F-C', waveform: 'square',
+  id: 'kreuzberg_static', name: 'Kreuzberg Static', bpm: 126, lanes: 4, chordProgression: 'Dm-Bb-F-C', waveform: 'square', audioFile: 'berlin_first.mp3',
   patterns: {
     // Driving four-on-the-floor pulse. Hero (modular_trade): the "machine" answers with an
     // erratic, syncopated pattern that never quite repeats — Lene's rig, not the band.
