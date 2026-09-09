@@ -12,6 +12,11 @@ import sailorLullabyRaw from '../../content/songs/sailor_lullaby.json';
 import neonRainRaw from '../../content/songs/neon_rain.json';
 import callejonGrooveRaw from '../../content/songs/callejon_groove.json';
 import kreuzbergStaticRaw from '../../content/songs/kreuzberg_static.json';
+// Second songs (close-out Part B) — one per city, so the return leg never replays the first night.
+import tejoAfterMidnightRaw from '../../content/songs/tejo_after_midnight.json';
+import lastTrainHomeRaw from '../../content/songs/last_train_home.json';
+import mercadoElectricoRaw from '../../content/songs/mercado_electrico.json';
+import hallenbadRaw from '../../content/songs/hallenbad.json';
 
 assertValid(validateCity(lisbonRaw), 'cities/lisbon.json');
 assertValid(validateCity(tokyoRaw), 'cities/tokyo.json');
@@ -21,9 +26,16 @@ assertValid(validateSong(sailorLullabyRaw), 'songs/sailor_lullaby.json');
 assertValid(validateSong(neonRainRaw), 'songs/neon_rain.json');
 assertValid(validateSong(callejonGrooveRaw), 'songs/callejon_groove.json');
 assertValid(validateSong(kreuzbergStaticRaw), 'songs/kreuzberg_static.json');
+assertValid(validateSong(tejoAfterMidnightRaw), 'songs/tejo_after_midnight.json');
+assertValid(validateSong(lastTrainHomeRaw), 'songs/last_train_home.json');
+assertValid(validateSong(mercadoElectricoRaw), 'songs/mercado_electrico.json');
+assertValid(validateSong(hallenbadRaw), 'songs/hallenbad.json');
 
 export const CITIES: CityDef[] = [lisbonRaw as CityDef, tokyoRaw as CityDef, mexicoCityRaw as CityDef, berlinRaw as CityDef];
-export const SONGS: SongDef[] = [sailorLullabyRaw as SongDef, neonRainRaw as SongDef, callejonGrooveRaw as SongDef, kreuzbergStaticRaw as SongDef];
+export const SONGS: SongDef[] = [
+  sailorLullabyRaw as SongDef, neonRainRaw as SongDef, callejonGrooveRaw as SongDef, kreuzbergStaticRaw as SongDef,
+  tejoAfterMidnightRaw as SongDef, lastTrainHomeRaw as SongDef, mercadoElectricoRaw as SongDef, hallenbadRaw as SongDef,
+];
 
 const cityIndex = new Map(CITIES.map((c) => [c.id, c]));
 const songIndex = new Map(SONGS.map((s) => [s.id, s]));

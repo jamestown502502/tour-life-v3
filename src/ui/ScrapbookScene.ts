@@ -6,7 +6,8 @@ import { spawnConfetti, applyVignette } from '../art/effects';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
-import { getCity } from '../game/content';
+import { getCity, getSong } from '../game/content';
+import { songForVisit } from '../game/setlist';
 import { generateEnding } from '../game/endings';
 import { clearSave } from '../core/save';
 import { textStyle } from './textStyles';
@@ -52,7 +53,16 @@ export class ScrapbookScene extends Phaser.Scene {
     this.add.text(W / 2, 240, `Route: ${route}`,
       textStyle('dialogue', { fontSize: '16px', shadow: undefined, wordWrap: { width: W - 180 }, align: 'center' })).setOrigin(0.5);
 
-    const setlist = Array.from(new Set(State.data.route.map((s) => getCity(s.cityId).songId))).join(', ');
+    // The songs this run ACTUALLY played, in route order — including the return leg's second
+    // song, which is the whole point of the pair. Was each city's nominal songId, which listed the
+    // first song twice for a revisited city and never named the one that closed the tour.
+    const played: string[] = [];
+    for (const stop of State.data.route) {
+      const city = getCity(stop.cityId);
+      const visit = played.filter((_, i) => State.data.route[i]?.cityId === stop.cityId).length;
+      played.push(getSong(songForVisit(city, State.data.seed, Math.min(visit, 1))).name);
+    }
+    const setlist = played.join(', ');
     this.add.text(W / 2, 290, `Setlist: ${setlist}`, textStyle('dialogue', { fontSize: '15px', shadow: undefined })).setOrigin(0.5);
 
     const souvenirs = State.data.inventory.map((i) => i.name).join(' · ') || 'none collected';

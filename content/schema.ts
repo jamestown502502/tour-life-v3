@@ -158,6 +158,11 @@ export interface CityDef {
   collaborator: CollaboratorDef;
   preShowChoices: PreShowChoiceDef[];
   songId: string;
+  /** The city's setlist: the two songs it can play. The run seed picks which one opens the city,
+   *  and the return leg always plays the OTHER — so a city never plays the same song twice.
+   *  Additive: a city (or a save) written before second songs existed resolves through `songId`,
+   *  and src/game/setlist.ts falls back to it. */
+  songs?: string[];
   storyGate?: StoryGate;
   scenes: SceneGraph;
   afterShowSceneId: string;
@@ -199,6 +204,10 @@ export interface SongDef {
   lanes: number;
   chordProgression: string;
   waveform: 'triangle' | 'square' | 'sine';
+  /** Optional real backing track (public/audio/<file>), loaded by BootScene and played by
+   *  RhythmScene in place of the procedural ambience. Absent, or failed to load, and the
+   *  procedural bed plays exactly as it always has — the same fallback seam the title theme uses. */
+  audioFile?: string;
   arrangements: SongArrangement[]; // arrangements[0] is the default/base
 }
 
@@ -286,6 +295,15 @@ export function validateCity(data: unknown): ValidationResult {
     fail(errors, `${path}: preShowChoices must have >= 2 entries`);
   }
   if (!isString(c.songId)) fail(errors, `${path}: songId must be a string`);
+  if (c.songs !== undefined) {
+    if (!isArray(c.songs) || (c.songs as unknown[]).some((x) => !isString(x))) {
+      fail(errors, `${path}: songs must be an array of song ids`);
+    } else if (new Set(c.songs as string[]).size !== (c.songs as string[]).length) {
+      // A duplicated entry would silently defeat the whole point: the return leg would replay the
+      // first night's song.
+      fail(errors, `${path}: songs must not repeat the same id`);
+    }
+  }
   if (!isString(c.arrivalSceneId)) fail(errors, `${path}: arrivalSceneId required`);
   if (!isString(c.preShowSceneId)) fail(errors, `${path}: preShowSceneId required`);
   if (!isString(c.afterShowSceneId)) fail(errors, `${path}: afterShowSceneId required`);

@@ -32,6 +32,7 @@
     { "id": "spotlight_rowan", "label": "Build the whole set around Rowan's bassline", "description": "Hand the room over to the one who's earned it.", "arrangementId": "bass_forward", "effects": { "inspiration": 2 }, "condition": "relationship.rowan>=30" }
   ],
   "songId": "neon_rain",
+  "songs": ["neon_rain", "last_train_home"],
   "storyGate": { "condition": "relationship.rowan>=30", "unlock": "bass_forward" },
   "afterShowSceneId": "tok_aftershow",
   "journalSceneId": "tok_journal",

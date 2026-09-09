@@ -10,6 +10,7 @@ import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
 import { saveRun } from '../core/save';
 import { getCity, getSong } from '../game/content';
+import { songForVisit, visitIndexFor } from '../game/setlist';
 import { audio } from '../core/audio';
 import { parseChordProgression } from '../core/musicTheory';
 import { resolveNode, visibleChoices, applyChoice, advanceTarget } from '../game/dialogue';
@@ -120,7 +121,10 @@ export class CityScene extends Phaser.Scene {
     const bgKey = ensureCityBackground(this, this.city.id, this.city.tint);
     const bg = addCoverBackground(this, bgKey);
     applyVignette(bg);
-    const song = getSong(this.city.songId);
+    // Same song the show will actually use tonight, so the city's ambient bed and the night's
+    // setlist agree (a return leg hums its second song, not the first night's).
+    const visit = visitIndexFor(this.city.id, (State.data.cityMemories ?? []).filter((m) => m.firstShowRecorded).map((m) => m.cityId));
+    const song = getSong(songForVisit(this.city, State.data.seed, visit));
     audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm * 0.5, song.waveform);
     const stop = currentStopFor(State.data.route, State.data.currentCityIndex, this.city.id);
     if (stop?.weather && /rain|drizzle/.test(stop.weather)) {

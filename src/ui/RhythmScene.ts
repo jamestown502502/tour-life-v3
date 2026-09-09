@@ -11,6 +11,7 @@ import { createButton } from './Button';
 import { State } from '../core/state';
 import { audio, type SfxName } from '../core/audio';
 import { getCity, getSong } from '../game/content';
+import { songForVisit, visitIndexFor } from '../game/setlist';
 import {
   adjustedHitMs, buildPerformanceResult, combineHoldJudgement, effectiveWindows, judgeHit,
   pickArrangement, scoreForHit, type HitJudgement, type PerformanceContext,
@@ -140,7 +141,10 @@ export class RhythmScene extends Phaser.Scene {
   create(): void {
     fadeIn(this);
     const city = getCity(this.cityId);
-    const song = getSong(city.songId);
+    // Which of the city's two songs tonight is: the seed picks the opener, and the return leg
+    // always plays the other one, so a city never repeats a song (src/game/setlist.ts).
+    const visit = visitIndexFor(city.id, (State.data.cityMemories ?? []).filter((m) => m.firstShowRecorded).map((m) => m.cityId));
+    const song = getSong(songForVisit(city, State.data.seed, visit));
 
     // Decide the tutorial + timing mode up front: lead time (and so fall speed) depends on it.
     this.tutorialActive = !hasSeenRhythmTutorial();
@@ -268,7 +272,18 @@ export class RhythmScene extends Phaser.Scene {
    *  practice pass can run first without duplicating any of the scoring/finish machinery. */
   private beginRealSong(city: CityDef, song: SongDef): void {
     const arrangement = pickArrangement(song, State.data.flags);
-    audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm, song.waveform);
+    // Real backing track when this song has one AND it actually loaded; the procedural bed
+    // otherwise. Scheduled 1.2s out so the audio lands exactly on the chart's own start (see
+    // startTime below) — and scheduled on the AUDIO clock inside playMusicTrack, never a scene
+    // timer, because scene timers advance on clamped frame delta and would drift on a slow device.
+    const trackKey = song.audioFile ? `song_${song.id}` : null;
+    const hasTrack = !!trackKey && this.cache.audio.has(trackKey);
+    if (hasTrack) {
+      const buffer = this.cache.audio.get(trackKey!) as AudioBuffer;
+      audio.playMusicTrack(buffer, 1.2);
+    } else {
+      audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm, song.waveform);
+    }
     this.ctx = {
       cityId: city.id, songId: song.id, arrangement,
       bandHarmony: State.data.stats.harmony, energy: State.data.stats.energy,
@@ -276,7 +291,10 @@ export class RhythmScene extends Phaser.Scene {
     };
     this.notes = arrangement.notes.map((note) => ({ note, judged: false }));
     this.cues = arrangement.cues.map((cue) => ({ cue, handled: false }));
-    this.cityLabel.setText(`${city.name} — ${arrangement.label}`);
+    // Names the SONG as well as the arrangement. A city's two songs deliberately share
+    // arrangement ids (so pre-show choices keep working), which meant this label read identically
+    // on the first night and the return leg — the player could not tell the setlist had moved on.
+    this.cityLabel.setText(`${city.name} — ${song.name} · ${arrangement.label}`);
 
     if (this.tutorialActive) {
       this.add.text(W / 2, 140, 'TAP = touch the note   HOLD = press & hold   CUE = tap the banner',

@@ -5,9 +5,16 @@ import sailorJson from '../../content/songs/sailor_lullaby.json';
 import neonJson from '../../content/songs/neon_rain.json';
 import callejonJson from '../../content/songs/callejon_groove.json';
 import kreuzbergJson from '../../content/songs/kreuzberg_static.json';
+// Second songs (close-out Part B) — one per city, so the return leg never replays the first night.
+import tejoJson from '../../content/songs/tejo_after_midnight.json';
+import lastTrainJson from '../../content/songs/last_train_home.json';
+import mercadoJson from '../../content/songs/mercado_electrico.json';
+import hallenbadJson from '../../content/songs/hallenbad.json';
 
 const COMMITTED: Record<string, unknown> = {
   sailor_lullaby: sailorJson, neon_rain: neonJson, callejon_groove: callejonJson, kreuzberg_static: kreuzbergJson,
+  tejo_after_midnight: tejoJson, last_train_home: lastTrainJson,
+  mercado_electrico: mercadoJson, hallenbad: hallenbadJson,
 };
 
 describe('chart generator', () => {

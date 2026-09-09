@@ -31,6 +31,7 @@
     { "id": "duet_with_lene", "label": "Trade the bridge with Lene's modular rig", "description": "Hand four bars to a machine that's never played it the same way twice.", "arrangementId": "modular_trade", "effects": { "inspiration": 4 }, "condition": "relationship.jun>=35" }
   ],
   "songId": "kreuzberg_static",
+  "songs": ["kreuzberg_static", "hallenbad"],
   "storyGate": { "condition": "relationship.jun>=35", "unlock": "modular_trade" },
   "afterShowSceneId": "ber_aftershow",
   "journalSceneId": "ber_journal",

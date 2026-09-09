@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { SONGS } from '../game/content';
 import { assetBaseUrl, fetchManifest, markRealAsset, markTitleThemeLoaded } from '../core/assets';
 
 /** Loads real painted assets (if any) into the texture manager, then hands off to Title.
@@ -50,6 +51,12 @@ export class BootScene extends Phaser.Scene {
     // "entries.length === 0 -> skip straight to Title" early-return is gone: there's always
     // something for load.start() to do now.
     this.load.audio('title_theme', `${assetBaseUrl()}audio/title_theme.mp3`);
+    // Real backing tracks (close-out Part B). Every song that declares an audioFile gets queued
+    // here; RhythmScene falls back to the procedural bed for any that is absent or fails to load,
+    // exactly like the title theme does. A missing track costs the track, never the song.
+    for (const song of SONGS) {
+      if (song.audioFile) this.load.audio(`song_${song.id}`, `${assetBaseUrl()}audio/${song.audioFile}`);
+    }
     this.load.start();
   }
 }

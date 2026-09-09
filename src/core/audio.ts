@@ -270,7 +270,7 @@ class AudioSystem {
    *  same musicGain bus playAmbience uses, crossfading out whatever was already playing the same
    *  way switching songs already does. duckMusic/setVolume('music')/stopMusic all keep working
    *  unchanged since they only ever touch musicGain, never the source feeding it. */
-  playMusicTrack(buffer: AudioBuffer): void {
+  playMusicTrack(buffer: AudioBuffer, delaySeconds = 0, loop = true): void {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const previous = this.musicNodes;
@@ -283,9 +283,15 @@ class AudioSystem {
 
     const src = ctx.createBufferSource();
     src.buffer = buffer;
-    src.loop = true;
+    src.loop = loop;
     src.connect(trackGain);
-    src.start();
+    // Scheduled on the AUDIO clock, not a scene timer. A rhythm chart starts 1.2s after the scene
+    // does, and the backing track has to land on that same moment or every note is judged against
+    // music it does not match. scene.time.delayedCall advances on clamped FRAME DELTA — the exact
+    // mechanism behind the stale-clock bug that made a song end before it began — so on a slow
+    // device it would drift audibly. AudioContext.currentTime is sample-accurate and unaffected
+    // by frame rate.
+    src.start(delaySeconds > 0 ? ctx.currentTime + delaySeconds : 0);
 
     let stopped = false;
     this.musicNodes = {

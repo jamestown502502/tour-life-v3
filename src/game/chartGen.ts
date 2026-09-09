@@ -36,6 +36,8 @@ export interface SongConfig {
   arrangements: ArrangementConfig[];
   /** Song-specific hand-designed patterns, merged over the shared library. */
   patterns?: Record<string, BarPattern>;
+  /** Optional real backing track under public/audio/. Procedural ambience remains the fallback. */
+  audioFile?: string;
 }
 
 const k = (beat: number): Hit => ({ beat, kind: 'kick' });
@@ -138,6 +140,9 @@ export function buildSong(config: SongConfig): SongDef {
     lanes: config.lanes,
     chordProgression: config.chordProgression,
     waveform: config.waveform,
+    // Only present on songs that have a real backing track; omitted entirely otherwise so the
+    // generated JSON for the original four songs is unchanged.
+    ...(config.audioFile ? { audioFile: config.audioFile } : {}),
     arrangements: config.arrangements.map((arr) => buildArrangement(config, arr, patterns)),
   };
 }
@@ -312,4 +317,156 @@ export const KREUZBERG_STATIC: SongConfig = {
   ],
 };
 
-export const SONG_CONFIGS: SongConfig[] = [SAILOR_LULLABY, NEON_RAIN, CALLEJON_GROOVE, KREUZBERG_STATIC];
+
+// ---------------------------------------------------------------------------------------------
+// SECOND SONGS (pre-public close-out, Part B).
+//
+// Every city had exactly one song, so a full run heard four tracks and the return leg replayed the
+// first night's song note for note. Each city now has a pair, and src/game/setlist.ts guarantees
+// the return leg plays the OTHER one.
+//
+// Each second song deliberately REUSES its city's arrangement IDs. PreShowChoiceDef.arrangementId
+// and StoryGate.unlock name those IDs, so a different set would make every pre-show choice a no-op
+// (pickArrangement would fall back to arrangements[0]) and the story gate would never fire. Same
+// three choices, same gate, different music.
+//
+// Bar counts target ~60s so the chart lands in the same 55-70s window as the first songs and
+// matches the generated backing track: bars = 60 / (4 * 60 / bpm).
+// ---------------------------------------------------------------------------------------------
+
+/** Lisbon's other side: the first song is a slow acoustic lullaby, this is the room after
+ *  midnight — faster, fuller, still nylon-stringed. 108bpm, 27 bars ~= 60s. */
+export const TEJO_AFTER_MIDNIGHT: SongConfig = {
+  id: 'tejo_after_midnight', name: 'Tejo After Midnight', bpm: 108, lanes: 4,
+  chordProgression: 'Em-C-G-D', waveform: 'triangle', audioFile: 'lisbon_second.mp3',
+  arrangements: [
+    {
+      id: 'acoustic', label: 'Acoustic', description: 'Just the guitar and whoever is still awake.', noteDensity: 1,
+      sections: [
+        { pattern: 'intro', bars: 3 }, { pattern: 'verse', bars: 8 }, { pattern: 'rest', bars: 1 },
+        { pattern: 'verse_off', bars: 8 }, { pattern: 'sparse', bars: 7 },
+      ],
+      cues: [{ bar: 8, type: 'pull_back' }, { bar: 18, type: 'invite_crowd' }],
+    },
+    {
+      id: 'full_band', label: 'Full Band', description: 'Everyone in, and louder than the hour deserves.', noteDensity: 1.8,
+      sections: [
+        { pattern: 'intro', bars: 2 }, { pattern: 'verse', bars: 6 }, { pattern: 'chorus', bars: 7 },
+        { pattern: 'fill', bars: 1 }, { pattern: 'chorus_chord', bars: 7 }, { pattern: 'verse', bars: 4 },
+      ],
+      cues: [{ bar: 8, type: 'build' }, { bar: 15, type: 'invite_crowd' }, { bar: 22, type: 'spotlight_bandmate' }],
+    },
+    {
+      id: 'duet', label: 'Duet', description: 'Two voices, trading the last verse.', noteDensity: 1.3,
+      sections: [
+        { pattern: 'intro', bars: 3 }, { pattern: 'verse', bars: 6 }, { pattern: 'chorus', bars: 6 },
+        { pattern: 'rest', bars: 1 }, { pattern: 'verse_off', bars: 6 }, { pattern: 'chorus', bars: 5 },
+      ],
+      cues: [{ bar: 7, type: 'pull_back' }, { bar: 16, type: 'invite_crowd' }],
+    },
+  ],
+};
+
+/** Tokyo's other side: the first song is 118bpm neon pop, this is the quiet after the room
+ *  empties. 84bpm, 21 bars ~= 60s. */
+export const LAST_TRAIN_HOME: SongConfig = {
+  id: 'last_train_home', name: 'Last Train Home', bpm: 84, lanes: 4,
+  chordProgression: 'Fmaj7-Cmaj7-Dm7-Bb', waveform: 'sine', audioFile: 'tokyo_second.mp3',
+  arrangements: [
+    {
+      id: 'tight', label: 'Tight & Precise', description: 'Clean, deliberate, nothing wasted.', noteDensity: 1.4,
+      sections: [
+        { pattern: 'intro', bars: 2 }, { pattern: 'verse', bars: 6 }, { pattern: 'chorus', bars: 6 },
+        { pattern: 'fill', bars: 1 }, { pattern: 'verse', bars: 6 },
+      ],
+      cues: [{ bar: 6, type: 'pull_back' }, { bar: 14, type: 'build' }],
+    },
+    {
+      id: 'loose', label: 'Loose & Late', description: 'Let it breathe. Nobody is counting.', noteDensity: 1,
+      sections: [
+        { pattern: 'intro', bars: 3 }, { pattern: 'sparse', bars: 6 }, { pattern: 'verse_off', bars: 6 },
+        { pattern: 'rest', bars: 1 }, { pattern: 'sparse', bars: 5 },
+      ],
+      cues: [{ bar: 8, type: 'pull_back' }, { bar: 16, type: 'improvise' }],
+    },
+    {
+      id: 'bass_forward', label: 'Bass Forward', description: 'Rowan out front for once.', noteDensity: 1.2,
+      sections: [
+        { pattern: 'intro', bars: 2 }, { pattern: 'verse', bars: 7 }, { pattern: 'chorus_chord', bars: 6 },
+        { pattern: 'verse_off', bars: 6 },
+      ],
+      cues: [{ bar: 9, type: 'spotlight_bandmate' }, { bar: 15, type: 'invite_crowd' }],
+    },
+  ],
+};
+
+/** Mexico City's other side: the first song is a 104bpm street groove, this one leans all the way
+ *  into the rhythm. 122bpm, 30 bars ~= 59s. */
+export const MERCADO_ELECTRICO: SongConfig = {
+  id: 'mercado_electrico', name: 'Mercado Eléctrico', bpm: 122, lanes: 4,
+  chordProgression: 'Am-Dm-E7-Am', waveform: 'square', audioFile: 'mexico_second.mp3',
+  arrangements: [
+    {
+      id: 'rehearsed', label: 'Rehearsed & Tight', description: 'The version you practised. It shows.', noteDensity: 1.5,
+      sections: [
+        { pattern: 'intro', bars: 3 }, { pattern: 'verse', bars: 8 }, { pattern: 'chorus', bars: 8 },
+        { pattern: 'fill', bars: 1 }, { pattern: 'chorus_chord', bars: 6 }, { pattern: 'verse', bars: 4 },
+      ],
+      cues: [{ bar: 9, type: 'build' }, { bar: 19, type: 'invite_crowd' }],
+    },
+    {
+      id: 'call_and_response', label: 'Call & Response', description: 'Let the market answer back.', noteDensity: 1.3,
+      sections: [
+        { pattern: 'intro', bars: 2 }, { pattern: 'verse', bars: 7 }, { pattern: 'verse_off', bars: 7 },
+        { pattern: 'rest', bars: 1 }, { pattern: 'chorus', bars: 7 }, { pattern: 'sparse', bars: 6 },
+      ],
+      cues: [{ bar: 8, type: 'invite_crowd' }, { bar: 20, type: 'improvise' }],
+    },
+    {
+      id: 'duet_percussion', label: 'Duet Percussion', description: 'Two players, one groove, no map.', noteDensity: 1.9,
+      sections: [
+        { pattern: 'intro', bars: 2 }, { pattern: 'chorus', bars: 9 }, { pattern: 'fill', bars: 1 },
+        { pattern: 'chorus_chord', bars: 9 }, { pattern: 'verse', bars: 9 },
+      ],
+      cues: [{ bar: 10, type: 'build' }, { bar: 22, type: 'spotlight_bandmate' }],
+    },
+  ],
+};
+
+/** Berlin's other side: the first song is 126bpm cold static, this is colder and slower.
+ *  96bpm, 24 bars ~= 60s. */
+export const HALLENBAD: SongConfig = {
+  id: 'hallenbad', name: 'Hallenbad', bpm: 96, lanes: 4,
+  chordProgression: 'Cm-Ab-Eb-Bb', waveform: 'square', audioFile: 'berlin_second.mp3',
+  arrangements: [
+    {
+      id: 'loose_wire', label: 'Loose Wire', description: 'Something in the rig is not quite right. Keep going.', noteDensity: 1,
+      sections: [
+        { pattern: 'intro', bars: 3 }, { pattern: 'sparse', bars: 7 }, { pattern: 'verse', bars: 7 },
+        { pattern: 'rest', bars: 1 }, { pattern: 'verse_off', bars: 6 },
+      ],
+      cues: [{ bar: 8, type: 'pull_back' }, { bar: 17, type: 'improvise' }],
+    },
+    {
+      id: 'overdrive', label: 'Overdrive', description: 'Push it until the room gives in.', noteDensity: 1.8,
+      sections: [
+        { pattern: 'intro', bars: 2 }, { pattern: 'chorus', bars: 8 }, { pattern: 'fill', bars: 1 },
+        { pattern: 'chorus_chord', bars: 8 }, { pattern: 'verse', bars: 5 },
+      ],
+      cues: [{ bar: 9, type: 'build' }, { bar: 18, type: 'invite_crowd' }],
+    },
+    {
+      id: 'modular_trade', label: 'Modular Trade', description: 'Hand the patch over and see what comes back.', noteDensity: 1.6,
+      sections: [
+        { pattern: 'intro', bars: 2 }, { pattern: 'verse', bars: 7 }, { pattern: 'verse_off', bars: 7 },
+        { pattern: 'chorus', bars: 8 },
+      ],
+      cues: [{ bar: 8, type: 'spotlight_bandmate' }, { bar: 17, type: 'improvise' }],
+    },
+  ],
+};
+
+export const SONG_CONFIGS: SongConfig[] = [
+  SAILOR_LULLABY, NEON_RAIN, CALLEJON_GROOVE, KREUZBERG_STATIC,
+  TEJO_AFTER_MIDNIGHT, LAST_TRAIN_HOME, MERCADO_ELECTRICO, HALLENBAD,
+];

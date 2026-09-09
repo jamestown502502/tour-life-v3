@@ -32,6 +32,7 @@
     { "id": "duet_with_ines", "label": "Invite Inês up for a duet", "description": "One song, two voices, no rehearsal.", "arrangementId": "duet", "effects": { "inspiration": 4 }, "condition": "stat.harmony>=30" }
   ],
   "songId": "sailor_lullaby",
+  "songs": ["sailor_lullaby", "tejo_after_midnight"],
   "storyGate": { "condition": "stat.harmony>=30", "unlock": "duet" },
   "afterShowSceneId": "lis_aftershow",
   "journalSceneId": "lis_journal",

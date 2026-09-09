@@ -31,6 +31,7 @@
     { "id": "spotlight_ximena", "label": "Bring Ximena up to trade rhythms", "description": "Hand her half the song, no rehearsal at all.", "arrangementId": "duet_percussion", "effects": { "inspiration": 4 }, "condition": "stat.harmony>=35" }
   ],
   "songId": "callejon_groove",
+  "songs": ["callejon_groove", "mercado_electrico"],
   "storyGate": { "condition": "stat.harmony>=35", "unlock": "duet_percussion" },
   "afterShowSceneId": "mex_aftershow",
   "journalSceneId": "mex_journal",
