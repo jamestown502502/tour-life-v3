@@ -114,7 +114,12 @@ offline after one load.
 | Minigame → ending | 5 of 7 reached it | **10 of 10** |
 | Epilogue depth | Ending + tags + 1 flourish | + **promise** + **return leg** + minigame flourish |
 | Rhythm backdrops | Three stitched bands, hard seams | **Regenerated** as one continuous room |
-| Unit tests | 128 | **162** |
+| Barren screens | 5 scenes on flat navy | **0** — every full-screen scene painted |
+| Overlays | Opaque, hid the world behind | **Dimmed** (0.82 / 0.78) |
+| Songs | 1 per city, 4 per run | **2 per city, 8 per run** |
+| Return-leg song | Same as the first night | **Always the other one** |
+| Backing tracks | Procedural only | **4 real tracks**, procedural still the fallback |
+| Unit tests | 128 | **174** |
 
 ## What was built
 
@@ -202,6 +207,49 @@ Fixed with an explicit `firstShowRecorded` marker.
 Rewritten to assert by type across all cities — a better test regardless.
 
 ---
+
+### 11. No barren screens (close-out Part A)
+Audited every scene for a real painted background versus a bare fill. The audit **corrected the
+brief twice**: Results already had one (it reuses the rhythm stage), and the social feed needed
+nothing (a panel over an already-painted, already-dimmed City).
+
+Five genuinely bare scenes — Opening, BandCreator, RoutePlan, Scrapbook (and its epilogue), and Van
+— now have painted backdrops. Those are the screens players linger on, which is exactly where flat
+navy broke the single-painted-world contract the rest of the game holds.
+
+**A finding the brief did not cover:** Settings and HowToPlay *are* genuine overlays, so the
+"dim the scene behind" rule applies — but both drew an effectively opaque fill (0.98 and 0.85),
+hiding the painted scene and producing the very barren look the pass exists to remove. A paused
+scene still renders, so dropping them to 0.82 / 0.78 was a code fix, cheaper than two more assets.
+
+Seams **measured, not eyeballed**: 4.2–10.2 across the new backdrops and 3.4–9.5 across all four
+rhythm ones, against **53.2** on the original broken Tokyo backdrop. That also closes close-out item
+C2 with numbers instead of an opinion.
+
+### 12. Two songs per city (close-out Part B)
+Every city had one song, so a run heard four tracks and the return leg replayed the first night note
+for note. Each city now carries a pair: the seed picks the opener, the return leg always plays the
+other. **8 distinct song plays per tour, up from 4**, and repetition inside a city is now
+structurally impossible rather than a content convention.
+
+New second songs, each the same band's other side: *Tejo After Midnight* (Lisbon, 108bpm),
+*Last Train Home* (Tokyo, 84bpm), *Mercado Eléctrico* (Mexico City, 122bpm), *Hallenbad*
+(Berlin, 96bpm) — all with real backing tracks, with the procedural bed still underneath.
+
+**The constraint that shaped it:** pre-show choices and story gates name arrangement IDs belonging
+to the city's first song. Different IDs on the second song would have made every pre-show choice a
+silent no-op — `pickArrangement` falls back to `arrangements[0]`, so it would still "work" while
+meaning nothing. Each second song reuses its city's arrangement IDs, and a test asserts it.
+
+**Sync is on the audio clock.** The chart starts 1.2s after the scene, so the track is scheduled at
+`AudioContext.currentTime + delay`. A scene timer would have reintroduced exactly the frame-delta
+class of bug that made a song end before it began.
+
+Verified live: first night **Hallenbad, 71 notes** → return leg **Kreuzberg Static, 84 notes**.
+
+**A project rule changed, deliberately:** `CLAUDE.md` said "no audio files". The title theme was
+already an exception; four backing tracks make it policy. Procedural remains the fallback
+everywhere, so the rule's intent — never depend on an asset that might not load — still holds.
 
 # PART THREE — WHAT REMAINS
 
