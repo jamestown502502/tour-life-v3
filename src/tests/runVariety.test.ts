@@ -13,30 +13,38 @@ import { VAN_CARRY } from '../../content/van';
 
 const idsFrom = (flags: string[]): string[] => flags.map((f) => f.replace(/^avail_/, ''));
 
+/** The flags that were actually DRAWN. Arc-resolution beats (arcStage 2) are always returned —
+ *  they are gated by arc stage at play time, not by the draw — so counting raw flags conflates
+ *  "how many scenes did this run draw" with "how many exist". Letting them compete for the two
+ *  draw slots was the bug that made a run fall back to the same scene every time. */
+const drawnFrom = (flags: string[], city: any): string[] =>
+  idsFrom(flags).filter((id) => !(city.relationshipScenePool.find((e: any) => e.id === id)?.arcStage === 2));
+
 describe('run variety: relationship scenes across playthroughs', () => {
   it('draws scenes the player has never seen before ones they have', () => {
     const city = getCity('berlin');
-    const all = city.relationshipScenePool.map((e) => e.id);
+    // Arc beats are never drawn, so they are not part of this comparison.
+    const all = city.relationshipScenePool.filter((e: any) => e.arcStage !== 2).map((e: any) => e.id);
     // Everything seen except two: those two must be exactly what a new run draws.
     const unseen = all.slice(0, 2);
     const seen = all.slice(2);
-    const drawn = idsFrom(drawScenePoolFlags(makeRng('any-seed'), city, seen));
+    const drawn = drawnFrom(drawScenePoolFlags(makeRng('any-seed'), city, seen), city);
     expect(drawn.sort()).toEqual([...unseen].sort());
   });
 
   it('a replay of the SAME seed still moves on to fresh material', () => {
     const city = getCity('berlin');
-    const first = idsFrom(drawScenePoolFlags(makeRng('seed:berlin:pool'), city, []));
+    const first = drawnFrom(drawScenePoolFlags(makeRng('seed:berlin:pool'), city, []), city);
     // The player has now seen those. Same seed, same city, second playthrough.
-    const second = idsFrom(drawScenePoolFlags(makeRng('seed:berlin:pool'), city, first));
+    const second = drawnFrom(drawScenePoolFlags(makeRng('seed:berlin:pool'), city, first), city);
     expect(second).toHaveLength(SCENES_PER_CITY);
     for (const id of second) expect(first).not.toContain(id);
   });
 
   it('falls back to seen material rather than showing nothing once a pool is exhausted', () => {
     const city = getCity('berlin');
-    const all = city.relationshipScenePool.map((e) => e.id);
-    const drawn = idsFrom(drawScenePoolFlags(makeRng('exhausted'), city, all));
+    const all = city.relationshipScenePool.map((e: any) => e.id);
+    const drawn = drawnFrom(drawScenePoolFlags(makeRng('exhausted'), city, all), city);
     expect(drawn).toHaveLength(SCENES_PER_CITY);
   });
 

@@ -162,10 +162,11 @@
         }
       },
       "sequenceRounds": [
-        3,
         4,
         5,
-        6
+        6,
+        7,
+        8
       ],
       "chordProgression": "Am-Am-E-E",
       "bpm": 118,
@@ -196,13 +197,13 @@
         }
       },
       "timingRoundsSec": [
-        2.0,
-        1.4,
-        1.0,
-        0.8
+        1.5,
+        1.1,
+        0.8,
+        0.6
       ],
       "outroTextPerfect": "\"That's the tightest level check I've run all month,\" the engineer says, and writes nothing down.",
-      "timingZoneW": 120
+      "timingZoneW": 96
     }
   ],
   "scenes": {

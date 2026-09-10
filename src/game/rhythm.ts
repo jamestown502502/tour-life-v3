@@ -99,10 +99,18 @@ export interface PerformanceResult {
   judgementCounts: Record<HitJudgement, number>;
 }
 
-export type LetterGrade = 'S' | 'A' | 'B' | 'C';
+export type LetterGrade = 'S' | 'A' | 'B' | 'C' | 'D' | 'E';
 
 /** Results-screen letter from the timing ratio. Purely presentational — like `grade`, it never
- *  gates anything. 'C' is the floor: a no-input run still gets a letter, not a blank.
+ *  gates anything, and none of these letters block a single line of story.
+ *
+ *  SIX BANDS, NOT FOUR. C used to be the floor, which meant it spanned 0.00 to 0.50 — half the
+ *  entire scale. A player who deliberately touched nothing (0 of 125 notes) and a player who
+ *  landed 81 of 125 got the identical letter, which is not a gentle grading curve, it is the score
+ *  refusing to tell you anything. Reported after a deliberate zero-score run came back C.
+ *
+ *  No-fail means the score never gates the story. It does not mean the score has to lie about what
+ *  happened.
  *
  *  RECALIBRATED after "why always C?" from a live player. The ratio is scored against a run where
  *  EVERY note is 'perfect' (100 pts); 'good' is worth 60. So a player who lands every single note
@@ -117,7 +125,9 @@ export function letterGrade(ratio: number): LetterGrade {
   if (ratio >= 0.90) return 'S';
   if (ratio >= 0.72) return 'A';
   if (ratio >= 0.50) return 'B';
-  return 'C';
+  if (ratio >= 0.30) return 'C';
+  if (ratio >= 0.12) return 'D';
+  return 'E';
 }
 
 /** Aggregates a played-through song's hits + chosen cues into the result handed back to the

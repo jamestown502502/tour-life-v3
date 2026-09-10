@@ -165,7 +165,7 @@
           "harmony": 1
         }
       },
-      "pressureSeconds": 4,
+      "pressureSeconds": 3,
       "questions": [
         {
           "id": "q_who",
@@ -218,14 +218,14 @@
         }
       },
       "timingRoundsSec": [
-        2.2,
-        1.8,
-        1.5,
-        1.2,
-        1.0
+        1.7,
+        1.4,
+        1.15,
+        0.95,
+        0.8
       ],
       "outroTextPerfect": "\"Nothing for me to fix,\" the engineer says, almost annoyed about it. \"Board's flat. Room's yours.\"",
-      "timingZoneW": 168
+      "timingZoneW": 132
     },
     {
       "id": "lis_load_in",
@@ -257,7 +257,7 @@
         "Merch box",
         "Water jugs"
       ],
-      "dragTimeSec": 22,
+      "dragTimeSec": 16,
       "outroTextPerfect": "Two flights, every cab, no scraped knuckles. The stairs lose for once."
     },
     {
@@ -271,7 +271,7 @@
       "outroText": "Close enough that nobody in the room will ever know the difference. The guitar sits right in the mix.",
       "outroTextRough": "It will hold for a set. Rowan quietly retunes between the second and third song and says nothing about it.",
       "outroTextPerfect": "Dead on, every time, by ear alone. The engineer comes back with the cable and finds there is nothing left to fix.",
-      "theoryRounds": 4,
+      "theoryRounds": 6,
       "reward": {
         "effects": {
           "harmony": 3,

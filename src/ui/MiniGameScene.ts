@@ -397,9 +397,11 @@ export class MiniGameScene extends Phaser.Scene {
     };
     const nextRound = (): void => { this.sequenceRound++; this.runSequenceRound(); };
 
-    pattern.forEach((pad, i) => this.time.delayedCall(500 + i * 520, () => flash(pad)));
+    // 340ms per pad, down from 520. Reported as the minigames being too easy: at 520 a pattern is
+    // a slow metronome you can count along with, which tests patience rather than memory.
+    pattern.forEach((pad, i) => this.time.delayedCall(400 + i * 340, () => flash(pad)));
 
-    this.time.delayedCall(500 + pattern.length * 520 + 250, () => {
+    this.time.delayedCall(400 + pattern.length * 340 + 220, () => {
       label.setText('Your turn');
       hint.setText('Tap them back in the same order');
       let expected = 0;
@@ -634,7 +636,8 @@ export class MiniGameScene extends Phaser.Scene {
       textStyle('small', { color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);
     this.contentLayer.add(hint);
 
-    const STEP = 0.24; // seconds per sixteenth slot
+    const STEP = 0.19; // seconds per sixteenth slot -- was 0.24, which read as slower than any
+                       // clave is actually played and made the pattern easier to count than hear.
     const playPattern = (grid: string): void => {
       const offsets = P(grid).map((on, i) => (on ? i * STEP : -1)).filter((t) => t >= 0);
       audio.playRhythm(offsets);

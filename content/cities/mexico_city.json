@@ -248,7 +248,7 @@
       "outroText": "You get most of them. She nods, satisfied enough, and shows you where the two sides swap.",
       "outroTextRough": "You get some of them. \"It comes,\" she says. \"Everybody hears it wrong first.\"",
       "outroTextPerfect": "Every pattern, first time, including the rumba. She stops tapping and just looks at you for a second, then asks what you are doing later.",
-      "theoryRounds": 4,
+      "theoryRounds": 6,
       "reward": {
         "effects": {
           "inspiration": 3,

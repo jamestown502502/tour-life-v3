@@ -6,7 +6,7 @@
 import type { CityMemory } from '../core/state';
 import type { RNG } from '../core/rng';
 import {
-  handlesFor, LOVE_POSTS, MINIGAME_POSTS, RETURN_POSTS, SHOW_POSTS, type SocialPost,
+  handlesFor, LOVE_POSTS, MINIGAME_POSTS, MINIGAME_POSTS_BY_TITLE, RETURN_POSTS, SHOW_POSTS, type SocialPost,
 } from '../../content/social';
 
 export type { SocialPost };
@@ -54,10 +54,16 @@ export function buildFeed(memory: CityMemory, cityName: string, rng: RNG): Socia
   // there is one; otherwise the town's affection carries the slot.
   let specific: SocialPost;
   if (memory.minigameGood !== undefined) {
+    // Name the thing they ACTUALLY did when there is a line for it. The generic pool is keyed only
+    // on the outcome, so acing a modular patch recall could be reported back as a tidy load-in --
+    // the one specific thing the player was proud of was the thing the feed could not mention.
+    // `minigameTitle` has been stored on the memory all along and nothing was reading it.
+    const bespoke = memory.minigameTitle ? MINIGAME_POSTS_BY_TITLE[memory.minigameTitle] : undefined;
     const pool = memory.minigameGood ? MINIGAME_POSTS.good : MINIGAME_POSTS.rough;
+    const line = bespoke ? (memory.minigameGood ? bespoke.good : bespoke.rough) : rng.pick(pool);
     specific = {
       handle: rng.pick(memory.minigameGood ? handles.fans : handles.haters),
-      text: sub(rng.pick(pool)),
+      text: sub(line),
       tone: memory.minigameGood ? 'fan' : 'hater',
     };
   } else if (memory.love >= LOVE_HIGH) {

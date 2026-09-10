@@ -395,7 +395,20 @@ export class CityScene extends Phaser.Scene {
       && !this.relationshipsPlayed.has(e.id)
       && stageAllows(e.arcStage as ArcStage | undefined, stageOf(e.bandmate))
       && (e.minRelationship === undefined || (State.data.relationships[e.bandmate] ?? 0) >= e.minRelationship));
-    const entry = available[0] ?? (this.relationshipsPlayed.size === 0 ? pool[0] : undefined);
+    // SHUFFLED, not pool order. `available[0]` always took the lowest-index eligible entry, so a
+    // city played its scenes in the order they happen to sit in the JSON every single run — and
+    // the low indices are heavily weighted toward one or two bandmates.
+    const order = makeRng(`${State.data.seed}:rel:${this.city.id}:${this.relationshipsPlayed.size}`);
+    const shuffled = order.shuffle(available);
+    // The fallback used to be a hard-coded `pool[0]` — the SAME scene every time nothing was
+    // eligible, belonging to the same bandmate in three of the four cities. It now falls back to a
+    // seeded pick among entries this player has actually not been shown, still respecting the
+    // stage and standing gates, so an empty draw degrades into variety rather than into repetition.
+    const fallbackPool = pool.filter((e) => !this.relationshipsPlayed.has(e.id)
+      && stageAllows(e.arcStage as ArcStage | undefined, stageOf(e.bandmate))
+      && (e.minRelationship === undefined || (State.data.relationships[e.bandmate] ?? 0) >= e.minRelationship));
+    const entry = shuffled[0]
+      ?? (this.relationshipsPlayed.size === 0 ? order.shuffle(fallbackPool)[0] ?? pool[0] : undefined);
     if (!entry) { this.startPreshow(); return; }
     this.relationshipsPlayed.add(entry.id);
     // Cross-run freshness: this scene has now genuinely been shown, so later runs draw around it

@@ -123,14 +123,30 @@ describe('audio offset calibration (Settings "Audio sync")', () => {
 });
 
 describe('letter grade (Results plate)', () => {
-  it('maps the timing ratio to S/A/B/C with C as the no-fail floor', () => {
+  it('maps the timing ratio across six bands, so the letter actually says something', () => {
     expect(letterGrade(1)).toBe('S');
     expect(letterGrade(0.9)).toBe('S');
     expect(letterGrade(0.8)).toBe('A');
     expect(letterGrade(0.72)).toBe('A');
     expect(letterGrade(0.5)).toBe('B');
     expect(letterGrade(0.3)).toBe('C');
-    expect(letterGrade(0)).toBe('C');
+    expect(letterGrade(0.12)).toBe('D');
+    expect(letterGrade(0)).toBe('E');
+  });
+
+  // C used to be the floor, so it spanned 0.00-0.50 -- half the whole scale. A player who
+  // deliberately touched nothing got the same letter as one who landed 81 of 125 notes, which is
+  // not a gentle curve, it is the score refusing to report. Reported live from a zero-score run.
+  it('a deliberate zero and a real attempt never share a letter', () => {
+    expect(letterGrade(0)).not.toBe(letterGrade(0.462));
+    expect(letterGrade(0)).not.toBe(letterGrade(0.30));
+  });
+
+  // No-fail means the score never gates the story. It does not mean the letter has to flatter.
+  it('still returns a letter for every possible ratio, never a blank', () => {
+    for (let r = 0; r <= 1.0001; r += 0.02) {
+      expect(['S', 'A', 'B', 'C', 'D', 'E']).toContain(letterGrade(r));
+    }
   });
 
   // The thresholds exist to be reachable, which is a claim about the SCORING, not about the

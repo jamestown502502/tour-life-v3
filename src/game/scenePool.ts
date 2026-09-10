@@ -35,8 +35,17 @@ export function drawScenePoolFlags(rng: RNG, city: CityDef, seenSceneIds: readon
   if (pool.length === 0) return [];
   const count = Math.min(SCENES_PER_CITY, pool.length);
   const seen = new Set(seenSceneIds);
-  const unseen = rng.shuffle(pool.filter((e) => !seen.has(e.id)));
-  const alreadySeen = rng.shuffle(pool.filter((e) => seen.has(e.id)));
+  // ARC BEATS ARE NOT DRAWN — they are always available and gated by stage at play time instead.
+  // Letting them compete for the two draw slots was actively harmful: a run whose draw happened to
+  // pick the stage-2 beat had it blocked until the back half of the tour, leaving nothing eligible
+  // early, which dropped the picker onto its fixed fallback entry. That fallback is the same scene
+  // every time, and in three of four cities it belongs to the same bandmate. Reported as getting
+  // the same dialogue over and over — and it was made worse, not better, by adding the arc beats.
+  const drawable = pool.filter((e) => e.arcStage !== 2);
+  const always = pool.filter((e) => e.arcStage === 2).map((entry) => availabilityFlag(entry.id));
+
+  const unseen = rng.shuffle(drawable.filter((e) => !seen.has(e.id)));
+  const alreadySeen = rng.shuffle(drawable.filter((e) => seen.has(e.id)));
   const chosen = [...unseen, ...alreadySeen].slice(0, count);
-  return chosen.map((entry) => availabilityFlag(entry.id));
+  return [...chosen.map((entry) => availabilityFlag(entry.id)), ...always];
 }

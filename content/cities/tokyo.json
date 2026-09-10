@@ -164,7 +164,7 @@
           "harmony": 1
         }
       },
-      "sustainSeconds": 12,
+      "sustainSeconds": 16,
       "chordProgression": "Em-Bm-C-G",
       "bpm": 100,
       "waveform": "triangle",
@@ -201,7 +201,7 @@
         "Suitcase",
         "Snacks"
       ],
-      "dragTimeSec": 25,
+      "dragTimeSec": 18,
       "outroTextPerfect": "Everything in, nothing rattling, door shut on the first try. Theo actually sits down."
     },
     {
@@ -228,11 +228,12 @@
         }
       },
       "timingRoundsSec": [
-        2.4,
-        1.5
+        1.8,
+        1.1,
+        0.75
       ],
       "outroTextPerfect": "Kenji pulls the headphones off one ear. \"One pass. You're done. Go eat something.\"",
-      "timingZoneW": 96
+      "timingZoneW": 76
     }
   ],
   "scenes": {
