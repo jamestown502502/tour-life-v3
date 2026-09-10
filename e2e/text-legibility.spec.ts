@@ -45,6 +45,8 @@ const SCENES: { key: string; data?: object }[] = [
   { key: 'MiniGame', data: { cityId: 'berlin', minigameId: 'ber_modular_check', returnPhase: 'locations' } },
   { key: 'MiniGame', data: { cityId: 'tokyo', minigameId: 'tok_mix_hold', returnPhase: 'locations' } },
   { key: 'MiniGame', data: { cityId: 'lisbon', minigameId: 'lis_live_radio', returnPhase: 'locations' } },
+  { key: 'MiniGame', data: { cityId: 'lisbon', minigameId: 'lis_tune_by_ear', returnPhase: 'locations' } },
+  { key: 'MiniGame', data: { cityId: 'mexico_city', minigameId: 'mex_find_the_clave', returnPhase: 'locations' } },
 ];
 
 async function seedRun(page: import('@playwright/test').Page): Promise<void> {

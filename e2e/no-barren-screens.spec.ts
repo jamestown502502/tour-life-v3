@@ -23,6 +23,8 @@ const FULL_SCREEN_SCENES: { key: string; data?: object; expectKey: string }[] = 
   { key: 'Van', expectKey: 'bg_scene_van', data: { cityId: 'berlin' } },
   { key: 'City', expectKey: 'bg_city_berlin', data: { cityId: 'berlin', phase: 'arrival' } },
   { key: 'MiniGame', expectKey: 'bg_mini_tok_pack_van', data: { cityId: 'tokyo', minigameId: 'tok_pack_van', returnPhase: 'locations' } },
+  { key: 'MiniGame', expectKey: 'bg_mini_lis_tune_by_ear', data: { cityId: 'lisbon', minigameId: 'lis_tune_by_ear', returnPhase: 'locations' } },
+  { key: 'MiniGame', expectKey: 'bg_mini_mex_find_the_clave', data: { cityId: 'mexico_city', minigameId: 'mex_find_the_clave', returnPhase: 'locations' } },
   { key: 'Rhythm', expectKey: 'bg_rhythm_berlin', data: { cityId: 'berlin' } },
   { key: 'Scrapbook', expectKey: 'bg_scene_scrapbook', data: {} },
 ];

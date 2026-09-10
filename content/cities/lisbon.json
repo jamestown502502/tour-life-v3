@@ -89,6 +89,12 @@
       "id": "jun_why_hes_here",
       "bandmate": "jun",
       "sceneId": "lis_rel_jun_why"
+    },
+    {
+      "id": "lis_arc_mira_arc",
+      "bandmate": "mira",
+      "sceneId": "lis_arc_mira",
+      "arcStage": 2
     }
   ],
   "collaborator": {
@@ -253,6 +259,43 @@
       ],
       "dragTimeSec": 22,
       "outroTextPerfect": "Two flights, every cab, no scraped knuckles. The stairs lose for once."
+    },
+    {
+      "id": "lis_tune_by_ear",
+      "chordProgression": "Am7-Fmaj7-Cmaj7-G6",
+      "bpm": 92,
+      "waveform": "triangle",
+      "type": "interval",
+      "title": "Tune by Ear",
+      "introText": "The house has no tuner and the spare cable is somewhere in the van. \"You have ears,\" the engineer says, not unkindly, and goes to find the cable.",
+      "outroText": "Close enough that nobody in the room will ever know the difference. The guitar sits right in the mix.",
+      "outroTextRough": "It will hold for a set. Rowan quietly retunes between the second and third song and says nothing about it.",
+      "outroTextPerfect": "Dead on, every time, by ear alone. The engineer comes back with the cable and finds there is nothing left to fix.",
+      "theoryRounds": 4,
+      "reward": {
+        "effects": {
+          "harmony": 3,
+          "inspiration": 2
+        },
+        "flags": [
+          "tuned_by_ear"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "harmony": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 4,
+          "inspiration": 4
+        },
+        "flags": [
+          "tuned_by_ear",
+          "perfect_pitch_night"
+        ]
+      }
     }
   ],
   "scenes": {
@@ -303,7 +346,7 @@
     "lis_arrival_mira": {
       "id": "lis_arrival_mira",
       "speaker": "mira",
-      "portrait": "worried",
+      "portrait": "wistful",
       "text": "\"I keep forgetting we're allowed to just... be here,\" Mira says, not quite a joke."
     },
     "lis_loc_fado": {
@@ -533,7 +576,7 @@
     "lis_rel_theo": {
       "id": "lis_rel_theo",
       "speaker": "theo",
-      "portrait": "tense",
+      "portrait": "tired",
       "text": "\"I could sleep for a year,\" Theo says, \"and still be tired when I woke up.\" It's not the tour talking. It's the last time he felt this tired, and where that ended up.",
       "choices": [
         {
@@ -1000,7 +1043,7 @@
       "speaker": "narrator",
       "text": "You write: Lisbon smelled like rain and someone else's song. You wonder if the promise still counts when the person it was made to never hears how it turned out — then decide it counts more, not less. Onward.",
       "condition": "flag:why_tour_funeral_promise",
-      "fallback": "lis_journal_radio"
+      "fallback": "lis_journal_eartrained"
     },
     "lis_journal_generic": {
       "id": "lis_journal_generic",
@@ -1013,6 +1056,34 @@
       "text": "You write: Live on air in Lisbon and I did not stumble once. Whoever was listening heard a band that knew what it was. Onward.",
       "condition": "flag:radio_quick_witted",
       "fallback": "lis_journal_generic"
+    },
+    "lis_journal_eartrained": {
+      "id": "lis_journal_eartrained",
+      "speaker": "narrator",
+      "text": "You write: Tuned the whole thing by ear tonight because there was nothing else to tune it with, and it held. Lisbon smelled like rain and someone else's song. Onward.",
+      "condition": "flag:tuned_by_ear",
+      "fallback": "lis_journal_radio"
+    },
+    "lis_arc_mira": {
+      "speaker": "mira",
+      "portrait": "wistful",
+      "text": "\"I used to think I wanted a big room,\" Mira says, watching the water. \"I think I actually wanted one person to hear it properly and say so.\"",
+      "next": "lis_arc_mira_b",
+      "id": "lis_arc_mira"
+    },
+    "lis_arc_mira_b": {
+      "speaker": "mira",
+      "portrait": "happy",
+      "text": "She looks over. \"You have been doing that the whole tour, by the way. I am aware it was on purpose.\"",
+      "condition": "relationship.mira>=45",
+      "fallback": "lis_arc_mira_b_cool",
+      "id": "lis_arc_mira_b"
+    },
+    "lis_arc_mira_b_cool": {
+      "speaker": "mira",
+      "portrait": "tired",
+      "text": "She does not look over. \"Still waiting on that, mostly. It is fine. It is a long career, supposedly.\"",
+      "id": "lis_arc_mira_b_cool"
     }
   }
 }

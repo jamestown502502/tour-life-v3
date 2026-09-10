@@ -16,6 +16,7 @@ import { parseChordProgression } from '../core/musicTheory';
 import { resolveNode, visibleChoices, applyChoice, advanceTarget } from '../game/dialogue';
 import { evaluateCondition } from '../game/condition';
 import { availabilityFlag } from '../game/scenePool';
+import { arcStageFor, stageAllows, type ArcStage } from '../game/arc';
 import { arrangementFlag } from '../game/rhythm';
 import type { CityDef, DialogueNode, LocationDef } from '../../content/schema';
 import { addTextScrim, textStyle } from './textStyles';
@@ -381,8 +382,18 @@ export class CityScene extends Phaser.Scene {
     // The arc gate (RelationshipScenePoolEntry.minRelationship) is applied HERE rather than at
     // pool-draw time: standing with a bandmate moves across a run, so a later beat becomes
     // eligible partway through, and an ungated opening beat is always there as the fallback.
+    // ARC STAGE, on top of the standing gate. Standing alone says how much someone likes you; it
+    // says nothing about where their story is. Without a stage, a resolution beat could surface in
+    // the first city and a setup beat in the finale, which is exactly why the bandmates read as a
+    // set of vignettes rather than four people going somewhere. See src/game/arc.ts.
+    const stageOf = (bandmate: string): ArcStage => arcStageFor({
+      scenesPlayed: (State.data.arcScenesPlayed ?? {})[bandmate] ?? 0,
+      currentCityIndex: State.data.currentCityIndex,
+      routeLength: State.data.route.length,
+    });
     const available = pool.filter((e) => State.hasFlag(availabilityFlag(e.id))
       && !this.relationshipsPlayed.has(e.id)
+      && stageAllows(e.arcStage as ArcStage | undefined, stageOf(e.bandmate))
       && (e.minRelationship === undefined || (State.data.relationships[e.bandmate] ?? 0) >= e.minRelationship));
     const entry = available[0] ?? (this.relationshipsPlayed.size === 0 ? pool[0] : undefined);
     if (!entry) { this.startPreshow(); return; }
@@ -390,6 +401,8 @@ export class CityScene extends Phaser.Scene {
     // Cross-run freshness: this scene has now genuinely been shown, so later runs draw around it
     // while this city still has material this player has never read (see scenePool).
     State.markSceneSeen(entry.id);
+    // Their arc advances because you spent a scene with them, not because time passed.
+    State.recordArcScene(entry.bandmate);
     // Persisted immediately, before walking the entry's own dialogue — the SAME dialogueNodeId
     // mechanism already covers an interruption mid-way through this specific entry's own scene
     // graph; this covers the gap between two entries that dialogueNodeId alone couldn't (walk()

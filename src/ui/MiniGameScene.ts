@@ -35,6 +35,8 @@ const HELP_TEXT: Record<MiniGameDef['type'], string> = {
   sequence: 'Watch the pads light up, then tap them back in the same order. Each round is one longer.',
   sustain: 'Hold BOTH faders inside the moving gold zone. Drag them up and down to keep them there.',
   pressure: 'Answer fast. Stay quiet long enough and the silence answers for you — which is also an answer.',
+  interval: 'Two notes play. Pick the interval between them. You can replay it as often as you like, and every answer tells you what it actually was — getting it wrong still teaches you the sound.',
+  clave: 'A rhythm plays. Pick the row of dots that matches it — filled dots are strokes. Replay it as often as you like; each answer names the pattern either way.',
 };
 
 export class MiniGameScene extends Phaser.Scene {
@@ -46,6 +48,9 @@ export class MiniGameScene extends Phaser.Scene {
   private outcomeGood = false;
   /** True only when the player aced it outright, not merely passed. Gates outroTextPerfect. */
   private outcomePerfect = false;
+  private theoryRound = 0;
+  private theoryHits = 0;
+  private theoryRng!: ReturnType<typeof makeRng>;
   private contentLayer!: Phaser.GameObjects.Container;
   // timing
   private timingRound = 0;
@@ -77,6 +82,8 @@ export class MiniGameScene extends Phaser.Scene {
     this.mg = found;
     this.outcomeGood = false;
     this.outcomePerfect = false;
+    this.theoryRound = 0;
+    this.theoryHits = 0;
     this.timingRound = 0;
     this.timingHits = 0;
     this.needle = null;
@@ -88,6 +95,9 @@ export class MiniGameScene extends Phaser.Scene {
     // Seeded per minigame like every other per-run variance, so a replayed seed drills the same
     // pattern instead of a fresh random one.
     this.sequenceRng = makeRng(State.data.seed + ':sequence:' + data.minigameId);
+    // Seeded like everything else: a replayed seed asks the same theory questions in the same
+    // order, so a run is reproducible and a player can compare two attempts at the same exercise.
+    this.theoryRng = makeRng(State.data.seed + ':theory:' + data.minigameId);
 
     const rng = makeRng(`${State.data.seed}:minigame:${this.mg.id}`);
     this.timingRoundsSec = timingRoundsForHarmony(this.mg.timingRoundsSec ?? [2.2, 1.7, 1.3], State.data.stats.harmony);
@@ -149,6 +159,8 @@ export class MiniGameScene extends Phaser.Scene {
     else if (this.mg.type === 'drag') this.runDrag();
     else if (this.mg.type === 'sequence') this.runSequenceRound();
     else if (this.mg.type === 'sustain') this.runSustain();
+    else if (this.mg.type === 'interval') this.runIntervalRound();
+    else if (this.mg.type === 'clave') this.runClaveRound();
     else this.runChoiceQuestion();
   }
 
@@ -518,4 +530,145 @@ export class MiniGameScene extends Phaser.Scene {
     saveRun(State.data);
     goTo(this, 'City', { cityId: this.cityId, phase: this.returnPhase });
   }
+
+  // ---- interval: hear two notes, name the distance. Relative-pitch ear training. ----
+  //
+  // Pedagogy, not decoration. Music-education research is consistent that ear training works when
+  // it is multimodal and immediate: play the real thing, let the learner answer, then NAME what
+  // they just heard whether they got it or not. So every round ends with the interval identified
+  // and anchored to something physical they already know - the gap between two guitar strings, the
+  // first two notes of a song they can hum. A wrong answer still teaches; it just does not score.
+  private runIntervalRound(): void {
+    const rounds = this.mg.theoryRounds ?? 4;
+    if (this.theoryRound >= rounds) {
+      this.finish(this.theoryHits >= Math.ceil(rounds / 2), this.theoryHits === rounds);
+      return;
+    }
+    this.clearContent();
+
+    // Ordered easiest-first: an octave and a unison are unmistakable, a fifth is the next most
+    // distinct, and thirds (the major/minor pair that decides whether music sounds bright or sad)
+    // come last, because telling those two apart is the actual skill.
+    const LADDER: { semitones: number; name: string; anchor: string }[][] = [
+      [{ semitones: 12, name: 'Octave', anchor: 'the same note higher up' },
+       { semitones: 7, name: 'Fifth', anchor: 'the gap between two open guitar strings' },
+       { semitones: 0, name: 'Unison', anchor: 'the same note twice, which is what being in tune sounds like' }],
+      [{ semitones: 7, name: 'Fifth', anchor: 'the opening leap of Twinkle, Twinkle' },
+       { semitones: 5, name: 'Fourth', anchor: 'the first two notes of Here Comes the Bride' },
+       { semitones: 12, name: 'Octave', anchor: 'the same note an octave up' }],
+      [{ semitones: 4, name: 'Major third', anchor: 'the bright one, and the reason a major chord sounds happy' },
+       { semitones: 3, name: 'Minor third', anchor: 'the sad one, and the reason a minor chord aches' },
+       { semitones: 7, name: 'Fifth', anchor: 'wide and open, neither bright nor sad' }],
+      [{ semitones: 3, name: 'Minor third', anchor: 'the interval that makes a chord sound sad' },
+       { semitones: 4, name: 'Major third', anchor: 'the interval that makes a chord sound bright' },
+       { semitones: 2, name: 'Major second', anchor: 'one step, the smallest gap on offer here' }],
+    ];
+    const set = LADDER[Math.min(this.theoryRound, LADDER.length - 1)];
+    const answer = set[this.theoryRng.int(0, set.length)];
+    const root = 220 * Math.pow(2, this.theoryRng.int(0, 5) / 12); // vary the starting pitch
+
+    this.contentLayer.add(addTextScrim(this, W / 2, 250, W - 60, 116));
+    this.contentLayer.add(this.add.text(W / 2, 226, 'Which interval was that?',
+      textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
+    const hint = this.add.text(W / 2, 268, `Question ${this.theoryRound + 1} of ${rounds} - listen, then choose`,
+      textStyle('small', { color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);
+    this.contentLayer.add(hint);
+
+    const playPair = (): void => {
+      audio.playPitch(root, 0.7, 0, 'triangle');
+      audio.playPitch(root * Math.pow(2, answer.semitones / 12), 0.7, 0.85, 'triangle');
+    };
+    playPair();
+    this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, 'Hear it again',
+      () => playPair(), { fillColor: PALETTE.plum, fontSize: '17px' }));
+
+    let answered = false;
+    set.forEach((option, i) => {
+      const btn = createButton(this, W / 2 - 260, 410 + i * 84, 520, 70, option.name, () => {
+        if (answered) return;
+        answered = true;
+        const right = option.semitones === answer.semitones;
+        if (right) { this.theoryHits++; spawnPerfectSpark(this, W / 2, 400); hitstop(this, 40); }
+        else shake(this, 3);
+        // Name it either way. This is the teaching moment, and skipping it on a wrong answer is
+        // exactly how a quiz fails to be a lesson.
+        hint.setText(right
+          ? `Yes - a ${answer.name.toLowerCase()}: ${answer.anchor}.`
+          : `That was a ${answer.name.toLowerCase()} - ${answer.anchor}.`);
+        this.theoryRound++;
+        this.time.delayedCall(2100, () => this.runIntervalRound());
+      }, { fillColor: PALETTE.teal, fontSize: '19px' });
+      this.contentLayer.add(btn);
+    });
+  }
+
+  // ---- clave: hear a rhythm, pick the pattern that matches it. ----
+  //
+  // The son clave is the backbone of most Latin popular music and is genuinely worth knowing, so
+  // Mexico City teaches it rather than testing reflexes. The player hears a real pattern and picks
+  // its notation out of three, which is rhythm-reading in its most reduced honest form: does the
+  // shape on the screen match the shape in the air.
+  private runClaveRound(): void {
+    const rounds = this.mg.theoryRounds ?? 4;
+    if (this.theoryRound >= rounds) {
+      this.finish(this.theoryHits >= Math.ceil(rounds / 2), this.theoryHits === rounds);
+      return;
+    }
+    this.clearContent();
+
+    // Sixteen slots = two bars of four. 'x' is a stroke.
+    const P = (g: string): boolean[] => g.split('').map((c) => c === 'x');
+    const PATTERNS: { name: string; grid: string; note: string }[] = [
+      { name: '3-2 son clave', grid: 'x..x..x...x.x...', note: 'three strokes then two, and the backbone of most of what this city dances to' },
+      { name: '2-3 son clave', grid: '..x.x...x..x..x.', note: 'the same pattern turned around, two strokes first and then three' },
+      { name: 'Straight four', grid: 'x...x...x...x...', note: 'one stroke per beat, steady, and the thing clave is deliberately not' },
+      { name: 'Rumba clave', grid: 'x..x...x..x.x...', note: 'like the 3-2 son, except the third stroke lands one step later' },
+    ];
+    const pool = this.theoryRng.shuffle(PATTERNS).slice(0, 3);
+    const answer = pool[this.theoryRng.int(0, pool.length)];
+
+    this.contentLayer.add(addTextScrim(this, W / 2, 236, W - 60, 108));
+    this.contentLayer.add(this.add.text(W / 2, 214, 'Which pattern did you hear?',
+      textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
+    const hint = this.add.text(W / 2, 254, `Question ${this.theoryRound + 1} of ${rounds} - filled dots are strokes`,
+      textStyle('small', { color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);
+    this.contentLayer.add(hint);
+
+    const STEP = 0.24; // seconds per sixteenth slot
+    const playPattern = (grid: string): void => {
+      const offsets = P(grid).map((on, i) => (on ? i * STEP : -1)).filter((t) => t >= 0);
+      audio.playRhythm(offsets);
+    };
+    playPattern(answer.grid);
+    this.contentLayer.add(createButton(this, W / 2 - 110, 306, 220, 58, 'Hear it again',
+      () => playPattern(answer.grid), { fillColor: PALETTE.plum, fontSize: '17px' }));
+
+    let answered = false;
+    pool.forEach((option, i) => {
+      const rowY = 400 + i * 96;
+      // The notation itself: sixteen dots, filled where a stroke lands. Reading it IS the lesson,
+      // so it is drawn rather than described in words.
+      const dotW = (W - 140) / 16;
+      const row = this.add.container(0, 0);
+      P(option.grid).forEach((on, j) => {
+        const cx = 70 + j * dotW + dotW / 2;
+        row.add(this.add.circle(cx, rowY, on ? 9 : 5, on ? PALETTE.gold : PALETTE.cream, on ? 1 : 0.35));
+      });
+      this.contentLayer.add(row);
+      const btn = createButton(this, W / 2 - 150, rowY + 22, 300, 52, 'This one', () => {
+        if (answered) return;
+        answered = true;
+        const right = option.name === answer.name;
+        if (right) { this.theoryHits++; spawnPerfectSpark(this, W / 2, rowY); hitstop(this, 40); }
+        else shake(this, 3);
+        hint.setText(right
+          ? `Yes - the ${answer.name}: ${answer.note}.`
+          : `That was the ${answer.name} - ${answer.note}.`);
+        this.theoryRound++;
+        this.time.delayedCall(2400, () => this.runClaveRound());
+      }, { fillColor: PALETTE.teal, fontSize: '16px' });
+      this.contentLayer.add(btn);
+    });
+  }
+
 }

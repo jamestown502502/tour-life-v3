@@ -52,6 +52,13 @@ export interface RelationshipScenePoolEntry {
   bandmate: BandmateId;
   sceneId: string;
   condition?: ConditionExpr;
+  /** WHICH STAGE OF THAT PERSON'S ARC this beat belongs to: 0 setup, 1 strain, 2 resolution.
+   *  See src/game/arc.ts. Optional and additive — an entry without one is stage-agnostic and
+   *  always eligible, so every scene written before arcs existed behaves exactly as it did. An
+   *  entry authored for a stage plays at that stage or later, so a missed strain beat can still
+   *  land in a later city rather than being lost; what never happens is a resolution arriving
+   *  before its setup. */
+  arcStage?: 0 | 1 | 2;
   /** RELATIONSHIP ARC GATE. The minimum standing with this bandmate before the entry can be
    *  played. Entries without one are the opening beats and are always eligible; a gated entry is
    *  a later beat in that person's arc, and only surfaces once you have actually got there.
@@ -87,7 +94,13 @@ export interface CollaboratorDef {
 // interactive beat that uses one of the tour's own verbs. Every type always reaches an outcome
 // — 'timing'/'drag' have a graded-but-never-failing result, 'choice' has no wrong answer, only
 // a warmer or cooler one — matching the same no-fail philosophy as the rhythm minigame.
-export type MiniGameType = 'timing' | 'drag' | 'choice' | 'sequence' | 'sustain' | 'pressure';
+export type MiniGameType = 'timing' | 'drag' | 'choice' | 'sequence' | 'sustain' | 'pressure'
+  // The two teaching minigames. Music-education research is consistent that what works is
+  // multimodal and progressive -- hear it, see it, answer, get told WHY immediately -- rather than
+  // a quiz with a score at the end. Both of these play a real example, show the candidates, take
+  // one answer, and name the thing that was just heard whether the answer was right or wrong.
+  | 'interval'   // relative pitch: two notes, name the distance between them
+  | 'clave';     // rhythm: hear a pattern, pick its notation out of three
 
 export interface MiniGameReward {
   effects?: StatDeltas;
@@ -147,6 +160,8 @@ export interface MiniGameDef {
   sequenceRounds?: number[];
   /** 'sustain' only: seconds the two faders must be held inside their drifting target zone. */
   sustainSeconds?: number;
+  /** 'interval' and 'clave' only: how many questions the exercise asks. Defaults to 4. */
+  theoryRounds?: number;
   /** 'pressure' only: seconds per question before the silence answers for you. Shorter than
    *  'choice''s forgiving 6.5s soft timer — that is the whole difficulty. */
   pressureSeconds?: number;
@@ -382,8 +397,15 @@ function validateMiniGames(minigames: unknown, path: string, errors: string[]): 
           }
         }
       }
+    } else if (mg.type === 'interval' || mg.type === 'clave') {
+      // Both teaching exercises carry their own question banks in code (the interval ladder and
+      // the clave patterns, both covered by src/tests/musicTheory.test.ts against real definitions
+      // rather than trusted). Content only chooses how many questions to ask.
+      if (mg.theoryRounds !== undefined && (!isNumber(mg.theoryRounds) || mg.theoryRounds! < 1)) {
+        fail(errors, `${p}: theoryRounds must be a positive number when present`);
+      }
     } else {
-      fail(errors, `${p}: type must be 'timing' | 'drag' | 'choice'`);
+      fail(errors, `${p}: type must be one of timing | drag | choice | sequence | sustain | pressure | interval | clave`);
     }
   }
 }

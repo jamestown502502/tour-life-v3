@@ -82,6 +82,21 @@ export class ResultsScene extends Phaser.Scene {
     // Landing an entire chart without dropping a note is the one performance milestone worth
     // naming outright. The game tracked it in the combo counter and then threw it away at the end,
     // so the achievement rhythm players actually chase left no trace on the results screen.
+    // THE RETURN LEG, ON THE RESULTS SCREEN. The town already remembers your first night here and
+    // the social feed already uses it — but the one screen where the comparison actually lands,
+    // the moment you finish the second show, said nothing about it. Tying the score to the story
+    // is what stops a rhythm result being a number and starts it being the second night.
+    const memory = (State.data.cityMemories ?? []).find((m) => m.cityId === this.cityId && m.firstShowRecorded);
+    if (memory && memory.secondShow) {
+      const RANK: Record<string, number> = { rough: 0, solid: 1, triumph: 2 };
+      const before = RANK[memory.show] ?? 0, now = RANK[memory.secondShow] ?? 0;
+      const line = now > before ? `Better than your first night in ${city.name}.`
+        : now < before ? `Not the night you had here the first time.`
+        : `About the same room you left behind here.`;
+      this.add.text(W / 2, 518, line,
+        textStyle('small', { fontSize: '16px', color: PALETTE_HEX.gold, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5);
+    }
+
     if (landed > 0 && jc.miss === 0) {
       const fc = this.add.text(W / 2, 552, 'FULL COMBO — not one note dropped',
         textStyle('body', { fontSize: '19px', color: PALETTE_HEX.gold })).setOrigin(0.5);

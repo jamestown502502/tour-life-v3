@@ -40,6 +40,14 @@
     "file": "img/bg_mini_lis_soundcheck.webp"
   },
   {
+    "key": "bg_mini_lis_tune_by_ear",
+    "file": "img/bg_mini_lis_tune_by_ear.webp"
+  },
+  {
+    "key": "bg_mini_mex_find_the_clave",
+    "file": "img/bg_mini_mex_find_the_clave.webp"
+  },
+  {
     "key": "bg_mini_mex_interview",
     "file": "img/bg_mini_mex_interview.webp"
   },
@@ -272,6 +280,14 @@
     "file": "img/portrait_jun_tense.png"
   },
   {
+    "key": "portrait_jun_tired",
+    "file": "img/portrait_jun_tired.png"
+  },
+  {
+    "key": "portrait_jun_wistful",
+    "file": "img/portrait_jun_wistful.png"
+  },
+  {
     "key": "portrait_jun_worried",
     "file": "img/portrait_jun_worried.png"
   },
@@ -286,6 +302,14 @@
   {
     "key": "portrait_mira_tense",
     "file": "img/portrait_mira_tense.png"
+  },
+  {
+    "key": "portrait_mira_tired",
+    "file": "img/portrait_mira_tired.png"
+  },
+  {
+    "key": "portrait_mira_wistful",
+    "file": "img/portrait_mira_wistful.png"
   },
   {
     "key": "portrait_mira_worried",
@@ -304,6 +328,14 @@
     "file": "img/portrait_rowan_tense.png"
   },
   {
+    "key": "portrait_rowan_tired",
+    "file": "img/portrait_rowan_tired.png"
+  },
+  {
+    "key": "portrait_rowan_wistful",
+    "file": "img/portrait_rowan_wistful.png"
+  },
+  {
     "key": "portrait_rowan_worried",
     "file": "img/portrait_rowan_worried.png"
   },
@@ -318,6 +350,14 @@
   {
     "key": "portrait_theo_tense",
     "file": "img/portrait_theo_tense.png"
+  },
+  {
+    "key": "portrait_theo_tired",
+    "file": "img/portrait_theo_tired.png"
+  },
+  {
+    "key": "portrait_theo_wistful",
+    "file": "img/portrait_theo_wistful.png"
   },
   {
     "key": "portrait_theo_worried",

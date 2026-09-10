@@ -36,6 +36,13 @@ mood_happy="Expression: warm open smile, relaxed eyebrows, bright eyes."
 mood_worried="Expression: faint frown, eyebrows raised and drawn together, eyes looking slightly away, anxious."
 mood_tense="Expression: jaw set, eyebrows lowered and knitted, mouth a flat line, guarded."
 mood_inspired="Expression: eyes wide and lit up, slight open-mouthed smile, eyebrows raised, struck by an idea."
+# Two expressions added after a live report that faces did not match the writing. The cause was
+# not the renderer (it shows the authored mood correctly) and not the art (the four were clearly
+# distinct) -- it was that the PALETTE was too coarse for the prose. A line like "her smile
+# flickers, before she catches it and buries it back, out of long habit" is wistful and guarded,
+# and the nearest available face was `tense`, which paints an angry frown and fights the line.
+mood_wistful="Expression: a small unfinished smile that is fading, eyes lowered and looking past the viewer, eyebrows slightly raised in the middle, fond and a little sad at once."
+mood_tired="Expression: heavy eyelids, faint shadows under the eyes, mouth relaxed and closed, shoulders low, worn out but not unhappy."
 
 gen() { # gen <id> <mood> [referenceFile]
   local who="$1" mood="$2" ref="${3:-}"
@@ -62,7 +69,7 @@ gen() { # gen <id> <mood> [referenceFile]
 for who in mira theo jun rowan; do
   base="$OUT/portrait_${who}_happy.png"
   gen "$who" happy                    # base: text-to-image
-  for mood in worried tense inspired; do
+  for mood in worried tense inspired wistful tired; do
     gen "$who" "$mood" "$base"        # derived: image-to-image from the base
   done
 done

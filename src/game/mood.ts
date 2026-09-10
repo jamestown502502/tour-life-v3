@@ -10,11 +10,16 @@
 // This infers a mood from the line itself when the writer did not specify one. It is presentational
 // only -- it never gates, scores, or branches anything -- and an authored `portrait` always wins.
 // The bar it has to clear is not "always right", it is "better than smiling through everything".
-export type PortraitMood = 'happy' | 'worried' | 'tense' | 'inspired';
+export type PortraitMood = 'happy' | 'worried' | 'tense' | 'inspired' | 'wistful' | 'tired';
+
+/** Every mood with a painted portrait behind it. Asking for one outside this set would fall back
+ *  to a code-drawn placeholder, so `moodForNode` is checked against it rather than against a
+ *  hand-maintained list that can drift. */
+export const PAINTED_MOODS: PortraitMood[] = ['happy', 'worried', 'tense', 'inspired', 'wistful', 'tired'];
 
 /** Scored rather than first-match: a line like "I don't know, maybe we try something new" hits both
  *  the worried and inspired sets, and should land on whichever is better represented. */
-const CUES: Record<PortraitMood, RegExp[]> = {
+const CUES: Partial<Record<PortraitMood, RegExp[]>> = {
   tense: [
     /\b(don'?t|do not|stop|not again|whatever|forget it|drop it)\b/i,
     /\b(argu|shout|snap|slam|glare|tense|angry|furious|blame|fault)\w*/i,
@@ -39,12 +44,28 @@ const CUES: Record<PortraitMood, RegExp[]> = {
 
 /** Ties break toward the calmer read: a line that is equally tense and worried is worried, and a
  *  line with no signal at all stays neutral-positive rather than inventing drama. */
+// wistful and tired are deliberately NOT inferred. They are exactly the registers a keyword
+// classifier reads backwards ("smile" in a sentence about suppressing one), and they exist so a
+// writer can author them — guessing at them would reintroduce the bug they were added to fix.
 const PRECEDENCE: PortraitMood[] = ['worried', 'tense', 'inspired', 'happy'];
 
+/** Prose about SUPPRESSING a feeling contains the vocabulary of the feeling. "Her smile flickers,
+ *  just slightly, before she catches it and buries it back in the noise of the street, out of long
+ *  habit" scored `happy` off the word "smile" while describing precisely the opposite, and shipped
+ *  a grinning portrait onto a line about not letting yourself grin.
+ *
+ *  Blanket-raising the confidence threshold was the wrong correction — it silenced genuinely
+ *  worried lines too. This is narrower and matches the actual failure: when a positive cue appears
+ *  alongside language of catching, burying or fading, the positive reading is discarded rather
+ *  than trusted. Those lines are wistful, and wistful is now a face a writer can author. */
+const SUPPRESSION = /(buri\w+|bury|catches it|caught|swallow\w*|flicker\w*|fade[sd]?|hide[sd]?|hiding|out of habit|long habit|almost|not quite|before she|before he|before they)/i;
+
 export function inferMood(text: string): PortraitMood {
+  const suppressed = SUPPRESSION.test(text);
   const scores = new Map<PortraitMood, number>();
   for (const mood of PRECEDENCE) {
-    scores.set(mood, CUES[mood].reduce((n, re) => n + (re.test(text) ? 1 : 0), 0));
+    const raw = (CUES[mood] ?? []).reduce((n, re) => n + (re.test(text) ? 1 : 0), 0);
+    scores.set(mood, mood === 'happy' && suppressed ? 0 : raw);
   }
   let best: PortraitMood = 'happy';
   let bestScore = 0;
@@ -57,8 +78,6 @@ export function inferMood(text: string): PortraitMood {
 
 /** The mood to actually render: an authored one always wins, otherwise infer from the line. */
 export function moodForNode(authored: string | undefined, text: string): PortraitMood {
-  if (authored === 'happy' || authored === 'worried' || authored === 'tense' || authored === 'inspired') {
-    return authored;
-  }
+  if (authored && (PAINTED_MOODS as string[]).includes(authored)) return authored as PortraitMood;
   return inferMood(text);
 }

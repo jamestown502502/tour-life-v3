@@ -86,6 +86,12 @@
       "bandmate": "rowan",
       "sceneId": "ber_rel_rowan2",
       "minRelationship": 32
+    },
+    {
+      "id": "ber_arc_theo_arc",
+      "bandmate": "theo",
+      "sceneId": "ber_arc_theo",
+      "arcStage": 2
     }
   ],
   "collaborator": {
@@ -244,7 +250,7 @@
     "ber_arrival_theo": {
       "id": "ber_arrival_theo",
       "speaker": "theo",
-      "portrait": "tense",
+      "portrait": "tired",
       "text": "\"This city doesn't sleep, and apparently neither will I,\" Theo says, staring up at the tower like it personally owes him an explanation."
     },
     "ber_loc_powerplant": {
@@ -570,7 +576,7 @@
     "ber_rel_theo": {
       "id": "ber_rel_theo",
       "speaker": "theo",
-      "portrait": "tense",
+      "portrait": "tired",
       "text": "\"I haven't slept right since Lisbon,\" Theo admits. \"This whole city runs on no sleep at all. I genuinely don't know if that helps me or ruins me.\"",
       "choices": [
         {
@@ -718,7 +724,7 @@
     "ber_rel_rowan_b": {
       "id": "ber_rel_rowan_b",
       "speaker": "rowan",
-      "portrait": "worried",
+      "portrait": "wistful",
       "text": "\"Yeah,\" Rowan says quietly, mostly to the pavement. \"Maybe that's just what this whole thing actually is.\""
     },
     "ber_rel_mira2": {
@@ -895,6 +901,27 @@
       "text": "You write: I recalled every one of Jun's patches back to him in order, and he made a noise I've never heard him make. Berlin never once cared whether we were there. Onward.",
       "condition": "flag:modular_locked_in",
       "fallback": "ber_journal_generic"
+    },
+    "ber_arc_theo": {
+      "speaker": "theo",
+      "portrait": "tired",
+      "text": "\"I worked out what I actually want,\" Theo says, over the noise. \"It is not a bigger room. It is one night where nobody needs anything from me.\"",
+      "next": "ber_arc_theo_b",
+      "id": "ber_arc_theo"
+    },
+    "ber_arc_theo_b": {
+      "speaker": "theo",
+      "portrait": "happy",
+      "text": "\"You already gave me a couple of those,\" he says. \"You probably did not notice. I did.\"",
+      "condition": "relationship.theo>=45",
+      "fallback": "ber_arc_theo_b_cool",
+      "id": "ber_arc_theo_b"
+    },
+    "ber_arc_theo_b_cool": {
+      "speaker": "theo",
+      "portrait": "wistful",
+      "text": "\"Anyway,\" he says, and picks the sticks back up before anyone has to answer. \"Not tonight. Obviously not tonight.\"",
+      "id": "ber_arc_theo_b_cool"
     }
   }
 }

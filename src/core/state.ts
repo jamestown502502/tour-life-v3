@@ -124,6 +124,10 @@ export interface RunState {
   route: CityStop[];
   /** Additive: absent on any save written before return legs existed, backfilled by migrate(). */
   cityMemories?: CityMemory[];
+  /** How many relationship scenes each bandmate has had this run — the input to their arc stage
+   *  (src/game/arc.ts). Optional and additive: a save written before arcs existed reads as zero
+   *  for everyone, which is exactly the setup stage they would have been in anyway. */
+  arcScenesPlayed?: Record<string, number>;
   log: string[];
   currentCityIndex: number;
   midTourComplication: string;
@@ -227,6 +231,13 @@ class GameState {
   /** Records that a relationship scene has actually been SHOWN to this player, so future runs can
    *  draw fresh material first (see scenePool.drawScenePoolFlags). Recorded on display rather than
    *  on draw: a run abandoned before reaching a city should not burn that city's unseen scenes. */
+  /** One more scene spent with this bandmate. Drives arc stage, and with it which of their beats
+   *  can surface next. */
+  recordArcScene(bandmate: string): void {
+    if (!this.data.arcScenesPlayed) this.data.arcScenesPlayed = {};
+    this.data.arcScenesPlayed[bandmate] = (this.data.arcScenesPlayed[bandmate] ?? 0) + 1;
+  }
+
   markSceneSeen(sceneId: string): void {
     const meta = this.data.meta;
     if (!meta.seenSceneIds) meta.seenSceneIds = [];

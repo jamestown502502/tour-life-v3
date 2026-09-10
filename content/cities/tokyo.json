@@ -89,6 +89,12 @@
       "id": "rowan_letter_from_home",
       "bandmate": "rowan",
       "sceneId": "tok_rel_rowan_letter"
+    },
+    {
+      "id": "tok_arc_jun_arc",
+      "bandmate": "jun",
+      "sceneId": "tok_arc_jun",
+      "arcStage": 2
     }
   ],
   "collaborator": {
@@ -978,6 +984,27 @@
       "text": "You write: Held the mix steady all the way through, both hands, nothing drifting. Tokyo never once slowed down for us. We kept up anyway.",
       "condition": "flag:mix_held_steady",
       "fallback": "tok_journal_generic"
+    },
+    "tok_arc_jun": {
+      "speaker": "jun",
+      "portrait": "wistful",
+      "text": "\"Four cities,\" Jun says, hand flat on the case. \"I have carried this to four cities and played what was already written every single night.\"",
+      "next": "tok_arc_jun_b",
+      "id": "tok_arc_jun"
+    },
+    "tok_arc_jun_b": {
+      "speaker": "jun",
+      "portrait": "inspired",
+      "text": "\"Except you let me try it. Twice.\" They are already patching something. \"That is the difference between a rig and a room.\"",
+      "condition": "relationship.jun>=45",
+      "fallback": "tok_arc_jun_b_cool",
+      "id": "tok_arc_jun_b"
+    },
+    "tok_arc_jun_b_cool": {
+      "speaker": "jun",
+      "portrait": "tense",
+      "text": "\"It is fine,\" Jun says, in the tone that means it is not. The case stays shut. \"The songs work. That is the job.\"",
+      "id": "tok_arc_jun_b_cool"
     }
   }
 }

@@ -1,6 +1,7 @@
 // Real text input, positioned by tracking the canvas's actual bounding rect rather than going
 // through Phaser's DOM plugin — under Scale.FIT the DOM plugin's own transform math drifts from
 // the canvas's true screen position (confirmed by measuring both rects directly in-browser).
+import Phaser from 'phaser';
 import { H, W } from '../const';
 
 export interface FloatingInput {
@@ -8,7 +9,15 @@ export interface FloatingInput {
   destroy(): void;
 }
 
-export function createFloatingInput(gameX: number, gameY: number, widthPx: number, placeholder: string): FloatingInput {
+/** `scene` is required so the element's teardown is registered ATOMICALLY with its creation.
+ *  Callers used to append the element and then register their own SHUTDOWN handler on the next
+ *  line; anything that stopped the scene in between left a real DOM input floating over the game
+ *  forever, on top of whatever scene came next. Observed as a Scrapbook button whose caption
+ *  measured 1.11:1 because a stray white text field was sitting on it. Callers may still call
+ *  destroy() early — it is idempotent. */
+export function createFloatingInput(
+  scene: Phaser.Scene, gameX: number, gameY: number, widthPx: number, placeholder: string,
+): FloatingInput {
   const el = document.createElement('input');
   el.placeholder = placeholder;
   el.maxLength = 30;
@@ -37,12 +46,17 @@ export function createFloatingInput(gameX: number, gameY: number, widthPx: numbe
   window.addEventListener('resize', reposition);
   const interval = window.setInterval(reposition, 250); // covers Scale.FIT reflow without a resize event
 
-  return {
-    el,
-    destroy() {
-      window.removeEventListener('resize', reposition);
-      window.clearInterval(interval);
-      el.remove();
-    },
+  let destroyed = false;
+  const destroy = (): void => {
+    if (destroyed) return;
+    destroyed = true;
+    window.removeEventListener('resize', reposition);
+    window.clearInterval(interval);
+    el.remove();
   };
+  // Registered here, not by the caller: this is the whole point of taking `scene`.
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, destroy);
+  scene.events.once(Phaser.Scenes.Events.DESTROY, destroy);
+
+  return { el, destroy };
 }

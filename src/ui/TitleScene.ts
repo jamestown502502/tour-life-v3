@@ -288,7 +288,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private buildSeedEntry(seedLabel: Phaser.GameObjects.Text): void {
-    this.seedInput = createFloatingInput(W / 2, 950, 320, 'Or type a seed to replay a run');
+    this.seedInput = createFloatingInput(this, W / 2, 950, 320, 'Or type a seed to replay a run');
     createButton(this, W / 2 - 100, 1000, 200, 44, 'Use this seed', () => {
       const val = this.seedInput?.el.value.trim();
       if (val) {

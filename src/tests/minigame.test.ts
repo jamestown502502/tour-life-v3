@@ -59,7 +59,11 @@ describe('MiniGameDef schema validation', () => {
 
   it('rejects an unknown minigame type', () => {
     const c = baseCity([{ id: 'x', type: 'nonsense', title: 't', introText: 'i', outroText: 'o', outroTextRough: 'r', reward: {} }]);
-    expect(validateCity(c).errors.some((e) => e.includes("'timing' | 'drag' | 'choice'"))).toBe(true);
+    // Asserts the REJECTION, not the wording. Pinning the message meant adding a legitimate new
+    // type (interval, clave) broke this test for no reason other than the sentence changing.
+    const result = validateCity(c);
+    expect(result.valid, 'an unknown minigame type must not validate').toBe(false);
+    expect(result.errors.some((e) => e.includes('type must be')), result.errors.join(' | ')).toBe(true);
   });
 });
 

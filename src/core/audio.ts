@@ -116,6 +116,41 @@ class AudioSystem {
     src.stop(t0 + durationSec + 0.02);
   }
 
+  /** One clean pitch, for the ear-training minigames.
+   *
+   *  Everything else in here is either a chord pad (playAmbience) or a fixed sound effect. Teaching
+   *  a player to hear an interval needs a single sustained note at a known frequency, twice, with
+   *  a gap — so this is the primitive those games are built on. Routed through sfxGain, not
+   *  musicGain, so a player who has turned the music down to read still hears the exercise.
+   *
+   *  Scheduled on the AudioContext clock (delaySeconds), never a scene timer: a two-note interval
+   *  whose gap wanders with the frame rate is not the same exercise. */
+  playPitch(freq: number, durationSec = 0.8, delaySeconds = 0, waveform: OscillatorType = 'triangle'): void {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime + delaySeconds;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = waveform;
+    osc.frequency.setValueAtTime(freq, t0);
+    // A soft attack and release: a hard gate on a pure tone reads as a click, and the click is
+    // easier to time off than the pitch is to hear.
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(0.5, t0 + 0.04);
+    gain.gain.setValueAtTime(0.5, t0 + durationSec - 0.12);
+    gain.gain.linearRampToValueAtTime(0, t0 + durationSec);
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t0);
+    osc.stop(t0 + durationSec + 0.02);
+  }
+
+  /** A rhythm played as identical short clicks at given offsets in seconds — the clave exercise.
+   *  Offsets are absolute from "now", so the pattern's internal timing is exact. */
+  playRhythm(offsetsSec: number[], freq = 880, clickSec = 0.09): void {
+    for (const at of offsetsSec) this.playPitch(freq, clickSec, at, 'square');
+  }
+
   playSfx(name: SfxName): void {
     if (!this.ctx) return;
     const bus = name === 'metronome' || name === 'metronomeAccent' ? this.metronomeGain : this.sfxGain;

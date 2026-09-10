@@ -39,7 +39,7 @@ export class BandCreatorScene extends Phaser.Scene {
     // forward. "Quit to Title" from here is the actual "back out of setup" path.
     addMenuButton(this, 'BandCreator');
 
-    this.nameInput = createFloatingInput(W / 2, 130, 320, 'Band name');
+    this.nameInput = createFloatingInput(this, W / 2, 130, 320, 'Band name');
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.nameInput.destroy());
 
     // GRID_ROW_H/GRID_INCREMENT (not the original 50/60/46/56): at the 390px mobile viewport

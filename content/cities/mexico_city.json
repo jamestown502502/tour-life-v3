@@ -84,6 +84,12 @@
       "id": "mira_why_shes_here",
       "bandmate": "mira",
       "sceneId": "mex_rel_mira_why"
+    },
+    {
+      "id": "mex_arc_rowan_arc",
+      "bandmate": "rowan",
+      "sceneId": "mex_arc_rowan",
+      "arcStage": 2
     }
   ],
   "collaborator": {
@@ -230,6 +236,43 @@
         }
       ],
       "outroTextPerfect": "Callers keep coming. The host lets the segment run long because it is working."
+    },
+    {
+      "id": "mex_find_the_clave",
+      "chordProgression": "Am-Dm-E7-Am",
+      "bpm": 104,
+      "waveform": "triangle",
+      "type": "clave",
+      "title": "Find the Clave",
+      "introText": "The percussionist next door taps a pattern on the doorframe and waits. \"If you can hear which one that is,\" she says, \"you can play with anybody on this street.\"",
+      "outroText": "You get most of them. She nods, satisfied enough, and shows you where the two sides swap.",
+      "outroTextRough": "You get some of them. \"It comes,\" she says. \"Everybody hears it wrong first.\"",
+      "outroTextPerfect": "Every pattern, first time, including the rumba. She stops tapping and just looks at you for a second, then asks what you are doing later.",
+      "theoryRounds": 4,
+      "reward": {
+        "effects": {
+          "inspiration": 3,
+          "harmony": 2
+        },
+        "flags": [
+          "clave_literate"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "inspiration": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "inspiration": 5,
+          "harmony": 2
+        },
+        "flags": [
+          "clave_literate",
+          "clave_fluent"
+        ]
+      }
     }
   ],
   "scenes": {
@@ -689,7 +732,7 @@
     "mex_rel_mira_b": {
       "id": "mex_rel_mira_b",
       "speaker": "mira",
-      "portrait": "tense",
+      "portrait": "wistful",
       "text": "Her smile flickers, just slightly, before she catches it and buries it back in the noise of the street, out of long habit."
     },
     "mex_rel_theo": {
@@ -895,7 +938,7 @@
     "mex_rel_theo_letter_fallback": {
       "id": "mex_rel_theo_letter_fallback",
       "speaker": "theo",
-      "portrait": "tense",
+      "portrait": "wistful",
       "text": "Theo's phone buzzes. He glances at it, pockets it without reading further, and says nothing about it."
     },
     "mex_rel_mira_why": {
@@ -1028,12 +1071,40 @@
       "speaker": "narrator",
       "text": "You write: somewhere a community radio host still has our two-question segment saved, Ximena's idea. Mexico City never once stopped moving, and somehow that was the most restful place we've played.",
       "condition": "flag:radio_callin_warm",
-      "fallback": "mex_journal_generic"
+      "fallback": "mex_journal_clave"
     },
     "mex_journal_generic": {
       "id": "mex_journal_generic",
       "speaker": "narrator",
       "text": "You write: Mexico City never once stopped moving, not for a single second, and somehow that was the most restful place we've played all tour."
+    },
+    "mex_journal_clave": {
+      "id": "mex_journal_clave",
+      "speaker": "narrator",
+      "text": "You write: Somebody tapped a clave on a doorframe and waited to see if I could hear which one it was. I could. That felt like being let in.",
+      "condition": "flag:clave_literate",
+      "fallback": "mex_journal_generic"
+    },
+    "mex_arc_rowan": {
+      "speaker": "rowan",
+      "portrait": "wistful",
+      "text": "\"Nobody has ever requested a bass solo,\" Rowan says. \"I have made peace with it. Mostly. I have made a treaty with it.\"",
+      "next": "mex_arc_rowan_b",
+      "id": "mex_arc_rowan"
+    },
+    "mex_arc_rowan_b": {
+      "speaker": "rowan",
+      "portrait": "happy",
+      "text": "\"You put me at the front of a set once and did not make a thing of it,\" they say. \"That was the good version of being seen.\"",
+      "condition": "relationship.rowan>=45",
+      "fallback": "mex_arc_rowan_b_cool",
+      "id": "mex_arc_rowan_b"
+    },
+    "mex_arc_rowan_b_cool": {
+      "speaker": "rowan",
+      "portrait": "tired",
+      "text": "\"Anyway,\" Rowan says, winding a cable that does not need winding. \"Somebody has to hold the bottom end. It may as well be the quiet one.\"",
+      "id": "mex_arc_rowan_b_cool"
     }
   }
 }

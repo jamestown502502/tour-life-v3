@@ -64,6 +64,12 @@ const MINIGAME_EPILOGUE_CALLBACKS: [flag: string, line: string][] = [
   // run and then dropped, so acing a modular recall, a mix hold or a live radio spot left no trace
   // anywhere. Placed above the older callbacks deliberately: only the first match is used, and
   // these are the ones a returning player has never seen pay off.
+  // The two teaching minigames. Learning something real on tour deserves to show up in how the
+  // tour is remembered, not just in a stat.
+  ['clave_fluent', ' Somebody on that street in Mexico City taught them the clave properly, and it has quietly been under three songs since.'],
+  ['perfect_pitch_night', ' The night in Lisbon with no tuner and no cable is the one they tell to sound engineers who doubt them.'],
+  ['tuned_by_ear', ' They tuned by ear in Lisbon once, out of necessity, and have not fully trusted a clip-on tuner since.'],
+  ['clave_literate', " The clave the percussionist tapped on a doorframe still turns up in the band's counting, months later."],
   ['modular_locked_in', " Jun still brings up the night someone played their whole patch back to them in order, and still refuses to call it impressive."],
   ['mix_held_steady', ' The Tokyo mix — held dead steady through the whole set, nothing drifting — comes up whenever anyone complains about a house engineer.'],
   ['radio_quick_witted', ' A recording of that Lisbon radio spot exists somewhere, and the band sounds, on it, exactly like they wanted to.'],
@@ -79,6 +85,7 @@ const MINIGAME_EPILOGUE_CALLBACKS: [flag: string, line: string][] = [
 // The return leg — the tour books one city twice, and coming back to a room that already has an
 // opinion of you is the biggest single story a run can generate. Ranked above the minigame
 // callback because a redemption night outweighs a fast load-out.
+import { codasFor } from './codas';
 import { PROMISE_EPILOGUE } from './promises';
 
 const RETURN_LEG_CALLBACKS: [flag: string, line: string][] = [
@@ -95,6 +102,10 @@ export function getEpilogue(
   tags: string[],
   flags: string[] = [],
   promise?: { flag: string; kept: boolean } | null,
+  /** Final standing per bandmate. When given, the epilogue closes on what happened to each of the
+   *  four of them rather than only to the band — see content/codas.ts for why that was the single
+   *  biggest hole in the ending. Optional so every existing caller and test keeps working. */
+  relationships?: Record<string, number>,
 ): string {
   const base = EPILOGUES[key(endingId, tags)] ?? GENERIC_EPILOGUES[endingId] ?? UNIVERSAL_FALLBACK;
   const promiseLine = promise && PROMISE_EPILOGUE[promise.flag]
@@ -102,5 +113,8 @@ export function getEpilogue(
     : '';
   const returnLeg = RETURN_LEG_CALLBACKS.find(([flag]) => flags.includes(flag));
   const minigame = MINIGAME_EPILOGUE_CALLBACKS.find(([flag]) => flags.includes(flag));
-  return base + promiseLine + (returnLeg ? returnLeg[1] : '') + (minigame ? minigame[1] : '');
+  // The four personal codas last, as their own paragraph. Six endings times four independent
+  // three-way outcomes is where an ending stops being one of six and starts being yours.
+  const codas = relationships ? String.fromCharCode(10,10) + codasFor(relationships).join(' ') : '';
+  return base + promiseLine + (returnLeg ? returnLeg[1] : '') + (minigame ? minigame[1] : '') + codas;
 }
