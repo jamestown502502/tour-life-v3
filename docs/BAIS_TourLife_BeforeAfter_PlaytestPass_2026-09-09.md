@@ -51,11 +51,15 @@ The descriptions were also colliding: the row pitch was 82px with each descripti
 76px below its button, so every description ran **11px into the next button**. That is the cramped
 stack in your screenshot. Pitch is now 104.
 
-### About Lisbon
+### About Lisbon — and what it actually proved
 
-95% missed with only 4 notes registering at all is not a difficulty curve — it looks like a run
-that was left sitting. I am not going to invent a bug to explain it. If it happens again on a run
-you actively played, that is a real signal and worth telling me.
+The 4-of-85 run was deliberate: a test of whether **any** grade other than C was reachable.
+
+That reframes the whole report. It was not three runs that happened to score badly — it was a
+player checking whether the top of the scale existed, and finding it did not. With every chord in
+every chart unhittable and the difficulty selector silent about what it selected, C was effectively
+the only outcome available. Berlin landing at 0.462, four good hits under the B floor, is the
+clearest evidence: the ceiling was broken, not the playing.
 
 ---
 
