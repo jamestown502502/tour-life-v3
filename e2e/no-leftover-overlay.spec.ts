@@ -9,8 +9,7 @@
 import { test, expect } from '@playwright/test';
 import {
   bootGame, skipFirstTimeOnboarding, startScene, canvasClick, collectConsoleErrors,
-  waitForCondition, waitForActiveScene,
-} from './helpers';
+  waitForCondition, waitForActiveScene, clickPreShowChoice } from './helpers';
 
 /** Every live object across every ACTIVE scene sitting at depth >= 500, with whether it still
  *  eats input. After any completed transition this must be empty. */
@@ -54,7 +53,7 @@ test.describe('Transition overlays must never outlive their transition', () => {
     await startScene(page, 'City', { cityId: 'berlin', phase: 'preshow-choices' });
     await waitForActiveScene(page, 'City', 10000);
     await page.waitForTimeout(600);
-    await canvasClick(page, 360, 993);
+    await clickPreShowChoice(page, 0);
     await waitForCondition(
       page,
       () => (window as any).__game.scene.getScenes(true).some((s: any) => s.scene.key === 'Rhythm'),

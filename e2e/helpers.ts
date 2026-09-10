@@ -244,3 +244,63 @@ export function collectConsoleErrors(page: Page): string[] {
   page.on('pageerror', (err) => errors.push(err.message));
   return errors;
 }
+
+/** Clicks a button by the text on it, wherever it happens to be.
+ *
+ *  Three specs hardcoded the pre-show buttons at y=960 with a comment naming CityScene's literal.
+ *  Moving that row to 900 (to stop each choice's description running 11px into the next button)
+ *  broke all three at once — they were clicking empty background and timing out, which reads as a
+ *  gameplay regression and is not one. A coordinate copied into a comment is a coupling that has
+ *  to be maintained by hand and silently rots the moment layout changes.
+ *
+ *  This asks the live scene where the button actually is. Layout can move freely; the test still
+ *  presses the thing it means to press. */
+export async function clickButtonByLabel(page: Page, sceneKey: string, label: string): Promise<void> {
+  const center = await page.evaluate(([key, want]) => {
+    const scene: any = (window as any).__game.scene.getScene(key as string);
+    if (!scene) return null;
+    const found: { x: number; y: number }[] = [];
+    const walk = (list: any[]) => {
+      for (const o of list) {
+        if (o.type === 'Container') {
+          const texts = (o.list ?? []).filter((c: any) => c.type === 'Text');
+          if (texts.some((t: any) => String(t.text ?? '').includes(want as string))) {
+            const b = o.getBounds();
+            found.push({ x: b.centerX, y: b.centerY });
+          }
+          walk(o.list ?? []);
+        }
+      }
+    };
+    walk(scene.children.list);
+    return found[0] ?? null;
+  }, [sceneKey, label] as const);
+  if (!center) throw new Error(`clickButtonByLabel: no button containing "${label}" in scene "${sceneKey}"`);
+  await canvasClick(page, center.x, center.y);
+}
+
+/** Where the Nth pre-show choice currently sits, in game coordinates. Exposed separately from the
+ *  click so a test that taps the SAME PLACE twice (the rapid double-tap regression guard) can
+ *  resolve the position once and then tap it — the first tap transitions away from City, so a
+ *  second lookup would correctly find nothing and throw, turning an intentional double-tap into a
+ *  test error. */
+export async function preShowChoiceCenter(page: Page, index = 0): Promise<{ x: number; y: number }> {
+  const center = await page.evaluate((i) => {
+    const scene: any = (window as any).__game.scene.getScene('City');
+    const box: any = scene?.children?.getByName?.('preshowChoices');
+    if (!box) return null;
+    const buttons = (box.list ?? []).filter((o: any) => o.type === 'Container');
+    const target = buttons[i as number];
+    if (!target) return null;
+    const b = target.getBounds();
+    return { x: b.centerX, y: b.centerY };
+  }, index);
+  if (!center) throw new Error(`preShowChoiceCenter: no pre-show choice at index ${index}`);
+  return center;
+}
+
+/** Clicks the Nth pre-show choice, wherever CityScene currently lays them out. */
+export async function clickPreShowChoice(page: Page, index = 0): Promise<void> {
+  const center = await preShowChoiceCenter(page, index);
+  await canvasClick(page, center.x, center.y);
+}

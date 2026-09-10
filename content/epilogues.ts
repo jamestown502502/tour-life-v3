@@ -60,6 +60,13 @@ const UNIVERSAL_FALLBACK = 'Two months later, the tour is over, and the band is 
  *  here is the only new work. Checked in a fixed order and only the first match is used, so a
  *  run that aced several cities' minigames still gets one closing beat, not a run-on paragraph. */
 const MINIGAME_EPILOGUE_CALLBACKS: [flag: string, line: string][] = [
+  // The three newer minigame types went in with reward flags that NOTHING read -- set on a clean
+  // run and then dropped, so acing a modular recall, a mix hold or a live radio spot left no trace
+  // anywhere. Placed above the older callbacks deliberately: only the first match is used, and
+  // these are the ones a returning player has never seen pay off.
+  ['modular_locked_in', " Jun still brings up the night someone played their whole patch back to them in order, and still refuses to call it impressive."],
+  ['mix_held_steady', ' The Tokyo mix — held dead steady through the whole set, nothing drifting — comes up whenever anyone complains about a house engineer.'],
+  ['radio_quick_witted', ' A recording of that Lisbon radio spot exists somewhere, and the band sounds, on it, exactly like they wanted to.'],
   ['fast_load_out', ' The band still tells the story about the Tokyo load-out — gear stowed in record time, growing a little more heroic with every retelling.'],
   ['synth_check_smooth', " Lene's rig comes up more than it probably should, for a soundcheck that only took ten minutes."],
   ['smooth_load_in', ' Someone still brings up the Lisbon stairs — every amp up in record time, no one quite sure how.'],

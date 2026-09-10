@@ -8,7 +8,7 @@
 // call), and separately audits that every CityPhase a save can resume into lands somewhere
 // playable, not a dead screen.
 import { test, expect } from '@playwright/test';
-import { bootGame, canvasClick, collectConsoleErrors, getActiveSceneKeys, skipFirstTimeOnboarding, startScene, waitForActiveScene, waitForCondition } from './helpers';
+import { bootGame, canvasClick, collectConsoleErrors, getActiveSceneKeys, skipFirstTimeOnboarding, startScene, waitForActiveScene, waitForCondition, clickPreShowChoice, preShowChoiceCenter } from './helpers';
 
 test.describe('Stuck-screen hardening (follow-up, Item B)', () => {
   test('a rapid double-tap on a themed-transition button fires the transition exactly once', async ({ page }) => {
@@ -31,13 +31,16 @@ test.describe('Stuck-screen hardening (follow-up, Item B)', () => {
     await waitForActiveScene(page, 'City');
 
     // Berlin's first preshow choice: CityScene.ts's renderPreShowChoices, W/2-300, 960, 600, 66 —
-    // center (360, 993). Uses 'lights' -> Rhythm, the exact transition type from the live bug
+    // found by identity, not a copied coordinate. -> Rhythm, the exact path from the live bug
     // report. Two real clicks fired back-to-back with no artificial delay between them — each is
     // a full, atomic move+down+up (canvasClick), sequential rather than concurrent so Playwright's
     // single shared virtual mouse can't interleave the two actions' own move/down/up steps into
     // something neither click nor the real bug report's double-tap actually looks like.
-    await canvasClick(page, 360, 993);
-    await canvasClick(page, 360, 993);
+    // Resolve the position ONCE, then tap it twice. Looking it up a second time would fail by
+    // design: the first tap hands off to Rhythm, so City's choice container is already gone.
+    const choice = await preShowChoiceCenter(page, 0);
+    await canvasClick(page, choice.x, choice.y);
+    await canvasClick(page, choice.x, choice.y);
 
     // Before the fix, this could leave BOTH "City" and a half-destroyed transition in place, or
     // race into "Rhythm" twice. After the fix: exactly one scene, reached once, no leftovers.

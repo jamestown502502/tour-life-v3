@@ -5,7 +5,7 @@
 // any of these three mechanisms fails a specific, named test instead of only being caught by a
 // live bug report again.
 import { test, expect } from '@playwright/test';
-import { bootGame, canvasClick, collectConsoleErrors, skipFirstTimeOnboarding, startScene, waitForActiveScene, waitForCondition } from './helpers';
+import { bootGame, canvasClick, collectConsoleErrors, skipFirstTimeOnboarding, startScene, waitForActiveScene, waitForCondition, clickPreShowChoice } from './helpers';
 
 test.describe('Critical-issues follow-up: regression guards', () => {
   // Root cause: only the PHASE ('arrival'/'preshow'/etc.) was persisted, not the exact dialogue
@@ -113,7 +113,7 @@ test.describe('Critical-issues follow-up: regression guards', () => {
     await waitForActiveScene(page, 'City');
 
     const clickStart = Date.now();
-    await canvasClick(page, 360, 993); // Berlin's first preshow choice -> Rhythm ('lights')
+    await clickPreShowChoice(page, 0); // Berlin's first preshow choice -> Rhythm ('lights')
     const reachedRhythm = await waitForCondition(page, () => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('Rhythm'), 10000);
     expect(reachedRhythm, 'preshow choice should hand off to Rhythm').toBe(true);
 

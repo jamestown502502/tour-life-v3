@@ -41,6 +41,31 @@ export function labelColorForFill(fill: number): string {
   return creamRatio >= plumRatio ? PALETTE_HEX.cream : PALETTE_HEX.plum;
 }
 
+/** WCAG AA for normal-weight text is 4.5:1, and picking the better of two text colours cannot
+ *  reach it on a mid-tone fill: measured against the palette, terracotta tops out at 3.35:1, teal
+ *  at 4.07 and softRed at 3.78 no matter which label colour is used. Reported live as text being
+ *  hard to read on certain screens — those three fills carry most of the game's buttons.
+ *
+ *  So the FILL moves, not just the label. Darkened by the smallest step that clears 4.5:1 against
+ *  cream, which preserves the hue (teal needs 93%, softRed 90%, terracotta 79%) rather than
+ *  swapping in different colours. Computed rather than hand-tuned, so a fill added later is held
+ *  to the same floor automatically instead of quietly failing. */
+export function legibleFill(fill: number): number {
+  // Targets 5.0, not the 4.5 floor itself. A button is not a flat rectangle: its baked texture
+  // carries a bevel highlight along the top edge, and the contrast sweep measures the WORST pixel
+  // behind the label, which is that highlight. Aiming exactly at 4.5 on the flat colour left every
+  // button landing at 4.2-4.4 once rendered. The half-point of headroom is what the bevel costs.
+  const TARGET = 5.0;
+  const best = Math.max(contrastRatio(fill, PALETTE.cream), contrastRatio(fill, PALETTE.plum));
+  if (best >= TARGET) return fill;
+  const r = (fill >> 16) & 255, g = (fill >> 8) & 255, b = fill & 255;
+  for (let k = 0.99; k >= 0.3; k -= 0.01) {
+    const dim = (Math.round(r * k) << 16) | (Math.round(g * k) << 8) | Math.round(b * k);
+    if (contrastRatio(dim, PALETTE.cream) >= TARGET) return dim;
+  }
+  return fill;
+}
+
 /** Toggle a persistent gold selection ring on a button created by createButton — used by
  *  screens with a mutually-exclusive picker (genre, "why this tour") that used to reach into
  *  the button's raw shape; that shape is now a baked texture, so this is the supported way. */
@@ -60,7 +85,7 @@ export function createButton(
   onClick: () => void, opts: ButtonOptions = {},
 ): Phaser.GameObjects.Container {
   const container = scene.add.container(x, y);
-  const fill = opts.disabled ? 0x8a8a8a : (opts.fillColor ?? PALETTE.teal);
+  const fill = legibleFill(opts.disabled ? 0x8a8a8a : (opts.fillColor ?? PALETTE.teal));
   const radius = opts.radius ?? UI_RADIUS.button;
 
   // Every call site used to hand this a single-line label with no wordWrap — fine for short

@@ -221,6 +221,13 @@ export class RhythmScene extends Phaser.Scene {
         .setOrigin(0.5).setDepth(50);
     }
 
+    // TWO FINGERS. Phaser tracks a single touch by default (one mouse pointer plus pointer1), so
+    // every chord in every chart -- two notes on the same beat in different lanes, 3 to 14 groups
+    // per arrangement -- was PHYSICALLY UNHITTABLE: the second finger's pointerdown was never
+    // dispatched, and the note it was aimed at could only ever be judged a miss. Reported live as
+    // 35-40% of notes missed on charts the player was otherwise reading fine.
+    this.input.addPointer(2);
+
     for (let l = 0; l < song.lanes; l++) {
       // Tap zone: the whole lane below the spawn area, so a thumb resting anywhere in the lane's
       // lower half registers — not just a thin band at the line. Timing is judged by the clock,
@@ -234,7 +241,18 @@ export class RhythmScene extends Phaser.Scene {
       }
     }
     // Scene-level pointerup so a hold releases even if the finger drifts off its lane zone.
-    this.input.on('pointerup', () => this.releaseAllHolds());
+    // Guarded on there being no other finger still down: with multi-touch enabled, a bare
+    // releaseAllHolds() here would drop a hold the OTHER thumb is still pressing every time the
+    // tapping thumb lifted — turning the fix above into a new bug.
+    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      // Exclude the pointer that is BEING released. Checking `pointers.some(p => p.isDown)` without
+      // that exclusion can see the releasing pointer still flagged down, in which case the guard is
+      // true forever, releaseAllHolds() never runs, and a hold note is never finalised -- which
+      // stalled the practice pass outright (tutorialActive stuck true, no handoff to the real song).
+      // A guard added to protect the multi-touch fix had broken more than the fix repaired.
+      const otherFingerDown = this.input.manager.pointers.some((p) => p.id !== pointer.id && p.isDown);
+      if (!otherFingerDown) this.releaseAllHolds();
+    });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.metronomeEvent?.destroy());
 

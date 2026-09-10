@@ -19,7 +19,14 @@ import { test, expect } from '@playwright/test';
 import { PNG } from 'pngjs';
 import { bootGame, skipFirstTimeOnboarding, waitForActiveScene } from './helpers';
 
-const MIN_CONTRAST = 3.0;
+// WCAG 2.x AA: 4.5:1 for normal text, 3.0:1 only for LARGE text (>=18pt, or >=14pt bold). The
+// first version of this suite applied the large-text figure to everything and passed a RoutePlan
+// screen the player then reported as hard to read -- correctly, because most of its labels are
+// small and were sitting between 3 and 4.5. The threshold is now chosen per label from its own
+// font size, which is what the standard actually says.
+const LARGE_TEXT_PX = 24;
+const MIN_CONTRAST_LARGE = 3.0;
+const MIN_CONTRAST_NORMAL = 4.5;
 
 const SCENES: { key: string; data?: object }[] = [
   { key: 'Title' },
@@ -78,7 +85,10 @@ async function readLabels(page: import('@playwright/test').Page, sceneKey: strin
         if (o.type !== 'Text' || !String(o.text || '').trim()) continue;
         const b = o.getBounds();
         if (b.width <= 0 || b.height <= 0) continue;
-        out.push({ text: String(o.text), x: b.x, y: b.y, w: b.width, h: b.height, color: o.style.color || '#ffffff' });
+          const px = parseFloat(String(o.style.fontSize || '16').replace('px', '')) || 16;
+        const bold = /bold|[789]00/.test(String(o.style.fontStyle || '') + String(o.style.fontWeight || ''));
+        out.push({ text: String(o.text), x: b.x, y: b.y, w: b.width, h: b.height,
+          color: o.style.color || '#ffffff', px, bold });
       }
     };
     walk(scene.children.list);
@@ -103,7 +113,7 @@ async function setLabelsVisible(page: import('@playwright/test').Page, sceneKey:
 test.describe('Text legibility over painted backdrops', () => {
   for (const { key, data } of SCENES) {
     const label = (data as any)?.minigameId ? `${key} (${(data as any).minigameId})` : key;
-    test(`${label}: every label meets ${MIN_CONTRAST}:1 against what is actually behind it`, async ({ page }) => {
+    test(`${label}: every label meets its WCAG AA floor against what is actually behind it`, async ({ page }) => {
       test.setTimeout(120000);
       await skipFirstTimeOnboarding(page);
       await bootGame(page);
@@ -121,11 +131,10 @@ test.describe('Text legibility over painted backdrops', () => {
       await waitForActiveScene(page, key);
       await page.waitForTimeout(1500);
 
-      // Zero is a legitimate result: RoutePlan and Hub put every string inside a Container
-      // (buttons, cards) which carries its own opaque backing, so there is no bare label to
-      // measure. Scene-loaded-at-all is already asserted by waitForActiveScene above.
       const labels = await readLabels(page, key);
-      if (labels.length === 0) return;
+      // Zero would mean the scene drew no text at all, which for these scenes is a bug in the
+      // probe rather than a pass. Scene-loaded-at-all is asserted by waitForActiveScene above.
+      expect(labels.length, `${key} reported no labels at all`).toBeGreaterThan(0);
 
       await setLabelsVisible(page, key, false);
       await page.waitForTimeout(250);
@@ -155,9 +164,13 @@ test.describe('Text legibility over painted backdrops', () => {
             if (c < worst) worst = c;
           }
         }
-        if (worst < MIN_CONTRAST) failures.push(`"${l.text.replace(/\n/g, ' ')}" ${worst.toFixed(2)}:1`);
+        const isLarge = l.px >= LARGE_TEXT_PX || (l.bold && l.px >= 19);
+        const floor = isLarge ? MIN_CONTRAST_LARGE : MIN_CONTRAST_NORMAL;
+        if (worst < floor) {
+          failures.push(String.raw`` + JSON.stringify(l.text) + ` ` + worst.toFixed(2) + `:1 (` + l.px + `px needs ` + floor + `)`);
+        }
       }
-      expect(failures, `${key} labels below ${MIN_CONTRAST}:1 — ${failures.join(' | ')}`).toEqual([]);
+      expect(failures, `${key} labels below the WCAG AA floor — ${failures.join(' | ')}`).toEqual([]);
     });
   }
 });

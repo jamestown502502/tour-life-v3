@@ -419,9 +419,39 @@ export class CityScene extends Phaser.Scene {
     this.updateBackButton();
     const ctx = { stats: State.data.stats, relationships: State.data.relationships, localLove: State.data.localLove, flags: State.data.flags };
     const options = this.city.preShowChoices.filter((c) => evaluateCondition(c.condition, ctx));
-    const container = this.add.container(0, 0).setDepth(80);
+    // Named so real-input e2e can find these choices by identity rather than by a copied y
+    // coordinate. Three specs hardcoded y=960 with a comment naming this literal, and all three
+    // broke the moment the row moved — clicking empty background and reading as a gameplay
+    // regression that did not exist.
+    const container = this.add.container(0, 0).setDepth(80).setName('preshowChoices');
+    // Pitch was 82 with the description scrim centred 76 below its own button — so each
+    // description's scrim ran 11px INTO the next button, which is the cramped, hard-to-read stack
+    // reported live. 104 gives every label its description with clear air on both sides, and the
+    // block starts higher so three options still fit above the fold.
+    const ROW_TOP = 900, ROW_PITCH = 104, DESC_OFFSET = 86;
+
+    // Tonight's song, so each choice can say what it actually does to the chart.
+    const visit = visitIndexFor(this.city.id, (State.data.cityMemories ?? []).filter((m) => m.firstShowRecorded).map((m) => m.cityId));
+    const tonight = getSong(songForVisit(this.city, State.data.seed, visit));
+
+    /** "Play it tight and precise" sounds like a stylistic preference. It is the difficulty
+     *  selector: on Tokyo it means 137 notes at 2.4/sec instead of 77 at 1.4. A player reported
+     *  missing 35-40% of notes having picked it twice without ever being told. Note density is the
+     *  standard way rhythm games express difficulty (notes per second), so the choice now says so
+     *  in the player's own terms rather than hiding it behind flavour text. Derived from the chart
+     *  itself, so it can never drift from the real numbers. */
+    const intensityOf = (arrangementId: string): string => {
+      const arr = tonight.arrangements.find((a) => a.id === arrangementId);
+      if (!arr || arr.notes.length === 0) return '';
+      const times = arr.notes.map((n) => n.t);
+      const span = Math.max(...times) - Math.min(...times);
+      const nps = span > 0 ? arr.notes.length / span : 0;
+      const band = nps >= 2.2 ? 'Demanding' : nps >= 1.6 ? 'Steady' : 'Gentle';
+      return `${band} · ${arr.notes.length} notes`;
+    };
+
     options.forEach((opt, i) => {
-      const btn = createButton(this, W / 2 - 300, 960 + i * 82, 600, 66, opt.label, () => {
+      const btn = createButton(this, W / 2 - 300, ROW_TOP + i * ROW_PITCH, 600, 66, opt.label, () => {
         State.applyStatDeltas(opt.effects);
         State.addFlag(arrangementFlag(opt.arrangementId));
         State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'preshow-done' });
@@ -438,9 +468,16 @@ export class CityScene extends Phaser.Scene {
       // actually does) and given the same scrim treatment as everything else over painted art.
       // small's default sky measures 2.90:1 on this scrim, under even the loosest 3:1 floor and
       // well under this normal-weight text's actual 4.5:1 — cream clears both.
-      const descScrim = addTextScrim(this, W / 2, 960 + i * 82 + 76, 600, 34);
-      const desc = this.add.text(W / 2 - 280, 960 + i * 82 + 68, opt.description, textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream }));
+      const descY = ROW_TOP + i * ROW_PITCH + DESC_OFFSET;
+      const descScrim = addTextScrim(this, W / 2, descY, 600, 36);
+      const desc = this.add.text(W / 2 - 288, descY - 9, opt.description,
+        textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream }));
       container.add([descScrim, desc]);
+      const intensity = intensityOf(opt.arrangementId);
+      if (intensity) {
+        container.add(this.add.text(W / 2 + 288, descY - 9, intensity,
+          textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold })).setOrigin(1, 0));
+      }
     });
   }
 

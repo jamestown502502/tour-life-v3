@@ -8,8 +8,7 @@
 import { test, expect } from '@playwright/test';
 import {
   bootGame, skipFirstTimeOnboarding, startScene, canvasClick, collectConsoleErrors,
-  waitForCondition, waitForActiveScene, getActiveSceneKeys,
-} from './helpers';
+  waitForCondition, waitForActiveScene, getActiveSceneKeys, clickPreShowChoice } from './helpers';
 
 /** Marks this profile as a returning player for BOTH onboarding gates the rhythm scene reads:
  *  the how-to-play overlay and the one-time rhythm practice pass. A returning player skips the
@@ -72,7 +71,7 @@ test.describe('Rhythm entry via the real pre-show path (live-regression repro)',
 
     // Click the first pre-show option (CityScene.renderPreShowChoices: buttons at y = 960 + i*82,
     // full-width-ish, so the row's vertical center for i=0 is ~y 960+33).
-    await canvasClick(page, 360, 993);
+    await clickPreShowChoice(page, 0);
 
     // The 'lights' transition is 380ms; give it generous room, then assert the scene is REALLY up.
     const reached = await waitForCondition(
@@ -434,7 +433,7 @@ test.describe('Rhythm entry via the real pre-show path (live-regression repro)',
     await startScene(page, 'City', { cityId: 'berlin', phase: 'preshow-choices' });
     await waitForActiveScene(page, 'City', 10000);
     await page.waitForTimeout(600);
-    await canvasClick(page, 360, 993);
+    await clickPreShowChoice(page, 0);
     await waitForCondition(
       page,
       () => (window as any).__game.scene.getScenes(true).some((s: any) => s.scene.key === 'Rhythm'),

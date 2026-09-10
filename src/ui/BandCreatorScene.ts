@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { ensureSceneBackdrop } from '../art/sprites';
 import { addCoverBackground } from '../art/background';
 import { applyVignette } from '../art/effects';
-import { PALETTE, W } from '../const';
+import { PALETTE, PALETTE_HEX, W } from '../const';
 import { createButton, setButtonSelected } from './Button';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
@@ -89,7 +89,7 @@ export class BandCreatorScene extends Phaser.Scene {
     const castY = membersY + 100;
     // One strip behind the whole roster: four columns of name/instrument/want plus the tap hint.
     // Per-column scrims would leave the busiest part of the backdrop showing between them.
-    addTextScrim(this, W / 2, castY + 112, W - 40, 142);
+    addTextScrim(this, W / 2, castY + 112, W - 40, 142, 0.86);
     const castStep = W / (BANDMATES.length + 1);
     BANDMATES.forEach((b, i) => {
       const cx = castStep * (i + 1);
@@ -103,9 +103,14 @@ export class BandCreatorScene extends Phaser.Scene {
       hitZone.on('pointerover', () => { frame.setScale(0.6); portrait.setScale(0.35); });
       hitZone.on('pointerout', () => { frame.setScale(0.55); portrait.setScale(0.32); });
       this.add.text(cx, castY + 70, b.name, textStyle('body', { fontSize: '17px', fontStyle: '700' })).setOrigin(0.5);
-      this.add.text(cx, castY + 90, b.instrument, textStyle('small', { fontSize: '13px' })).setOrigin(0.5);
+      // 13px in small's default sky measured 3.45:1 over the roster scrim — under the 4.5:1 WCAG
+      // AA floor for normal-weight text, and reported live as hard to read. Cream at 14px clears
+      // it without changing the layout.
+      this.add.text(cx, castY + 90, b.instrument, textStyle('small', {
+        fontSize: '14px', color: PALETTE_HEX.cream,
+      })).setOrigin(0.5);
       this.add.text(cx, castY + 108, `wants ${b.wants}`, textStyle('small', {
-        fontSize: '13px', wordWrap: { width: castStep - 10 }, align: 'center',
+        fontSize: '14px', color: PALETTE_HEX.cream, wordWrap: { width: castStep - 10 }, align: 'center',
       })).setOrigin(0.5, 0);
     });
     // castY+166, not +150: one bandmate's want ("wants sonic experimentation") wraps to two lines,

@@ -44,6 +44,8 @@ export class MiniGameScene extends Phaser.Scene {
   private mg!: MiniGameDef;
   private returnPhase!: string;
   private outcomeGood = false;
+  /** True only when the player aced it outright, not merely passed. Gates outroTextPerfect. */
+  private outcomePerfect = false;
   private contentLayer!: Phaser.GameObjects.Container;
   // timing
   private timingRound = 0;
@@ -74,6 +76,7 @@ export class MiniGameScene extends Phaser.Scene {
     if (!found) throw new Error(`[minigame] "${data.minigameId}" not found on city "${this.cityId}"`);
     this.mg = found;
     this.outcomeGood = false;
+    this.outcomePerfect = false;
     this.timingRound = 0;
     this.timingHits = 0;
     this.needle = null;
@@ -152,11 +155,14 @@ export class MiniGameScene extends Phaser.Scene {
   // ---- timing: a needle sweeps a gauge; tap while it's in the gold zone. ----
   private runTimingRound(): void {
     const rounds = this.timingRoundsSec;
-    if (this.timingRound >= rounds.length) { this.finish(this.timingHits >= Math.ceil(rounds.length / 2)); return; }
+    if (this.timingRound >= rounds.length) {
+      this.finish(this.timingHits >= Math.ceil(rounds.length / 2), this.timingHits === rounds.length);
+      return;
+    }
     this.clearContent();
 
     const barX = 90, barW = W - 180, barY = 420, barH = 28;
-    const zoneW = 140;
+    const zoneW = this.mg.timingZoneW ?? 140;
     const zoneX = barX + (barW - zoneW) / 2;
     this.contentLayer.add(this.add.rectangle(barX, barY, barW, barH, 0x000000, 0.3).setOrigin(0, 0));
     this.contentLayer.add(this.add.rectangle(zoneX, barY, zoneW, barH, PALETTE.gold, 0.55).setOrigin(0, 0));
@@ -338,7 +344,7 @@ export class MiniGameScene extends Phaser.Scene {
   private runSequenceRound(): void {
     const rounds = this.mg.sequenceRounds ?? [3, 4, 5];
     if (this.sequenceRound >= rounds.length) {
-      this.finish(this.sequenceHits >= Math.ceil(rounds.length / 2));
+      this.finish(this.sequenceHits >= Math.ceil(rounds.length / 2), this.sequenceHits === rounds.length);
       return;
     }
     this.clearContent();
@@ -361,7 +367,13 @@ export class MiniGameScene extends Phaser.Scene {
     const colors = [PALETTE.terracotta, PALETTE.teal, PALETTE.plum, PALETTE.gold];
     const pads: Phaser.GameObjects.Rectangle[] = [];
     for (let i = 0; i < 4; i++) {
-      const pad = this.add.rectangle(startX + i * (padW + gap), padY, padW, padH, colors[i], 0.45).setOrigin(0, 0);
+      // Resting alpha 0.45 was too low to survive a painted backdrop: over Berlin's dark blue wall
+      // the terracotta and plum pads were effectively INVISIBLE until they flashed, so a memory
+      // game asked the player to tap back a sequence on buttons they could not see. Confirmed from
+      // a live screenshot showing two of the four. Opaque fill plus a cream outline so all four
+      // read at rest on any backdrop, and the flash to full brightness still reads as the cue.
+      const pad = this.add.rectangle(startX + i * (padW + gap), padY, padW, padH, colors[i], 0.92)
+        .setOrigin(0, 0).setStrokeStyle(3, PALETTE.cream, 0.9);
       this.contentLayer.add(pad);
       pads.push(pad);
     }
@@ -369,7 +381,7 @@ export class MiniGameScene extends Phaser.Scene {
     const flash = (i: number): void => {
       pads[i].setAlpha(1);
       audio.playSfx(i % 2 === 0 ? 'perfect' : 'ok');
-      this.time.delayedCall(240, () => pads[i].setAlpha(0.45));
+      this.time.delayedCall(240, () => pads[i].setAlpha(0.92));
     };
     const nextRound = (): void => { this.sequenceRound++; this.runSequenceRound(); };
 
@@ -475,14 +487,17 @@ export class MiniGameScene extends Phaser.Scene {
     this.time.delayedCall(totalMs * 2.4, () => { timer.remove(); end(held >= totalMs * 0.5); });
   }
 
-  private finish(good: boolean): void {
+  private finish(good: boolean, perfect = false): void {
     // Remembered for the return leg's social feed — the concrete callback ("they still talk about
     // that load-out") rather than a generic one about the show.
     recordMinigame(this.cityId, good, this.mg.title);
     this.outcomeGood = good;
+    this.outcomePerfect = perfect && good;
     this.clearContent();
     this.card(300, 260);
-    const text = good ? this.mg.outroText : this.mg.outroTextRough;
+    const text = !good ? this.mg.outroTextRough
+      : (this.outcomePerfect && this.mg.outroTextPerfect) ? this.mg.outroTextPerfect
+      : this.mg.outroText;
     this.contentLayer.add(this.add.text(W / 2, 330, text, textStyle('dialogue', {
       fontSize: '24px', wordWrap: { width: W - 140 }, align: 'center', lineSpacing: 6,
     })).setOrigin(0.5, 0));
@@ -491,7 +506,9 @@ export class MiniGameScene extends Phaser.Scene {
   }
 
   private applyRewardAndReturn(): void {
-    const reward: MiniGameReward | undefined = this.outcomeGood ? this.mg.reward : (this.mg.roughReward ?? this.mg.reward);
+    const reward: MiniGameReward | undefined = !this.outcomeGood
+      ? (this.mg.roughReward ?? this.mg.reward)
+      : (this.outcomePerfect ? (this.mg.perfectReward ?? this.mg.reward) : this.mg.reward);
     if (reward) {
       State.applyStatDeltas(reward.effects);
       State.applyRelationshipDeltas(reward.relationshipEffects);

@@ -115,9 +115,23 @@ export interface MiniGameDef {
   outroText: string;
   /** Shown otherwise — "rough but fine," never a failure or scold. */
   outroTextRough: string;
+  /** Shown when the player aces it outright — every round, not just enough of them. Optional: a
+   *  minigame without one falls back to `outroText`, exactly as before.
+   *
+   *  Reported live as "feels like I get the same result every time", and that was accurate: the
+   *  outcome was BINARY, so the three soundchecks between them had six possible endings and a
+   *  competent player saw the same "clean signal, good levels" line in every city. A third tier
+   *  makes the difference between scraping through and nailing it legible. */
+  outroTextPerfect?: string;
   reward: MiniGameReward;
   /** Applied instead of `reward` on the rough outcome. Omit for "no reward either way, just flavor." */
   roughReward?: MiniGameReward;
+  /** Applied instead of `reward` on a flawless run. Omit to just use `reward`. */
+  perfectReward?: MiniGameReward;
+  /** 'timing' only: width of the gold zone in canvas units (default 140). Narrower is harder --
+   *  the three soundchecks used identical 3-round structures and the same zone, so they read as
+   *  one minigame reskinned three times. */
+  timingZoneW?: number;
   /** Backdrop texture key (see art/sprites.ts ensureMiniGameBackdrop / the real-asset manifest). Falls back to a code-drawn panel if absent. */
   backdropKey?: string;
   /** 'timing' only: seconds the needle takes to sweep the gauge once, per round (gets faster). */

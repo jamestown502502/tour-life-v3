@@ -91,7 +91,7 @@ export class ResultsScene extends Phaser.Scene {
     }
     if (this.result.expressionChoices.length > 0) {
       this.add.text(W / 2, 520, `Moments: ${this.result.expressionChoices.map((c) => c.replace(/_/g, ' ')).join(', ')}`,
-        textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5);
+        textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5);
     }
 
     this.renderCrowdStrip(city.id);

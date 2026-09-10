@@ -6,7 +6,7 @@
 // the tap-to-skip-typewriter bug: it never taps anything). This is the "did I miss anything else"
 // check for Workstream 2's navigation-fix pass.
 import { test, expect } from '@playwright/test';
-import { bootGame, canvasClick, collectConsoleErrors, playAnyPendingMinigame, skipFirstTimeOnboarding, waitForActiveScene, waitForCondition, walkDialogueToSceneChange } from './helpers';
+import { bootGame, canvasClick, collectConsoleErrors, playAnyPendingMinigame, skipFirstTimeOnboarding, waitForActiveScene, waitForCondition, walkDialogueToSceneChange, clickPreShowChoice } from './helpers';
 
 test('a full real playthrough of one city loop never gets stuck', async ({ page }) => {
   // 180s wasn't enough headroom for the whole chain in this sandboxed session — confirmed live
@@ -85,7 +85,7 @@ test('a full real playthrough of one city loop never gets stuck', async ({ page 
     expect(await waitForActiveScene(page, 'City')).toContain('City');
   }
 
-  // Preshow choice (first of 3 — CityScene.ts: W/2-300, 960, 600, 66, center (360, 993)) -> Rhythm,
+  // Preshow choice (first of 3), found by identity rather than a copied coordinate -> Rhythm,
   // via the 'lights' themed transition (Addendum v2, Item 9). This click surfaced a real crash
   // (see transition.ts's destroyOverlay comment): the completion delayedCall and the overlay's
   // own tweens raced at the same nominal duration, so destroying the overlay could null out a
@@ -94,7 +94,7 @@ test('a full real playthrough of one city loop never gets stuck', async ({ page 
   // "stuck transition" this test kept failing on, at every wait length tried up to 60s, before
   // the actual cause was found and fixed). 10s here is normal machine-load headroom, not a
   // workaround for that bug.
-  await canvasClick(page, 360, 993);
+  await clickPreShowChoice(page, 0);
   const reachedRhythm = await waitForCondition(page, () => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('Rhythm'), 10000);
   expect(reachedRhythm, 'preshow choice should hand off to Rhythm').toBe(true);
 
