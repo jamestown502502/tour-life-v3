@@ -170,12 +170,36 @@ The band creator's cast labels also moved from 13px dim sky to 14px cream on a d
 
 ---
 
+## Two bugs this pass caught in its own fixes
+
+Recorded because both would have reached you, and one of them was worse than the bug it replaced.
+
+**The multi-touch guard stalled the practice pass.** Enabling two fingers needed a guard so lifting
+one thumb does not drop a hold the other is still pressing. The first version checked
+`pointers.some(p => p.isDown)` — which includes the pointer *being released*. That reads true
+forever, `releaseAllHolds()` never ran, a hold note was never finalised, and the first rhythm
+section hung with `tutorialActive` stuck true. A guard added to protect a fix had broken more than
+the fix repaired. Caught by the suite before deploy; it now excludes the releasing pointer.
+
+**Five specs clicked the pre-show buttons at a hardcoded `y=993`,** with a comment naming the
+literal in `CityScene.ts`. Moving that row broke all five at once — clicking empty background and
+timing out, which reads exactly like a gameplay regression and was not one. The choice container is
+now named and tests resolve the button from the live scene, so layout can move freely.
+
+A third round of failures turned out to be neither: two Playwright suites had been left running
+against the same dev server and were starving each other. That is the same trap this project has
+hit repeatedly — a contended harness looks identical to a broken game.
+
+---
+
 ## Verification
 
-- Unit tests, including the new minigame-impact suite
+- **197/197 unit tests** (was 194), `tsc --noEmit` clean
+- **86/86 end-to-end** on Pixel 7
 - Contrast: 12 of 12 scenes at size-aware WCAG AA floors, measured from real rendered pixels
-- Full end-to-end suite on Pixel 7 before deploy, and continuous integration across all four
-  device profiles after
+- **Live, cold cache, fresh profile:** Edge 25.3s and Chrome 26.7s to playable, **zero console
+  errors, zero failed requests, all 9 audio files fetched** in both
+- Deployed bundle hash confirmed identical to the local build
 
 ---
 
