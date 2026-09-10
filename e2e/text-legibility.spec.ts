@@ -51,6 +51,13 @@ async function seedRun(page: import('@playwright/test').Page): Promise<void> {
   await page.evaluate(() => {
     const S: any = (window as any).__state;
     S.newRun('legibility');
+    // RoutePlan returns EARLY behind an onboarding DialogueBox on a first run, so without this
+    // the sweep measured that overlay's two lines and never the route screen at all -- passing
+    // it three times while the real screen (zero scrims, cream on a pale painted map) was being
+    // reported as unreadable. Any scene with a first-run gate needs the gate cleared here or the
+    // measurement is of the gate.
+    S.addFlag('onboard_routeplan_seen');
+    S.addFlag('hub_onboard_seen');
     S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
     S.data.route = [{ cityId: 'berlin', visited: false }, { cityId: 'tokyo', visited: false }];
     S.data.currentCityIndex = 0;

@@ -11,7 +11,7 @@ import { CITIES, getCity } from '../game/content';
 import { generateRoute, MID_TOUR_COMPLICATIONS, routeArcRole } from '../game/route';
 import { drawScenePoolFlags } from '../game/scenePool';
 import { saveRun } from '../core/save';
-import { textStyle } from './textStyles';
+import { addTextScrim, textStyle } from './textStyles';
 import { TOUR_PROMISES } from '../../content/promises';
 import { DialogueBox } from './DialogueBox';
 import { addMenuButton } from './MenuButton';
@@ -54,14 +54,20 @@ export class RoutePlanScene extends Phaser.Scene {
     // this never collides with its top-left backlog toggle the way CityScene's did.
     addMenuButton(this, 'RoutePlan');
     const possessive = State.data.band.name.endsWith('s') ? `${State.data.band.name}'` : `${State.data.band.name}'s`;
+    // This whole scene drew straight onto the painted map — a lit desk, a paper chart, a mug —
+    // with NOT ONE scrim anywhere. Reported as hard to read three separate times while the
+    // contrast suite passed it, because the suite only ever saw the onboarding dialogue that
+    // covers this screen on a first run and returns early. The header block and the route list
+    // are the two densest stacks, so each gets one scrim rather than a dozen.
+    addTextScrim(this, W / 2, 118, W - 60, 116);
     this.add.text(W / 2, 80, `${possessive} Route`, textStyle('h1')).setOrigin(0.5);
-    this.add.text(W / 2, 130, `Seed: ${State.data.seed}`, textStyle('small')).setOrigin(0.5);
+    this.add.text(W / 2, 130, `Seed: ${State.data.seed}`, textStyle('small', { color: PALETTE_HEX.cream })).setOrigin(0.5);
     // Stuck-screen-hardening follow-up, Item D: the why-tour pick (BandCreatorScene.ts) was
     // decorative everywhere except one flag-gated Lisbon branch — this is its second grounding
     // beat (after OpeningScene's closing line), so the reason for the whole route stays visible
     // right where the route itself is being laid out.
     this.add.text(W / 2, 160, `You're touring because: "${State.data.band.whyTour}"`, textStyle('small', {
-      color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center',
+      color: PALETTE_HEX.cream, wordWrap: { width: W - 120 }, align: 'center',
     })).setOrigin(0.5);
 
     const rng = makeRng(`${State.data.seed}:route`);
@@ -73,6 +79,13 @@ export class RoutePlanScene extends Phaser.Scene {
     // The opener/finale labels are presentational (every stop is mechanically the same), but the
     // midpoint label reflects a real, already-existing mechanical fact about this run.
     const rowH = 78;
+
+    // One strip behind the entire route list. Each row is a city line plus an optional arc note,
+    // and both were cream/terracotta directly on pale paper.
+    // 0.82, not the 0.72 default: a five-stop route puts its last row near the scrim's edge over
+    // the map's brightest area, and the city line measured 4.46:1 against a 4.5 floor at 0.72.
+    addTextScrim(this, W / 2, 210 + (generated.stops.length - 1) * rowH / 2 + 12,
+      W - 40, generated.stops.length * rowH + 40, 0.82);
 
     generated.stops.forEach((stop, i) => {
       const city = getCity(stop.cityId);
@@ -86,8 +99,11 @@ export class RoutePlanScene extends Phaser.Scene {
         : role === 'midpoint' ? (COMPLICATION_LABELS[generated.midTourComplication] ?? '')
         : '';
       if (frameLine) {
+        // Terracotta at 14px measured 2.80-2.99:1 on the route scrim, well under the 4.5 floor for
+        // normal-weight text. Cream clears it; the size difference against the 22px city line
+        // carries the hierarchy that the colour was doing.
         this.add.text(W / 2, y + 24, frameLine, textStyle('small', {
-          fontSize: '14px', color: PALETTE_HEX.terracotta, wordWrap: { width: W - 140 }, align: 'center',
+          fontSize: '14px', color: PALETTE_HEX.cream, wordWrap: { width: W - 140 }, align: 'center',
         })).setOrigin(0.5);
       }
     });
@@ -103,11 +119,16 @@ export class RoutePlanScene extends Phaser.Scene {
     // no stated intent, so the ending could only summarise what happened, never whether it was
     // what you set out to do. Purely additive: a run with no promise flag simply gets no promise
     // paragraph, which is what every save written before this did.
-    this.add.text(W / 2, buttonY - 8, 'What is this tour for?', textStyle('h2')).setOrigin(0.5);
+    addTextScrim(this, W / 2, buttonY - 8, 420, 52);
+    // h2's default sky measures ~2.4-2.9:1 on a standard scrim — under even the 3:1 large-text
+    // floor. MiniGameScene already carries this exact note; cream is the same answer here.
+    this.add.text(W / 2, buttonY - 8, 'What is this tour for?',
+      textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
     let promiseChosen: string | null = null;
     const promiseButtons: Phaser.GameObjects.Container[] = [];
+    addTextScrim(this, W / 2, buttonY + 34 + TOUR_PROMISES.length * 74, W - 100, 46);
     const promiseLine = this.add.text(W / 2, buttonY + 34 + TOUR_PROMISES.length * 74, '', textStyle('small', {
-      color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center',
+      color: PALETTE_HEX.cream, wordWrap: { width: W - 120 }, align: 'center',
     })).setOrigin(0.5);
     TOUR_PROMISES.forEach((promise, i) => {
       const btn = createButton(this, 40, buttonY + 24 + i * 74, W - 80, 62, promise.label, () => {
