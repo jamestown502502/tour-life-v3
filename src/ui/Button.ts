@@ -101,6 +101,12 @@ export function createButton(
   // the new height, not the caller's original one — see the stuck-screen-hardening follow-up's
   // Item A note below.
   const padX = 20, padY = 10;
+  // A single-glyph label (the gear, the help '?', the backlog '≡') sits on a small square button,
+  // where w - padding floors at 20px. Phaser's advanced word wrap THROWS "wordWrapWidth < a single
+  // character" when the wrap width is narrower than one glyph — which depends on which font
+  // actually resolved, so it surfaces on some device profiles and not others, and takes the whole
+  // scene down with it rather than degrading. There is nothing to wrap in a one-word label anyway.
+  const wrappable = /\s/.test(label) && label.length > 2;
   const wrapWidth = Math.max(20, w - padX * 2);
   let fontSize = parseInt((opts.fontSize ?? '22px').replace('px', ''), 10) || 22;
   const minFontSize = 12;
@@ -108,7 +114,7 @@ export function createButton(
     fontSize: `${fontSize}px`,
     color: labelColorForFill(fill),
     align: 'center',
-    wordWrap: { width: wrapWidth, useAdvancedWrap: true },
+    ...(wrappable ? { wordWrap: { width: wrapWidth, useAdvancedWrap: true } } : {}),
   })).setOrigin(0.5);
   // updateText() is called internally by both the constructor and setFontSize(), so text.height
   // already reflects a fresh measurement at every step below — forced here too as cheap

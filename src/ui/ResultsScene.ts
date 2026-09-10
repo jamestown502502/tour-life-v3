@@ -62,7 +62,12 @@ export class ResultsScene extends Phaser.Scene {
     // art — neon signage, stage wash, a lit window — and every line below was authored back when
     // a stale asset manifest meant the flat code-drawn fallback was what actually rendered. Sent
     // in live as an unreadable results screen.
-    addTextScrim(this, W / 2, 400, W - 40, 300);
+    // 0.88, not the 0.72 default. CI runs four device profiles and iPhone 12 measured the
+    // breakdown rows at 4.29:1 and 4.50:1 against a 4.5 floor -- borderline on a local Pixel 7 run
+    // and failing there. This screen sits on the city's lit rhythm-stage art (neon signage, stage
+    // wash), which is the brightest backdrop any text in the game has to survive, so it needs more
+    // than the standard scrim rather than exactly enough on one device.
+    addTextScrim(this, W / 2, 400, W - 40, 320, 0.88);
 
     this.add.text(W / 2, 290, city.name, textStyle('h1')).setOrigin(0.5);
     this.add.text(W / 2, 350, GRADE_LABELS[this.result.grade],
@@ -76,7 +81,7 @@ export class ResultsScene extends Phaser.Scene {
     this.add.text(W / 2, 420, `${landed} of ${landed + jc.miss} notes landed`,
       textStyle('small', { fontSize: '18px' })).setOrigin(0.5);
     this.add.text(W / 2, 452, `Perfect ${jc.perfect}  ·  Good ${jc.good}  ·  Close ${jc.ok}  ·  Missed ${jc.miss}`,
-      textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold })).setOrigin(0.5);
+      textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream })).setOrigin(0.5);
     this.add.text(W / 2, 486, `Timing score: ${this.result.timingScore}  ·  Crowd: ${this.result.crowdConnection}`,
       textStyle('small', { fontSize: '16px' })).setOrigin(0.5);
     // Landing an entire chart without dropping a note is the one performance milestone worth
