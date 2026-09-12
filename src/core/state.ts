@@ -128,6 +128,8 @@ export interface RunState {
    *  (src/game/arc.ts). Optional and additive: a save written before arcs existed reads as zero
    *  for everyone, which is exactly the setup stage they would have been in anyway. */
   arcScenesPlayed?: Record<string, number>;
+  /** The Van Ledger: money decisions made this run, newest last. Additive; absent on older saves. */
+  ledger?: { cityId: string; label: string; funds: number }[];
   log: string[];
   currentCityIndex: number;
   midTourComplication: string;
@@ -236,6 +238,12 @@ class GameState {
   recordArcScene(bandmate: string): void {
     if (!this.data.arcScenesPlayed) this.data.arcScenesPlayed = {};
     this.data.arcScenesPlayed[bandmate] = (this.data.arcScenesPlayed[bandmate] ?? 0) + 1;
+  }
+
+  recordLedger(entry: { cityId: string; label: string; funds: number }): void {
+    if (!this.data.ledger) this.data.ledger = [];
+    this.data.ledger.push(entry);
+    if (this.data.ledger.length > 12) this.data.ledger.shift();
   }
 
   markSceneSeen(sceneId: string): void {

@@ -18,7 +18,11 @@ class AudioSystem {
   /** Call on first user gesture (pointerdown/keydown). Idempotent. */
   unlock(): void {
     if (this.unlocked) return;
-    this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // No Web Audio at all (a stripped WebKit build, a locked-down kiosk): the game plays silent
+    // rather than throwing on the first tap. Every play* method already no-ops on a null ctx.
+    const Ctor = window.AudioContext || (window as any).webkitAudioContext;
+    if (!Ctor) return;
+    this.ctx = new Ctor();
 
     // Master chain: gentle low/high shelf for warmth + a compressor so layered ambience +
     // arpeggio + bass pulse + SFX never clips, even at full volume with everything playing.

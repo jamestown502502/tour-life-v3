@@ -63,18 +63,22 @@ export class ScrapbookScene extends Phaser.Scene {
       played.push(getSong(songForVisit(city, State.data.seed, Math.min(visit, 1))).name);
     }
     const setlist = played.join(', ');
-    this.add.text(W / 2, 290, `Setlist: ${setlist}`, textStyle('dialogue', { fontSize: '15px', shadow: undefined })).setOrigin(0.5);
+    // QA #11: every dynamic line wraps and the lines stack from measured heights, so a long
+    // setlist or souvenir list on a narrow phone can never run off the card.
+    const setlistText = this.add.text(W / 2, 268, `Setlist: ${setlist}`, textStyle('dialogue', { fontSize: '15px', shadow: undefined, wordWrap: { width: W - 180 }, align: 'center' })).setOrigin(0.5, 0);
 
     const souvenirs = State.data.inventory.map((i) => i.name).join(' · ') || 'none collected';
-    this.add.text(W / 2, 340, `Souvenirs: ${souvenirs}`,
-      textStyle('dialogue', { fontSize: '14px', shadow: undefined, wordWrap: { width: W - 180 }, align: 'center' })).setOrigin(0.5);
+    const souvenirText = this.add.text(W / 2, setlistText.y + setlistText.height + 14, `Souvenirs: ${souvenirs}`,
+      textStyle('dialogue', { fontSize: '14px', shadow: undefined, wordWrap: { width: W - 180 }, align: 'center' })).setOrigin(0.5, 0);
 
     const rel = Object.entries(State.data.relationships).map(([id, v]) => `${id} ${Math.round(v)}`).join('  ');
-    this.add.text(W / 2, 420, `Where the band landed: ${rel}`, textStyle('dialogue', { fontSize: '14px', shadow: undefined })).setOrigin(0.5);
+    this.add.text(W / 2, Math.min(560, souvenirText.y + souvenirText.height + 16), `Where the band landed: ${rel}`,
+      textStyle('dialogue', { fontSize: '14px', shadow: undefined, wordWrap: { width: W - 180 }, align: 'center' })).setOrigin(0.5, 0);
 
-    createButton(this, W / 2 - 150, 720, 300, 66, 'Read the epilogue', () => this.toggleEpilogue(), { fillColor: 0xd9a441, fontSize: '18px' });
+    // QA #13: all three buttons share the default label size now (one used to override to 18px).
+    createButton(this, W / 2 - 150, 720, 300, 66, 'Read the epilogue', () => this.toggleEpilogue(), { fillColor: 0xd9a441 });
 
-    createButton(this, W / 2 - 150, 810, 300, 66, 'Save tour as image', () => this.exportAsImage(), { fillColor: 0x8a6fa3, fontSize: '18px' });
+    createButton(this, W / 2 - 150, 810, 300, 66, 'Save tour as image', () => this.exportAsImage(), { fillColor: 0x8a6fa3 });
 
     createButton(this, W / 2 - 150, 900, 300, 66, 'Start a new tour', async () => {
       await clearSave();
@@ -95,11 +99,11 @@ export class ScrapbookScene extends Phaser.Scene {
     // save written before promises existed.
     const text = getEpilogue(this.endingId, this.tags, State.data.flags, keptPromise(State.data), State.data.relationships);
     const panelKey = ensureDialoguePanel(this);
-    const x = 40, y = 100, w = W - 80, h = 700;
+    const x = 40, y = 100, w = W - 80;
     const panel = this.add.container(0, 0).setName('epiloguePanel').setDepth(160);
     const overlay = this.add.rectangle(0, 0, W, this.cameras.main.height, 0x000000, 0.55).setOrigin(0, 0).setInteractive();
     overlay.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event: { stopPropagation: () => void }) => event.stopPropagation());
-    const bg = this.add.image(x, y, panelKey).setOrigin(0, 0).setDisplaySize(w, h);
+    const bg = this.add.image(x, y, panelKey).setOrigin(0, 0);
     const title = this.add.text(x + w / 2, y + 40, 'Two Months Later', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5);
     // Item D: the why-tour pick's third and last grounding echo (after OpeningScene's closing
     // line and RoutePlan's banner) — the reason the run started, next to how it ended.
@@ -108,6 +112,23 @@ export class ScrapbookScene extends Phaser.Scene {
     const body = this.add.text(x + 36, y + 100, text, textStyle('dialogue', {
       fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: w - 72 }, lineSpacing: 8,
     }));
+    // QA #5: the panel is sized to the epilogue, and Close sits below the last line rather than
+    // at a fixed offset that a long epilogue ran underneath. A very long one scrolls inside a mask.
+    const maxBodyH = this.cameras.main.height - y - 260;
+    const bodyH = Math.min(body.height, maxBodyH);
+    const h = 100 + bodyH + 110;
+    bg.setDisplaySize(w, h);
+    if (body.height > maxBodyH) {
+      const mask = this.make.graphics({}).fillRect(x, y + 96, w, bodyH + 8);
+      body.setMask(mask.createGeometryMask());
+      const top = y + 100, minY = top - (body.height - bodyH);
+      bg.setInteractive();
+      bg.on('wheel', (_p: Phaser.Input.Pointer, _dx: number, dy: number) => { body.y = Phaser.Math.Clamp(body.y - dy * 0.5, minY, top); });
+      let dragY: number | null = null;
+      bg.on('pointerdown', (p: Phaser.Input.Pointer) => { dragY = p.y; });
+      bg.on('pointermove', (p: Phaser.Input.Pointer) => { if (dragY !== null && p.isDown) { body.y = Phaser.Math.Clamp(body.y + (p.y - dragY), minY, top); dragY = p.y; } });
+      bg.on('pointerup', () => { dragY = null; });
+    }
     const closeBtn = createButton(this, x + w / 2 - 110, y + h - 80, 220, 60, 'Close', () => this.toggleEpilogue(), { fillColor: 0x8fb7c9 });
     panel.add([overlay, bg, title, whyTourCaption, body, closeBtn]);
   }

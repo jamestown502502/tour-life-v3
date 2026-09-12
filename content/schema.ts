@@ -100,7 +100,19 @@ export type MiniGameType = 'timing' | 'drag' | 'choice' | 'sequence' | 'sustain'
   // a quiz with a score at the end. Both of these play a real example, show the candidates, take
   // one answer, and name the thing that was just heard whether the answer was right or wrong.
   | 'interval'   // relative pitch: two notes, name the distance between them
-  | 'clave';     // rhythm: hear a pattern, pick its notation out of three
+  | 'clave'      // rhythm: hear a pattern, pick its notation out of three
+  // The Van Ledger (financial literacy, 2026-09-12 QA-response pass — see src/game/ledger.ts).
+  // Each is hosted by the bandmate whose arc it presses on; a hosted minigame credits that arc.
+  | 'split'      // guarantee vs door deal: expected value under uncertainty
+  | 'pricing'    // the merch table: unit cost, demand, margin
+  | 'perdiem'    // tomorrow's budget: food / lodging / rest, opportunity cost
+  | 'gearcall'   // buy vs rent vs pass over the shows that remain
+  | 'exchange'   // three currency windows: the fee is part of the rate
+  // Music theory, extending interval/clave on the same hear-it-then-name-it pedagogy.
+  | 'chordquality' // major / minor / dominant 7 / major 7 by ear
+  | 'transpose'    // move a chord from the set by a named interval
+  | 'meter'        // 3/4, 4/4, 6/8 from a count-in
+  | 'tempo';       // tap the tempo of a click, read the BPM
 
 export interface MiniGameReward {
   effects?: StatDeltas;
@@ -119,9 +131,24 @@ export interface MiniGameQuestion {
   warmerOption: 'A' | 'B';
 }
 
+export interface LedgerNumbers {
+  guarantee?: number; doorPct?: number; ticketPrice?: number; capacity?: number;
+  unitCost?: number; stock?: number; minPrice?: number; maxPrice?: number;
+  budget?: number;
+  price?: number; rentPerShow?: number;
+  rates?: { label: string; rate: number; feePct: number }[];
+}
+
 export interface MiniGameDef {
   id: string;
   type: MiniGameType;
+  /** The bandmate who hosts this beat. A city's hosted minigames are offered two per run, picked
+   *  by the seed (src/game/ledger.ts hostedSelection), and playing one counts as a scene with
+   *  that person for their arc (src/game/arc.ts). Non-hosted minigames are always offered. */
+  hostBandmate?: BandmateId;
+  /** Ledger types only: the numbers on the table. Any omitted value falls back to
+   *  src/game/ledger.ts DEFAULT_LEDGER, so a def can carry only the numbers that matter. */
+  ledger?: LedgerNumbers;
   title: string;
   introText: string;
   /** Shown on a good outcome (timing: >=2/3 good hits; drag: all items placed in time; choice: majority-warmer answers). */
@@ -396,6 +423,23 @@ function validateMiniGames(minigames: unknown, path: string, errors: string[]): 
             fail(errors, `${p}: each question needs id/prompt/optionA/optionB and warmerOption 'A'|'B'`);
           }
         }
+      }
+    } else if (['split', 'pricing', 'perdiem', 'gearcall', 'exchange'].includes(mg.type as string)) {
+      if (mg.hostBandmate !== undefined && !BANDMATE_IDS.includes(mg.hostBandmate)) {
+        fail(errors, `${p}: hostBandmate must be one of ${BANDMATE_IDS.join('/')}`);
+      }
+      if (mg.ledger !== undefined && (typeof mg.ledger !== 'object' || mg.ledger === null)) {
+        fail(errors, `${p}: ledger must be an object of numbers`);
+      }
+      if (mg.type === 'exchange' && mg.ledger?.rates !== undefined && (!isArray(mg.ledger.rates) || mg.ledger.rates.length < 2)) {
+        fail(errors, `${p}: exchange rates need >= 2 entries`);
+      }
+    } else if (['chordquality', 'transpose', 'meter', 'tempo'].includes(mg.type as string)) {
+      if (mg.theoryRounds !== undefined && (!isNumber(mg.theoryRounds) || mg.theoryRounds! < 1)) {
+        fail(errors, `${p}: theoryRounds must be a positive number`);
+      }
+      if (mg.hostBandmate !== undefined && !BANDMATE_IDS.includes(mg.hostBandmate)) {
+        fail(errors, `${p}: hostBandmate must be one of ${BANDMATE_IDS.join('/')}`);
       }
     } else if (mg.type === 'interval' || mg.type === 'clave') {
       // Both teaching exercises carry their own question banks in code (the interval ladder and

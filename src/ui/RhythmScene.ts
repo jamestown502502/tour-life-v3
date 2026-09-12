@@ -95,6 +95,10 @@ export class RhythmScene extends Phaser.Scene {
   private metronomeEvent: Phaser.Time.TimerEvent | null = null;
   private ctx!: PerformanceContext;
   private activeHolds = new Map<number, NoteState>();
+  /** Lanes currently pressed (finger or key). QA #3: press-and-hold that started a little early
+   *  used to do nothing at all — attemptHit only fires on the down edge, so a held finger never
+   *  met the hold note. update() now arms the hold the moment the note enters the window. */
+  private laneDown = new Set<number>();
   private tutorialActive = false;
   private forceRelaxedFirstSong = false;
   /** Practice-pass hand-off guard: see create()'s watchdog comment. 0 = no watchdog armed. */
@@ -124,6 +128,7 @@ export class RhythmScene extends Phaser.Scene {
     this.startTime = 0;
     this.songStarted = false;
     this.activeHolds = new Map();
+    this.laneDown = new Set();
     this.tutorialActive = false;
     this.forceRelaxedFirstSong = false;
     this.holdHintShown = false;
@@ -233,11 +238,13 @@ export class RhythmScene extends Phaser.Scene {
       // lower half registers — not just a thin band at the line. Timing is judged by the clock,
       // never by where in the zone the finger landed.
       const zone = this.add.zone(LANE_X_START + l * LANE_W, HIT_LINE_Y - 160, LANE_W, 300).setOrigin(0, 0).setInteractive();
-      zone.on('pointerdown', () => this.attemptHit(l));
+      zone.on('pointerdown', () => { this.laneDown.add(l); this.attemptHit(l); });
+      zone.on('pointerup', () => this.laneDown.delete(l));
+      zone.on('pointerout', () => this.laneDown.delete(l));
       const keyMap = ['D', 'F', 'J', 'K'];
       if (keyMap[l]) {
-        this.input.keyboard?.on(`keydown-${keyMap[l]}`, () => this.attemptHit(l));
-        this.input.keyboard?.on(`keyup-${keyMap[l]}`, () => this.releaseAllHolds());
+        this.input.keyboard?.on(`keydown-${keyMap[l]}`, () => { this.laneDown.add(l); this.attemptHit(l); });
+        this.input.keyboard?.on(`keyup-${keyMap[l]}`, () => { this.laneDown.delete(l); this.releaseAllHolds(); });
       }
     }
     // Scene-level pointerup so a hold releases even if the finger drifts off its lane zone.
@@ -464,6 +471,11 @@ export class RhythmScene extends Phaser.Scene {
         const texKey = ensureLaneTextures(this, LANE_W)[ns.note.type === 'tap' ? 'noteTap' : 'noteChoice'];
         if (!ns.sprite) ns.sprite = this.add.image(lane, y, texKey).setDepth(10);
         else ns.sprite.setPosition(lane, y);
+      }
+      // Armed hold: the lane is held down as the note arrives. Judged at the moment of arrival
+      // inside the window, exactly as a perfectly timed press would be.
+      if (ns.note.type === 'hold' && !ns.judged && !ns.holding && this.laneDown.has(ns.note.l) && Math.abs(now - hitMs) <= windows.ok) {
+        this.beginHold(ns, now - hitMs, now);
       }
       if (State.data.accessibility.autoplay && !ns.judged && !ns.holding && now >= hitMs) {
         if (ns.note.type === 'hold') this.beginHold(ns, 0, now);
@@ -746,6 +758,6 @@ export class RhythmScene extends Phaser.Scene {
     // the town's reaction to THIS show is what the social feed is built from.
     recordShow(this.cityId, showBandFor(result.grade), State.data.localLove[this.cityId] ?? 0);
     saveRun(State.data);
-    goTo(this, 'Results', { cityId: this.cityId, result });
+    goTo(this, 'Results', { cityId: this.cityId, result }, { theme: 'vinyl', label: 'That was the show' });
   }
 }

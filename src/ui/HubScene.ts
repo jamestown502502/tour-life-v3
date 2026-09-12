@@ -94,6 +94,7 @@ export class HubScene extends Phaser.Scene {
     }
 
     this.renderStats();
+    this.renderLedgerCard();
     this.renderCorkboard(hasRealAsset(bgKey));
 
     if (stop) {
@@ -114,7 +115,7 @@ export class HubScene extends Phaser.Scene {
         // Addendum v2, Item 9b: hub -> city travel uses 'drive'.
         // Via the van: a two-beat travel scene on the way in (VanScene), which sets no progress
         // and gates nothing, so an interruption there still resumes at the Hub.
-        goTo(this, 'Van', { cityId: city.id });
+        goTo(this, 'Van', { cityId: city.id }, { theme: 'drive', label: `On the road to ${city.name}` });
       }, { fillColor: 0x3e7c7b });
       // Left-anchored (not centered) and clipped short of the corkboard's x-range (CORKBOARD_X
       // starts at W-190) so this can't visually collide with the souvenir chips beside it.
@@ -129,6 +130,9 @@ export class HubScene extends Phaser.Scene {
       this.add.text(W / 2, 920, `Décor: ${State.data.meta.unlockedDecor.map((d) => d.replace(/_/g, ' ')).join(', ')}`,
         textStyle('small', { wordWrap: { width: W - 100 }, align: 'center' })).setOrigin(0.5);
     }
+
+    // QA #9 (decision D6): replay any minigame from this run's route without rewards or flags.
+    createButton(this, W / 2 - 160, 990, 320, 56, 'Practice a minigame', () => this.showPractice(), { fillColor: 0x8a6fa3, fontSize: '17px' });
 
     createButton(this, W / 2 - 100, 1140, 200, 66, 'Settings', () => {
       this.scene.launch('Settings', { returnTo: 'Hub' });
@@ -154,6 +158,22 @@ export class HubScene extends Phaser.Scene {
         targets: fill, width: targetW, duration: 550, delay: i * 90, ease: 'Cubic.easeOut',
       });
       this.add.text(220 + barW + 12, y, key === 'funds' ? `$${value}` : `${Math.round(value)}`, textStyle('stat'));
+    });
+  }
+
+  /** The Van Ledger card: the run's last money decisions, so `funds` reads as a story rather
+   *  than a bar. Only appears once a ledger minigame has been played. */
+  private renderLedgerCard(): void {
+    const entries = (State.data.ledger ?? []).slice(-3).reverse();
+    if (entries.length === 0) return;
+    const x = 60, y = 318, w = 400;
+    const h = 30 + entries.length * 22;
+    this.add.rectangle(x, y, w, h, PALETTE.night, 0.62).setOrigin(0, 0).setStrokeStyle(1, PALETTE.gold, 0.5);
+    this.add.text(x + 12, y + 8, 'Van ledger', textStyle('stat', { fontSize: '13px', color: PALETTE_HEX.gold }));
+    entries.forEach((e, i) => {
+      const sign = e.funds > 0 ? '+' : e.funds < 0 ? '-' : '±';
+      this.add.text(x + 12, y + 30 + i * 22, `${getCity(e.cityId).name}: ${e.label}`, textStyle('small', { fontSize: '13px', color: PALETTE_HEX.cream }));
+      this.add.text(x + w - 12, y + 30 + i * 22, `${sign}${Math.abs(e.funds)} funds`, textStyle('small', { fontSize: '13px', color: e.funds >= 0 ? PALETTE_HEX.gold : PALETTE_HEX.softRed })).setOrigin(1, 0);
     });
   }
 
@@ -187,8 +207,12 @@ export class HubScene extends Phaser.Scene {
     if (State.data.inventory.length > 4) {
       // Default small's sky measures 2.3:1 on this corkboard's brown tint — same fix as the
       // "Souvenirs" header above.
-      this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 40 + 4 * 34, `+${State.data.inventory.length - 4} more`,
-        textStyle('small', { fontSize: '11px', color: '#FFFFFF' })).setOrigin(0.5);
+      // QA #7: this used to be plain text. It opens the full list now.
+      const more = this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 40 + 4 * 34, `+${State.data.inventory.length - 4} more`,
+        textStyle('small', { fontSize: '12px', color: '#FFFFFF', fontStyle: '700' })).setOrigin(0.5);
+      more.setInteractive(new Phaser.Geom.Rectangle(-30, -14, more.width + 60, more.height + 28), Phaser.Geom.Rectangle.Contains);
+      more.input!.cursor = 'pointer';
+      more.on('pointerdown', () => this.showSouvenirs());
     }
   }
 
@@ -219,6 +243,67 @@ export class HubScene extends Phaser.Scene {
     return null;
   }
 
+  /** Full souvenir list — the corkboard only has room for four. */
+  private showSouvenirs(): void {
+    if (this.children.getByName('souvenirPanel')) return;
+    const w = 560, h = 620;
+    const x = W / 2 - w / 2, y = 300;
+    const panel = this.add.container(0, 0).setName('souvenirPanel').setDepth(200);
+    const backdrop = this.add.rectangle(0, 0, W, this.cameras.main.height, 0x000000, 0.55).setOrigin(0, 0).setInteractive();
+    backdrop.on('pointerdown', () => panel.destroy());
+    const card = this.add.rectangle(x, y, w, h, PALETTE.sand, 0.98).setOrigin(0, 0).setInteractive();
+    card.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event: { stopPropagation: () => void }) => event.stopPropagation());
+    const title = this.add.text(x + w / 2, y + 36, 'Souvenirs', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5);
+    const list = State.data.inventory.map((it) => `• ${it.name}`).join('\n');
+    const body = this.add.text(x + 30, y + 70, list, textStyle('body', { fontSize: '17px', color: PALETTE_HEX.plum, wordWrap: { width: w - 60 }, lineSpacing: 6 }));
+    panel.add([backdrop, card, title, body]);
+    if (body.height > h - 170) {
+      const mask = this.make.graphics({}).fillRect(x, y + 60, w, h - 150);
+      body.setMask(mask.createGeometryMask());
+      const minY = y + 70 - (body.height - (h - 160));
+      card.on('wheel', (_p: Phaser.Input.Pointer, _dx: number, dy: number) => { body.y = Phaser.Math.Clamp(body.y - dy * 0.5, minY, y + 70); });
+      let dragY: number | null = null;
+      card.on('pointerdown', (p: Phaser.Input.Pointer) => { dragY = p.y; });
+      card.on('pointermove', (p: Phaser.Input.Pointer) => { if (dragY !== null && p.isDown) { body.y = Phaser.Math.Clamp(body.y + (p.y - dragY), minY, y + 70); dragY = p.y; } });
+      card.on('pointerup', () => { dragY = null; });
+      panel.add(this.add.text(x + w / 2, y + h - 100, 'scroll for more', textStyle('small', { fontSize: '12px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+    }
+    panel.add(createButton(this, x + w / 2 - 110, y + h - 80, 220, 60, 'Close', () => panel.destroy(), { fillColor: 0x8fb7c9 }));
+  }
+
+  /** Practice picker: every minigame authored on the cities of this run's route. Practice runs
+   *  write no reward, no relationship change, and no played-flag (MiniGameScene `practice`). */
+  private showPractice(): void {
+    if (this.children.getByName('practicePanel')) return;
+    const entries: { cityId: string; id: string; title: string }[] = [];
+    const seen = new Set<string>();
+    for (const stop of State.data.route) {
+      if (seen.has(stop.cityId)) continue;
+      seen.add(stop.cityId);
+      for (const mg of getCity(stop.cityId).minigames ?? []) entries.push({ cityId: stop.cityId, id: mg.id, title: mg.title });
+    }
+    const rows = entries.slice(0, 9);
+    const w = 600, h = Math.min(1060, 170 + rows.length * 70);
+    const x = W / 2 - w / 2, y = Math.max(100, (this.cameras.main.height - h) / 2);
+    const panel = this.add.container(0, 0).setName('practicePanel').setDepth(200);
+    const backdrop = this.add.rectangle(0, 0, W, this.cameras.main.height, 0x000000, 0.55).setOrigin(0, 0).setInteractive();
+    backdrop.on('pointerdown', () => panel.destroy());
+    const card = this.add.rectangle(x, y, w, h, PALETTE.sand, 0.98).setOrigin(0, 0).setInteractive();
+    card.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event: { stopPropagation: () => void }) => event.stopPropagation());
+    panel.add([backdrop, card]);
+    panel.add(this.add.text(x + w / 2, y + 36, 'Practice', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5));
+    panel.add(this.add.text(x + w / 2, y + 66, 'No rewards, no story changes — just the game.', textStyle('small', { fontSize: '13px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+    rows.forEach((e, i) => {
+      const cityName = getCity(e.cityId).name;
+      panel.add(createButton(this, x + 30, y + 92 + i * 70, w - 60, 56, `${e.title} — ${cityName}`, () => {
+        panel.destroy();
+        goTo(this, 'MiniGame', { cityId: e.cityId, minigameId: e.id, returnPhase: 'locations', practice: true });
+      }, { fillColor: 0x3e7c7b, fontSize: '17px' }));
+    });
+    if (rows.length === 0) panel.add(this.add.text(x + w / 2, y + 120, 'Nothing to practice yet.', textStyle('body', { color: PALETTE_HEX.plum })).setOrigin(0.5));
+    panel.add(createButton(this, x + w / 2 - 110, y + h - 74, 220, 56, 'Close', () => panel.destroy(), { fillColor: 0x8fb7c9 }));
+  }
+
   private wrapTour(): void {
     const ending = generateEnding(State.data);
     State.data.meta = completeRun(State.data.meta, {
@@ -226,6 +311,6 @@ export class HubScene extends Phaser.Scene {
     });
     State.setProgress({ screen: 'scrapbook' });
     saveRun(State.data);
-    goTo(this, 'Scrapbook', { endingId: ending.id, tags: ending.tags });
+    goTo(this, 'Scrapbook', { endingId: ending.id, tags: ending.tags }, { theme: 'pages', label: 'The tour, in pictures' });
   }
 }

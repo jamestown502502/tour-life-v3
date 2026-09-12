@@ -130,6 +130,17 @@
         "inspiration": 2
       },
       "condition": "relationship.rowan>=30"
+    },
+    {
+      "id": "rent_good_pa",
+      "label": "Rent the good PA ($60)",
+      "description": "The house rig hums. The good one does not. Sixty dollars buys silence.",
+      "arrangementId": "tight",
+      "effects": {
+        "inspiration": 4,
+        "funds": -60
+      },
+      "condition": "stat.funds>=560"
     }
   ],
   "songId": "neon_rain",
@@ -141,8 +152,8 @@
     "condition": "relationship.rowan>=30",
     "unlock": "bass_forward"
   },
-  "afterShowSceneId": "tok_aftershow",
-  "journalSceneId": "tok_journal",
+  "afterShowSceneId": "tok_aftershow_broke",
+  "journalSceneId": "tok_journal_merch",
   "minigames": [
     {
       "id": "tok_mix_hold",
@@ -234,6 +245,80 @@
       ],
       "outroTextPerfect": "Kenji pulls the headphones off one ear. \"One pass. You're done. Go eat something.\"",
       "timingZoneW": 76
+    },
+    {
+      "id": "tok_merch_table",
+      "type": "pricing",
+      "title": "The Merch Table",
+      "introText": "Forty shirts, one folding table, a livehouse crowd that reads price tags. Mira wants them on every back in the room. The tour wants the box paid for.",
+      "outroText": "The table nearly clears and the box is paid for with something to spare. Mira signs the last one.",
+      "outroTextRough": "Either half the box comes home or the shirts went for less than they cost. Mira does not mind. The float does.",
+      "outroTextPerfect": "You price it almost exactly where the room wanted it. Sold out, paid for, and Mira gets recognised on the train home.",
+      "reward": {
+        "effects": {
+          "inspiration": 2,
+          "harmony": 2
+        },
+        "flags": [
+          "merch_priced_right"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "harmony": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "inspiration": 4,
+          "harmony": 4
+        },
+        "flags": [
+          "merch_priced_right"
+        ]
+      },
+      "hostBandmate": "mira",
+      "ledger": {
+        "unitCost": 8,
+        "stock": 40,
+        "minPrice": 10,
+        "maxPrice": 40
+      },
+      "chordProgression": "Dm-Bb-F-C",
+      "bpm": 108,
+      "waveform": "square"
+    },
+    {
+      "id": "tok_count_in",
+      "type": "meter",
+      "title": "The Count-In",
+      "introText": "Theo taps the sticks together in the green room. \"Tell me what I'm counting. Not the number. The feel.\"",
+      "outroText": "You feel where the heavy beat lands more often than not. Theo grins. \"You'd make a drummer. Don't.\"",
+      "outroTextRough": "You catch the four and lose the six. Theo counts it again, slower, until the lilt shows itself.",
+      "outroTextPerfect": "Every count, first time. Theo puts the sticks down. \"Right. You're calling the tempos tonight.\"",
+      "reward": {
+        "effects": {
+          "harmony": 3
+        },
+        "flags": [
+          "counted_in"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "harmony": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 5
+        },
+        "flags": [
+          "counted_in"
+        ]
+      },
+      "hostBandmate": "theo",
+      "theoryRounds": 3
     }
   ],
   "scenes": {
@@ -1006,6 +1091,28 @@
       "portrait": "tense",
       "text": "\"It is fine,\" Jun says, in the tone that means it is not. The case stays shut. \"The songs work. That is the job.\"",
       "id": "tok_arc_jun_b_cool"
+    },
+    "tok_journal_count": {
+      "id": "tok_journal_count",
+      "speaker": "narrator",
+      "text": "You write: Theo counted and I felt it before I could name it. Three, four, six. There is a whole map in there I never knew I was walking on.",
+      "condition": "flag:counted_in",
+      "fallback": "tok_journal"
+    },
+    "tok_journal_merch": {
+      "id": "tok_journal_merch",
+      "speaker": "narrator",
+      "text": "You write: forty shirts, one number, and Mira watching me pick it. Price is a story about who you think is in the room. I think I got it right.",
+      "condition": "flag:merch_priced_right",
+      "fallback": "tok_journal_count"
+    },
+    "tok_aftershow_broke": {
+      "id": "tok_aftershow_broke",
+      "speaker": "narrator",
+      "text": "The after-party is a vending machine on a station platform. Four cans, one long silence, and then Jun laughs at nothing and everyone joins in.",
+      "condition": "stat.funds<=430",
+      "fallback": "tok_aftershow",
+      "next": "tok_aftershow"
     }
   }
 }

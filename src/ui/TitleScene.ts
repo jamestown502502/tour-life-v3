@@ -304,8 +304,13 @@ export class TitleScene extends Phaser.Scene {
     if (existing) { existing.destroy(); return; }
     if (!this.galleryOpen) return;
     const panel = this.add.container(0, 0).setName('galleryPanel').setDepth(200);
-    const bg = this.add.rectangle(60, 200, W - 120, 700, 0x2b3a55, 0.96).setOrigin(0, 0);
-    panel.add(bg);
+    // QA #6: the panel used to cover its own toggle button with no way out. Tap outside or Close.
+    const backdrop = this.add.rectangle(0, 0, W, this.cameras.main.height, 0x000000, 0.5).setOrigin(0, 0).setInteractive();
+    backdrop.on('pointerdown', () => this.toggleGallery());
+    const bg = this.add.rectangle(60, 200, W - 120, 700, 0x2b3a55, 0.96).setOrigin(0, 0).setInteractive();
+    bg.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event: { stopPropagation: () => void }) => event.stopPropagation());
+    panel.add([backdrop, bg]);
+    panel.add(createButton(this, W / 2 - 110, 200 + 700 - 84, 220, 60, 'Close', () => this.toggleGallery(), { fillColor: 0x8fb7c9 }));
     const history = State.data.meta.runHistory;
     const title = this.add.text(W / 2, 230, `${State.data.meta.completedRuns} tours completed`, textStyle('h2', { color: PALETTE_HEX.gold })).setOrigin(0.5);
     panel.add(title);

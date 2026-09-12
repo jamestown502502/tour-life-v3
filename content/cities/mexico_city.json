@@ -125,6 +125,17 @@
         "inspiration": 4
       },
       "condition": "stat.harmony>=35"
+    },
+    {
+      "id": "hire_percussion",
+      "label": "Bring in the percussion crew ($60)",
+      "description": "Ximena's friends, three drums, no rehearsal. Expensive. Loud. Worth it.",
+      "arrangementId": "duet_percussion",
+      "effects": {
+        "inspiration": 4,
+        "funds": -60
+      },
+      "condition": "stat.funds>=560"
     }
   ],
   "songId": "callejon_groove",
@@ -136,8 +147,8 @@
     "condition": "stat.harmony>=35",
     "unlock": "duet_percussion"
   },
-  "afterShowSceneId": "mex_aftershow",
-  "journalSceneId": "mex_journal",
+  "afterShowSceneId": "mex_aftershow_broke",
+  "journalSceneId": "mex_journal_perdiem",
   "minigames": [
     {
       "id": "mex_interview",
@@ -271,6 +282,126 @@
         "flags": [
           "clave_literate",
           "clave_fluent"
+        ]
+      }
+    },
+    {
+      "id": "mex_per_diem",
+      "type": "perdiem",
+      "title": "Tomorrow's Per Diem",
+      "introText": "Theo lays sixty dollars on the van's dashboard. \"Food, a bed, a stop somewhere quiet. Split it however you like. Just don't spend it twice.\"",
+      "outroText": "Everyone eats, everyone sleeps horizontal, and there is something left in the envelope. Theo nods and says nothing, which is his thank you.",
+      "outroTextRough": "Somebody goes without something. Theo says it is fine. Theo says that about everything.",
+      "outroTextPerfect": "A real meal, a real bed, a stop by the water, and money back in the float. Theo looks at the envelope twice.",
+      "reward": {
+        "effects": {
+          "energy": 4,
+          "harmony": 2
+        },
+        "flags": [
+          "per_diem_balanced"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "energy": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "energy": 6,
+          "harmony": 4
+        },
+        "flags": [
+          "per_diem_balanced"
+        ]
+      },
+      "hostBandmate": "theo",
+      "ledger": {
+        "budget": 60
+      },
+      "chordProgression": "Am-F-C-G",
+      "bpm": 88,
+      "waveform": "triangle"
+    },
+    {
+      "id": "mex_crowd_clap",
+      "type": "tempo",
+      "title": "The Crowd's Clap",
+      "introText": "Rowan watches the room clap along to the house music. \"They're telling us the tempo. Can you hear it? Tap it out.\"",
+      "outroText": "You find it within a few beats. Rowan locks the bass to your hands and the room comes with you.",
+      "outroTextRough": "You rush, then drag, then land somewhere near it. Rowan smiles. \"The room forgives. Eventually.\"",
+      "outroTextPerfect": "Dead on the first time. Rowan raises an eyebrow, which is the most anyone has seen him do all tour.",
+      "reward": {
+        "effects": {
+          "harmony": 2,
+          "inspiration": 2
+        },
+        "flags": [
+          "found_the_tempo"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "harmony": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 4,
+          "inspiration": 4
+        },
+        "flags": [
+          "found_the_tempo"
+        ]
+      },
+      "hostBandmate": "rowan",
+      "theoryRounds": 2
+    },
+    {
+      "id": "mex_exchange",
+      "type": "exchange",
+      "title": "Changing Money Again",
+      "introText": "A different city, the same three signs. This time Theo just hands you the envelope and waits.",
+      "outroText": "You read the fee first. Theo takes the envelope back without counting it, which is a compliment.",
+      "outroTextRough": "The friendly rate at the friendly window keeps a friendly slice. You notice, after.",
+      "outroTextPerfect": "Best window, no hesitation. Theo says, \"You're doing all of these now.\"",
+      "reward": {
+        "effects": {
+          "harmony": 2
+        },
+        "flags": [
+          "read_the_fee"
+        ]
+      },
+      "roughReward": {
+        "effects": {}
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 4
+        },
+        "flags": [
+          "read_the_fee"
+        ]
+      },
+      "ledger": {
+        "rates": [
+          {
+            "label": "Hotel front desk",
+            "rate": 1.01,
+            "feePct": 8
+          },
+          {
+            "label": "Bank branch",
+            "rate": 0.99,
+            "feePct": 1.5
+          },
+          {
+            "label": "Market stall",
+            "rate": 1.04,
+            "feePct": 8
+          }
         ]
       }
     }
@@ -1105,6 +1236,28 @@
       "portrait": "tired",
       "text": "\"Anyway,\" Rowan says, winding a cable that does not need winding. \"Somebody has to hold the bottom end. It may as well be the quiet one.\"",
       "id": "mex_arc_rowan_b_cool"
+    },
+    "mex_journal_tempo": {
+      "id": "mex_journal_tempo",
+      "speaker": "narrator",
+      "text": "You write: the crowd was clapping the tempo the whole time. Rowan heard it. Tonight, for a few bars, so did I.",
+      "condition": "flag:found_the_tempo",
+      "fallback": "mex_journal"
+    },
+    "mex_journal_perdiem": {
+      "id": "mex_journal_perdiem",
+      "speaker": "narrator",
+      "text": "You write: sixty dollars and Theo watching me divide it. Every dollar I put somewhere was a dollar I took from somewhere else. He knew that already. Now I do.",
+      "condition": "flag:per_diem_balanced",
+      "fallback": "mex_journal_tempo"
+    },
+    "mex_aftershow_broke": {
+      "id": "mex_aftershow_broke",
+      "speaker": "narrator",
+      "text": "Street tacos for four on the last of the small bills. Mira insists it is the best meal of the tour and, annoyingly, she is right.",
+      "condition": "stat.funds<=430",
+      "fallback": "mex_aftershow",
+      "next": "mex_aftershow"
     }
   }
 }

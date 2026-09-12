@@ -66,7 +66,7 @@ export class VanScene extends Phaser.Scene {
     const focus = this.focusBandmate();
     const beat = VAN_BEATS[focus.id];
 
-    const toCity = (): void => goTo(this, 'City', { cityId: this.cityId });
+    const toCity = (): void => goTo(this, 'City', { cityId: this.cityId }, { theme: 'ticket', label: getCity(this.cityId).name });
     const playBandmateBeat = (): void => {
       this.dialogueBox.show(
         { id: 'van_beat', speaker: focus.id, text: focus.warm ? beat.warm : beat.cool },

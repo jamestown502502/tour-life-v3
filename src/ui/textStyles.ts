@@ -57,11 +57,32 @@ export const TEXT_STYLES = {
 
 export type TextStyleName = keyof typeof TEXT_STYLES;
 
+/** QA #8 (decision D2): on a tall, fine-pointer viewport the 720x1280 canvas letterboxes to
+ *  ~0.84 CSS px per unit, so 14px captions rendered under 12px. The small text tiers scale up
+ *  on desktop only; buttons keep their geometry (Button.ts shrinks a label to fit anyway) and
+ *  phones are untouched, so the mobile text-fit audit stays authoritative there. */
+export function computeUiScale(): number {
+  try {
+    if (typeof window === 'undefined') return 1;
+    const tall = window.innerHeight >= 900;
+    const fine = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: fine)').matches;
+    return tall && fine ? 1.15 : 1;
+  } catch { return 1; }
+}
+export const UI_SCALE = computeUiScale();
+const SCALED_TIERS: TextStyleName[] = ['small', 'stat', 'body'];
+function scaleFont(fontSize: unknown): unknown {
+  if (UI_SCALE === 1 || typeof fontSize !== 'string' || !fontSize.endsWith('px')) return fontSize;
+  return `${Math.round(parseFloat(fontSize) * UI_SCALE)}px`;
+}
+
 export function textStyle(
   name: TextStyleName,
   overrides?: Partial<Phaser.Types.GameObjects.Text.TextStyle>,
 ): Phaser.Types.GameObjects.Text.TextStyle {
-  return { ...TEXT_STYLES[name], ...overrides } as Phaser.Types.GameObjects.Text.TextStyle;
+  const merged = { ...TEXT_STYLES[name], ...overrides } as Phaser.Types.GameObjects.Text.TextStyle;
+  if (SCALED_TIERS.includes(name)) merged.fontSize = scaleFont(merged.fontSize) as string;
+  return merged;
 }
 
 /** A translucent night-tinted backing for text placed directly over painted/photographic art —

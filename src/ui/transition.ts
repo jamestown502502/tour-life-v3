@@ -1,5 +1,14 @@
 import Phaser from 'phaser';
 import { SCREEN_FADE_MS } from '../const';
+import { State } from '../core/state';
+import type { TransitionScene, TransitionTheme } from './TransitionScene';
+
+export interface GoToOptions {
+  /** A themed cover played by the persistent TransitionScene (see that file for why it is safe
+   *  where the 2026-09-06 layer was not). Omitted, or under reduced motion: the plain fade. */
+  theme?: TransitionTheme;
+  label?: string;
+}
 
 /** 250ms fade-to-night-navy, then start the target scene, passing data through.
  *
@@ -32,17 +41,42 @@ import { SCREEN_FADE_MS } from '../const';
 // state once per frame, so two fast clicks collapse into one pointerdown and the bug hides.
 const transitioning = new WeakSet<Phaser.Scene>();
 
-export function goTo(scene: Phaser.Scene, key: string, data?: object): void {
+export function goTo(scene: Phaser.Scene, key: string, data?: object, opts: GoToOptions = {}): void {
   if (transitioning.has(scene)) return;
   transitioning.add(scene);
   // Cleared if this scene is stopped by some other path mid-fade, so the guard can never outlive
   // its transition and wedge a reused scene instance shut.
   scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => transitioning.delete(scene));
+
+  const themed = opts.theme && !State.data?.accessibility?.reducedMotion ? themedScene(scene) : null;
+  if (themed) {
+    // The outgoing scene keeps rendering under the cover but must stop taking taps: a Settings
+    // launch mid-cover would survive the scene switch. This is a plugin flag, not an object —
+    // nothing that can leak. Re-enabled when this scene instance is next started.
+    scene.input.enabled = false;
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { scene.input.enabled = true; });
+    themed.play(opts.theme!, opts.label ?? '', () => {
+      transitioning.delete(scene);
+      scene.scene.start(key, data);
+    });
+    return;
+  }
+
   scene.cameras.main.fadeOut(SCREEN_FADE_MS, 43, 58, 85);
   scene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
     transitioning.delete(scene);
     scene.scene.start(key, data);
   });
+}
+
+/** The persistent overlay scene, if BootScene launched it and it is idle. Any doubt → null →
+ *  the plain fade, which has never failed. */
+function themedScene(scene: Phaser.Scene): TransitionScene | null {
+  try {
+    const t = scene.scene.get('Transition') as unknown as TransitionScene | null;
+    if (!t || !t.scene.isActive() || t.isPlaying) return null;
+    return t;
+  } catch { return null; }
 }
 
 export function fadeIn(scene: Phaser.Scene): void {

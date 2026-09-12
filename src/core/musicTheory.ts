@@ -36,6 +36,30 @@ export function parseChordProgression(progression: string, octave = 3): number[]
   return progression.split('-').map((symbol) => parseChord(symbol, octave));
 }
 
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+export interface ParsedChord { root: string; quality: string }
+export function splitChord(symbol: string): ParsedChord {
+  const match = symbol.trim().match(/^([A-G]#?)(maj7|m7|m6|m|7|6)?$/);
+  return { root: match?.[1] ?? 'C', quality: match?.[2] ?? '' };
+}
+/** "Am7" moved by `semitones` → "Cm7". Quality is preserved; the root wraps around the octave. */
+export function transposeChord(symbol: string, semitones: number): string {
+  const { root, quality } = splitChord(symbol);
+  const idx = ((NOTE_SEMITONES[root] ?? 0) + semitones + 120) % 12;
+  return `${NOTE_NAMES[idx]}${quality}`;
+}
+export const QUALITY_LABELS: Record<string, string> = {
+  '': 'Major', m: 'Minor', 7: 'Dominant seventh', maj7: 'Major seventh', 6: 'Sixth', m7: 'Minor seventh', m6: 'Minor sixth',
+};
+export const QUALITY_HINTS: Record<string, string> = {
+  '': 'bright and settled',
+  m: 'the third is lowered, and the whole chord aches',
+  7: 'a major chord with a restless top note that wants to move somewhere',
+  maj7: 'a major chord with a dreamy top note that is happy to stay',
+};
+export function chordFrequencies(symbol: string, octave = 3): number[] { return parseChord(symbol, octave); }
+
 /** Default cozy pad for screens with no specific song attached (Title, Hub). */
 export const DEFAULT_AMBIENCE_CHORDS = parseChordProgression('Am7-Fmaj7-Cmaj7-G6');
 export const DEFAULT_AMBIENCE_BPM = 68;

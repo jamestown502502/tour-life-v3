@@ -72,7 +72,9 @@ export class HowToPlayScene extends Phaser.Scene {
       this.dots.push(dot);
     }
 
-    this.backBtn = createButton(this, CARD_X, CARD_Y + CARD_H + 30, 160, 54, 'Back', () => this.go(-1), { fillColor: 0x8fb7c9 });
+    // QA #14: "Back" read as "leave"; it pages. An explicit Close leaves.
+    this.backBtn = createButton(this, CARD_X, CARD_Y + CARD_H + 30, 160, 54, 'Previous', () => this.go(-1), { fillColor: 0x8fb7c9 });
+    createButton(this, W - 170, 130, 130, 50, 'Close', () => this.close(), { fillColor: PALETTE.plum, fontSize: '16px' });
     this.nextBtn = createButton(this, CARD_X + CARD_W - 220, CARD_Y + CARD_H + 30, 220, 54, 'Next', () => this.go(1), { fillColor: 0x3e7c7b });
 
     this.renderPage();

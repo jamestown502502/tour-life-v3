@@ -294,12 +294,12 @@ export class CityScene extends Phaser.Scene {
    *  insertion points below — `returnPhase` is where MiniGameScene.finish() sends the player
    *  back to, `fallback` is what runs immediately if there's nothing left to play. */
   private tryMinigame(returnPhase: CityPhase, fallback: () => void): void {
-    const next = nextUnplayedMinigame(this.city.minigames, (flag) => State.hasFlag(flag));
+    const next = nextUnplayedMinigame(this.city.minigames, (flag) => State.hasFlag(flag), State.data.seed, this.city.id);
     if (next) {
       // Addendum v2, Item 9b: VN -> minigame uses 'card', the minigame's own diegetic intro
       // line doubling as the transition's line so it reads as the story turning a page into the
       // minigame, not a generic loading screen.
-      goTo(this, 'MiniGame', { cityId: this.city.id, minigameId: next.id, returnPhase });
+      goTo(this, 'MiniGame', { cityId: this.city.id, minigameId: next.id, returnPhase }, { theme: 'card', label: next.title });
     } else {
       fallback();
     }
@@ -486,7 +486,7 @@ export class CityScene extends Phaser.Scene {
         // 'lights' themed cover. With themed transitions off there is nothing to display it on,
         // so the line (and routeArcRole's only use here) goes with it rather than being computed
         // and thrown away. RoutePlanScene/HubScene still surface the same arc roles.
-        goTo(this, 'Rhythm', { cityId: this.city.id });
+        goTo(this, 'Rhythm', { cityId: this.city.id }, { theme: 'lights', label: 'Showtime' });
       }, { fontSize: '18px' });
       container.add(btn);
       // These sit directly on the painted city background, same as the location-picker header
@@ -531,6 +531,6 @@ export class CityScene extends Phaser.Scene {
     State.setProgress({ screen: 'hub' });
     saveRun(State.data);
     // Addendum v2, Item 9b: city -> hub travel uses 'drive', mirroring hub -> city.
-    goTo(this, 'Hub');
+    goTo(this, 'Hub', undefined, { theme: 'pages', label: 'Back on the bus' });
   }
 }

@@ -49,6 +49,8 @@ export class BootScene extends Phaser.Scene {
     this.load.once(Phaser.Loader.Events.COMPLETE, () => {
       this.setProgress(1);
       this.loadAudioInBackground();
+      // The themed-transition overlay scene lives for the whole session, above everything.
+      this.scene.launch('Transition');
       this.scene.start('Title');
     });
     // Addendum v2, Item 7's 40 crowd sprites pushed the manifest past Phaser's default

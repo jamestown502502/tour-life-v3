@@ -14,6 +14,7 @@ import { addMenuButton } from './MenuButton';
 import { DialogueBox } from './DialogueBox';
 import { OPENING_GRAPH } from '../../content/opening';
 import { ensurePortrait, ensurePortraitFrame } from '../art/sprites';
+import { suggestBandName } from '../game/bandName';
 
 export class BandCreatorScene extends Phaser.Scene {
   constructor() { super('BandCreator'); }
@@ -40,7 +41,15 @@ export class BandCreatorScene extends Phaser.Scene {
     addMenuButton(this, 'BandCreator');
 
     this.nameInput = createFloatingInput(this, W / 2, 130, 320, 'Band name');
+    // Pre-filled from the run seed (QA #1, decision D1): the button is never blocked, and a
+    // player who taps straight through still gets a real name rather than "The Unnamed".
+    this.nameInput.el.value = suggestBandName(State.data.seed);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.nameInput.destroy());
+    addTextScrim(this, W / 2, 166, 380, 30, 0.6);
+    this.add.text(W / 2, 166, 'We picked one — tap the name to change it.', textStyle('small', { fontSize: '13px', color: PALETTE_HEX.cream })).setOrigin(0.5);
+    // QA #12: an explicit way back to the welcome screen from setup. Top-right: the menu gear
+    // already owns the top-left corner (MenuButton.ts).
+    createButton(this, W - 150, 20, 130, 54, '← Back', () => goTo(this, 'Title'), { fillColor: PALETTE.plum, fontSize: '17px' });
 
     // GRID_ROW_H/GRID_INCREMENT (not the original 50/60/46/56): at the 390px mobile viewport
     // the canvas renders at ~0.542x, so a button needs its raw canvas-unit height to clear
@@ -118,7 +127,7 @@ export class BandCreatorScene extends Phaser.Scene {
     this.add.text(W / 2, castY + 166, 'Tap a face to say hi.', textStyle('small', { fontSize: '14px' })).setOrigin(0.5);
 
     createButton(this, W / 2 - 150, castY + 200, 300, GRID_ROW_H, "Hit the road", () => {
-      const name = this.nameInput.el.value.trim() || 'The Unnamed';
+      const name = this.nameInput.el.value.trim() || suggestBandName(State.data.seed);
       const genre = this.genre || GENRES[0].id;
       const whyTour = this.whyTour || WHY_TOUR_BEATS[0];
       State.data.band = { name, genre, whyTour, members: BANDMATES.map((b) => b.id) };

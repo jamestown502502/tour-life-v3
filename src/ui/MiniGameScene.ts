@@ -26,6 +26,9 @@ import { addHelpButton } from './HelpButton';
 import { addMenuButton } from './MenuButton';
 import type { MiniGameDef, MiniGameQuestion, MiniGameReward } from '../../content/schema';
 import { minigamePlayedFlag, timingRoundsForHarmony } from '../game/minigame';
+import { DEFAULT_LEDGER, resolveSplit, resolvePricing, resolvePerDiem, resolveGearCall, resolveExchange, doorTake, breakEvenTurnout, demandAt, perDiemForecast, type LedgerOutcome } from '../game/ledger';
+import { chordFrequencies, splitChord, transposeChord, QUALITY_LABELS, QUALITY_HINTS } from '../core/musicTheory';
+import { getSong } from '../game/content';
 import { makeRng } from '../core/rng';
 
 const HELP_TEXT: Record<MiniGameDef['type'], string> = {
@@ -37,6 +40,15 @@ const HELP_TEXT: Record<MiniGameDef['type'], string> = {
   pressure: 'Answer fast. Stay quiet long enough and the silence answers for you — which is also an answer.',
   interval: 'Two notes play. Pick the interval between them. You can replay it as often as you like, and every answer tells you what it actually was — getting it wrong still teaches you the sound.',
   clave: 'A rhythm plays. Pick the row of dots that matches it — filled dots are strokes. Replay it as often as you like; each answer names the pattern either way.',
+  split: 'Two deals: a flat guarantee, or a share of the door. Set how full you think the room will be, then choose. The break-even point is the number worth knowing.',
+  pricing: 'Set a price for the shirts. Cheaper sells more, dearer earns more each — the table shows how many will buy. Profit is what is left after the box was paid for.',
+  perdiem: 'Split tomorrow\'s per diem across food, a bed, and a rest stop. The forecast updates as you go. Spending nothing on something has a cost too.',
+  gearcall: 'Buy the synth, rent it per show, or pass. Compare the price to renting for every show that is left — that is the whole decision.',
+  exchange: 'Three places to change money. Each shows a rate and a fee. Work out which one actually hands you the most — the fee is part of the rate.',
+  chordquality: 'A chord plays. Say whether it is major, minor, or one of the sevenths. Replay it as often as you like; every answer names what it was.',
+  transpose: 'A chord from tonight\'s set has to move by the interval named. Pick the chord it becomes. Every answer plays both so you hear the move.',
+  meter: 'A count-in plays. Pick its time signature from the feel of the accents — three, four, or six. Replay as often as you like.',
+  tempo: 'A click plays at the crowd\'s tempo. Tap along at least five times and the game reads your BPM. Close counts.',
 };
 
 export class MiniGameScene extends Phaser.Scene {
@@ -45,6 +57,9 @@ export class MiniGameScene extends Phaser.Scene {
   private cityId!: string;
   private mg!: MiniGameDef;
   private returnPhase!: string;
+  /** QA #9 / decision D6: launched from the Hub's Practice picker. No reward, no relationship
+   *  change, no played-flag, no memory entry; returns to the Hub instead of the city. */
+  private practice = false;
   private outcomeGood = false;
   /** True only when the player aced it outright, not merely passed. Gates outroTextPerfect. */
   private outcomePerfect = false;
@@ -57,6 +72,9 @@ export class MiniGameScene extends Phaser.Scene {
   private timingHits = 0;
   private needle: Phaser.GameObjects.Arc | null = null;
   private needleTween: Phaser.Tweens.Tween | null = null;
+  /** Ledger types: applied on top of the reward in applyRewardAndReturn (never in practice). */
+  private ledgerOutcome: LedgerOutcome | null = null;
+  private tempoTaps: number[] = [];
   // sequence
   private sequenceRound = 0;
   private sequenceHits = 0;
@@ -73,9 +91,10 @@ export class MiniGameScene extends Phaser.Scene {
   private dragItemsOrder: string[] = [];
   private questionsOrder: MiniGameQuestion[] = [];
 
-  init(data: { cityId: string; minigameId: string; returnPhase: string }): void {
+  init(data: { cityId: string; minigameId: string; returnPhase: string; practice?: boolean }): void {
     this.cityId = data.cityId;
     this.returnPhase = data.returnPhase;
+    this.practice = !!data.practice;
     const city = getCity(this.cityId);
     const found = (city.minigames ?? []).find((m) => m.id === data.minigameId);
     if (!found) throw new Error(`[minigame] "${data.minigameId}" not found on city "${this.cityId}"`);
@@ -92,6 +111,8 @@ export class MiniGameScene extends Phaser.Scene {
     this.warmerCount = 0;
     this.sequenceRound = 0;
     this.sequenceHits = 0;
+    this.ledgerOutcome = null;
+    this.tempoTaps = [];
     // Seeded per minigame like every other per-run variance, so a replayed seed drills the same
     // pattern instead of a fresh random one.
     this.sequenceRng = makeRng(State.data.seed + ':sequence:' + data.minigameId);
@@ -135,13 +156,35 @@ export class MiniGameScene extends Phaser.Scene {
     return img;
   }
 
+  /** QA #16: how long this will take, derived from the def, so the intro can say so. */
+  private estimate(): { seconds: number; rounds: number } {
+    const mg = this.mg;
+    switch (mg.type) {
+      case 'timing': { const r = this.timingRoundsSec; return { seconds: r.reduce((a, b) => a + b, 0) * 1.6 + r.length * 0.6, rounds: r.length }; }
+      case 'drag': return { seconds: mg.dragTimeSec ?? 30, rounds: (mg.dragItems ?? []).length || 6 };
+      case 'choice': return { seconds: (mg.questions ?? []).length * 5, rounds: (mg.questions ?? []).length };
+      case 'pressure': return { seconds: (mg.questions ?? []).length * (mg.pressureSeconds ?? 4), rounds: (mg.questions ?? []).length };
+      case 'sequence': { const r = mg.sequenceRounds ?? [3, 4, 5]; return { seconds: r.reduce((a, b) => a + b * 0.34 * 2 + 2.2, 0), rounds: r.length }; }
+      case 'sustain': return { seconds: (mg.sustainSeconds ?? 12) * 1.4, rounds: 1 };
+      case 'interval': case 'clave': case 'chordquality': case 'transpose': case 'meter': return { seconds: (mg.theoryRounds ?? 4) * 8, rounds: mg.theoryRounds ?? 4 };
+      case 'tempo': return { seconds: (mg.theoryRounds ?? 2) * 14, rounds: mg.theoryRounds ?? 2 };
+      case 'split': case 'pricing': case 'perdiem': case 'gearcall': case 'exchange': return { seconds: 35, rounds: 1 };
+      default: return { seconds: 30, rounds: 3 };
+    }
+  }
+
   private showIntro(): void {
     this.clearContent();
-    this.card(300, 260);
+    this.card(300, 300);
     this.contentLayer.add(this.add.text(W / 2, 330, this.mg.introText, textStyle('dialogue', {
       fontSize: '24px', wordWrap: { width: W - 140 }, align: 'center', lineSpacing: 6,
     })).setOrigin(0.5, 0));
-    this.contentLayer.add(createButton(this, W / 2 - 130, 500, 260, 66, 'Start', () => this.beginGame(), { fillColor: 0x3e7c7b }));
+    const est = this.estimate();
+    const secs = Math.max(10, Math.round(est.seconds / 10) * 10);
+    const roundsLabel = est.rounds > 1 ? `${est.rounds} rounds` : 'one round';
+    this.contentLayer.add(this.add.text(W / 2, 486, `About ${secs} seconds · ${roundsLabel}${this.practice ? ' · practice, nothing at stake' : ' · no way to fail'}`,
+      textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, align: 'center', wordWrap: { width: W - 160 } })).setOrigin(0.5));
+    this.contentLayer.add(createButton(this, W / 2 - 130, 520, 260, 66, 'Start', () => this.beginGame(), { fillColor: 0x3e7c7b }));
   }
 
   private beginGame(): void {
@@ -161,6 +204,15 @@ export class MiniGameScene extends Phaser.Scene {
     else if (this.mg.type === 'sustain') this.runSustain();
     else if (this.mg.type === 'interval') this.runIntervalRound();
     else if (this.mg.type === 'clave') this.runClaveRound();
+    else if (this.mg.type === 'split') this.runSplit();
+    else if (this.mg.type === 'pricing') this.runPricing();
+    else if (this.mg.type === 'perdiem') this.runPerDiem();
+    else if (this.mg.type === 'gearcall') this.runGearCall();
+    else if (this.mg.type === 'exchange') this.runExchange();
+    else if (this.mg.type === 'chordquality') this.runChordQualityRound();
+    else if (this.mg.type === 'transpose') this.runTransposeRound();
+    else if (this.mg.type === 'meter') this.runMeterRound();
+    else if (this.mg.type === 'tempo') this.runTempoRound();
     else this.runChoiceQuestion();
   }
 
@@ -350,9 +402,12 @@ export class MiniGameScene extends Phaser.Scene {
 
   // ---- sequence: pads light in a pattern; play it back. Each round is one step longer. ----
   //
-  // Deliberately the hardest of the six: it tests MEMORY, which none of the original three asked
-  // for, and call-and-response is how bands actually check a room. Still structurally no-fail —
-  // getting it wrong ends the round, never the minigame.
+  // Deliberately the hardest of the set: it tests MEMORY, and call-and-response is how bands check
+  // a room. Still structurally no-fail. QA reported "the round starts before I've tapped the full
+  // sequence" and "the cubes didn't change": the no-fail safety timer was a TOTAL cap (8s for a
+  // 3-pad pattern) that cut a slow first-timer off mid-entry, and the only feedback per tap was the
+  // same 240ms flash the demo used. Now: an idle timer that resets on every tap, a bright ring and
+  // pop on every correct tap, and a wrong tap replays the pattern once before the round is called.
   private runSequenceRound(): void {
     const rounds = this.mg.sequenceRounds ?? [3, 4, 5];
     if (this.sequenceRound >= rounds.length) {
@@ -365,63 +420,92 @@ export class MiniGameScene extends Phaser.Scene {
     this.contentLayer.add(addTextScrim(this, W / 2, 300, 520, 96));
     const label = this.add.text(W / 2, 284, 'Watch the pattern...', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
     this.contentLayer.add(label);
-    // A second, quieter line that spells out what to DO. The help button explains the rules once;
-    // this is on screen while you play, which is where a first-timer actually needs it.
     const hint = this.add.text(W / 2, 320, `Round ${this.sequenceRound + 1} of ${rounds.length} — don't tap yet`,
       textStyle('small', { color: PALETTE_HEX.gold })).setOrigin(0.5);
     this.contentLayer.add(hint);
 
-    // 150px pads at the measured 0.5417x phone scale are ~81 CSS px — comfortably over the 44px
-    // touch floor, and bigger than the 140 they started at, because a memory game punishes a
-    // mis-tap far more harshly than a timing one does.
     const padW = 150, padH = 150, gap = 18, padY = 430;
     const startX = (W - (padW * 4 + gap * 3)) / 2;
     const colors = [PALETTE.terracotta, PALETTE.teal, PALETTE.plum, PALETTE.gold];
     const pads: Phaser.GameObjects.Rectangle[] = [];
+    const dots: Phaser.GameObjects.Arc[] = [];
     for (let i = 0; i < 4; i++) {
-      // Resting alpha 0.45 was too low to survive a painted backdrop: over Berlin's dark blue wall
-      // the terracotta and plum pads were effectively INVISIBLE until they flashed, so a memory
-      // game asked the player to tap back a sequence on buttons they could not see. Confirmed from
-      // a live screenshot showing two of the four. Opaque fill plus a cream outline so all four
-      // read at rest on any backdrop, and the flash to full brightness still reads as the cue.
       const pad = this.add.rectangle(startX + i * (padW + gap), padY, padW, padH, colors[i], 0.92)
         .setOrigin(0, 0).setStrokeStyle(3, PALETTE.cream, 0.9);
       this.contentLayer.add(pad);
       pads.push(pad);
     }
+    // Progress dots: one per step, filled as the player enters them — the "did that count?"
+    // question answered on screen.
+    for (let i = 0; i < pattern.length; i++) {
+      const d = this.add.circle(W / 2 - (pattern.length - 1) * 16 + i * 32, padY + padH + 40, 8, PALETTE.cream, 0.3);
+      this.contentLayer.add(d);
+      dots.push(d);
+    }
 
-    const flash = (i: number): void => {
-      pads[i].setAlpha(1);
+    const flash = (i: number, strong = false): void => {
+      const pad = pads[i];
+      pad.setAlpha(1).setStrokeStyle(strong ? 6 : 4, PALETTE.cream, 1);
+      this.tweens.add({ targets: pad, scaleX: 1.08, scaleY: 1.08, duration: 110, yoyo: true, ease: 'Quad.easeOut' });
+      spawnRingPulse(this, pad.x + padW / 2, pad.y + padH / 2, PALETTE.cream);
       audio.playSfx(i % 2 === 0 ? 'perfect' : 'ok');
-      this.time.delayedCall(240, () => pads[i].setAlpha(0.92));
+      this.time.delayedCall(240, () => pad.setAlpha(0.92).setStrokeStyle(3, PALETTE.cream, 0.9));
     };
     const nextRound = (): void => { this.sequenceRound++; this.runSequenceRound(); };
 
-    // 340ms per pad, down from 520. Reported as the minigames being too easy: at 520 a pattern is
-    // a slow metronome you can count along with, which tests patience rather than memory.
-    pattern.forEach((pad, i) => this.time.delayedCall(400 + i * 340, () => flash(pad)));
+    const STEP = 340;
+    let retried = false;
+    const playDemo = (then: () => void): void => {
+      for (const pad of pads) pad.disableInteractive();
+      dots.forEach((d) => d.setFillStyle(PALETTE.cream, 0.3));
+      pattern.forEach((pad, i) => this.time.delayedCall(400 + i * STEP, () => flash(pad)));
+      this.time.delayedCall(400 + pattern.length * STEP + 220, then);
+    };
 
-    this.time.delayedCall(400 + pattern.length * 340 + 220, () => {
+    const yourTurn = (): void => {
       label.setText('Your turn');
       hint.setText('Tap them back in the same order');
       let expected = 0;
       let settled = false;
+      let idle: Phaser.Time.TimerEvent | null = null;
+      // No-fail safety net: the round only ends on its own after the player has been idle — a
+      // slow player is never cut off mid-pattern.
+      const armIdle = (): void => {
+        idle?.remove();
+        idle = this.time.delayedCall(9000, () => { if (!settled) { settled = true; hint.setText('Moving on — no penalty'); this.time.delayedCall(500, nextRound); } });
+      };
+      armIdle();
       for (let i = 0; i < 4; i++) {
-        pads[i].setInteractive();
+        pads[i].setInteractive({ useHandCursor: true });
+        pads[i].removeAllListeners('pointerdown');
         pads[i].on('pointerdown', () => {
           if (settled || expected >= pattern.length) return;
-          flash(i);
+          armIdle();
           if (i !== pattern[expected]) {
-            settled = true;
-            label.setText('Not quite');
+            flash(i);
             shake(this, 3);
+            if (!retried) {
+              retried = true;
+              settled = true;
+              idle?.remove();
+              label.setText('Not that one');
+              hint.setText('Watch it once more...');
+              this.time.delayedCall(700, () => playDemo(yourTurn));
+              return;
+            }
+            settled = true;
+            idle?.remove();
+            label.setText('Not quite');
             hint.setText('No penalty — next round coming up');
             this.time.delayedCall(700, nextRound);
             return;
           }
+          flash(i, true);
+          dots[expected].setFillStyle(PALETTE.gold, 1);
           expected++;
           if (expected === pattern.length) {
             settled = true;
+            idle?.remove();
             this.sequenceHits++;
             label.setText('Got it');
             spawnPerfectSpark(this, W / 2, 430);
@@ -431,9 +515,9 @@ export class MiniGameScene extends Phaser.Scene {
           }
         });
       }
-      // No-fail safety net: the round ends on its own if the player never touches a pad.
-      this.time.delayedCall(4000 + pattern.length * 1400, () => { if (!settled) { settled = true; nextRound(); } });
-    });
+    };
+
+    playDemo(yourTurn);
   }
 
   // ---- sustain: hold two drifting faders inside a moving gold zone. ----
@@ -466,7 +550,14 @@ export class MiniGameScene extends Phaser.Scene {
       // 72px tall (was 48) with a hit area padded well beyond the visual: a drifting target that
       // must be held is far more frustrating to grab than a one-shot drag, and this was reported
       // as needing better input before anything else about it.
+      // The track itself follows a held finger: tap-and-hold anywhere on it and the fader comes to
+      // you. Reported as "tap and holding has no response" when only the fader body was draggable.
+      const track = this.add.rectangle(x, trackY, trackW, trackH, 0x000000, 0.001).setOrigin(0, 0).setInteractive();
+      this.contentLayer.add(track);
       const fader = this.add.rectangle(x, trackY + trackH / 2 - 36, trackW, 72, PALETTE.cream, 0.95).setOrigin(0, 0);
+      const follow = (p: Phaser.Input.Pointer): void => { fader.y = Phaser.Math.Clamp(p.y - 36, trackY, trackY + trackH - 72); };
+      track.on('pointerdown', follow);
+      track.on('pointermove', (p: Phaser.Input.Pointer) => { if (p.isDown) follow(p); });
       fader.setInteractive(new Phaser.Geom.Rectangle(-30, -30, trackW + 60, 72 + 60), Phaser.Geom.Rectangle.Contains);
       fader.input!.draggable = true;
       this.input.setDraggable(fader);
@@ -504,7 +595,7 @@ export class MiniGameScene extends Phaser.Scene {
   private finish(good: boolean, perfect = false): void {
     // Remembered for the return leg's social feed — the concrete callback ("they still talk about
     // that load-out") rather than a generic one about the show.
-    recordMinigame(this.cityId, good, this.mg.title);
+    if (!this.practice) recordMinigame(this.cityId, good, this.mg.title);
     this.outcomeGood = good;
     this.outcomePerfect = perfect && good;
     this.clearContent();
@@ -520,6 +611,14 @@ export class MiniGameScene extends Phaser.Scene {
   }
 
   private applyRewardAndReturn(): void {
+    if (this.practice) { goTo(this, 'Hub'); return; }
+    // Ledger money lands on top of the authored reward, and the decision is remembered for the Hub card.
+    if (this.ledgerOutcome) {
+      State.applyStatDeltas({ funds: this.ledgerOutcome.funds });
+      State.recordLedger({ cityId: this.cityId, label: this.ledgerOutcome.label, funds: this.ledgerOutcome.funds });
+    }
+    // A hosted minigame is time spent with that bandmate: it moves their arc like a scene does.
+    if (this.mg.hostBandmate) State.recordArcScene(this.mg.hostBandmate);
     const reward: MiniGameReward | undefined = !this.outcomeGood
       ? (this.mg.roughReward ?? this.mg.reward)
       : (this.outcomePerfect ? (this.mg.perfectReward ?? this.mg.reward) : this.mg.reward);
@@ -672,6 +771,277 @@ export class MiniGameScene extends Phaser.Scene {
       }, { fillColor: PALETTE.teal, fontSize: '16px' });
       this.contentLayer.add(btn);
     });
+  }
+
+
+  // =============================================================================================
+  // The Van Ledger — five money decisions with real numbers on screen. Pure logic lives in
+  // src/game/ledger.ts; these methods are only the table the numbers sit on.
+  // =============================================================================================
+
+  /** Shared frame: a sand card with a title, a subtitle, and a live line the exercise updates. */
+  private ledgerFrame(title: string, sub: string): Phaser.GameObjects.Text {
+    this.clearContent();
+    this.card(220, 760);
+    this.contentLayer.add(this.add.text(W / 2, 250, title, textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5));
+    this.contentLayer.add(this.add.text(W / 2, 286, sub, textStyle('small', { fontSize: '15px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center' })).setOrigin(0.5, 0));
+    const live = this.add.text(W / 2, 560, '', textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center', lineSpacing: 4 })).setOrigin(0.5, 0);
+    this.contentLayer.add(live);
+    return live;
+  }
+
+  /** Explain the money for a beat, then hand off to the normal three-tier outro. */
+  private settleLedger(outcome: LedgerOutcome): void {
+    this.ledgerOutcome = outcome;
+    this.clearContent();
+    this.card(300, 320);
+    this.contentLayer.add(this.add.text(W / 2, 330, 'The ledger', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5));
+    this.contentLayer.add(this.add.text(W / 2, 372, outcome.explain, textStyle('dialogue', {
+      fontSize: '20px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center', lineSpacing: 5,
+    })).setOrigin(0.5, 0));
+    if (outcome.tier === 'perfect') { spawnPerfectSpark(this, W / 2, 330); hitstop(this, 40); }
+    else if (outcome.tier === 'rough') shake(this, 3);
+    this.contentLayer.add(createButton(this, W / 2 - 130, 540, 260, 62, 'Continue', () => this.finish(outcome.tier !== 'rough', outcome.tier === 'perfect'), { fillColor: 0xd9a441 }));
+  }
+
+  private stepper(y: number, label: string, get: () => number, set: (v: number) => void, fmt: (v: number) => string, step: number, min: number, max: number, onChange: () => void): void {
+    this.contentLayer.add(this.add.text(90, y + 28, label, textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum })).setOrigin(0, 0.5));
+    const value = this.add.text(W - 250, y + 28, fmt(get()), textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.plum })).setOrigin(0.5);
+    this.contentLayer.add(value);
+    const bump = (d: number) => { set(Phaser.Math.Clamp(get() + d, min, max)); value.setText(fmt(get())); audio.playSfx('tap'); onChange(); };
+    this.contentLayer.add(createButton(this, W - 340, y, 56, 56, '−', () => bump(-step), { fillColor: PALETTE.plum, fontSize: '26px' }));
+    this.contentLayer.add(createButton(this, W - 160, y, 56, 56, '+', () => bump(step), { fillColor: PALETTE.plum, fontSize: '26px' }));
+  }
+
+  private runSplit(): void {
+    const d = { ...DEFAULT_LEDGER.split, ...(this.mg.ledger ?? {}) } as { guarantee: number; doorPct: number; ticketPrice: number; capacity: number };
+    const live = this.ledgerFrame('The deal', `The venue offers $${d.guarantee} flat, or ${d.doorPct}% of the door: ${d.capacity} seats at $${d.ticketPrice}. Rowan wants your read on the room.`);
+    const est = { v: 50 };
+    const actual = this.theoryRng.int(25, 96) / 100;
+    const update = () => {
+      const t = est.v / 100;
+      live.setText(`If the room is ${est.v}% full, the door pays $${doorTake(d, t)}.\nBreak-even is ${Math.round(breakEvenTurnout(d) * 100)}% full.`);
+    };
+    this.stepper(400, 'How full will it be?', () => est.v, (v) => { est.v = v; }, (v) => `${v}%`, 10, 10, 100, update);
+    update();
+    this.contentLayer.add(createButton(this, W / 2 - 300, 700, 290, 66, `Take the $${d.guarantee}`, () => this.settleLedger(resolveSplit(d, 'guarantee', est.v / 100, actual)), { fillColor: PALETTE.teal, fontSize: '18px' }));
+    this.contentLayer.add(createButton(this, W / 2 + 10, 700, 290, 66, 'Take the door', () => this.settleLedger(resolveSplit(d, 'door', est.v / 100, actual)), { fillColor: PALETTE.terracotta, fontSize: '18px' }));
+    this.contentLayer.add(this.add.text(W / 2, 800, 'A sure thing is worth something. So is being right about the room.', textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+  }
+
+  private runPricing(): void {
+    const d = { ...DEFAULT_LEDGER.pricing, ...(this.mg.ledger ?? {}) } as { unitCost: number; stock: number; minPrice: number; maxPrice: number };
+    const live = this.ledgerFrame('The merch table', `${d.stock} shirts in the box at $${d.unitCost} each to print. Mira wants them seen; the tour needs them paid for.`);
+    const price = { v: Math.round((d.minPrice + d.maxPrice) / 2) };
+    const update = () => {
+      const sold = demandAt(d, price.v);
+      live.setText(`At $${price.v}, about ${sold} people buy.\nThat is $${sold * price.v} in, against $${d.stock * d.unitCost} already spent on the box.`);
+    };
+    this.stepper(400, 'Price per shirt', () => price.v, (v) => { price.v = v; }, (v) => `$${v}`, 2, d.minPrice, d.maxPrice, update);
+    update();
+    this.contentLayer.add(createButton(this, W / 2 - 150, 700, 300, 66, 'Open the table', () => this.settleLedger(resolvePricing(d, price.v)), { fillColor: PALETTE.terracotta }));
+    this.contentLayer.add(this.add.text(W / 2, 800, 'Margin is price minus cost, times how many actually buy.', textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+  }
+
+  private runPerDiem(): void {
+    const d = { ...DEFAULT_LEDGER.perdiem, ...(this.mg.ledger ?? {}) } as { budget: number };
+    const live = this.ledgerFrame('Tomorrow\'s per diem', `$${d.budget} for the day. Theo would like one real meal and one real bed. Whatever is left goes back in the float.`);
+    const a = { food: 20, lodging: 20, rest: 0 };
+    const update = () => {
+      const spent = a.food + a.lodging + a.rest;
+      const f = perDiemForecast(a);
+      live.setText(`$${spent} of $${d.budget}${spent > d.budget ? ' — over budget' : `, $${d.budget - spent} back in the float`}.\nTomorrow: energy ${f.energy >= 0 ? '+' : ''}${f.energy}, harmony ${f.harmony >= 0 ? '+' : ''}${f.harmony}.`);
+    };
+    this.stepper(380, 'Food', () => a.food, (v) => { a.food = v; }, (v) => `$${v}`, 10, 0, 60, update);
+    this.stepper(446, 'A bed', () => a.lodging, (v) => { a.lodging = v; }, (v) => `$${v}`, 10, 0, 60, update);
+    this.stepper(512, 'Rest stop', () => a.rest, (v) => { a.rest = v; }, (v) => `$${v}`, 10, 0, 40, update);
+    update();
+    this.contentLayer.add(createButton(this, W / 2 - 150, 700, 300, 66, 'Set the budget', () => this.settleLedger(resolvePerDiem(d, { ...a })), { fillColor: PALETTE.teal }));
+    this.contentLayer.add(this.add.text(W / 2, 800, 'Every dollar not spent on one thing was spent on another. That is the whole idea.', textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+  }
+
+  private runGearCall(): void {
+    const d = { ...DEFAULT_LEDGER.gearcall, ...(this.mg.ledger ?? {}) } as { price: number; rentPerShow: number };
+    const showsLeft = Math.max(1, State.data.route.length - State.data.currentCityIndex);
+    const live = this.ledgerFrame('The synth', `A used synth Jun has wanted for a year. $${d.price} to buy, or $${d.rentPerShow} a night to rent. ${showsLeft} show${showsLeft === 1 ? '' : 's'} left on this tour.`);
+    live.setText(`Renting for the rest of the tour: ${showsLeft} × $${d.rentPerShow} = $${showsLeft * d.rentPerShow}.\nBuying: $${d.price}, and it comes home with you.`);
+    const mk = (y: number, label: string, choice: 'buy' | 'rent' | 'pass', color: number) =>
+      this.contentLayer.add(createButton(this, W / 2 - 220, y, 440, 62, label, () => this.settleLedger(resolveGearCall(d, showsLeft, choice)), { fillColor: color, fontSize: '19px' }));
+    mk(660, `Buy it ($${d.price})`, 'buy', PALETTE.terracotta);
+    mk(736, `Rent it ($${d.rentPerShow} a show)`, 'rent', PALETTE.teal);
+    mk(812, 'Pass — the old rig is fine', 'pass', PALETTE.plum);
+  }
+
+  private runExchange(): void {
+    const rates: { label: string; rate: number; feePct: number }[] = [...(this.mg.ledger?.rates ?? DEFAULT_LEDGER.exchange.rates)];
+    const live = this.ledgerFrame('Changing money', 'Three windows, three rates, three fees. $200 of the float needs to become local money for the week.');
+    live.setText('What you get is the rate with the fee taken off. Pick the window.');
+    rates.forEach((r, i) => {
+      this.contentLayer.add(createButton(this, W / 2 - 260, 380 + i * 90, 520, 74, `${r.label}\nrate ${r.rate.toFixed(2)} · fee ${r.feePct}%`, () => this.settleLedger(resolveExchange(rates, i)), { fillColor: i % 2 === 0 ? PALETTE.teal : PALETTE.plum, fontSize: '17px' }));
+    });
+  }
+
+  // =============================================================================================
+  // Music theory, continued — same pedagogy as interval/clave: play it, answer, name it either way.
+  // =============================================================================================
+
+  private theoryFrame(question: string, rounds: number): Phaser.GameObjects.Text {
+    this.clearContent();
+    this.contentLayer.add(addTextScrim(this, W / 2, 250, W - 60, 116));
+    this.contentLayer.add(this.add.text(W / 2, 226, question, textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
+    const hint = this.add.text(W / 2, 268, `Question ${this.theoryRound + 1} of ${rounds} - listen, then choose`,
+      textStyle('small', { color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);
+    this.contentLayer.add(hint);
+    return hint;
+  }
+
+  private playChordSymbol(symbol: string, delay = 0): void {
+    for (const f of chordFrequencies(symbol, 3)) audio.playPitch(f, 1.1, delay, 'triangle');
+  }
+
+  private theoryDone(rounds: number): boolean {
+    if (this.theoryRound >= rounds) {
+      this.finish(this.theoryHits >= Math.ceil(rounds / 2), this.theoryHits === rounds);
+      return true;
+    }
+    return false;
+  }
+
+  private runChordQualityRound(): void {
+    const rounds = this.mg.theoryRounds ?? 4;
+    if (this.theoryDone(rounds)) return;
+    const LADDER = [['', 'm'], ['', 'm', '7'], ['', 'm', '7', 'maj7'], ['m', '7', 'maj7', '']];
+    const set = LADDER[Math.min(this.theoryRound, LADDER.length - 1)];
+    const roots = ['C', 'D', 'E', 'F', 'G', 'A'];
+    const root = roots[this.theoryRng.int(0, roots.length)];
+    const answer = set[this.theoryRng.int(0, set.length)];
+    const symbol = `${root}${answer}`;
+    const hint = this.theoryFrame('What kind of chord was that?', rounds);
+    this.playChordSymbol(symbol);
+    this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, 'Hear it again', () => this.playChordSymbol(symbol), { fillColor: PALETTE.plum, fontSize: '17px' }));
+    let answered = false;
+    set.forEach((q, i) => {
+      this.contentLayer.add(createButton(this, W / 2 - 260, 410 + i * 84, 520, 70, QUALITY_LABELS[q], () => {
+        if (answered) return;
+        answered = true;
+        const right = q === answer;
+        if (right) { this.theoryHits++; spawnPerfectSpark(this, W / 2, 400); hitstop(this, 40); } else shake(this, 3);
+        hint.setText(right ? `Yes - ${QUALITY_LABELS[answer].toLowerCase()}: ${QUALITY_HINTS[answer]}.` : `That was ${QUALITY_LABELS[answer].toLowerCase()} - ${QUALITY_HINTS[answer]}.`);
+        this.playChordSymbol(symbol);
+        this.theoryRound++;
+        this.time.delayedCall(2200, () => this.runChordQualityRound());
+      }, { fillColor: PALETTE.teal, fontSize: '19px' }));
+    });
+  }
+
+  private runTransposeRound(): void {
+    const rounds = this.mg.theoryRounds ?? 4;
+    if (this.theoryDone(rounds)) return;
+    const song = getSong(getCity(this.cityId).songId);
+    const chords = song.chordProgression.split('-');
+    const from = chords[this.theoryRng.int(0, chords.length)];
+    const MOVES = [{ semis: -2, name: 'down a whole step' }, { semis: 2, name: 'up a whole step' }, { semis: -1, name: 'down a half step' }, { semis: 5, name: 'up a fourth' }, { semis: 7, name: 'up a fifth' }];
+    const move = MOVES[Math.min(this.theoryRound, MOVES.length - 1)];
+    const answer = transposeChord(from, move.semis);
+    const wrongs = [transposeChord(from, move.semis + 1), transposeChord(from, move.semis - 1), transposeChord(from, move.semis + 2)].filter((c) => c !== answer);
+    const options = this.theoryRng.shuffle([answer, wrongs[0], wrongs[1]]);
+    const hint = this.theoryFrame(`Move ${from} ${move.name}`, rounds);
+    hint.setText(`Question ${this.theoryRound + 1} of ${rounds} - Mira's voice is shot tonight; the set moves ${move.name}. Which chord does ${from} become?`);
+    this.playChordSymbol(from);
+    this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, `Hear ${from}`, () => this.playChordSymbol(from), { fillColor: PALETTE.plum, fontSize: '17px' }));
+    let answered = false;
+    options.forEach((opt, i) => {
+      this.contentLayer.add(createButton(this, W / 2 - 260, 410 + i * 84, 520, 70, opt, () => {
+        if (answered) return;
+        answered = true;
+        const right = opt === answer;
+        if (right) { this.theoryHits++; spawnPerfectSpark(this, W / 2, 400); hitstop(this, 40); } else shake(this, 3);
+        const { quality } = splitChord(from);
+        hint.setText(right ? `Yes - ${from} ${move.name} is ${answer}${quality ? ' (same quality, new root)' : ''}.` : `${from} ${move.name} is ${answer}, not ${opt}. Same shape, ${Math.abs(move.semis)} fret${Math.abs(move.semis) === 1 ? '' : 's'} over.`);
+        this.playChordSymbol(from);
+        this.playChordSymbol(answer, 0.9);
+        this.theoryRound++;
+        this.time.delayedCall(2600, () => this.runTransposeRound());
+      }, { fillColor: PALETTE.teal, fontSize: '22px' }));
+    });
+  }
+
+  private runMeterRound(): void {
+    const rounds = this.mg.theoryRounds ?? 3;
+    if (this.theoryDone(rounds)) return;
+    const METERS = [
+      { name: '4/4', beats: 4, step: 0.5, accents: [0], note: 'four even beats, the heaviest on one - almost everything on the radio' },
+      { name: '3/4', beats: 3, step: 0.5, accents: [0], note: 'ONE two three, ONE two three - a waltz, a lullaby, a slow sway' },
+      { name: '6/8', beats: 6, step: 0.25, accents: [0, 3], note: 'six quick pulses in two groups of three - a lilt, a rolling feel' },
+    ];
+    const answer = METERS[this.theoryRng.int(0, METERS.length)];
+    const play = () => {
+      for (let bar = 0; bar < 2; bar++) for (let b = 0; b < answer.beats; b++) {
+        const t = (bar * answer.beats + b) * answer.step;
+        audio.playPitch(answer.accents.includes(b) ? 1320 : 880, answer.accents.includes(b) ? 0.12 : 0.07, t, 'square');
+      }
+    };
+    const hint = this.theoryFrame('What time signature was that?', rounds);
+    hint.setText(`Question ${this.theoryRound + 1} of ${rounds} - Theo counts it in. Feel where the heavy beat lands.`);
+    play();
+    this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, 'Hear it again', play, { fillColor: PALETTE.plum, fontSize: '17px' }));
+    let answered = false;
+    METERS.forEach((m, i) => {
+      this.contentLayer.add(createButton(this, W / 2 - 260, 410 + i * 84, 520, 70, m.name, () => {
+        if (answered) return;
+        answered = true;
+        const right = m.name === answer.name;
+        if (right) { this.theoryHits++; spawnPerfectSpark(this, W / 2, 400); hitstop(this, 40); } else shake(this, 3);
+        hint.setText(right ? `Yes - ${answer.name}: ${answer.note}.` : `That was ${answer.name} - ${answer.note}.`);
+        this.theoryRound++;
+        this.time.delayedCall(2400, () => this.runMeterRound());
+      }, { fillColor: PALETTE.teal, fontSize: '24px' }));
+    });
+  }
+
+  private runTempoRound(): void {
+    const rounds = this.mg.theoryRounds ?? 2;
+    if (this.theoryDone(rounds)) return;
+    const target = getCity(this.cityId).tempo + this.theoryRng.int(-14, 15);
+    const beat = 60 / target;
+    const play = () => { for (let i = 0; i < 8; i++) audio.playPitch(i % 4 === 0 ? 1320 : 880, 0.07, i * beat, 'square'); };
+    const hint = this.theoryFrame('Find the tempo', rounds);
+    hint.setText(`Round ${this.theoryRound + 1} of ${rounds} - the crowd claps at one speed. Tap the pad along with it, at least five times.`);
+    play();
+    this.tempoTaps = [];
+    this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, 'Hear it again', play, { fillColor: PALETTE.plum, fontSize: '17px' }));
+    const pad = this.add.rectangle(W / 2, 560, 360, 240, PALETTE.terracotta, 0.95).setStrokeStyle(4, PALETTE.cream, 0.9).setInteractive({ useHandCursor: true });
+    this.contentLayer.add(pad);
+    const readout = this.add.text(W / 2, 560, 'TAP', textStyle('h1', { fontSize: '34px', color: PALETTE_HEX.cream })).setOrigin(0.5);
+    this.contentLayer.add(readout);
+    let settled = false;
+    const settle = () => {
+      if (settled) return;
+      settled = true;
+      const t = this.tempoTaps;
+      const gaps = t.slice(1).map((v, i) => v - t[i]).sort((a, b) => a - b);
+      const median = gaps.length ? gaps[Math.floor(gaps.length / 2)] : beat * 1000;
+      const bpm = Math.round(60000 / Math.max(1, median));
+      const err = Math.abs(bpm - target) / target;
+      const right = err <= 0.1;
+      if (err <= 0.04) { this.theoryHits++; spawnPerfectSpark(this, W / 2, 560); hitstop(this, 40); }
+      else if (right) { this.theoryHits++; }
+      else shake(this, 3);
+      readout.setText(`${bpm} BPM`);
+      hint.setText(right ? `Yes - you tapped ${bpm}, the crowd is at ${target}. ${err <= 0.04 ? 'Dead on.' : 'Close enough to lock in.'}` : `You tapped ${bpm}; the crowd is at ${target}. ${bpm > target ? 'Rushing' : 'Dragging'} - relax the shoulders and listen for the heavy beat.`);
+      this.theoryRound++;
+      this.time.delayedCall(2600, () => this.runTempoRound());
+    };
+    pad.on('pointerdown', () => {
+      if (settled) return;
+      this.tempoTaps.push(this.time.now);
+      audio.playSfx('tap');
+      spawnRingPulse(this, W / 2, 560, PALETTE.cream);
+      readout.setText(`${this.tempoTaps.length} / 6`);
+      if (this.tempoTaps.length >= 6) this.time.delayedCall(250, settle);
+    });
+    // No-fail: a player who never taps still moves on after a while.
+    this.time.delayedCall(20000, () => { if (!settled) { if (this.tempoTaps.length >= 2) settle(); else { settled = true; hint.setText('Moving on - no penalty'); this.theoryRound++; this.time.delayedCall(900, () => this.runTempoRound()); } } });
   }
 
 }

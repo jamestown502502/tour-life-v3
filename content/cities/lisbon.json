@@ -130,6 +130,17 @@
         "inspiration": 4
       },
       "condition": "stat.harmony>=30"
+    },
+    {
+      "id": "hire_horn",
+      "label": "Hire the horn player ($60)",
+      "description": "Inês knows a trumpet who owes her a favour. Money well spent, if you have it.",
+      "arrangementId": "full_band",
+      "effects": {
+        "inspiration": 4,
+        "funds": -60
+      },
+      "condition": "stat.funds>=560"
     }
   ],
   "songId": "sailor_lullaby",
@@ -141,8 +152,8 @@
     "condition": "stat.harmony>=30",
     "unlock": "duet"
   },
-  "afterShowSceneId": "lis_aftershow",
-  "journalSceneId": "lis_journal",
+  "afterShowSceneId": "lis_aftershow_broke",
+  "journalSceneId": "lis_journal_deal",
   "minigames": [
     {
       "id": "lis_live_radio",
@@ -294,6 +305,128 @@
         "flags": [
           "tuned_by_ear",
           "perfect_pitch_night"
+        ]
+      }
+    },
+    {
+      "id": "lis_door_deal",
+      "type": "split",
+      "title": "The Door Deal",
+      "introText": "The fado house owner names two deals and waits. Rowan leans in. \"You're better at rooms than I am. What do you think it does tonight?\"",
+      "outroText": "You call the room close and the money follows. Rowan says nothing, which from Rowan is a compliment.",
+      "outroTextRough": "The room does what rooms do and the number lands where it lands. Rowan shrugs. \"It's a night. There's another one.\"",
+      "outroTextPerfect": "You read the room almost to the head. Rowan looks at you like he has just learned something about you, and files it.",
+      "reward": {
+        "effects": {
+          "harmony": 3
+        },
+        "flags": [
+          "lisbon_deal_called"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "harmony": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 5
+        },
+        "flags": [
+          "lisbon_deal_called"
+        ]
+      },
+      "hostBandmate": "rowan",
+      "ledger": {
+        "guarantee": 300,
+        "doorPct": 70,
+        "ticketPrice": 12,
+        "capacity": 120
+      },
+      "chordProgression": "Am7-Fmaj7-Cmaj7-G6",
+      "bpm": 84,
+      "waveform": "triangle"
+    },
+    {
+      "id": "lis_chord_ear",
+      "type": "chordquality",
+      "title": "Bright or Sad",
+      "introText": "Jun sits on an amp with the guitar. \"Close your eyes. I'll play a chord and you tell me what it wants. Not the name. What it wants.\"",
+      "outroText": "You hear it more often than not. Jun nods slowly. \"That's the whole job. The rest is fingers.\"",
+      "outroTextRough": "You get the easy ones and guess the rest. Jun plays the last chord again, softer, until you hear it.",
+      "outroTextPerfect": "Every one. Jun stops playing and just looks at you. \"Okay. Okay. We should write something.\"",
+      "reward": {
+        "effects": {
+          "inspiration": 3
+        },
+        "flags": [
+          "heard_the_quality"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "inspiration": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "inspiration": 5
+        },
+        "flags": [
+          "heard_the_quality"
+        ]
+      },
+      "hostBandmate": "jun",
+      "theoryRounds": 4,
+      "chordProgression": "C-Am-F-G",
+      "bpm": 76,
+      "waveform": "sine"
+    },
+    {
+      "id": "lis_exchange",
+      "type": "exchange",
+      "title": "Changing Money",
+      "introText": "Three windows, three signs, one float. Theo hands you the envelope. \"Whatever you do, read the small print.\"",
+      "outroText": "You read the fee before the rate and come away with a fair week's money.",
+      "outroTextRough": "The window with the best-looking rate quietly keeps a slice. You notice on the receipt, after.",
+      "outroTextPerfect": "You find the best window without a second thought. Theo takes the envelope back a little heavier.",
+      "reward": {
+        "effects": {
+          "harmony": 2
+        },
+        "flags": [
+          "read_the_fee"
+        ]
+      },
+      "roughReward": {
+        "effects": {}
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 4
+        },
+        "flags": [
+          "read_the_fee"
+        ]
+      },
+      "ledger": {
+        "rates": [
+          {
+            "label": "Airport kiosk",
+            "rate": 1.02,
+            "feePct": 9
+          },
+          {
+            "label": "Street ATM",
+            "rate": 0.98,
+            "feePct": 2.5
+          },
+          {
+            "label": "The bar's back office",
+            "rate": 1.05,
+            "feePct": 9.5
+          }
         ]
       }
     }
@@ -1084,6 +1217,35 @@
       "portrait": "tired",
       "text": "She does not look over. \"Still waiting on that, mostly. It is fine. It is a long career, supposedly.\"",
       "id": "lis_arc_mira_b_cool"
+    },
+    "lis_journal_fee": {
+      "id": "lis_journal_fee",
+      "speaker": "narrator",
+      "text": "You write: the fee is part of the rate. Theo said it like a proverb. I think it is one now.",
+      "condition": "flag:read_the_fee",
+      "fallback": "lis_journal"
+    },
+    "lis_journal_chord": {
+      "id": "lis_journal_chord",
+      "speaker": "narrator",
+      "text": "You write: Jun made me hear the difference between bright and sad tonight. It was always there. I just never had to name it before.",
+      "condition": "flag:heard_the_quality",
+      "fallback": "lis_journal_fee"
+    },
+    "lis_journal_deal": {
+      "id": "lis_journal_deal",
+      "speaker": "narrator",
+      "text": "You write: Rowan asked what I thought the room would do, and then did what I said. That is a kind of trust I did not know we had yet.",
+      "condition": "flag:lisbon_deal_called",
+      "fallback": "lis_journal_chord"
+    },
+    "lis_aftershow_broke": {
+      "id": "lis_aftershow_broke",
+      "speaker": "narrator",
+      "text": "Dinner is petrol-station sandwiches in the van, split four ways. Nobody says the word broke. Theo does the sum on a napkin and folds it away.",
+      "condition": "stat.funds<=430",
+      "fallback": "lis_aftershow",
+      "next": "lis_aftershow"
     }
   }
 }

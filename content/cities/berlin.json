@@ -127,6 +127,17 @@
         "inspiration": 4
       },
       "condition": "relationship.jun>=35"
+    },
+    {
+      "id": "book_modular",
+      "label": "Book the modular rig ($60)",
+      "description": "Lene's modular wall, patched for one night. Sixty dollars and a very long soundcheck.",
+      "arrangementId": "modular_trade",
+      "effects": {
+        "inspiration": 4,
+        "funds": -60
+      },
+      "condition": "stat.funds>=560"
     }
   ],
   "songId": "kreuzberg_static",
@@ -138,8 +149,8 @@
     "condition": "relationship.jun>=35",
     "unlock": "modular_trade"
   },
-  "afterShowSceneId": "ber_aftershow",
-  "journalSceneId": "ber_journal",
+  "afterShowSceneId": "ber_aftershow_broke",
+  "journalSceneId": "ber_journal_synth",
   "minigames": [
     {
       "id": "ber_modular_check",
@@ -204,6 +215,78 @@
       ],
       "outroTextPerfect": "\"That's the tightest level check I've run all month,\" the engineer says, and writes nothing down.",
       "timingZoneW": 96
+    },
+    {
+      "id": "ber_synth_call",
+      "type": "gearcall",
+      "title": "The Synth",
+      "introText": "A used synth in a Kreuzberg window that Jun has wanted for a year. Buy it, rent one per show, or walk past. Jun is pretending not to look.",
+      "outroText": "You make the cheaper of the two ways to have it on stage. Jun plays it like a first kiss.",
+      "outroTextRough": "You walk past. Jun says the old rig is fine. Jun says it twice.",
+      "outroTextPerfect": "You do the sum out loud and it comes out right. Jun looks at you, then at the synth, then buys you a coffee.",
+      "reward": {
+        "effects": {
+          "inspiration": 4
+        },
+        "flags": [
+          "synth_decision_made"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "inspiration": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "inspiration": 6
+        },
+        "flags": [
+          "synth_decision_made"
+        ]
+      },
+      "hostBandmate": "jun",
+      "ledger": {
+        "price": 240,
+        "rentPerShow": 45
+      },
+      "chordProgression": "Em-C-G-D",
+      "bpm": 120,
+      "waveform": "square"
+    },
+    {
+      "id": "ber_transpose",
+      "type": "transpose",
+      "title": "Down a Step",
+      "introText": "Mira's voice is shot. \"Take the set down for me,\" she says. \"Every chord. On the fly.\" Jun hands you the chart.",
+      "outroText": "You move most of it in your head and Jun catches the rest. Mira sings it like nothing happened.",
+      "outroTextRough": "You move a few and guess a few. Jun quietly corrects the chart in pencil during the second song.",
+      "outroTextPerfect": "Every chord, the right chord, without looking down. Mira sings the whole set, and after, she does not thank you. She just takes your hand.",
+      "reward": {
+        "effects": {
+          "harmony": 3,
+          "inspiration": 2
+        },
+        "flags": [
+          "transposed_on_the_fly"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "harmony": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 5,
+          "inspiration": 4
+        },
+        "flags": [
+          "transposed_on_the_fly"
+        ]
+      },
+      "hostBandmate": "mira",
+      "theoryRounds": 4
     }
   ],
   "scenes": {
@@ -923,6 +1006,28 @@
       "portrait": "wistful",
       "text": "\"Anyway,\" he says, and picks the sticks back up before anyone has to answer. \"Not tonight. Obviously not tonight.\"",
       "id": "ber_arc_theo_b_cool"
+    },
+    "ber_journal_transpose": {
+      "id": "ber_journal_transpose",
+      "speaker": "narrator",
+      "text": "You write: Mira lost her voice and I moved the set for her, chord by chord. Same shapes, different frets. Same song, different night.",
+      "condition": "flag:transposed_on_the_fly",
+      "fallback": "ber_journal"
+    },
+    "ber_journal_synth": {
+      "id": "ber_journal_synth",
+      "speaker": "narrator",
+      "text": "You write: buy or rent is just a sum. I did the sum out loud and Jun heard it, and I think that mattered more than the answer.",
+      "condition": "flag:synth_decision_made",
+      "fallback": "ber_journal_transpose"
+    },
+    "ber_aftershow_broke": {
+      "id": "ber_aftershow_broke",
+      "speaker": "narrator",
+      "text": "The club owner slides four beers across without asking for money. Nobody argues. Rowan writes it in the ledger anyway, under gifts.",
+      "condition": "stat.funds<=430",
+      "fallback": "ber_aftershow",
+      "next": "ber_aftershow"
     }
   }
 }

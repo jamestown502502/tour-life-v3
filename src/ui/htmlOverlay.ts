@@ -25,7 +25,10 @@ export function createFloatingInput(
     position: 'fixed', zIndex: '1000', textAlign: 'center', borderRadius: '8px',
     border: 'none', padding: '6px', boxSizing: 'border-box' as const,
   });
+  el.style.touchAction = 'manipulation';
   document.body.appendChild(el);
+  // Belt and braces for the same iOS behaviour: snap the visual viewport back when the keyboard closes.
+  el.addEventListener('blur', () => { try { window.scrollTo(0, 0); } catch { /* ignore */ } });
 
   const reposition = () => {
     const canvas = document.querySelector('canvas');
@@ -39,7 +42,10 @@ export function createFloatingInput(
     el.style.top = `${rect.top + gameY * scaleY - hPx / 2}px`;
     el.style.width = `${wPx}px`;
     el.style.height = `${hPx}px`;
-    el.style.fontSize = `${16 * scaleY}px`;
+    // Never under 16px: iOS Safari zooms the whole page into any focused input smaller than that,
+    // and the zoom does not fully undo on blur — reported as the welcome screen being stuck
+    // half-scrolled. 16px is the documented threshold.
+    el.style.fontSize = `${Math.max(16, 16 * scaleY)}px`;
   };
 
   reposition();

@@ -35,15 +35,18 @@ export async function skipFirstTimeOnboarding(page: Page): Promise<void> {
 /** The Phaser scene keys currently active (started, not necessarily visible — e.g. a paused
  *  scene under a launched Settings overlay is still "active" in Phaser's terms; use
  *  getVisibleSceneKeys for what's actually on screen). */
+// 'Transition' (src/ui/TransitionScene.ts) is a permanent overlay scene launched at boot and never
+// stopped — it is never "the screen", so both helpers leave it out.
 export async function getActiveSceneKeys(page: Page): Promise<string[]> {
-  return page.evaluate(() => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key));
+  return page.evaluate(() => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).filter((k: string) => k !== 'Transition'));
 }
 
 export async function getVisibleSceneKeys(page: Page): Promise<string[]> {
   return page.evaluate(() =>
     (window as any).__game.scene.getScenes(true)
       .filter((s: any) => s.scene.settings.visible !== false)
-      .map((s: any) => s.scene.key));
+      .map((s: any) => s.scene.key)
+      .filter((k: string) => k !== 'Transition'));
 }
 
 /** Polls (rather than a fixed sleep) until `key` is among the active scenes, or the timeout

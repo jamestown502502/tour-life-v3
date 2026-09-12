@@ -1536,3 +1536,78 @@ short:
 - A 5th+ city is now the only thing standing between this game and the `Ambitious` ending tag
   (§7.3) actually being reachable — worth asking directly whether that's worth doing for its own
   sake, independent of the broader "how many cities should this game have" question §7.2 poses.
+
+---
+
+## 18. QA-response pass — 16 fixes, themed transitions (safely), the Van Ledger, new theory games (2026-09-12)
+
+Triggered by an external Fiverr QA report (16 issues; Windows Chrome, iPhone 15, OnePlus 9R).
+Row-by-row causes and fixes: `C:\Users\Jbthi\Claude Cowork\BAIS_TwoGame_FixPolishExpand_Plan_2026-09-12.md`
+§3, evidence in `BAIS_TourLife_BeforeAfter_QAPass_2026-09-12.md`, tester-facing comments in
+`BAIS_TourLife_IssueReport_DevComments_2026-09-12.xlsx`.
+
+### 18.1 Fixes worth knowing the shape of
+- **Hold notes (QA #3):** `RhythmScene` tracks `laneDown` (finger or key). `update()` starts a hold
+  the moment a hold note enters the ok-window on a lane that is already pressed — a press that
+  began early used to do nothing because holds only started on the down edge. The sustain
+  minigame's tracks also follow a held finger anywhere on the track.
+- **Sequence minigame (QA #2, #4):** the total-time no-fail cap (8 s for 3 pads) is now an idle
+  timer that resets per tap; every lit or tapped pad pulses, rings, and scales; progress dots
+  show the count; the first wrong tap replays the pattern, the second ends the round.
+- **iOS "cannot scroll the welcome screen" (QA #10):** `htmlOverlay.ts` inputs were under 16 px
+  on phones, which makes iOS Safari zoom into a focused input and not fully undo it. Minimum
+  16 px now, plus `scrollTo(0,0)` on blur. Verify on a real iPhone — this is the diagnosis, not
+  a device repro.
+- **Desktop text (QA #8):** `textStyles.ts` `UI_SCALE` = 1.15 on viewports ≥ 900 px tall with a
+  fine pointer; applies to `small`/`stat`/`body` tiers only. Phones unchanged.
+- **Band name (QA #1, decision D1):** pre-filled from the seed (`src/game/bandName.ts`); never
+  blocked. Back button on BandCreator (top-right; the menu gear owns top-left).
+- Scrapbook dynamic text wraps and stacks (QA #11, #15); epilogue panel sized to its text with a
+  scroll mask when needed (QA #5); gallery Close (QA #6); souvenir list from "+N more" (QA #7);
+  How to Play "Previous" + Close (QA #14); minigame intros show a duration estimate (QA #16);
+  consistent Scrapbook button sizes (QA #13); Practice mode from the Hub (QA #9, decision D6).
+
+### 18.2 Themed transitions, the safe way (`src/ui/TransitionScene.ts`)
+The 2026-09-06 stabilization revert (see the comment atop `transition.ts`) removed themed
+transitions because overlays owned by the OUTGOING scene raced their own tweens on shutdown, and
+an interactive blocker could leak and eat every tap. The re-implementation removes both root
+causes rather than guarding them:
+- One persistent `Transition` scene, launched by BootScene, always on top. It OWNS every overlay,
+  so no gameplay scene's shutdown can destroy a tween target.
+- Nothing in it is ever interactive. Input on the outgoing scene is disabled via the plugin flag
+  (`scene.input.enabled = false`, restored on SHUTDOWN) for the cover half — a flag, not an object.
+- No `delayedCall`; the tweens' own `onComplete` drives the switch (`goTo(..., { theme, label })`
+  calls `scene.start` at full cover) and the reveal.
+- Reduced motion, or any doubt (scene missing, mid-play), falls back to the plain fade that has
+  never failed.
+Themes by edge: Hub→Van `drive`, Van→City `ticket`, City→MiniGame `card`, City→Rhythm `lights`,
+Rhythm→Results `vinyl`, City→Hub and Hub→Scrapbook `pages`. `e2e/themed-transitions.spec.ts`
+plays every theme, asserts zero children left and zero interactive objects ever, double-taps a
+themed edge (exactly one scene start), and checks reduced motion skips the layer.
+
+### 18.3 The Van Ledger (`src/game/ledger.ts`, pure; UI in MiniGameScene)
+Five financial-literacy minigames, each hosted by a bandmate: `split` (Rowan: guarantee vs door,
+with the break-even turnout on screen), `pricing` (Mira: merch table, demand curve, margin),
+`perdiem` (Theo: food/bed/rest with a live forecast), `gearcall` (Jun: buy vs rent over shows
+left), `exchange` (three windows; the fee is part of the rate). All three-tier no-fail; funds
+deltas are scaled to a tenth of the dollars shown. Outcomes are recorded to `State.data.ledger`
+(additive) and shown on the Hub as a ledger card. `src/tests/ledger.test.ts` covers every rule.
+
+### 18.4 Theory games
+`chordquality`, `transpose` (uses the city's own song chords via `transposeChord`), `meter`,
+`tempo` (city tempo ± seed, BPM read from the median tap gap). Same hear-it/answer/name-it
+pedagogy as `interval`/`clave`.
+
+### 18.5 Unique playthroughs and story hooks
+- `hostBandmate` on a MiniGameDef; `offeredMinigames(list, seed, cityId)` offers every non-hosted
+  minigame plus TWO hosted ones per city per seed (`src/game/minigame.ts`). Playing a hosted
+  minigame credits that bandmate's arc (`arcScenesPlayed`), so it moves their stage like a scene.
+- Every new reward flag is consumed by a gated journal node (drift guard `minigameImpact.test`
+  stays green). Each city gained a funds-gated pre-show choice (`stat.funds>=560`, costs 60) and
+  a low-funds after-show beat (`stat.funds<=430`).
+- Content totals now: 20 minigames across 15 types; Lisbon 7, Tokyo 5, Mexico City 6, Berlin 4.
+
+### 18.6 Evidence
+Typecheck clean. Vitest 238/238 (29 files). Playwright: see the before/after doc for the run
+this shipped with. `git checkout -- docs/polish-before-after/` after any e2e run: some specs
+regenerate those PNGs and they should not be committed as noise.
