@@ -1608,6 +1608,9 @@ pedagogy as `interval`/`clave`.
 - Content totals now: 20 minigames across 15 types; Lisbon 7, Tokyo 5, Mexico City 6, Berlin 4.
 
 ### 18.6 Evidence
-Typecheck clean. Vitest 238/238 (29 files). Playwright: see the before/after doc for the run
-this shipped with. `git checkout -- docs/polish-before-after/` after any e2e run: some specs
+Typecheck clean. Vitest 238/238 (29 files). Playwright: CI run `34720950967` on commit
+`220de1f` is GREEN — 364 e2e across the full 4-device matrix plus 4 dist-smoke, in 1h4m36s.
+Worth noting against §12's open items: the hold-rail timing flake that kept earlier runs at
+160/164 did not recur, which is consistent with the armed-hold fix in §18.1 removing the
+press-timing margin that test was fighting. `git checkout -- docs/polish-before-after/` after any e2e run: some specs
 regenerate those PNGs and they should not be committed as noise.
