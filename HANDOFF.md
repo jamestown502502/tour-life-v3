@@ -75,6 +75,30 @@ touch the art system, keep this split — don't "finish the job" by asset-ifying
 
 ---
 
+## 0a. Resubmission update (2026-09-27) — read before touching minigames, art, or the page shell
+
+- **Minigame selection** is seeded per slot (`minigameForSlot` in `src/game/minigame.ts`): each
+  stop has a *band* slot (bandmate-hosted, leaning to whichever of money/music the run has seen
+  less) and a *craft* slot. Authored order is no longer used. `src/tests/minigameSlots.test.ts`
+  simulates 500 seeds: every minigame reachable, every run 4+ bandmate games with 1+ money and
+  1+ music, no repeats, no minigame in >75% of runs. 30 minigames, 17 types, 16 hosted.
+- **Every decision/theory minigame has an idle timer** (no-fail rule). New types must too.
+- **Return visits** use `bg_city_<id>_return` / `bg_rhythm_<id>_return` when loaded
+  (`ensureCityBackground` / `ensureRhythmStageBackdrop` take `visit`). Rhythm passes `visit` to
+  Results because `recordShow()` runs first.
+- **Background art** lives in `public/assets/img/later/`, indexed by `manifest-later.json`
+  (built by `scripts/rebuild-manifest.mjs`), loaded after the title by
+  `BootScene.loadImagesInBackground`. Phaser advances a loader queue only on its owning scene's
+  UPDATE, and Boot stops, so that loader is pumped from `game.events` STEP. Keys still downloading
+  are "pending"; `ensureMiniGameBackdrop` draws its placeholder under a separate key meanwhile.
+- **All art is 720x1280 max** (the canvas backing size at any DPR; measured). 1440x2560 decoded
+  to ~760 MB and crashed the iPhone test profile. `scripts/process-bg.sh` now outputs 720x1280 and
+  `src/tests/laterArt.test.ts` enforces size and a 256 MB total budget.
+- **`#app` is pinned to the safe area** with `env()` offsets and NO padding: Phaser FIT measures
+  its parent including padding, so padding let the canvas run under the notch.
+- e2e: `e2e/return-art-and-viewport.spec.ts`. The full local suite is very slow on this machine;
+  CI runs the same four-profile config on Linux and is the full-suite gate.
+
 ## 1. How to run, test, and deploy
 
 ```bash
