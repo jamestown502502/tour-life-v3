@@ -95,6 +95,8 @@ export class RhythmScene extends Phaser.Scene {
   private metronomeEvent: Phaser.Time.TimerEvent | null = null;
   private ctx!: PerformanceContext;
   private activeHolds = new Map<number, NoteState>();
+  /** Which visit to this city tonight is (0 first, 1 return), fixed at create(). */
+  private visit = 0;
   /** Lanes currently pressed (finger or key). QA #3: press-and-hold that started a little early
    *  used to do nothing at all — attemptHit only fires on the down edge, so a held finger never
    *  met the hold note. update() now arms the hold the moment the note enters the window. */
@@ -163,7 +165,8 @@ export class RhythmScene extends Phaser.Scene {
     // real bg_rhythm_<cityId> asset exists (generated with a deliberately dark/low-contrast
     // middle third so notes and judgement text stay legible over it); falls back to the
     // original flat night rect otherwise — same graceful seam every other background uses.
-    const stageBgKey = ensureRhythmStageBackdrop(this, city.id);
+    this.visit = visit;
+    const stageBgKey = ensureRhythmStageBackdrop(this, city.id, visit);
     addCoverBackground(this, stageBgKey);
     if (hasRealAsset(stageBgKey)) this.veilStageBackdrop();
     const tex = ensureLaneTextures(this, LANE_W);
@@ -758,6 +761,8 @@ export class RhythmScene extends Phaser.Scene {
     // the town's reaction to THIS show is what the social feed is built from.
     recordShow(this.cityId, showBandFor(result.grade), State.data.localLove[this.cityId] ?? 0);
     saveRun(State.data);
-    goTo(this, 'Results', { cityId: this.cityId, result }, { theme: 'vinyl', label: 'That was the show' });
+    // recordShow() above has already marked this city's first show, so Results cannot re-derive
+    // which visit this was — a first visit would read as a return. Hand it over explicitly.
+    goTo(this, 'Results', { cityId: this.cityId, result, visit: this.visit }, { theme: 'vinyl', label: 'That was the show' });
   }
 }

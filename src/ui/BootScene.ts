@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { SONGS } from '../game/content';
 import { PALETTE, PALETTE_HEX, W } from '../const';
-import { assetBaseUrl, fetchManifest, markRealAsset, markTitleThemeLoaded } from '../core/assets';
+import { LATER_MANIFEST_PATH, assetBaseUrl, fetchManifest, markPending, markRealAsset, markTitleThemeLoaded, settlePending } from '../core/assets';
 import { textStyle } from './textStyles';
 
 /** Loads real painted assets (if any) into the texture manager, then hands off to Title.
@@ -49,6 +49,7 @@ export class BootScene extends Phaser.Scene {
     this.load.once(Phaser.Loader.Events.COMPLETE, () => {
       this.setProgress(1);
       this.loadAudioInBackground();
+      void this.loadImagesInBackground();
       // The themed-transition overlay scene lives for the whole session, above everything.
       this.scene.launch('Transition');
       this.scene.start('Title');
@@ -84,6 +85,36 @@ export class BootScene extends Phaser.Scene {
     }
     loader.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => {
       console.warn(`[audio] backing track "${file.key}" failed — that song plays procedurally`);
+    });
+    loader.start();
+  }
+
+  /** Same idea as loadAudioInBackground, for images: return-visit scenes and newer minigame
+   *  backdrops, fetched after the title screen is up. Every scene that uses one falls back to
+   *  existing art until it arrives, so nothing ever waits on this. */
+  private async loadImagesInBackground(): Promise<void> {
+    const entries = await fetchManifest(LATER_MANIFEST_PATH);
+    if (entries.length === 0) return;
+    const loader = new Phaser.Loader.LoaderPlugin(this);
+    loader.maxParallelDownloads = 4; // a trickle, so it never competes with play
+    let queued = 0;
+    for (const entry of entries) {
+      if (this.textures.exists(entry.key)) continue;
+      markPending(entry.key);
+      loader.image(entry.key, `${assetBaseUrl()}assets/${entry.file}`);
+      queued++;
+    }
+    if (queued === 0) return;
+    // Phaser only pulls the next queued file on its OWNING scene's UPDATE event. This loader belongs
+    // to Boot, which stops the moment the title opens, so without this it loaded the first batch
+    // of four and then waited forever. The game-wide step event runs whatever scenes are up.
+    const pump = (): void => loader.update();
+    this.game.events.on(Phaser.Core.Events.STEP, pump);
+    loader.once(Phaser.Loader.Events.COMPLETE, () => this.game.events.off(Phaser.Core.Events.STEP, pump));
+    loader.on(Phaser.Loader.Events.FILE_COMPLETE, (key: string) => { settlePending(key); markRealAsset(key); });
+    loader.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => {
+      settlePending(file.key);
+      console.warn(`[assets] background image "${file.key}" failed — existing art stays in place`);
     });
     loader.start();
   }

@@ -1,5 +1,6 @@
 // All visuals are code-drawn: Phaser Graphics + generateTexture(). No image files.
 import Phaser from 'phaser';
+import { hasRealAsset, isPending } from '../core/assets';
 import { H, PALETTE, UI_RADIUS, W } from '../const';
 import { CITY_TINTS, NIGHT_TINTS } from './palette';
 import type { BandmateId } from '../../content/schema';
@@ -150,7 +151,17 @@ export function ensureTitleBackground(scene: Phaser.Scene): string {
   return key;
 }
 
-export function ensureCityBackground(scene: Phaser.Scene, cityId: string, tint: string): string {
+/** A return visit gets its own painted scene when one has arrived: same city, a different hour and
+ *  weather, so the town reads as familiar but changed. If it has not loaded yet (it is background
+ *  art) or does not exist, the first-visit art is used — never a blank. */
+function returnVariant(scene: Phaser.Scene, baseKey: string, visit: number): string | null {
+  const key = `${baseKey}_return`;
+  return visit >= 1 && hasRealAsset(key) && scene.textures.exists(key) ? key : null;
+}
+
+export function ensureCityBackground(scene: Phaser.Scene, cityId: string, tint: string, visit = 0): string {
+  const again = returnVariant(scene, `bg_city_${cityId}`, visit);
+  if (again) return again;
   const key = `bg_city_${cityId}`;
   withGraphics(scene, W, H, (g) => {
     const tintColor = CITY_TINTS[tint] ?? CITY_TINTS.warm_amber;
@@ -170,7 +181,9 @@ export function ensureCityBackground(scene: Phaser.Scene, cityId: string, tint: 
  *  simply never called. Falls back to the original flat night rectangle (RhythmScene's look
  *  before this pass) rather than inventing a new code-drawn stage scene, since the lanes/notes
  *  themselves are already the whole visual focus in that fallback case. */
-export function ensureRhythmStageBackdrop(scene: Phaser.Scene, cityId: string): string {
+export function ensureRhythmStageBackdrop(scene: Phaser.Scene, cityId: string, visit = 0): string {
+  const again = returnVariant(scene, `bg_rhythm_${cityId}`, visit);
+  if (again) return again;
   const key = `bg_rhythm_${cityId}`;
   withGraphics(scene, W, H, (g) => {
     g.fillStyle(PALETTE.night, 1);
@@ -184,7 +197,8 @@ export function ensureRhythmStageBackdrop(scene: Phaser.Scene, cityId: string): 
  *  image under `bg_mini_<id>` and this function is simply never called. A soft gradient +
  *  a few scattered warm motes reads as "somewhere backstage," not a placeholder. */
 export function ensureMiniGameBackdrop(scene: Phaser.Scene, id: string, tint: number): string {
-  const key = `bg_mini_${id}`;
+  // Still downloading: draw the placeholder under its own key so the real art can still land.
+  const key = isPending(`bg_mini_${id}`) ? `bg_mini_${id}__pending` : `bg_mini_${id}`;
   withGraphics(scene, W, H, (g) => {
     fillVerticalGradient(g, 0, 0, W, H, PALETTE.night, tint, 1, 20);
     let seed = id.length * 97 + 13;

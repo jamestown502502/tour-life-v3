@@ -67,27 +67,28 @@ test.describe('No barren screens', () => {
       // THE KEY ALONE PROVES NOTHING. ensureSceneBackdrop GENERATES a code-drawn texture under the
       // same key when the painted file is absent, so "the key exists" is true either way — the
       // first version of this test asserted exactly that and passed while production was rendering
-      // flat gradient fallbacks on five screens. The painted assets are 1440x2560; every
-      // code-drawn fallback is generated at the 720x1280 canvas size. Source width is what
-      // actually distinguishes them.
+      // flat gradient fallbacks on five screens. A painted asset's source is a loaded <img>; a
+      // code-drawn fallback's source is a generated <canvas>. (This used to compare widths, 1440 vs
+      // 720, until the art was resized to the 720x1280 canvas on 2026-09-27 to cut GPU memory.)
       const found = await page.evaluate(({ key, expectKey }) => {
         const s: any = (window as any).__game.scene.getScene(key);
         const covers = (s?.children?.list ?? []).filter((o: any) =>
           o.type === 'Image' && o.displayWidth >= 700 && o.displayHeight >= 1200);
         const match = covers.find((o: any) => o.texture?.key === expectKey);
         const sourceW = match?.texture?.source?.[0]?.width ?? 0;
+        const sourceTag = match?.texture?.source?.[0]?.image?.tagName ?? '';
         return {
           keys: covers.map((o: any) => o.texture?.key),
           hasExpected: !!match,
           sourceW,
-          isPainted: sourceW > 720,
+          isPainted: sourceTag === 'IMG',
           count: covers.length,
         };
       }, { key: scene.key, expectKey: scene.expectKey });
 
       console.log(`[barren] ${scene.key}: ${JSON.stringify(found)}`);
       if (!found.hasExpected) bare.push(`${scene.key}: expected ${scene.expectKey}, saw ${found.keys.join(',') || 'nothing'}`);
-      else if (!found.isPainted) bare.push(`${scene.key}: rendering the CODE-DRAWN FALLBACK for ${scene.expectKey} (source ${found.sourceW}px wide, painted assets are 1440)`);
+      else if (!found.isPainted) bare.push(`${scene.key}: rendering the CODE-DRAWN FALLBACK for ${scene.expectKey} (source is a generated canvas, not a loaded image)`);
       await page.screenshot({ path: `docs/polish-before-after/scene-${scene.key.toLowerCase()}.png` });
     }
 
