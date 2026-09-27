@@ -150,7 +150,7 @@
     "unlock": "modular_trade"
   },
   "afterShowSceneId": "ber_aftershow_broke",
-  "journalSceneId": "ber_journal_synth",
+  "journalSceneId": "ber_journal_beat",
   "minigames": [
     {
       "id": "ber_modular_check",
@@ -230,11 +230,17 @@
         },
         "flags": [
           "synth_decision_made"
-        ]
+        ],
+        "relationshipEffects": {
+          "jun": 3
+        }
       },
       "roughReward": {
         "effects": {
           "inspiration": 1
+        },
+        "relationshipEffects": {
+          "jun": 1
         }
       },
       "perfectReward": {
@@ -243,7 +249,10 @@
         },
         "flags": [
           "synth_decision_made"
-        ]
+        ],
+        "relationshipEffects": {
+          "jun": 5
+        }
       },
       "hostBandmate": "jun",
       "ledger": {
@@ -269,11 +278,17 @@
         },
         "flags": [
           "transposed_on_the_fly"
-        ]
+        ],
+        "relationshipEffects": {
+          "mira": 3
+        }
       },
       "roughReward": {
         "effects": {
           "harmony": 1
+        },
+        "relationshipEffects": {
+          "mira": 1
         }
       },
       "perfectReward": {
@@ -283,10 +298,109 @@
         },
         "flags": [
           "transposed_on_the_fly"
-        ]
+        ],
+        "relationshipEffects": {
+          "mira": 5
+        }
       },
       "hostBandmate": "mira",
       "theoryRounds": 4
+    },
+    {
+      "id": "ber_beatmatch",
+      "type": "tempo",
+      "hostBandmate": "rowan",
+      "title": "Beatmatch",
+      "introText": "The DJ before you never stops. There is no gap to walk into. Rowan plugs in and waits for the kick. \"Tell me the tempo.\"",
+      "outroText": "Rowan comes in close to the kick and the floor barely notices the join.",
+      "outroTextRough": "The join is audible for a bar. Rowan pulls it back by feel and the room forgives it.",
+      "outroTextPerfect": "Rowan comes in on the kick exactly. Nobody on the floor can say when the DJ stopped.",
+      "reward": {
+        "effects": {
+          "inspiration": 2,
+          "harmony": 1
+        },
+        "relationshipEffects": {
+          "rowan": 3
+        },
+        "flags": [
+          "beatmatched"
+        ]
+      },
+      "roughReward": {
+        "effects": {},
+        "relationshipEffects": {
+          "rowan": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "inspiration": 4,
+          "harmony": 3
+        },
+        "relationshipEffects": {
+          "rowan": 5
+        },
+        "flags": [
+          "beatmatched"
+        ]
+      },
+      "theoryRounds": 2,
+      "copy": {
+        "setup": "Round {round} of {rounds} - The DJ is still playing. Tap along with the kick, at least five times."
+      }
+    },
+    {
+      "id": "ber_night_budget",
+      "type": "perdiem",
+      "hostBandmate": "theo",
+      "title": "The Late-Night Budget",
+      "introText": "Berlin shows start at midnight and end at breakfast. Theo counts out the per diem on the club bar. \"Food, a couch that is not the van, and sleep. Pick.\"",
+      "outroText": "Everyone eats, everyone sleeps somewhere soft, and there is money left over.",
+      "outroTextRough": "Someone goes without something. Theo says it is fine. It is not quite fine.",
+      "outroTextPerfect": "Food, a couch, a lie-in, and change in the envelope. Theo checks it twice.",
+      "reward": {
+        "effects": {
+          "energy": 3
+        },
+        "relationshipEffects": {
+          "theo": 3
+        },
+        "flags": [
+          "berlin_night_budgeted"
+        ]
+      },
+      "roughReward": {
+        "effects": {},
+        "relationshipEffects": {
+          "theo": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "energy": 5
+        },
+        "relationshipEffects": {
+          "theo": 5
+        },
+        "flags": [
+          "berlin_night_budgeted"
+        ]
+      },
+      "ledger": {
+        "budget": 60
+      },
+      "copy": {
+        "heading": "The late-night budget",
+        "setup": "${budget} to get four people through a night that starts at midnight. Theo wants food and a couch that is not the van.",
+        "labels": [
+          "Food",
+          "A couch",
+          "Sleep in"
+        ],
+        "overBudgetLine": "That's ${over} over the ${budget}. Jun covers it and writes it in the ledger in pencil.",
+        "tip": "Every dollar not spent on one thing was spent on another."
+      }
     }
   ],
   "scenes": {
@@ -1028,6 +1142,20 @@
       "condition": "stat.funds<=430",
       "fallback": "ber_aftershow",
       "next": "ber_aftershow"
+    },
+    "ber_journal_budget": {
+      "id": "ber_journal_budget",
+      "speaker": "narrator",
+      "text": "You write: Theo budgeted a Berlin night like it was a tour. We ate, we slept, and there was money left. I did not think that was possible here.",
+      "condition": "flag:berlin_night_budgeted",
+      "fallback": "ber_journal_synth"
+    },
+    "ber_journal_beat": {
+      "id": "ber_journal_beat",
+      "speaker": "narrator",
+      "text": "You write: the DJ never stopped and we never started. Rowan came in on the kick and nobody heard the join. That is the whole trick.",
+      "condition": "flag:beatmatched",
+      "fallback": "ber_journal_budget"
     }
   }
 }

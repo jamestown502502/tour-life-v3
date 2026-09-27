@@ -139,6 +139,36 @@ export interface LedgerNumbers {
   rates?: { label: string; rate: number; feePct: number }[];
 }
 
+/** Story copy for the ledger and theory types. Every field is optional: a minigame that omits
+ *  one gets the text its type always had, so the first eight bandmate games need no copy at all.
+ *  Strings may carry {tokens} that are filled from the minigame's own numbers, so the prose can
+ *  never disagree with the maths on the same screen. Tokens per type are listed in
+ *  src/game/ledger.ts COPY_TOKENS, and src/tests/minigameSlots.test.ts rejects any other. */
+export interface MiniGameCopy {
+  /** Ledger: the card heading. */
+  heading?: string;
+  /** Ledger: the paragraph under the heading. Theory: the hint line under each question. */
+  setup?: string;
+  /** split and pricing: the stepper's label. */
+  prompt?: string;
+  /** The small footer line under a ledger table. */
+  tip?: string;
+  /** gearcall: the live comparison line. */
+  detail?: string;
+  /** gearcall: the three button labels. */
+  buyLabel?: string;
+  rentLabel?: string;
+  passLabel?: string;
+  /** gearcall: the noun for the Hub's ledger card, e.g. "the kit". */
+  thing?: string;
+  /** gearcall: the outcome line when the player passes. */
+  passLine?: string;
+  /** perdiem: the outcome line when the player overspends. */
+  overBudgetLine?: string;
+  /** perdiem: the three category labels, in order food / bed / rest. */
+  labels?: string[];
+}
+
 export interface MiniGameDef {
   id: string;
   type: MiniGameType;
@@ -146,6 +176,8 @@ export interface MiniGameDef {
    *  by the seed (src/game/ledger.ts hostedSelection), and playing one counts as a scene with
    *  that person for their arc (src/game/arc.ts). Non-hosted minigames are always offered. */
   hostBandmate?: BandmateId;
+  /** Optional story copy for ledger and theory types. See MiniGameCopy. */
+  copy?: MiniGameCopy;
   /** Ledger types only: the numbers on the table. Any omitted value falls back to
    *  src/game/ledger.ts DEFAULT_LEDGER, so a def can carry only the numbers that matter. */
   ledger?: LedgerNumbers;

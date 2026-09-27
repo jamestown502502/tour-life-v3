@@ -271,37 +271,44 @@ export class HubScene extends Phaser.Scene {
     panel.add(createButton(this, x + w / 2 - 110, y + h - 80, 220, 60, 'Close', () => panel.destroy(), { fillColor: 0x8fb7c9 }));
   }
 
-  /** Practice picker: every minigame authored on the cities of this run's route. Practice runs
-   *  write no reward, no relationship change, and no played-flag (MiniGameScene `practice`). */
-  private showPractice(): void {
-    if (this.children.getByName('practicePanel')) return;
-    const entries: { cityId: string; id: string; title: string }[] = [];
-    const seen = new Set<string>();
-    for (const stop of State.data.route) {
-      if (seen.has(stop.cityId)) continue;
-      seen.add(stop.cityId);
-      for (const mg of getCity(stop.cityId).minigames ?? []) entries.push({ cityId: stop.cityId, id: mg.id, title: mg.title });
-    }
-    const rows = entries.slice(0, 9);
-    const w = 600, h = Math.min(1060, 170 + rows.length * 70);
-    const x = W / 2 - w / 2, y = Math.max(100, (this.cameras.main.height - h) / 2);
+  /** Practice picker: every minigame on this run's route, one city at a time. Practice runs write
+   *  no reward, no relationship change, and no played-flag (MiniGameScene `practice`).
+   *
+   *  Grouped by city with a tab row because the flat list it replaced was capped at nine rows, and
+   *  the route carries around thirty minigames — so everything past the first city's was
+   *  unreachable from here. */
+  private showPractice(cityIndex = 0): void {
+    this.children.getByName('practicePanel')?.destroy();
+    const cityIds: string[] = [];
+    for (const stop of State.data.route) if (!cityIds.includes(stop.cityId)) cityIds.push(stop.cityId);
+    if (cityIds.length === 0) return;
+    const current = cityIds[Math.max(0, Math.min(cityIndex, cityIds.length - 1))];
+    const rows = (getCity(current).minigames ?? []);
+    const w = 640, rowH = 64;
+    const h = 250 + rows.length * rowH;
+    const x = W / 2 - w / 2, y = Math.max(60, (this.cameras.main.height - h) / 2);
     const panel = this.add.container(0, 0).setName('practicePanel').setDepth(200);
     const backdrop = this.add.rectangle(0, 0, W, this.cameras.main.height, 0x000000, 0.55).setOrigin(0, 0).setInteractive();
     backdrop.on('pointerdown', () => panel.destroy());
     const card = this.add.rectangle(x, y, w, h, PALETTE.sand, 0.98).setOrigin(0, 0).setInteractive();
     card.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event: { stopPropagation: () => void }) => event.stopPropagation());
     panel.add([backdrop, card]);
-    panel.add(this.add.text(x + w / 2, y + 36, 'Practice', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5));
-    panel.add(this.add.text(x + w / 2, y + 66, 'No rewards, no story changes — just the game.', textStyle('small', { fontSize: '13px', color: PALETTE_HEX.plum })).setOrigin(0.5));
-    rows.forEach((e, i) => {
-      const cityName = getCity(e.cityId).name;
-      panel.add(createButton(this, x + 30, y + 92 + i * 70, w - 60, 56, `${e.title} — ${cityName}`, () => {
-        panel.destroy();
-        goTo(this, 'MiniGame', { cityId: e.cityId, minigameId: e.id, returnPhase: 'locations', practice: true });
-      }, { fillColor: 0x3e7c7b, fontSize: '17px' }));
+    panel.add(this.add.text(x + w / 2, y + 34, 'Practice', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5));
+    panel.add(this.add.text(x + w / 2, y + 62, 'No rewards, no story changes — just the game.', textStyle('small', { fontSize: '13px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+    const tabW = (w - 40) / cityIds.length;
+    cityIds.forEach((id, i) => {
+      const on = id === current;
+      panel.add(createButton(this, x + 20 + i * tabW, y + 84, tabW - 8, 54, getCity(id).name, () => this.showPractice(i),
+        { fillColor: on ? 0xd9a441 : 0x8fb7c9, fontSize: '15px' }));
     });
-    if (rows.length === 0) panel.add(this.add.text(x + w / 2, y + 120, 'Nothing to practice yet.', textStyle('body', { color: PALETTE_HEX.plum })).setOrigin(0.5));
-    panel.add(createButton(this, x + w / 2 - 110, y + h - 74, 220, 56, 'Close', () => panel.destroy(), { fillColor: 0x8fb7c9 }));
+    rows.forEach((mg, i) => {
+      const tag = mg.hostBandmate ? ` · ${mg.hostBandmate[0].toUpperCase()}${mg.hostBandmate.slice(1)}` : '';
+      panel.add(createButton(this, x + 30, y + 156 + i * rowH, w - 60, 54, `${mg.title}${tag}`, () => {
+        panel.destroy();
+        goTo(this, 'MiniGame', { cityId: current, minigameId: mg.id, returnPhase: 'locations', practice: true });
+      }, { fillColor: mg.hostBandmate ? 0x8a6fa3 : 0x3e7c7b, fontSize: '16px' }));
+    });
+    panel.add(createButton(this, x + w / 2 - 110, y + h - 72, 220, 56, 'Close', () => panel.destroy(), { fillColor: 0x8fb7c9 }));
   }
 
   private wrapTour(): void {
