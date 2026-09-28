@@ -148,7 +148,7 @@
     "unlock": "duet_percussion"
   },
   "afterShowSceneId": "mex_aftershow_broke",
-  "journalSceneId": "mex_journal_perdiem",
+  "journalSceneId": "mex_journal_mercado",
   "minigames": [
     {
       "id": "mex_interview",
@@ -300,11 +300,17 @@
         },
         "flags": [
           "per_diem_balanced"
-        ]
+        ],
+        "relationshipEffects": {
+          "theo": 3
+        }
       },
       "roughReward": {
         "effects": {
           "energy": 1
+        },
+        "relationshipEffects": {
+          "theo": 1
         }
       },
       "perfectReward": {
@@ -314,7 +320,10 @@
         },
         "flags": [
           "per_diem_balanced"
-        ]
+        ],
+        "relationshipEffects": {
+          "theo": 5
+        }
       },
       "hostBandmate": "theo",
       "ledger": {
@@ -339,11 +348,17 @@
         },
         "flags": [
           "found_the_tempo"
-        ]
+        ],
+        "relationshipEffects": {
+          "rowan": 3
+        }
       },
       "roughReward": {
         "effects": {
           "harmony": 1
+        },
+        "relationshipEffects": {
+          "rowan": 1
         }
       },
       "perfectReward": {
@@ -353,7 +368,10 @@
         },
         "flags": [
           "found_the_tempo"
-        ]
+        ],
+        "relationshipEffects": {
+          "rowan": 5
+        }
       },
       "hostBandmate": "rowan",
       "theoryRounds": 2
@@ -403,6 +421,98 @@
             "feePct": 8
           }
         ]
+      }
+    },
+    {
+      "id": "mex_mercado",
+      "type": "pricing",
+      "hostBandmate": "mira",
+      "title": "The Mercado Stall",
+      "introText": "A friend of Ximena lends you a stall at the Sunday mercado. Mira unpacks fifty tote bags and turns to you. \"What do we charge?\"",
+      "outroText": "The stall does steady business and the box is paid for. Mira works it like a stage.",
+      "outroTextRough": "Either half the bags go home or they went for less than they cost. Mira does not mind. The float does.",
+      "outroTextPerfect": "You price it where the plaza wanted it. The last bag goes by noon and the box is paid for twice.",
+      "reward": {
+        "effects": {
+          "inspiration": 2
+        },
+        "relationshipEffects": {
+          "mira": 3
+        },
+        "flags": [
+          "mercado_priced"
+        ]
+      },
+      "roughReward": {
+        "effects": {},
+        "relationshipEffects": {
+          "mira": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "inspiration": 4
+        },
+        "relationshipEffects": {
+          "mira": 5
+        },
+        "flags": [
+          "mercado_priced"
+        ]
+      },
+      "ledger": {
+        "unitCost": 6,
+        "stock": 50,
+        "minPrice": 8,
+        "maxPrice": 30
+      },
+      "copy": {
+        "heading": "The mercado stall",
+        "setup": "{stock} tote bags from a print shop off Calle Regina, ${unitCost} each. Mira wants one on every shoulder in the plaza; the float wants the box paid for.",
+        "prompt": "Price per bag",
+        "tip": "Cheap moves more bags. Dear earns more per bag. The best price is in between."
+      }
+    },
+    {
+      "id": "mex_son_meter",
+      "type": "meter",
+      "hostBandmate": "jun",
+      "title": "Six and Three",
+      "introText": "Ximena hands Jun her jarana. \"The son lives between six and three,\" she says. \"You do not count it. You lean.\" Jun looks at you for help.",
+      "outroText": "Jun finds the lean more often than not. Ximena takes the jarana back, satisfied.",
+      "outroTextRough": "Jun counts it square and Ximena laughs, not unkindly, and shows him again.",
+      "outroTextPerfect": "Jun leans into every one. Ximena tells him to keep the jarana for the night.",
+      "reward": {
+        "effects": {
+          "inspiration": 3
+        },
+        "relationshipEffects": {
+          "jun": 3
+        },
+        "flags": [
+          "felt_the_son"
+        ]
+      },
+      "roughReward": {
+        "effects": {},
+        "relationshipEffects": {
+          "jun": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "inspiration": 5
+        },
+        "relationshipEffects": {
+          "jun": 5
+        },
+        "flags": [
+          "felt_the_son"
+        ]
+      },
+      "theoryRounds": 3,
+      "copy": {
+        "setup": "Question {round} of {rounds} - The son moves between six and three. Feel where the heavy beat lands."
       }
     }
   ],
@@ -1258,6 +1368,20 @@
       "condition": "stat.funds<=430",
       "fallback": "mex_aftershow",
       "next": "mex_aftershow"
+    },
+    "mex_journal_son": {
+      "id": "mex_journal_son",
+      "speaker": "narrator",
+      "text": "You write: Ximena says the son lives between six and three. You do not count it, you lean. Jun leaned. It worked.",
+      "condition": "flag:felt_the_son",
+      "fallback": "mex_journal_perdiem"
+    },
+    "mex_journal_mercado": {
+      "id": "mex_journal_mercado",
+      "speaker": "narrator",
+      "text": "You write: Mira worked the stall like a stage. By noon people were buying bags to be part of the conversation.",
+      "condition": "flag:mercado_priced",
+      "fallback": "mex_journal_son"
     }
   }
 }

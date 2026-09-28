@@ -153,7 +153,7 @@
     "unlock": "duet"
   },
   "afterShowSceneId": "lis_aftershow_broke",
-  "journalSceneId": "lis_journal_deal",
+  "journalSceneId": "lis_journal_lower",
   "minigames": [
     {
       "id": "lis_live_radio",
@@ -322,11 +322,17 @@
         },
         "flags": [
           "lisbon_deal_called"
-        ]
+        ],
+        "relationshipEffects": {
+          "rowan": 3
+        }
       },
       "roughReward": {
         "effects": {
           "harmony": 1
+        },
+        "relationshipEffects": {
+          "rowan": 1
         }
       },
       "perfectReward": {
@@ -335,7 +341,10 @@
         },
         "flags": [
           "lisbon_deal_called"
-        ]
+        ],
+        "relationshipEffects": {
+          "rowan": 5
+        }
       },
       "hostBandmate": "rowan",
       "ledger": {
@@ -362,11 +371,17 @@
         },
         "flags": [
           "heard_the_quality"
-        ]
+        ],
+        "relationshipEffects": {
+          "jun": 3
+        }
       },
       "roughReward": {
         "effects": {
           "inspiration": 1
+        },
+        "relationshipEffects": {
+          "jun": 1
         }
       },
       "perfectReward": {
@@ -375,7 +390,10 @@
         },
         "flags": [
           "heard_the_quality"
-        ]
+        ],
+        "relationshipEffects": {
+          "jun": 5
+        }
       },
       "hostBandmate": "jun",
       "theoryRounds": 4,
@@ -428,6 +446,100 @@
             "feePct": 9.5
           }
         ]
+      }
+    },
+    {
+      "id": "lis_step_down",
+      "type": "transpose",
+      "hostBandmate": "mira",
+      "title": "A Step Down for Inês",
+      "introText": "Inês asks to sing the second verse with Mira, a step lower than you wrote it. \"Move it for me? Now, before I lose my nerve.\"",
+      "outroText": "Most of the chords land where they should. Inês sings it like the song was always hers.",
+      "outroTextRough": "A couple of chords go the wrong way. Mira covers it with a harmony nobody planned.",
+      "outroTextPerfect": "Every chord moved clean, first time. Inês stops mid-verse to laugh, then finishes it.",
+      "reward": {
+        "effects": {
+          "harmony": 3
+        },
+        "relationshipEffects": {
+          "mira": 3
+        },
+        "flags": [
+          "sang_it_lower"
+        ]
+      },
+      "roughReward": {
+        "effects": {},
+        "relationshipEffects": {
+          "mira": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 5
+        },
+        "relationshipEffects": {
+          "mira": 5
+        },
+        "flags": [
+          "sang_it_lower"
+        ]
+      },
+      "theoryRounds": 4,
+      "copy": {
+        "setup": "Question {round} of {rounds} - Inês wants it lower; the set moves {move}. Which chord does {from} become?"
+      }
+    },
+    {
+      "id": "lis_backline",
+      "type": "gearcall",
+      "hostBandmate": "theo",
+      "title": "The Drum Kit",
+      "introText": "Theo stands over his cases at the airport counter. Flying his kit costs real money. The venue will rent him one. He looks at you.",
+      "outroText": "The sums come out right and Theo plays a kit he trusts. He nods at you from the riser.",
+      "outroTextRough": "Theo plays a kit that is not his and apologises to it between songs.",
+      "outroTextPerfect": "You call it before Theo finishes asking. He plays the whole tour on the right kit for the right money.",
+      "reward": {
+        "effects": {
+          "energy": 3
+        },
+        "relationshipEffects": {
+          "theo": 3
+        },
+        "flags": [
+          "kit_decided"
+        ]
+      },
+      "roughReward": {
+        "effects": {},
+        "relationshipEffects": {
+          "theo": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "energy": 5
+        },
+        "relationshipEffects": {
+          "theo": 5
+        },
+        "flags": [
+          "kit_decided"
+        ]
+      },
+      "ledger": {
+        "price": 180,
+        "rentPerShow": 55
+      },
+      "copy": {
+        "heading": "The drum kit",
+        "setup": "Theo can fly his own kit for ${price} in excess baggage, once, or rent a house kit at ${rentPerShow} a night. {shows} left on this tour.",
+        "detail": "Renting for the rest of the tour: {shows} at ${rentPerShow} = ${rentTotal}.\nFlying his own: ${price}, once.",
+        "buyLabel": "Fly his kit (${price})",
+        "rentLabel": "Rent a kit (${rentPerShow} a show)",
+        "passLabel": "Borrow the opener's kit",
+        "thing": "the kit",
+        "passLine": "Theo borrows the opener's kit."
       }
     }
   ],
@@ -1246,6 +1358,20 @@
       "condition": "stat.funds<=430",
       "fallback": "lis_aftershow",
       "next": "lis_aftershow"
+    },
+    "lis_journal_kit": {
+      "id": "lis_journal_kit",
+      "speaker": "narrator",
+      "text": "You write: Theo did the maths on his own drums, did not like the answer, and did the sensible thing anyway. He is better with money than he lets on.",
+      "condition": "flag:kit_decided",
+      "fallback": "lis_journal_deal"
+    },
+    "lis_journal_lower": {
+      "id": "lis_journal_lower",
+      "speaker": "narrator",
+      "text": "You write: we moved the whole song down for Inês and it sounded like it had always lived there. Mira sang the harmony. Nobody planned that.",
+      "condition": "flag:sang_it_lower",
+      "fallback": "lis_journal_kit"
     }
   }
 }

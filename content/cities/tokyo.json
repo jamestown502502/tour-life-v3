@@ -153,7 +153,7 @@
     "unlock": "bass_forward"
   },
   "afterShowSceneId": "tok_aftershow_broke",
-  "journalSceneId": "tok_journal_merch",
+  "journalSceneId": "tok_journal_room",
   "minigames": [
     {
       "id": "tok_mix_hold",
@@ -261,11 +261,17 @@
         },
         "flags": [
           "merch_priced_right"
-        ]
+        ],
+        "relationshipEffects": {
+          "mira": 3
+        }
       },
       "roughReward": {
         "effects": {
           "harmony": 1
+        },
+        "relationshipEffects": {
+          "mira": 1
         }
       },
       "perfectReward": {
@@ -275,7 +281,10 @@
         },
         "flags": [
           "merch_priced_right"
-        ]
+        ],
+        "relationshipEffects": {
+          "mira": 5
+        }
       },
       "hostBandmate": "mira",
       "ledger": {
@@ -302,11 +311,17 @@
         },
         "flags": [
           "counted_in"
-        ]
+        ],
+        "relationshipEffects": {
+          "theo": 3
+        }
       },
       "roughReward": {
         "effects": {
           "harmony": 1
+        },
+        "relationshipEffects": {
+          "theo": 1
         }
       },
       "perfectReward": {
@@ -315,10 +330,107 @@
         },
         "flags": [
           "counted_in"
-        ]
+        ],
+        "relationshipEffects": {
+          "theo": 5
+        }
       },
       "hostBandmate": "theo",
       "theoryRounds": 3
+    },
+    {
+      "id": "tok_door_split",
+      "type": "split",
+      "hostBandmate": "rowan",
+      "title": "The Livehouse Deal",
+      "introText": "The livehouse booker slides two numbers across the counter. Rowan reads them twice. \"Weeknight rooms here can go either way.\"",
+      "outroText": "You read the room close enough, and the money follows. Rowan writes the number down without comment.",
+      "outroTextRough": "The room does what weeknight rooms do. Rowan shrugs. \"Next time we guess better.\"",
+      "outroTextPerfect": "You call the crowd almost to the head. The booker looks at Rowan, then at you, and rebooks you for spring.",
+      "reward": {
+        "effects": {
+          "harmony": 2
+        },
+        "relationshipEffects": {
+          "rowan": 3
+        },
+        "flags": [
+          "tokyo_room_read"
+        ]
+      },
+      "roughReward": {
+        "effects": {},
+        "relationshipEffects": {
+          "rowan": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 4
+        },
+        "relationshipEffects": {
+          "rowan": 5
+        },
+        "flags": [
+          "tokyo_room_read"
+        ]
+      },
+      "ledger": {
+        "guarantee": 700,
+        "doorPct": 60,
+        "capacity": 150,
+        "ticketPrice": 14
+      },
+      "copy": {
+        "heading": "The livehouse deal",
+        "setup": "The livehouse offers ${guarantee} flat, or {doorPct}% of the door: {capacity} tickets at ${ticketPrice}. Rowan has seen rooms like this half-empty on a weeknight.",
+        "prompt": "How full on a weeknight?",
+        "tip": "Break-even is the number worth knowing. Everything else is a guess about the room."
+      }
+    },
+    {
+      "id": "tok_click",
+      "type": "tempo",
+      "hostBandmate": "jun",
+      "title": "Set the Click",
+      "introText": "Tokyo sets its clocks by the second. Jun wants the click track matched to the room before soundcheck. \"Count it for me. Out loud, with your hands.\"",
+      "outroText": "Close enough to lock in. Jun sets the click and the band stops drifting.",
+      "outroTextRough": "The click and the room disagree for a verse. Jun nudges it by ear and it settles.",
+      "outroTextPerfect": "Dead on. Jun does not touch the click again all night.",
+      "reward": {
+        "effects": {
+          "harmony": 2,
+          "inspiration": 1
+        },
+        "relationshipEffects": {
+          "jun": 3
+        },
+        "flags": [
+          "click_track_set"
+        ]
+      },
+      "roughReward": {
+        "effects": {},
+        "relationshipEffects": {
+          "jun": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 4,
+          "inspiration": 3
+        },
+        "relationshipEffects": {
+          "jun": 5
+        },
+        "flags": [
+          "click_track_set"
+        ]
+      },
+      "theoryRounds": 2,
+      "copy": {
+        "setup": "Round {round} of {rounds} - Jun wants the click matched to the room. Tap along with the count, at least five times."
+      }
     }
   ],
   "scenes": {
@@ -1113,6 +1225,20 @@
       "condition": "stat.funds<=430",
       "fallback": "tok_aftershow",
       "next": "tok_aftershow"
+    },
+    "tok_journal_click": {
+      "id": "tok_journal_click",
+      "speaker": "narrator",
+      "text": "You write: Jun set the click to my hands tonight. If the room drifted, it drifted with us.",
+      "condition": "flag:click_track_set",
+      "fallback": "tok_journal_merch"
+    },
+    "tok_journal_room": {
+      "id": "tok_journal_room",
+      "speaker": "narrator",
+      "text": "You write: Rowan asked me to guess the room, then argued with my number for ten minutes. We were wrong in the same direction. That felt like being a band.",
+      "condition": "flag:tokyo_room_read",
+      "fallback": "tok_journal_click"
     }
   }
 }

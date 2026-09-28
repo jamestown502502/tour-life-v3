@@ -184,6 +184,14 @@ export async function playAnyPendingMinigame(page: Page, returnSceneKey: string,
     // Still on the outro card — MiniGameScene.ts finish(): W/2-130, min(560, SAFE_BOTTOM_Y-66)=560, 260, 66, center (360, 593).
     await canvasClick(page, 360, 593);
   }
+  // Decision and theory minigames (ledger, transpose, meter...) have no button at the taps above,
+  // and their idle timers take 25-45s. This helper's job is to get PAST a minigame, not to test
+  // one (minigames.spec.ts does that), so finish it the same way the Continue button does.
+  await page.waitForTimeout(400);
+  if ((await getActiveSceneKeys(page)).includes('MiniGame')) {
+    await page.evaluate(() => (window as any).__game.scene.getScene('MiniGame').applyRewardAndReturn());
+    await waitForCondition(page, () => !(window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('MiniGame'), 5000);
+  }
   return true;
 }
 

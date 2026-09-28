@@ -57,8 +57,9 @@ self.addEventListener('fetch', (event) => {
   // for `cache: 'no-cache'` cannot fix this: once a service worker handles a request, its
   // respondWith decides, and the fetch's own cache hint is ignored.
   //
-  // Network-first with a cache fallback: current whenever online, still offline-capable.
-  if (url.pathname.endsWith('/assets/manifest.json')) {
+  // Network-first with a cache fallback: current whenever online, still offline-capable. The same
+  // holds for manifest-later.json, the index of art fetched after the title screen.
+  if (url.pathname.endsWith('/assets/manifest.json') || url.pathname.endsWith('/assets/manifest-later.json')) {
     event.respondWith(
       fetch(request)
         .then((res) => {

@@ -27,9 +27,13 @@ export class ResultsScene extends Phaser.Scene {
   private cityId!: string;
   private result!: PerformanceResult;
 
-  init(data: { cityId: string; result: PerformanceResult }): void {
+  /** 0 first visit, 1 return. Passed by RhythmScene, because the show is already recorded by now. */
+  private visit = 0;
+
+  init(data: { cityId: string; result: PerformanceResult; visit?: number }): void {
     this.cityId = data.cityId;
     this.result = data.result;
+    this.visit = data.visit ?? 0;
   }
 
   create(): void {
@@ -38,7 +42,7 @@ export class ResultsScene extends Phaser.Scene {
     // Addendum v2, Item 10c: reuse the same stage backdrop Rhythm just showed (real asset with
     // its built-in legibility scrim, or the flat night-rect fallback) — "the show you just
     // played, where you played it," not a plain color card.
-    const stageBgKey = ensureRhythmStageBackdrop(this, city.id);
+    const stageBgKey = ensureRhythmStageBackdrop(this, city.id, this.visit);
     addCoverBackground(this, stageBgKey);
 
     // The room after the show still sounds like the song that was just played, a little slower.

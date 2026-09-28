@@ -10,11 +10,14 @@
 #      close to but not exactly 9:16). Normalizing here means the runtime cover-fit in
 #      src/art/background.ts is a no-op safety net rather than something doing real cropping.
 #   3. SIZE — a raw 2K PNG is ~6.3MB. Four of those is ~25MB of background alone, which is not
-#      shippable. WebP q82 at 1440x2560 lands ~340KB, an ~18x reduction with no visible loss on
-#      painted art (verified by eye against the source).
+#      shippable. WebP at the output size lands well under 340KB with no visible loss on painted
+#      art (verified by eye against the source).
 #
-# Output is 1440x2560 = exactly 2x the game's 720x1280 canvas, so it stays crisp at
-# devicePixelRatio 2 without being gratuitously large.
+# Output is 720x1280, the game canvas's actual backing-store size. It was 1440x2560 until
+# 2026-09-27 on the theory that 2x stays crisp at devicePixelRatio 2, but Phaser draws into a
+# 720x1280 canvas whatever the screen's DPR, so the extra pixels were never shown. They did cost
+# GPU memory: every texture stays decoded (w*h*4 bytes), and 53 backgrounds at 1440x2560 came to
+# ~760 MB, enough for a phone to kill the tab (seen as "Target crashed" on the iPhone profile).
 #
 # Usage: ./scripts/process-bg.sh <input.png> [output.webp]
 #        (default output: same path/name with a .webp extension)
@@ -25,7 +28,7 @@ IN="${1:?usage: process-bg.sh <input.png> [output.webp]}"
 OUT="${2:-${IN%.*}.webp}"
 
 ffmpeg -y -v error -i "$IN" \
-  -vf "crop=iw*0.94:ih*0.94,scale=1440:2560:force_original_aspect_ratio=increase,crop=1440:2560" \
-  -quality 82 "$OUT"
+  -vf "crop=iw*0.94:ih*0.94,scale=720:1280:force_original_aspect_ratio=increase:flags=lanczos,crop=720:1280" \
+  -quality 85 "$OUT"
 
 echo "$(basename "$IN") -> $(basename "$OUT")  $(du -h "$OUT" | cut -f1)"

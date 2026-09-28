@@ -13,6 +13,9 @@ export interface ManifestEntry {
 }
 
 const MANIFEST_PATH = 'assets/manifest.json';
+/** Art that is not needed in a run's first minutes: loaded after the title screen appears, never
+ *  at boot. The boot manifest is already ~10 MB; this keeps it from doubling. */
+export const LATER_MANIFEST_PATH = 'assets/manifest-later.json';
 
 /** Vite sets BASE_URL from vite.config's `base` ('./' here), so this resolves correctly both
  *  on the dev server and in the static production build. */
@@ -20,9 +23,9 @@ export function assetBaseUrl(): string {
   return import.meta.env.BASE_URL ?? './';
 }
 
-export async function fetchManifest(): Promise<ManifestEntry[]> {
+export async function fetchManifest(path: string = MANIFEST_PATH): Promise<ManifestEntry[]> {
   try {
-    const res = await fetch(`${assetBaseUrl()}${MANIFEST_PATH}`, { cache: 'no-cache' });
+    const res = await fetch(`${assetBaseUrl()}${path}`, { cache: 'no-cache' });
     if (!res.ok) return [];
     const parsed = await res.json();
     if (!Array.isArray(parsed)) {
@@ -54,6 +57,16 @@ export function markRealAsset(key: string): void {
 export function hasRealAsset(key: string): boolean {
   return realAssetKeys.has(key);
 }
+
+/** Keys queued by the background loader that have not arrived yet. While a key is pending, a
+ *  code-drawn fallback must NOT be generated under it: the real image would then find its key
+ *  already taken when it lands, and Phaser would discard it for the rest of the session. See
+ *  ensureMiniGameBackdrop, which draws its placeholder under a separate key instead. */
+const pendingKeys = new Set<string>();
+
+export function markPending(key: string): void { pendingKeys.add(key); }
+export function settlePending(key: string): void { pendingKeys.delete(key); }
+export function isPending(key: string): boolean { return pendingKeys.has(key); }
 
 // The one real (non-procedural) audio asset the design allows (DESIGN.md §15.17) — a single
 // flag rather than a Set since there's only ever this one file. Same missing-file tolerance as

@@ -37,6 +37,25 @@ export type LedgerDef = MiniGameDef['ledger'];
 
 function scale(dollars: number): number { return Math.round(dollars / 10); }
 
+/** The {tokens} each type's copy may use. Anything else in a copy string is an authoring error,
+ *  caught by src/tests/minigameSlots.test.ts rather than rendered as a literal brace. */
+export const COPY_TOKENS: Record<string, string[]> = {
+  split: ['guarantee', 'doorPct', 'capacity', 'ticketPrice'],
+  pricing: ['stock', 'unitCost'],
+  perdiem: ['budget', 'over'],
+  gearcall: ['price', 'rentPerShow', 'shows', 'rentTotal'],
+  exchange: [],
+  chordquality: ['round', 'rounds'],
+  transpose: ['round', 'rounds', 'from', 'move'],
+  meter: ['round', 'rounds'],
+  tempo: ['round', 'rounds'],
+};
+
+/** Fill {token} placeholders. Unknown tokens are left as written so a test can find them. */
+export function fillTemplate(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+}
+
 // ---- split: guarantee vs door ----------------------------------------------------------------
 export function doorTake(def: { doorPct: number; ticketPrice: number; capacity: number }, turnout: number): number {
   return Math.round((def.doorPct / 100) * def.ticketPrice * def.capacity * turnout);
@@ -105,7 +124,7 @@ export function perDiemForecast(alloc: PerDiemAlloc): { energy: number; harmony:
   const harmony = Math.round(Math.min(6, alloc.lodging / 5) - (alloc.lodging < 10 ? 4 : 0));
   return { energy, harmony };
 }
-export function resolvePerDiem(def: { budget: number }, alloc: PerDiemAlloc): LedgerOutcome {
+export function resolvePerDiem(def: { budget: number }, alloc: PerDiemAlloc, overBudgetLine?: string): LedgerOutcome {
   const spent = alloc.food + alloc.lodging + alloc.rest;
   const left = def.budget - spent;
   const f = perDiemForecast(alloc);
@@ -113,21 +132,22 @@ export function resolvePerDiem(def: { budget: number }, alloc: PerDiemAlloc): Le
   const balanced = !starved && f.energy >= 8 && f.harmony >= 3;
   const tier: LedgerTier = left < 0 ? 'rough' : balanced && left >= 0 ? 'perfect' : !starved ? 'good' : 'rough';
   const explain = left < 0
-    ? `That's $${-left} over the $${def.budget} per diem. Rowan covers it and does not let you forget.`
+    ? (overBudgetLine ? fillTemplate(overBudgetLine, { over: -left, budget: def.budget }) : `That's $${-left} over the $${def.budget} per diem. Rowan covers it and does not let you forget.`)
     : `$${spent} of $${def.budget} spent, $${left} back in the float. Tomorrow: energy ${f.energy >= 0 ? '+' : ''}${f.energy}, harmony ${f.harmony >= 0 ? '+' : ''}${f.harmony}.`;
   return { tier, funds: scale(Math.max(-40, left)), explain, label: `Per diem, $${left >= 0 ? left : 0} saved` };
 }
 
 // ---- gearcall: buy, rent, or pass -------------------------------------------------------------
-export function resolveGearCall(def: { price: number; rentPerShow: number }, showsLeft: number, choice: 'buy' | 'rent' | 'pass'): LedgerOutcome {
+export function resolveGearCall(def: { price: number; rentPerShow: number }, showsLeft: number, choice: 'buy' | 'rent' | 'pass', copy: { thing?: string; passLine?: string } = {}): LedgerOutcome {
+  const thing = copy.thing ?? 'the synth';
   const rentTotal = def.rentPerShow * Math.max(1, showsLeft);
   const cheapestPaid: 'buy' | 'rent' = def.price <= rentTotal ? 'buy' : 'rent';
   const cost = choice === 'buy' ? def.price : choice === 'rent' ? rentTotal : 0;
   const tier: LedgerTier = choice === cheapestPaid ? 'perfect' : choice === 'pass' ? 'rough' : 'good';
   const explain = choice === 'pass'
-    ? `You pass. Jun plays the old rig. Buying was $${def.price}; renting for the ${showsLeft} shows left was $${rentTotal}.`
+    ? `${copy.passLine ?? 'You pass. Jun plays the old rig.'} Buying was $${def.price}; renting for the ${showsLeft} shows left was $${rentTotal}.`
     : `${choice === 'buy' ? 'Bought' : 'Rented'} for $${cost}. Over the ${showsLeft} shows left, ${cheapestPaid === 'buy' ? 'buying' : 'renting'} was the cheaper way to have it on stage${choice === cheapestPaid ? ' — which is what you did.' : '.'}`;
-  return { tier, funds: cost === 0 ? 0 : -scale(cost), explain, label: choice === 'pass' ? 'Passed on the synth' : `${choice === 'buy' ? 'Bought' : 'Rented'} the synth, -$${cost}` };
+  return { tier, funds: cost === 0 ? 0 : -scale(cost), explain, label: choice === 'pass' ? `Passed on ${thing}` : `${choice === 'buy' ? 'Bought' : 'Rented'} ${thing}, -$${cost}` };
 }
 
 // ---- exchange: reading the fee ----------------------------------------------------------------
@@ -142,16 +162,4 @@ export function resolveExchange(rates: readonly { label: string; rate: number; f
   const bestGot = Math.round(amount * best);
   const explain = `$${amount} became ${got} local at ${rates[pick].label} (rate ${rates[pick].rate.toFixed(2)}, fee ${rates[pick].feePct}%). The best window paid ${bestGot}. The fee is part of the rate.`;
   return { tier, funds: -scale(bestGot - got) + (tier === 'perfect' ? 3 : 0), explain, label: `Exchange, ${got} local` };
-}
-
-/** Which of a city's bandmate-hosted minigames this run offers (two of them, by seed), plus every
- *  non-hosted one. Deterministic per seed, so a replayed seed offers the same hosts. */
-export function hostedSelection<T extends { hostBandmate?: string }>(minigames: readonly T[], pick: (n: number) => number, count = 2): T[] {
-  const hosted = minigames.filter((m) => m.hostBandmate);
-  const plain = minigames.filter((m) => !m.hostBandmate);
-  const chosen: T[] = [];
-  const pool = [...hosted];
-  while (chosen.length < count && pool.length > 0) chosen.push(pool.splice(pick(pool.length), 1)[0]);
-  // Keep authored order so insertion points stay predictable.
-  return minigames.filter((m) => plain.includes(m) || chosen.includes(m));
 }

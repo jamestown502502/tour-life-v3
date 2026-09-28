@@ -21,3 +21,15 @@ const files = readdirSync(IMG_DIR)
 const entries = files.map((f) => ({ key: path.parse(f).name, file: `img/${f}` }));
 writeFileSync(MANIFEST_PATH, JSON.stringify(entries, null, 2) + '\n', 'utf-8');
 console.log(`Wrote ${entries.length} entries to public/assets/manifest.json`);
+
+// Background art (img/later/): fetched after the title screen appears, never at boot. Same key
+// convention. See src/ui/BootScene.ts loadImagesInBackground.
+const LATER_DIR = path.join(IMG_DIR, 'later');
+const LATER_PATH = path.join(__dirname, '..', 'public', 'assets', 'manifest-later.json');
+let later = [];
+try {
+  later = readdirSync(LATER_DIR).filter((f) => /\.(png|webp|jpg|jpeg)$/i.test(f) && !f.endsWith('.raw.png')).sort()
+    .map((f) => ({ key: path.parse(f).name, file: `img/later/${f}` }));
+} catch { /* no later/ directory is a valid state */ }
+writeFileSync(LATER_PATH, JSON.stringify(later, null, 2) + '\n', 'utf-8');
+console.log(`Wrote ${later.length} entries to public/assets/manifest-later.json`);

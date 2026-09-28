@@ -26,7 +26,7 @@ import { addHelpButton } from './HelpButton';
 import { addMenuButton } from './MenuButton';
 import type { MiniGameDef, MiniGameQuestion, MiniGameReward } from '../../content/schema';
 import { minigamePlayedFlag, timingRoundsForHarmony } from '../game/minigame';
-import { DEFAULT_LEDGER, resolveSplit, resolvePricing, resolvePerDiem, resolveGearCall, resolveExchange, doorTake, breakEvenTurnout, demandAt, perDiemForecast, type LedgerOutcome } from '../game/ledger';
+import { fillTemplate, DEFAULT_LEDGER, resolveSplit, resolvePricing, resolvePerDiem, resolveGearCall, resolveExchange, doorTake, breakEvenTurnout, demandAt, perDiemForecast, type LedgerOutcome } from '../game/ledger';
 import { chordFrequencies, splitChord, transposeChord, QUALITY_LABELS, QUALITY_HINTS } from '../core/musicTheory';
 import { getSong } from '../game/content';
 import { makeRng } from '../core/rng';
@@ -50,6 +50,13 @@ const HELP_TEXT: Record<MiniGameDef['type'], string> = {
   meter: 'A count-in plays. Pick its time signature from the feel of the accents — three, four, or six. Replay as often as you like.',
   tempo: 'A click plays at the crowd\'s tempo. Tap along at least five times and the game reads your BPM. Close counts.',
 };
+
+// No-fail, structurally: the header of this file promises every path reaches an outro, "including
+// simply not touching anything until a safety timer fires." The timing/drag/sequence/sustain/choice
+// types always kept that promise. The decision types did not — interval, clave, and every ledger
+// and theory game added later waited for a tap forever. These are their safety timers.
+const THEORY_IDLE_MS = 25000;
+const LEDGER_IDLE_MS = 45000;
 
 export class MiniGameScene extends Phaser.Scene {
   constructor() { super('MiniGame'); }
@@ -701,6 +708,13 @@ export class MiniGameScene extends Phaser.Scene {
       }, { fillColor: PALETTE.teal, fontSize: '19px' });
       this.contentLayer.add(btn);
     });
+    this.time.delayedCall(THEORY_IDLE_MS, () => {
+      if (answered) return;
+      answered = true;
+      hint.setText(`Moving on - that was a ${answer.name.toLowerCase()}: ${answer.anchor}.`);
+      this.theoryRound++;
+      this.time.delayedCall(2100, () => this.runIntervalRound());
+    });
   }
 
   // ---- clave: hear a rhythm, pick the pattern that matches it. ----
@@ -771,6 +785,13 @@ export class MiniGameScene extends Phaser.Scene {
       }, { fillColor: PALETTE.teal, fontSize: '16px' });
       this.contentLayer.add(btn);
     });
+    this.time.delayedCall(THEORY_IDLE_MS, () => {
+      if (answered) return;
+      answered = true;
+      hint.setText(`Moving on - that was the ${answer.name}: ${answer.note}.`);
+      this.theoryRound++;
+      this.time.delayedCall(2400, () => this.runClaveRound());
+    });
   }
 
 
@@ -778,6 +799,14 @@ export class MiniGameScene extends Phaser.Scene {
   // The Van Ledger — five money decisions with real numbers on screen. Pure logic lives in
   // src/game/ledger.ts; these methods are only the table the numbers sit on.
   // =============================================================================================
+
+  /** A copy field from the minigame's content if it has one, otherwise the type's own default.
+   *  Either way {tokens} are filled from the live numbers, so prose cannot disagree with the maths. */
+  private copyText(field: keyof NonNullable<MiniGameDef['copy']>, fallback: string, vars: Record<string, string | number>): string {
+    const authored = this.mg.copy?.[field];
+    const template = typeof authored === 'string' && authored.length > 0 ? authored : fallback;
+    return fillTemplate(template, vars);
+  }
 
   /** Shared frame: a sand card with a title, a subtitle, and a live line the exercise updates. */
   private ledgerFrame(title: string, sub: string): Phaser.GameObjects.Text {
@@ -791,7 +820,9 @@ export class MiniGameScene extends Phaser.Scene {
   }
 
   /** Explain the money for a beat, then hand off to the normal three-tier outro. */
-  private settleLedger(outcome: LedgerOutcome): void {
+  private settleLedger(outcome: LedgerOutcome, idle = false): void {
+    if (this.ledgerOutcome) return;
+    if (idle) outcome = { ...outcome, explain: `Nobody made the call, so the band took the safe one. ${outcome.explain}` };
     this.ledgerOutcome = outcome;
     this.clearContent();
     this.card(300, 320);
@@ -815,67 +846,80 @@ export class MiniGameScene extends Phaser.Scene {
 
   private runSplit(): void {
     const d = { ...DEFAULT_LEDGER.split, ...(this.mg.ledger ?? {}) } as { guarantee: number; doorPct: number; ticketPrice: number; capacity: number };
-    const live = this.ledgerFrame('The deal', `The venue offers $${d.guarantee} flat, or ${d.doorPct}% of the door: ${d.capacity} seats at $${d.ticketPrice}. Rowan wants your read on the room.`);
+    const vars = { guarantee: d.guarantee, doorPct: d.doorPct, capacity: d.capacity, ticketPrice: d.ticketPrice };
+    const live = this.ledgerFrame(this.copyText('heading', 'The deal', vars), this.copyText('setup', `The venue offers $${d.guarantee} flat, or ${d.doorPct}% of the door: ${d.capacity} seats at $${d.ticketPrice}. Rowan wants your read on the room.`, vars));
     const est = { v: 50 };
     const actual = this.theoryRng.int(25, 96) / 100;
     const update = () => {
       const t = est.v / 100;
       live.setText(`If the room is ${est.v}% full, the door pays $${doorTake(d, t)}.\nBreak-even is ${Math.round(breakEvenTurnout(d) * 100)}% full.`);
     };
-    this.stepper(400, 'How full will it be?', () => est.v, (v) => { est.v = v; }, (v) => `${v}%`, 10, 10, 100, update);
+    this.stepper(400, this.copyText('prompt', 'How full will it be?', vars), () => est.v, (v) => { est.v = v; }, (v) => `${v}%`, 10, 10, 100, update);
     update();
     this.contentLayer.add(createButton(this, W / 2 - 300, 700, 290, 66, `Take the $${d.guarantee}`, () => this.settleLedger(resolveSplit(d, 'guarantee', est.v / 100, actual)), { fillColor: PALETTE.teal, fontSize: '18px' }));
     this.contentLayer.add(createButton(this, W / 2 + 10, 700, 290, 66, 'Take the door', () => this.settleLedger(resolveSplit(d, 'door', est.v / 100, actual)), { fillColor: PALETTE.terracotta, fontSize: '18px' }));
-    this.contentLayer.add(this.add.text(W / 2, 800, 'A sure thing is worth something. So is being right about the room.', textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+    this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolveSplit(d, 'guarantee', est.v / 100, actual), true));
+    this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'A sure thing is worth something. So is being right about the room.', vars), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
   }
 
   private runPricing(): void {
     const d = { ...DEFAULT_LEDGER.pricing, ...(this.mg.ledger ?? {}) } as { unitCost: number; stock: number; minPrice: number; maxPrice: number };
-    const live = this.ledgerFrame('The merch table', `${d.stock} shirts in the box at $${d.unitCost} each to print. Mira wants them seen; the tour needs them paid for.`);
+    const vars = { stock: d.stock, unitCost: d.unitCost };
+    const live = this.ledgerFrame(this.copyText('heading', 'The merch table', vars), this.copyText('setup', `${d.stock} shirts in the box at $${d.unitCost} each to print. Mira wants them seen; the tour needs them paid for.`, vars));
     const price = { v: Math.round((d.minPrice + d.maxPrice) / 2) };
     const update = () => {
       const sold = demandAt(d, price.v);
       live.setText(`At $${price.v}, about ${sold} people buy.\nThat is $${sold * price.v} in, against $${d.stock * d.unitCost} already spent on the box.`);
     };
-    this.stepper(400, 'Price per shirt', () => price.v, (v) => { price.v = v; }, (v) => `$${v}`, 2, d.minPrice, d.maxPrice, update);
+    this.stepper(400, this.copyText('prompt', 'Price per shirt', vars), () => price.v, (v) => { price.v = v; }, (v) => `$${v}`, 2, d.minPrice, d.maxPrice, update);
     update();
     this.contentLayer.add(createButton(this, W / 2 - 150, 700, 300, 66, 'Open the table', () => this.settleLedger(resolvePricing(d, price.v)), { fillColor: PALETTE.terracotta }));
-    this.contentLayer.add(this.add.text(W / 2, 800, 'Margin is price minus cost, times how many actually buy.', textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+    this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolvePricing(d, price.v), true));
+    this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'Margin is price minus cost, times how many actually buy.', vars), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
   }
 
   private runPerDiem(): void {
     const d = { ...DEFAULT_LEDGER.perdiem, ...(this.mg.ledger ?? {}) } as { budget: number };
-    const live = this.ledgerFrame('Tomorrow\'s per diem', `$${d.budget} for the day. Theo would like one real meal and one real bed. Whatever is left goes back in the float.`);
+    const vars = { budget: d.budget };
+    const lbl = this.mg.copy?.labels ?? ['Food', 'A bed', 'Rest stop'];
+    const over = this.mg.copy?.overBudgetLine;
+    const live = this.ledgerFrame(this.copyText('heading', 'Tomorrow\'s per diem', vars), this.copyText('setup', `$${d.budget} for the day. Theo would like one real meal and one real bed. Whatever is left goes back in the float.`, vars));
     const a = { food: 20, lodging: 20, rest: 0 };
     const update = () => {
       const spent = a.food + a.lodging + a.rest;
       const f = perDiemForecast(a);
       live.setText(`$${spent} of $${d.budget}${spent > d.budget ? ' — over budget' : `, $${d.budget - spent} back in the float`}.\nTomorrow: energy ${f.energy >= 0 ? '+' : ''}${f.energy}, harmony ${f.harmony >= 0 ? '+' : ''}${f.harmony}.`);
     };
-    this.stepper(380, 'Food', () => a.food, (v) => { a.food = v; }, (v) => `$${v}`, 10, 0, 60, update);
-    this.stepper(446, 'A bed', () => a.lodging, (v) => { a.lodging = v; }, (v) => `$${v}`, 10, 0, 60, update);
-    this.stepper(512, 'Rest stop', () => a.rest, (v) => { a.rest = v; }, (v) => `$${v}`, 10, 0, 40, update);
+    this.stepper(380, lbl[0], () => a.food, (v) => { a.food = v; }, (v) => `$${v}`, 10, 0, 60, update);
+    this.stepper(446, lbl[1], () => a.lodging, (v) => { a.lodging = v; }, (v) => `$${v}`, 10, 0, 60, update);
+    this.stepper(512, lbl[2], () => a.rest, (v) => { a.rest = v; }, (v) => `$${v}`, 10, 0, 40, update);
     update();
-    this.contentLayer.add(createButton(this, W / 2 - 150, 700, 300, 66, 'Set the budget', () => this.settleLedger(resolvePerDiem(d, { ...a })), { fillColor: PALETTE.teal }));
-    this.contentLayer.add(this.add.text(W / 2, 800, 'Every dollar not spent on one thing was spent on another. That is the whole idea.', textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+    this.contentLayer.add(createButton(this, W / 2 - 150, 700, 300, 66, 'Set the budget', () => this.settleLedger(resolvePerDiem(d, { ...a }, over)), { fillColor: PALETTE.teal }));
+    this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolvePerDiem(d, { ...a }, over), true));
+    this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'Every dollar not spent on one thing was spent on another. That is the whole idea.', vars), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
   }
 
   private runGearCall(): void {
     const d = { ...DEFAULT_LEDGER.gearcall, ...(this.mg.ledger ?? {}) } as { price: number; rentPerShow: number };
     const showsLeft = Math.max(1, State.data.route.length - State.data.currentCityIndex);
-    const live = this.ledgerFrame('The synth', `A used synth Jun has wanted for a year. $${d.price} to buy, or $${d.rentPerShow} a night to rent. ${showsLeft} show${showsLeft === 1 ? '' : 's'} left on this tour.`);
-    live.setText(`Renting for the rest of the tour: ${showsLeft} × $${d.rentPerShow} = $${showsLeft * d.rentPerShow}.\nBuying: $${d.price}, and it comes home with you.`);
+    const shows = `${showsLeft} show${showsLeft === 1 ? '' : 's'}`;
+    const vars = { price: d.price, rentPerShow: d.rentPerShow, shows, rentTotal: showsLeft * d.rentPerShow };
+    const gearCopy = { thing: this.mg.copy?.thing, passLine: this.mg.copy?.passLine };
+    const live = this.ledgerFrame(this.copyText('heading', 'The synth', vars), this.copyText('setup', `A used synth Jun has wanted for a year. $${d.price} to buy, or $${d.rentPerShow} a night to rent. ${shows} left on this tour.`, vars));
+    live.setText(this.copyText('detail', `Renting for the rest of the tour: ${showsLeft} × $${d.rentPerShow} = $${showsLeft * d.rentPerShow}.\nBuying: $${d.price}, and it comes home with you.`, vars));
     const mk = (y: number, label: string, choice: 'buy' | 'rent' | 'pass', color: number) =>
-      this.contentLayer.add(createButton(this, W / 2 - 220, y, 440, 62, label, () => this.settleLedger(resolveGearCall(d, showsLeft, choice)), { fillColor: color, fontSize: '19px' }));
-    mk(660, `Buy it ($${d.price})`, 'buy', PALETTE.terracotta);
-    mk(736, `Rent it ($${d.rentPerShow} a show)`, 'rent', PALETTE.teal);
-    mk(812, 'Pass — the old rig is fine', 'pass', PALETTE.plum);
+      this.contentLayer.add(createButton(this, W / 2 - 220, y, 440, 62, label, () => this.settleLedger(resolveGearCall(d, showsLeft, choice, gearCopy)), { fillColor: color, fontSize: '19px' }));
+    mk(660, this.copyText('buyLabel', `Buy it ($${d.price})`, vars), 'buy', PALETTE.terracotta);
+    mk(736, this.copyText('rentLabel', `Rent it ($${d.rentPerShow} a show)`, vars), 'rent', PALETTE.teal);
+    mk(812, this.copyText('passLabel', 'Pass — the old rig is fine', vars), 'pass', PALETTE.plum);
+    this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolveGearCall(d, showsLeft, 'pass', gearCopy), true));
   }
 
   private runExchange(): void {
     const rates: { label: string; rate: number; feePct: number }[] = [...(this.mg.ledger?.rates ?? DEFAULT_LEDGER.exchange.rates)];
     const live = this.ledgerFrame('Changing money', 'Three windows, three rates, three fees. $200 of the float needs to become local money for the week.');
     live.setText('What you get is the rate with the fee taken off. Pick the window.');
+    this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolveExchange(rates, 0), true));
     rates.forEach((r, i) => {
       this.contentLayer.add(createButton(this, W / 2 - 260, 380 + i * 90, 520, 74, `${r.label}\nrate ${r.rate.toFixed(2)} · fee ${r.feePct}%`, () => this.settleLedger(resolveExchange(rates, i)), { fillColor: i % 2 === 0 ? PALETTE.teal : PALETTE.plum, fontSize: '17px' }));
     });
@@ -917,6 +961,7 @@ export class MiniGameScene extends Phaser.Scene {
     const answer = set[this.theoryRng.int(0, set.length)];
     const symbol = `${root}${answer}`;
     const hint = this.theoryFrame('What kind of chord was that?', rounds);
+    if (this.mg.copy?.setup) hint.setText(this.copyText('setup', '', { round: this.theoryRound + 1, rounds }));
     this.playChordSymbol(symbol);
     this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, 'Hear it again', () => this.playChordSymbol(symbol), { fillColor: PALETTE.plum, fontSize: '17px' }));
     let answered = false;
@@ -932,6 +977,13 @@ export class MiniGameScene extends Phaser.Scene {
         this.time.delayedCall(2200, () => this.runChordQualityRound());
       }, { fillColor: PALETTE.teal, fontSize: '19px' }));
     });
+    this.time.delayedCall(THEORY_IDLE_MS, () => {
+      if (answered) return;
+      answered = true;
+      hint.setText(`Moving on - that was ${QUALITY_LABELS[answer].toLowerCase()}: ${QUALITY_HINTS[answer]}.`);
+      this.theoryRound++;
+      this.time.delayedCall(2200, () => this.runChordQualityRound());
+    });
   }
 
   private runTransposeRound(): void {
@@ -946,7 +998,7 @@ export class MiniGameScene extends Phaser.Scene {
     const wrongs = [transposeChord(from, move.semis + 1), transposeChord(from, move.semis - 1), transposeChord(from, move.semis + 2)].filter((c) => c !== answer);
     const options = this.theoryRng.shuffle([answer, wrongs[0], wrongs[1]]);
     const hint = this.theoryFrame(`Move ${from} ${move.name}`, rounds);
-    hint.setText(`Question ${this.theoryRound + 1} of ${rounds} - Mira's voice is shot tonight; the set moves ${move.name}. Which chord does ${from} become?`);
+    hint.setText(this.copyText('setup', `Question ${this.theoryRound + 1} of ${rounds} - Mira's voice is shot tonight; the set moves ${move.name}. Which chord does ${from} become?`, { round: this.theoryRound + 1, rounds, from, move: move.name }));
     this.playChordSymbol(from);
     this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, `Hear ${from}`, () => this.playChordSymbol(from), { fillColor: PALETTE.plum, fontSize: '17px' }));
     let answered = false;
@@ -963,6 +1015,15 @@ export class MiniGameScene extends Phaser.Scene {
         this.theoryRound++;
         this.time.delayedCall(2600, () => this.runTransposeRound());
       }, { fillColor: PALETTE.teal, fontSize: '22px' }));
+    });
+    this.time.delayedCall(THEORY_IDLE_MS, () => {
+      if (answered) return;
+      answered = true;
+      hint.setText(`Moving on - ${from} ${move.name} is ${answer}.`);
+      this.playChordSymbol(from);
+      this.playChordSymbol(answer, 0.9);
+      this.theoryRound++;
+      this.time.delayedCall(2600, () => this.runTransposeRound());
     });
   }
 
@@ -982,7 +1043,7 @@ export class MiniGameScene extends Phaser.Scene {
       }
     };
     const hint = this.theoryFrame('What time signature was that?', rounds);
-    hint.setText(`Question ${this.theoryRound + 1} of ${rounds} - Theo counts it in. Feel where the heavy beat lands.`);
+    hint.setText(this.copyText('setup', `Question ${this.theoryRound + 1} of ${rounds} - Theo counts it in. Feel where the heavy beat lands.`, { round: this.theoryRound + 1, rounds }));
     play();
     this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, 'Hear it again', play, { fillColor: PALETTE.plum, fontSize: '17px' }));
     let answered = false;
@@ -997,6 +1058,13 @@ export class MiniGameScene extends Phaser.Scene {
         this.time.delayedCall(2400, () => this.runMeterRound());
       }, { fillColor: PALETTE.teal, fontSize: '24px' }));
     });
+    this.time.delayedCall(THEORY_IDLE_MS, () => {
+      if (answered) return;
+      answered = true;
+      hint.setText(`Moving on - that was ${answer.name}: ${answer.note}.`);
+      this.theoryRound++;
+      this.time.delayedCall(2400, () => this.runMeterRound());
+    });
   }
 
   private runTempoRound(): void {
@@ -1006,7 +1074,7 @@ export class MiniGameScene extends Phaser.Scene {
     const beat = 60 / target;
     const play = () => { for (let i = 0; i < 8; i++) audio.playPitch(i % 4 === 0 ? 1320 : 880, 0.07, i * beat, 'square'); };
     const hint = this.theoryFrame('Find the tempo', rounds);
-    hint.setText(`Round ${this.theoryRound + 1} of ${rounds} - the crowd claps at one speed. Tap the pad along with it, at least five times.`);
+    hint.setText(this.copyText('setup', `Round ${this.theoryRound + 1} of ${rounds} - the crowd claps at one speed. Tap the pad along with it, at least five times.`, { round: this.theoryRound + 1, rounds }));
     play();
     this.tempoTaps = [];
     this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, 'Hear it again', play, { fillColor: PALETTE.plum, fontSize: '17px' }));

@@ -1,12 +1,11 @@
 // The Van Ledger (src/game/ledger.ts): every rule is a pure function, and every exercise has to
 // be no-fail — the worst tier is 'rough', never a loss of the game — while still grading the
-// reasoning. Plus the seeded host selection that decides which two bandmate beats a run offers.
+// reasoning. Slot selection (which minigames a run actually plays) lives in minigameSlots.test.ts.
 import { describe, expect, it } from 'vitest';
 import {
   breakEvenTurnout, doorTake, resolveSplit, demandAt, profitAt, bestPrice, resolvePricing,
-  perDiemForecast, resolvePerDiem, resolveGearCall, effectiveRate, resolveExchange, hostedSelection, DEFAULT_LEDGER,
+  perDiemForecast, resolvePerDiem, resolveGearCall, effectiveRate, resolveExchange, DEFAULT_LEDGER,
 } from '../game/ledger';
-import { offeredMinigames, nextUnplayedMinigame } from '../game/minigame';
 import { transposeChord, splitChord } from '../core/musicTheory';
 import { validateCity } from '../../content/schema';
 import lisbonRaw from '../../content/cities/lisbon.json';
@@ -101,7 +100,7 @@ describe('theory helpers', () => {
   });
 });
 
-describe('hosted selection', () => {
+describe('shipped content', () => {
   const cities = [lisbonRaw, tokyoRaw, mexicoRaw, berlinRaw] as unknown as { id: string; minigames: MiniGameDef[] }[];
   it('every shipped city validates with the new types and every new type ships somewhere', () => {
     for (const c of cities) expect(validateCity(c).errors, c.id).toEqual([]);
@@ -109,39 +108,5 @@ describe('hosted selection', () => {
     for (const t of ['split', 'pricing', 'perdiem', 'gearcall', 'exchange', 'chordquality', 'transpose', 'meter', 'tempo']) {
       expect(types, t).toContain(t);
     }
-  });
-  it('offers every non-hosted minigame plus exactly two hosted ones, deterministically per seed', () => {
-    for (const c of cities) {
-      const hosted = c.minigames.filter((m) => m.hostBandmate);
-      const plain = c.minigames.filter((m) => !m.hostBandmate);
-      const a = offeredMinigames(c.minigames, 'seed-one', c.id);
-      const b = offeredMinigames(c.minigames, 'seed-one', c.id);
-      expect(a.map((m) => m.id)).toEqual(b.map((m) => m.id));
-      expect(a.filter((m) => !m.hostBandmate).length).toBe(plain.length);
-      expect(a.filter((m) => m.hostBandmate).length).toBe(Math.min(2, hosted.length));
-      const ids = c.minigames.map((m) => m.id);
-      const order = a.map((m) => ids.indexOf(m.id));
-      expect(order).toEqual([...order].sort((x, y) => x - y));
-    }
-  });
-  it('across many seeds every host gets offered', () => {
-    for (const c of cities) {
-      const hosts = new Set<string>();
-      for (let i = 0; i < 60; i++) for (const m of offeredMinigames(c.minigames, `seed-${i}`, c.id)) if (m.hostBandmate) hosts.add(m.hostBandmate);
-      const authored = new Set(c.minigames.filter((m) => m.hostBandmate).map((m) => m.hostBandmate as string));
-      expect(hosts).toEqual(authored);
-    }
-  });
-  it('legacy callers without a seed still see everything, and a played flag is skipped', () => {
-    const list = lisbonRaw.minigames as unknown as MiniGameDef[];
-    expect(offeredMinigames(list).length).toBe(list.length);
-    const first = nextUnplayedMinigame(list, () => false, 'seed-x', 'lisbon')!;
-    const second = nextUnplayedMinigame(list, (f) => f === `minigame_${first.id}_played`, 'seed-x', 'lisbon')!;
-    expect(second.id).not.toBe(first.id);
-  });
-  it('hostedSelection picks by the supplied index function', () => {
-    const items = [{ id: 'a', hostBandmate: 'mira' }, { id: 'b' }, { id: 'c', hostBandmate: 'theo' }, { id: 'd', hostBandmate: 'jun' }];
-    const out = hostedSelection(items, () => 0, 2);
-    expect(out.map((i) => i.id)).toEqual(['a', 'b', 'c']);
   });
 });

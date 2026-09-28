@@ -9,7 +9,7 @@ import { DialogueBox, DIALOGUE_PANEL_H, DIALOGUE_PANEL_X, DIALOGUE_PANEL_Y } fro
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
 import { saveRun } from '../core/save';
-import { getCity, getSong } from '../game/content';
+import { CITIES, getCity, getSong } from '../game/content';
 import { songForVisit, visitIndexFor } from '../game/setlist';
 import { audio } from '../core/audio';
 import { parseChordProgression } from '../core/musicTheory';
@@ -22,7 +22,7 @@ import type { CityDef, DialogueNode, LocationDef } from '../../content/schema';
 import { addTextScrim, textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
 import { addMenuButton } from './MenuButton';
-import { nextUnplayedMinigame } from '../game/minigame';
+import { bandTally, minigameForSlot, type MinigameSlot } from '../game/minigame';
 import { memoryFor, returnFeedFlag } from '../game/memory';
 import { buildFeed } from '../game/social';
 import { showSocialFeed } from './SocialFeed';
@@ -119,12 +119,13 @@ export class CityScene extends Phaser.Scene {
 
   create(): void {
     fadeIn(this);
-    const bgKey = ensureCityBackground(this, this.city.id, this.city.tint);
+    const visit = visitIndexFor(this.city.id, (State.data.cityMemories ?? []).filter((m) => m.firstShowRecorded).map((m) => m.cityId));
+    // A return visit gets its own painted city when it has loaded (see ensureCityBackground).
+    const bgKey = ensureCityBackground(this, this.city.id, this.city.tint, visit);
     const bg = addCoverBackground(this, bgKey);
     applyVignette(bg);
     // Same song the show will actually use tonight, so the city's ambient bed and the night's
     // setlist agree (a return leg hums its second song, not the first night's).
-    const visit = visitIndexFor(this.city.id, (State.data.cityMemories ?? []).filter((m) => m.firstShowRecorded).map((m) => m.cityId));
     const song = getSong(songForVisit(this.city, State.data.seed, visit));
     audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm * 0.5, song.waveform);
     const stop = currentStopFor(State.data.route, State.data.currentCityIndex, this.city.id);
@@ -293,8 +294,11 @@ export class CityScene extends Phaser.Scene {
    *  played-flag also prevents ever repeating the same one twice in a run. Shared by both
    *  insertion points below — `returnPhase` is where MiniGameScene.finish() sends the player
    *  back to, `fallback` is what runs immediately if there's nothing left to play. */
-  private tryMinigame(returnPhase: CityPhase, fallback: () => void): void {
-    const next = nextUnplayedMinigame(this.city.minigames, (flag) => State.hasFlag(flag), State.data.seed, this.city.id);
+  private tryMinigame(returnPhase: CityPhase, slot: MinigameSlot, fallback: () => void): void {
+    const has = (flag: string): boolean => State.hasFlag(flag);
+    const visit = visitIndexFor(this.city.id, (State.data.cityMemories ?? []).filter((m) => m.firstShowRecorded).map((m) => m.cityId));
+    const tally = bandTally(CITIES.flatMap((c) => c.minigames ?? []), has);
+    const next = minigameForSlot(this.city.minigames, has, State.data.seed, this.city.id, visit, slot, tally);
     if (next) {
       // Addendum v2, Item 9b: VN -> minigame uses 'card', the minigame's own diegetic intro
       // line doubling as the transition's line so it reads as the story turning a page into the
@@ -306,11 +310,13 @@ export class CityScene extends Phaser.Scene {
   }
 
   private startMinigameOrLocations(): void {
-    this.tryMinigame('locations', () => this.startLocationPicker());
+    // Arrival is when the band talks money and music; the craft slot sits before the show,
+    // where a soundcheck or a load-in actually happens.
+    this.tryMinigame('locations', 'band', () => this.startLocationPicker());
   }
 
   private startMinigameOrPreshowChoices(): void {
-    this.tryMinigame('preshow-choices', () => this.renderPreShowChoices());
+    this.tryMinigame('preshow-choices', 'craft', () => this.renderPreShowChoices());
   }
 
   private startLocationPicker(): void {

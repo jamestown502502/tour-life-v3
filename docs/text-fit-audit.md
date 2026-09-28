@@ -9,7 +9,7 @@ that fails this shrink loop — it grows the button instead — so a "fail" here
 would grow its button taller than requested," a layout risk in a tight vertical stack, not a
 rendering defect.
 
-**189 strings checked, 0 would force the grow-fallback.**
+**193 strings checked, 0 would force the grow-fallback.**
 
 | City | Screen | Field | Label | Container | Fits |
 |---|---|---|---|---|---|
@@ -22,6 +22,7 @@ rendering defect.
 | berlin | preshow choice | preShowChoices[no_click_track].label | Cut the click track entirely | 600x66 @ 18px | ✅ |
 | berlin | preshow choice | preShowChoices[full_pa_push].label | Push the PA to the edge | 600x66 @ 18px | ✅ |
 | berlin | preshow choice | preShowChoices[duet_with_lene].label | Trade the bridge with Lene's modular rig | 600x66 @ 18px | ✅ |
+| berlin | preshow choice | preShowChoices[book_modular].label | Book the modular rig ($60) | 600x66 @ 18px | ✅ |
 | berlin | dialogue node "ber_arrival" | choices[view].label | Watch the light hit the tower | 660x62 @ 22px | ✅ |
 | berlin | dialogue node "ber_arrival" | choices[gear].label | Get the gear off before the meter runs | 660x62 @ 22px | ✅ |
 | berlin | dialogue node "ber_arrival" | choices[theo].label | Check on Theo, who's gone unusually q... | 660x62 @ 22px | ✅ |
@@ -64,6 +65,7 @@ rendering defect.
 | lisbon | preshow choice | preShowChoices[acoustic_set].label | Play it acoustic | 600x66 @ 18px | ✅ |
 | lisbon | preshow choice | preShowChoices[crowd_pleaser].label | Give them the full band | 600x66 @ 18px | ✅ |
 | lisbon | preshow choice | preShowChoices[duet_with_ines].label | Invite Inês up for a duet | 600x66 @ 18px | ✅ |
+| lisbon | preshow choice | preShowChoices[hire_horn].label | Hire the horn player ($60) | 600x66 @ 18px | ✅ |
 | lisbon | dialogue node "lis_arrival" | choices[view].label | Take in the view | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_arrival" | choices[gear].label | Get the gear off the train | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_arrival" | choices[mira].label | Check on Mira | 660x62 @ 22px | ✅ |
@@ -108,6 +110,7 @@ rendering defect.
 | mexico_city | preshow choice | preShowChoices[rehearsed_set].label | Play it exactly as rehearsed | 600x66 @ 18px | ✅ |
 | mexico_city | preshow choice | preShowChoices[open_the_floor].label | Open the floor for the crowd to answer | 600x66 @ 18px | ✅ |
 | mexico_city | preshow choice | preShowChoices[spotlight_ximena].label | Bring Ximena up to trade rhythms | 600x66 @ 18px | ✅ |
+| mexico_city | preshow choice | preShowChoices[hire_percussion].label | Bring in the percussion crew ($60) | 600x66 @ 18px | ✅ |
 | mexico_city | minigame "mex_interview" | questions[q1].optionA | "Chasing something honest" | 600x66 @ 19px | ✅ |
 | mexico_city | minigame "mex_interview" | questions[q1].optionB | "Just seeing the world, mostly" | 600x66 @ 19px | ✅ |
 | mexico_city | minigame "mex_interview" | questions[q2].optionA | "None we'd say out loud" | 600x66 @ 19px | ✅ |
@@ -167,6 +170,7 @@ rendering defect.
 | tokyo | preshow choice | preShowChoices[precision_set].label | Play it tight and precise | 600x66 @ 18px | ✅ |
 | tokyo | preshow choice | preShowChoices[improvised_night].label | Let it breathe and improvise | 600x66 @ 18px | ✅ |
 | tokyo | preshow choice | preShowChoices[spotlight_rowan].label | Build the whole set around Rowan's ba... | 600x66 @ 18px | ✅ |
+| tokyo | preshow choice | preShowChoices[rent_good_pa].label | Rent the good PA ($60) | 600x66 @ 18px | ✅ |
 | tokyo | dialogue node "tok_arrival" | choices[explore].label | Walk it off before soundcheck | 660x62 @ 22px | ✅ |
 | tokyo | dialogue node "tok_arrival" | choices[rest].label | Find the hotel and actually rest | 660x62 @ 22px | ✅ |
 | tokyo | dialogue node "tok_arrival" | choices[rowan].label | Check on Rowan, who's gone quiet | 660x62 @ 22px | ✅ |
