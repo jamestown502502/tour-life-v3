@@ -5,7 +5,7 @@
 // skipping it is missing a small moment. That is also why HubScene can route through it safely
 // without touching the resume matrix.
 import Phaser from 'phaser';
-import { ensureSceneBackdrop } from '../art/sprites';
+import { vanBackdropKey } from '../art/sprites';
 import { addCoverBackground } from '../art/background';
 import { applyVignette } from '../art/effects';
 import { PALETTE, W } from '../const';
@@ -47,9 +47,9 @@ export class VanScene extends Phaser.Scene {
 
   create(): void {
     fadeIn(this);
-    // Painted backdrop (pre-public "no barren screens" pass). Falls back to a code-drawn
-    // gradient if the asset is missing — ensureSceneBackdrop keeps that seam.
-    const bgKey = ensureSceneBackdrop(this, 'van', PALETTE.sky);
+    // One of four painted drives, never the same one twice in a row (see src/game/vanArt.ts).
+    // Falls back to the original, and that to a code-drawn gradient, if art is missing.
+    const bgKey = vanBackdropKey(this, State.data.seed, State.data.currentCityIndex);
     applyVignette(addCoverBackground(this, bgKey));
     const city = getCity(this.cityId);
 

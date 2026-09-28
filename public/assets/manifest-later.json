@@ -102,5 +102,17 @@
   {
     "key": "bg_rhythm_tokyo_return",
     "file": "img/later/bg_rhythm_tokyo_return.webp"
+  },
+  {
+    "key": "bg_scene_van_2",
+    "file": "img/later/bg_scene_van_2.webp"
+  },
+  {
+    "key": "bg_scene_van_3",
+    "file": "img/later/bg_scene_van_3.webp"
+  },
+  {
+    "key": "bg_scene_van_4",
+    "file": "img/later/bg_scene_van_4.webp"
   }
 ]
