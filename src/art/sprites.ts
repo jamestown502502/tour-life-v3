@@ -1,6 +1,7 @@
 // All visuals are code-drawn: Phaser Graphics + generateTexture(). No image files.
 import Phaser from 'phaser';
 import { hasRealAsset, isPending } from '../core/assets';
+import { vanBackdropOrder } from '../game/vanArt';
 import { H, PALETTE, UI_RADIUS, W } from '../const';
 import { CITY_TINTS, NIGHT_TINTS } from './palette';
 import type { BandmateId } from '../../content/schema';
@@ -625,6 +626,19 @@ export function ensurePixelTexture(scene: Phaser.Scene, key: string, color: numb
  *  Same seam as every other painted asset: if the real file registered, withGraphics early-returns
  *  and the painting wins; if it is missing, the code-drawn gradient below draws instead and nothing
  *  crashes. The tint keeps each fallback distinguishable rather than four identical navy fields. */
+/** The van painting for drive number `leg` (see src/game/vanArt.ts). The variants are
+ *  background-loaded; one that has not arrived yet is skipped for the next in the tour's order,
+ *  and the original always exists (painted at boot, or its code-drawn fallback). */
+export function vanBackdropKey(scene: Phaser.Scene, seed: string, leg: number): string {
+  const order = vanBackdropOrder(seed);
+  for (let i = 0; i < order.length; i++) {
+    const key = order[(leg + i) % order.length];
+    if (key === 'bg_scene_van') break;
+    if (hasRealAsset(key) && scene.textures.exists(key)) return key;
+  }
+  return ensureSceneBackdrop(scene, 'van', PALETTE.sky);
+}
+
 export function ensureSceneBackdrop(scene: Phaser.Scene, id: string, tint: number): string {
   const key = `bg_scene_${id}`;
   withGraphics(scene, W, H, (g) => {

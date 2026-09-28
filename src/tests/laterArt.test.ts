@@ -13,6 +13,7 @@ import tokyo from '../../content/cities/tokyo.json';
 import mexico from '../../content/cities/mexico_city.json';
 import berlin from '../../content/cities/berlin.json';
 import type { CityDef } from '../../content/schema';
+import { VAN_BACKDROPS, vanBackdropOrder } from '../game/vanArt';
 
 const CITIES = [lisbon, tokyo, mexico, berlin] as unknown as CityDef[];
 const BOOT_KEYS = new Set((boot as { key: string }[]).map((e) => e.key));
@@ -42,6 +43,28 @@ describe('background-loaded art', () => {
     const root = path.join(__dirname, '..', '..', 'public', 'assets');
     const absent = LATER.filter((e) => !existsSync(path.join(root, e.file))).map((e) => e.file);
     expect(absent).toEqual([]);
+  });
+});
+
+describe('van paintings', () => {
+  const seeds = Array.from({ length: 300 }, (_, i) => `van-${i}`);
+
+  it('every van variant is shipped (the original is boot art, the rest load after the title)', () => {
+    for (const key of VAN_BACKDROPS) expect(BOOT_KEYS.has(key) || LATER_KEYS.has(key), key).toBe(true);
+  });
+
+  it('two drives in a row never share a painting, and a tour\'s first four drives are all different', () => {
+    for (const seed of seeds) {
+      const legs = Array.from({ length: 5 }, (_, leg) => vanBackdropOrder(seed)[leg % 4]);
+      for (let i = 1; i < legs.length; i++) expect(legs[i], `${seed} leg ${i}`).not.toBe(legs[i - 1]);
+      expect(new Set(legs.slice(0, 4)).size, seed).toBe(4);
+    }
+  });
+
+  it('the seed decides the order, so tours differ from each other', () => {
+    const firstDrives = new Set(seeds.map((s) => vanBackdropOrder(s)[0]));
+    expect(firstDrives.size).toBe(4);
+    expect(vanBackdropOrder('same-seed')).toEqual(vanBackdropOrder('same-seed'));
   });
 });
 

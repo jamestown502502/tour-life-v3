@@ -87,6 +87,40 @@ test.describe('return-visit art', () => {
   });
 });
 
+test.describe('van paintings', () => {
+  test('consecutive drives show different van paintings', async ({ page }) => {
+    test.setTimeout(120000);
+    const errors = collectConsoleErrors(page);
+    await skipFirstTimeOnboarding(page);
+    await bootGame(page);
+    await waitForActiveScene(page, 'Title', 20000);
+    for (const k of ['bg_scene_van_2', 'bg_scene_van_3', 'bg_scene_van_4']) await waitForTexture(page, k);
+    await page.evaluate(() => (window as any).__game.scene.stop('Title'));
+    const seen: string[] = [];
+    for (let leg = 0; leg < 5; leg++) {
+      await page.evaluate((leg) => {
+        const S: any = (window as any).__state;
+        if (leg === 0) {
+          S.newRun('van-art-e2e');
+          S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+        }
+        S.data.currentCityIndex = leg;
+        const g: any = (window as any).__game;
+        g.scene.stop('Van');
+        g.scene.start('Van', { cityId: 'lisbon' });
+      }, leg);
+      await waitForActiveScene(page, 'Van', 15000);
+      await page.waitForTimeout(300);
+      seen.push(await backgroundKey(page, 'Van'));
+    }
+    console.log('[van legs]', seen.join(' -> '));
+    for (const key of seen) expect(key).toMatch(/^bg_scene_van(_[234])?$/);
+    for (let i = 1; i < seen.length; i++) expect(seen[i], `leg ${i}`).not.toBe(seen[i - 1]);
+    expect(new Set(seen.slice(0, 4)).size).toBe(4);
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+});
+
 test.describe('iPhone safe-area insets', () => {
   test('with notch and home-indicator insets, the whole game stays on screen', async ({ page }) => {
     await skipFirstTimeOnboarding(page);
