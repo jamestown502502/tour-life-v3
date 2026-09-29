@@ -28,6 +28,7 @@ import type { MiniGameDef, MiniGameQuestion, MiniGameReward } from '../../conten
 import { minigamePlayedFlag, timingRoundsForHarmony } from '../game/minigame';
 import { fillTemplate, DEFAULT_LEDGER, resolveSplit, resolvePricing, resolvePerDiem, resolveGearCall, resolveExchange, doorTake, breakEvenTurnout, demandAt, perDiemForecast, type LedgerOutcome } from '../game/ledger';
 import { chordFrequencies, splitChord, transposeChord, QUALITY_LABELS, QUALITY_HINTS } from '../core/musicTheory';
+import { rapportFor, RAPPORT_LABEL, HOST_NAMES, quietLine, wrongToRemove, chordHint, transposeHint, meterHint, tempoHint, splitHint, pricingHint, perDiemHint, gearHint, type Rapport } from '../game/bandHelp';
 import { getSong } from '../game/content';
 import { makeRng } from '../core/rng';
 
@@ -97,6 +98,11 @@ export class MiniGameScene extends Phaser.Scene {
   private timingRoundsSec: number[] = [];
   private dragItemsOrder: string[] = [];
   private questionsOrder: MiniGameQuestion[] = [];
+  /** Rapport with this game's host bandmate, fixed when the game opens; null if nobody hosts it.
+   *  It decides the help the host gives (src/game/bandHelp.ts). */
+  private rapport: Rapport | null = null;
+  private helpUsed = false;
+  private tempoPulse: Phaser.Time.TimerEvent | null = null;
 
   init(data: { cityId: string; minigameId: string; returnPhase: string; practice?: boolean }): void {
     this.cityId = data.cityId;
@@ -120,6 +126,9 @@ export class MiniGameScene extends Phaser.Scene {
     this.sequenceHits = 0;
     this.ledgerOutcome = null;
     this.tempoTaps = [];
+    this.rapport = this.mg.hostBandmate ? rapportFor(State.data.relationships[this.mg.hostBandmate]) : null;
+    this.helpUsed = false;
+    this.tempoPulse = null;
     // Seeded per minigame like every other per-run variance, so a replayed seed drills the same
     // pattern instead of a fresh random one.
     this.sequenceRng = makeRng(State.data.seed + ':sequence:' + data.minigameId);
@@ -153,6 +162,43 @@ export class MiniGameScene extends Phaser.Scene {
 
   private clearContent(): void {
     this.contentLayer.removeAll(true);
+  }
+
+  /** The host's strip under the title: who is hosting, how close you are, and a line their help
+   *  (or their silence) fills in. Returns that line, or null for a game nobody hosts. */
+  private hostStrip(): Phaser.GameObjects.Text | null {
+    if (!this.rapport || !this.mg.hostBandmate) return null;
+    this.contentLayer.add(addTextScrim(this, W / 2, 144, W - 60, 80));
+    const color = this.rapport === 'close' ? PALETTE_HEX.gold : PALETTE_HEX.cream;
+    this.contentLayer.add(this.add.text(W / 2, 118, `${HOST_NAMES[this.mg.hostBandmate]} · ${RAPPORT_LABEL[this.rapport]}`,
+      textStyle('small', { fontSize: '15px', color })).setOrigin(0.5));
+    const line = this.add.text(W / 2, 140, '', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream, wordWrap: { width: W - 110 }, align: 'center' })).setOrigin(0.5, 0);
+    this.contentLayer.add(line);
+    return line;
+  }
+
+  /** Close: the help arrives on its own. Steady: an "Ask <name>" button, once per game. Distant:
+   *  the host keeps to themselves. `apply` performs the help and returns the host's line. */
+  private offerHelp(line: Phaser.GameObjects.Text | null, apply: () => string, askX: number, askY: number): void {
+    if (!line || !this.rapport || !this.mg.hostBandmate) return;
+    if (this.rapport === 'distant') { line.setText(quietLine(this.mg.hostBandmate)); return; }
+    if (this.rapport === 'close') { line.setText(apply()); return; }
+    if (this.helpUsed) return;
+    const btn = createButton(this, askX, askY, 176, 58, `Ask ${HOST_NAMES[this.mg.hostBandmate]}`, () => {
+      if (this.helpUsed) return;
+      this.helpUsed = true;
+      btn.setVisible(false);
+      line.setText(apply());
+      audio.playSfx('tap');
+    }, { fillColor: PALETTE.plum, fontSize: '17px' });
+    this.contentLayer.add(btn);
+  }
+
+  /** Grey out some wrong answers (never the right one, always leaving at least one wrong). */
+  private dimWrong(opts: { key: string; btn: Phaser.GameObjects.Container }[], answer: string, dimmed: Set<string>): void {
+    const wrong = this.theoryRng.shuffle(opts.filter((o) => o.key !== answer && !dimmed.has(o.key)));
+    // the buttons fade in (Button.ts); stop that tween or it would restore full alpha afterwards
+    for (const o of wrong.slice(0, wrongToRemove(opts.length))) { dimmed.add(o.key); this.tweens.killTweensOf(o.btn); o.btn.setScale(1).setAlpha(0.45); }
   }
 
   private card(y: number, h: number): Phaser.GameObjects.Image {
@@ -622,7 +668,7 @@ export class MiniGameScene extends Phaser.Scene {
     // Ledger money lands on top of the authored reward, and the decision is remembered for the Hub card.
     if (this.ledgerOutcome) {
       State.applyStatDeltas({ funds: this.ledgerOutcome.funds });
-      State.recordLedger({ cityId: this.cityId, label: this.ledgerOutcome.label, funds: this.ledgerOutcome.funds });
+      State.recordLedger({ cityId: this.cityId, label: this.ledgerOutcome.label, funds: this.ledgerOutcome.funds, type: this.mg.type, tier: this.ledgerOutcome.tier });
     }
     // A hosted minigame is time spent with that bandmate: it moves their arc like a scene does.
     if (this.mg.hostBandmate) State.recordArcScene(this.mg.hostBandmate);
@@ -860,6 +906,7 @@ export class MiniGameScene extends Phaser.Scene {
     this.contentLayer.add(createButton(this, W / 2 + 10, 700, 290, 66, 'Take the door', () => this.settleLedger(resolveSplit(d, 'door', est.v / 100, actual)), { fillColor: PALETTE.terracotta, fontSize: '18px' }));
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolveSplit(d, 'guarantee', est.v / 100, actual), true));
     this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'A sure thing is worth something. So is being right about the room.', vars), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+    this.offerHelp(this.hostStrip(), () => splitHint(this.mg.hostBandmate!, actual), W / 2 - 88, 900);
   }
 
   private runPricing(): void {
@@ -876,6 +923,7 @@ export class MiniGameScene extends Phaser.Scene {
     this.contentLayer.add(createButton(this, W / 2 - 150, 700, 300, 66, 'Open the table', () => this.settleLedger(resolvePricing(d, price.v)), { fillColor: PALETTE.terracotta }));
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolvePricing(d, price.v), true));
     this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'Margin is price minus cost, times how many actually buy.', vars), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+    this.offerHelp(this.hostStrip(), () => pricingHint(this.mg.hostBandmate!, d), W / 2 - 88, 900);
   }
 
   private runPerDiem(): void {
@@ -897,6 +945,7 @@ export class MiniGameScene extends Phaser.Scene {
     this.contentLayer.add(createButton(this, W / 2 - 150, 700, 300, 66, 'Set the budget', () => this.settleLedger(resolvePerDiem(d, { ...a }, over)), { fillColor: PALETTE.teal }));
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolvePerDiem(d, { ...a }, over), true));
     this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'Every dollar not spent on one thing was spent on another. That is the whole idea.', vars), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+    this.offerHelp(this.hostStrip(), () => perDiemHint(this.mg.hostBandmate!, d.budget, lbl), W / 2 - 88, 900);
   }
 
   private runGearCall(): void {
@@ -913,6 +962,7 @@ export class MiniGameScene extends Phaser.Scene {
     mk(736, this.copyText('rentLabel', `Rent it ($${d.rentPerShow} a show)`, vars), 'rent', PALETTE.teal);
     mk(812, this.copyText('passLabel', 'Pass — the old rig is fine', vars), 'pass', PALETTE.plum);
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolveGearCall(d, showsLeft, 'pass', gearCopy), true));
+    this.offerHelp(this.hostStrip(), () => gearHint(this.mg.hostBandmate!, d.price, d.rentPerShow, showsLeft), W / 2 - 88, 900);
   }
 
   private runExchange(): void {
@@ -965,9 +1015,11 @@ export class MiniGameScene extends Phaser.Scene {
     this.playChordSymbol(symbol);
     this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, 'Hear it again', () => this.playChordSymbol(symbol), { fillColor: PALETTE.plum, fontSize: '17px' }));
     let answered = false;
+    const opts: { key: string; btn: Phaser.GameObjects.Container }[] = [];
+    const dimmed = new Set<string>();
     set.forEach((q, i) => {
-      this.contentLayer.add(createButton(this, W / 2 - 260, 410 + i * 84, 520, 70, QUALITY_LABELS[q], () => {
-        if (answered) return;
+      opts.push({ key: q, btn: createButton(this, W / 2 - 260, 410 + i * 84, 520, 70, QUALITY_LABELS[q], () => {
+        if (answered || dimmed.has(q)) return;
         answered = true;
         const right = q === answer;
         if (right) { this.theoryHits++; spawnPerfectSpark(this, W / 2, 400); hitstop(this, 40); } else shake(this, 3);
@@ -975,8 +1027,10 @@ export class MiniGameScene extends Phaser.Scene {
         this.playChordSymbol(symbol);
         this.theoryRound++;
         this.time.delayedCall(2200, () => this.runChordQualityRound());
-      }, { fillColor: PALETTE.teal, fontSize: '19px' }));
+      }, { fillColor: PALETTE.teal, fontSize: '19px' }) });
     });
+    for (const o of opts) this.contentLayer.add(o.btn);
+    this.offerHelp(this.hostStrip(), () => { this.dimWrong(opts, answer, dimmed); this.playChordSymbol(symbol); return chordHint(this.mg.hostBandmate!); }, W - 196, 320);
     this.time.delayedCall(THEORY_IDLE_MS, () => {
       if (answered) return;
       answered = true;
@@ -1002,9 +1056,11 @@ export class MiniGameScene extends Phaser.Scene {
     this.playChordSymbol(from);
     this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, `Hear ${from}`, () => this.playChordSymbol(from), { fillColor: PALETTE.plum, fontSize: '17px' }));
     let answered = false;
+    const opts: { key: string; btn: Phaser.GameObjects.Container }[] = [];
+    const dimmed = new Set<string>();
     options.forEach((opt, i) => {
-      this.contentLayer.add(createButton(this, W / 2 - 260, 410 + i * 84, 520, 70, opt, () => {
-        if (answered) return;
+      opts.push({ key: opt, btn: createButton(this, W / 2 - 260, 410 + i * 84, 520, 70, opt, () => {
+        if (answered || dimmed.has(opt)) return;
         answered = true;
         const right = opt === answer;
         if (right) { this.theoryHits++; spawnPerfectSpark(this, W / 2, 400); hitstop(this, 40); } else shake(this, 3);
@@ -1014,8 +1070,10 @@ export class MiniGameScene extends Phaser.Scene {
         this.playChordSymbol(answer, 0.9);
         this.theoryRound++;
         this.time.delayedCall(2600, () => this.runTransposeRound());
-      }, { fillColor: PALETTE.teal, fontSize: '22px' }));
+      }, { fillColor: PALETTE.teal, fontSize: '22px' }) });
     });
+    for (const o of opts) this.contentLayer.add(o.btn);
+    this.offerHelp(this.hostStrip(), () => { this.dimWrong(opts, answer, dimmed); return transposeHint(this.mg.hostBandmate!, move.semis); }, W - 196, 320);
     this.time.delayedCall(THEORY_IDLE_MS, () => {
       if (answered) return;
       answered = true;
@@ -1047,17 +1105,26 @@ export class MiniGameScene extends Phaser.Scene {
     play();
     this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, 'Hear it again', play, { fillColor: PALETTE.plum, fontSize: '17px' }));
     let answered = false;
+    const opts: { key: string; btn: Phaser.GameObjects.Container }[] = [];
+    const dimmed = new Set<string>();
     METERS.forEach((m, i) => {
-      this.contentLayer.add(createButton(this, W / 2 - 260, 410 + i * 84, 520, 70, m.name, () => {
-        if (answered) return;
+      opts.push({ key: m.name, btn: createButton(this, W / 2 - 260, 410 + i * 84, 520, 70, m.name, () => {
+        if (answered || dimmed.has(m.name)) return;
         answered = true;
         const right = m.name === answer.name;
         if (right) { this.theoryHits++; spawnPerfectSpark(this, W / 2, 400); hitstop(this, 40); } else shake(this, 3);
         hint.setText(right ? `Yes - ${answer.name}: ${answer.note}.` : `That was ${answer.name} - ${answer.note}.`);
         this.theoryRound++;
         this.time.delayedCall(2400, () => this.runMeterRound());
-      }, { fillColor: PALETTE.teal, fontSize: '24px' }));
+      }, { fillColor: PALETTE.teal, fontSize: '24px' }) });
     });
+    for (const o of opts) this.contentLayer.add(o.btn);
+    this.offerHelp(this.hostStrip(), () => {
+      this.dimWrong(opts, answer.name, dimmed);
+      // the host claps only the heavy beats of the count-in
+      for (let bar = 0; bar < 2; bar++) for (const a of answer.accents) audio.playPitch(1760, 0.1, (bar * answer.beats + a) * answer.step, 'triangle');
+      return meterHint(this.mg.hostBandmate!);
+    }, W - 196, 320);
     this.time.delayedCall(THEORY_IDLE_MS, () => {
       if (answered) return;
       answered = true;
@@ -1069,6 +1136,8 @@ export class MiniGameScene extends Phaser.Scene {
 
   private runTempoRound(): void {
     const rounds = this.mg.theoryRounds ?? 2;
+    this.tempoPulse?.remove();
+    this.tempoPulse = null;
     if (this.theoryDone(rounds)) return;
     const target = getCity(this.cityId).tempo + this.theoryRng.int(-14, 15);
     const beat = 60 / target;
@@ -1086,6 +1155,8 @@ export class MiniGameScene extends Phaser.Scene {
     const settle = () => {
       if (settled) return;
       settled = true;
+      this.tempoPulse?.remove();
+      this.tempoPulse = null;
       const t = this.tempoTaps;
       const gaps = t.slice(1).map((v, i) => v - t[i]).sort((a, b) => a - b);
       const median = gaps.length ? gaps[Math.floor(gaps.length / 2)] : beat * 1000;
@@ -1108,6 +1179,11 @@ export class MiniGameScene extends Phaser.Scene {
       readout.setText(`${this.tempoTaps.length} / 6`);
       if (this.tempoTaps.length >= 6) this.time.delayedCall(250, settle);
     });
+    this.offerHelp(this.hostStrip(), () => {
+      this.tempoPulse?.remove();
+      this.tempoPulse = this.time.addEvent({ delay: beat * 1000, loop: true, callback: () => { if (!settled) spawnRingPulse(this, W / 2, 560, PALETTE.gold); } });
+      return tempoHint(this.mg.hostBandmate!);
+    }, W - 196, 320);
     // No-fail: a player who never taps still moves on after a while.
     this.time.delayedCall(20000, () => { if (!settled) { if (this.tempoTaps.length >= 2) settle(); else { settled = true; hint.setText('Moving on - no penalty'); this.theoryRound++; this.time.delayedCall(900, () => this.runTempoRound()); } } });
   }

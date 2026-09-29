@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { LEDGER_LESSONS, LEDGER_TYPES, type LedgerType } from '../game/ledger';
 import { addCoverBackground } from '../art/background';
 import { PALETTE, PALETTE_HEX, W } from '../const';
 import { ensureDialoguePanel, ensureScrapbookCard, ensureSceneBackdrop } from '../art/sprites';
@@ -80,11 +81,48 @@ export class ScrapbookScene extends Phaser.Scene {
 
     createButton(this, W / 2 - 150, 810, 300, 66, 'Save tour as image', () => this.exportAsImage(), { fillColor: 0x8a6fa3 });
 
+    // The money decisions this tour made, each with the rule of thumb behind it. Only when there
+    // were some: a run that never met a ledger game has nothing to reflect on.
+    if (this.ledgerLessons()) {
+      createButton(this, W / 2 - 150, 990, 300, 66, 'What the ledger taught us', () => this.toggleLedger(), { fillColor: 0x3e7c7b, fontSize: '19px' });
+    }
+
     createButton(this, W / 2 - 150, 900, 300, 66, 'Start a new tour', async () => {
       await clearSave();
       State.data.progress = { screen: 'title' };
       goTo(this, 'Title');
     }, { fillColor: 0x3e7c7b });
+  }
+
+  /** Each kind of money decision this run made: what the band chose, and the lesson. */
+  private ledgerLessons(): string | null {
+    const typed = (State.data.ledger ?? []).filter((e) => LEDGER_TYPES.includes(e.type as LedgerType));
+    if (typed.length === 0) return null;
+    const order = LEDGER_TYPES.filter((t) => typed.some((e) => e.type === t));
+    return order.map((t) => {
+      const what = typed.filter((e) => e.type === t).map((e) => `${e.label} (${getCity(e.cityId).name})`).join('; ');
+      return `${what}\n${LEDGER_LESSONS[t]}`;
+    }).join('\n\n');
+  }
+
+  private toggleLedger(): void {
+    const existing = this.children.getByName('ledgerPanel');
+    if (existing) { existing.destroy(); return; }
+    const text = this.ledgerLessons() ?? '';
+    const panelKey = ensureDialoguePanel(this);
+    const x = 40, y = 140, w = W - 80;
+    const panel = this.add.container(0, 0).setName('ledgerPanel').setDepth(160);
+    const overlay = this.add.rectangle(0, 0, W, this.cameras.main.height, 0x000000, 0.55).setOrigin(0, 0).setInteractive();
+    overlay.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event: { stopPropagation: () => void }) => event.stopPropagation());
+    const bg = this.add.image(x, y, panelKey).setOrigin(0, 0);
+    const title = this.add.text(x + w / 2, y + 44, 'What the ledger taught us', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5);
+    const body = this.add.text(x + 36, y + 90, text, textStyle('dialogue', {
+      fontSize: '18px', color: PALETTE_HEX.plum, wordWrap: { width: w - 72 }, lineSpacing: 6,
+    }));
+    const h = 90 + body.height + 110;
+    bg.setDisplaySize(w, h);
+    const closeBtn = createButton(this, x + w / 2 - 110, y + h - 80, 220, 60, 'Close', () => this.toggleLedger(), { fillColor: 0x8fb7c9 });
+    panel.add([overlay, bg, title, body, closeBtn]);
   }
 
   /** Close-out item 7: a written payoff ("Two months later...") matched to the exact
