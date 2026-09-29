@@ -7,7 +7,7 @@
 // three no-fail tiers as every other minigame (rough / good / perfect), and its effect on funds
 // is deliberately scaled down (about a tenth of the dollars shown) so a ledger never swings a
 // run the way a show does.
-import type { MiniGameDef } from '../../content/schema';
+import type { MiniGameDef, StatDeltas } from '../../content/schema';
 
 export type LedgerTier = 'rough' | 'good' | 'perfect';
 
@@ -163,3 +163,59 @@ export function resolveExchange(rates: readonly { label: string; rate: number; f
   const explain = `$${amount} became ${got} local at ${rates[pick].label} (rate ${rates[pick].rate.toFixed(2)}, fee ${rates[pick].feePct}%). The best window paid ${bestGot}. The fee is part of the rate.`;
   return { tier, funds: -scale(bestGot - got) + (tier === 'perfect' ? 3 : 0), explain, label: `Exchange, ${got} local` };
 }
+
+// ---- echoes and lessons -----------------------------------------------------------------------
+// A money decision used to be settled on the spot and never mentioned again. Now it comes back on
+// the next drive (VanScene) as a line of story with a small stat effect, and every decision the
+// run made is summed up in the Scrapbook with the rule of thumb behind it. Research on financial
+// games is consistent that consequences and a moment of reflection are what make the lesson stick.
+
+export type LedgerType = 'split' | 'pricing' | 'perdiem' | 'gearcall' | 'exchange';
+export const LEDGER_TYPES: readonly LedgerType[] = ['split', 'pricing', 'perdiem', 'gearcall', 'exchange'];
+
+const ECHOES: Record<LedgerType, { good: string[]; rough: string[]; goodFx: StatDeltas; roughFx: StatDeltas }> = {
+  split: {
+    good: ['An email from the {city} booker: the room remembered you, and they want you back.', 'Rowan reads the {city} door numbers out loud again, just to hear them.'],
+    rough: ['Rowan does the {city} sums one more time in the van. "Next time we trust the break-even."'],
+    goodFx: { inspiration: 2 }, roughFx: { harmony: -1 },
+  },
+  pricing: {
+    good: ['Someone at a petrol station is wearing your {city} shirt. Mira takes a photo from behind a pump.'],
+    rough: ['Half the {city} merch is still in the back of the van, and it rattles on every turn.'],
+    goodFx: { inspiration: 2 }, roughFx: { harmony: -1 },
+  },
+  perdiem: {
+    good: ['Theo slept properly in {city}, and it shows. He drives the first shift without being asked.'],
+    rough: ['Theo is still tired from {city}. Nobody mentions it, which is how you know.'],
+    goodFx: { energy: 3 }, roughFx: { energy: -3 },
+  },
+  gearcall: {
+    good: ['The gear decision from {city} is paying for itself. It sounds right, and it is ours.'],
+    rough: ['The borrowed gear from {city} is making a noise nobody can place. Jun keeps looking at it.'],
+    goodFx: { inspiration: 2 }, roughFx: { harmony: -1 },
+  },
+  exchange: {
+    good: ['The money changed in {city} stretched further than anyone expected. Theo counts it twice.'],
+    rough: ['Theo finds the {city} exchange receipt in the glovebox and reads the fee out loud.'],
+    goodFx: { funds: 2 }, roughFx: { harmony: -1 },
+  },
+};
+
+/** The line and effect a past decision brings back on the next drive. `pick` chooses among
+ *  variants (pass a seeded rng's pick for determinism). Perfect earns a little more than good. */
+export function ledgerEcho(type: LedgerType, tier: LedgerTier, cityName: string, pick: (lines: string[]) => string = (l) => l[0]): { text: string; effects: StatDeltas } {
+  const e = ECHOES[type];
+  const good = tier !== 'rough';
+  const effects: StatDeltas = { ...(good ? e.goodFx : e.roughFx) };
+  if (tier === 'perfect') for (const k of Object.keys(effects) as (keyof StatDeltas)[]) effects[k] = (effects[k] ?? 0) + 1;
+  return { text: pick(good ? e.good : e.rough).replace(/\{city\}/g, cityName), effects };
+}
+
+/** The rule of thumb behind each kind of decision, for the Scrapbook's ledger page. */
+export const LEDGER_LESSONS: Record<LedgerType, string> = {
+  split: 'Know your break-even. Take the guarantee when you doubt the room will pass it; take the door when you are sure it will.',
+  pricing: 'Profit is margin times how many people actually buy. The highest price and the busiest table are both usually wrong.',
+  perdiem: 'A budget is a plan for every dollar. Starving one line to save money still costs you, just later.',
+  gearcall: 'Buy when renting for as long as you will need it costs more than the price. Otherwise rent.',
+  exchange: 'Compare what you actually receive after the fee, never the headline rate.',
+};

@@ -1,9 +1,9 @@
 // The van between cities — a two-beat travel scene on the way into every stop.
 //
-// Sits between Hub and City. Deliberately weightless: it sets no progress, applies no effects and
-// gates nothing, so an interruption here resumes at the Hub exactly as before and the only cost of
-// skipping it is missing a small moment. That is also why HubScene can route through it safely
-// without touching the resume matrix.
+// Sits between Hub and City. It sets no progress and gates nothing, so an interruption here resumes
+// at the Hub exactly as before. The one thing it applies is a past money decision coming back (the
+// ledger echo), and that is marked and saved the moment it plays, so a resume never plays it twice.
+// That is also why HubScene can route through it safely without touching the resume matrix.
 import Phaser from 'phaser';
 import { vanBackdropKey } from '../art/sprites';
 import { addCoverBackground } from '../art/background';
@@ -18,6 +18,8 @@ import { textStyle } from './textStyles';
 import { getCity } from '../game/content';
 import { bedForCity } from '../game/ambience';
 import { VAN_BEATS, VAN_CARRY, VAN_OPENERS } from '../../content/van';
+import { ledgerEcho, LEDGER_TYPES, type LedgerTier, type LedgerType } from '../game/ledger';
+import { saveRun } from '../core/save';
 import type { BandmateId } from '../../content/schema';
 
 const BANDMATES: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
@@ -78,15 +80,35 @@ export class VanScene extends Phaser.Scene {
     // a disaster produced the identical drive, and the tour read as a list of separate cities
     // rather than one trip. Only shown when there IS a previous stop with a real show behind it.
     const carry = this.carryBeat(rng);
-    const afterOpener = carry
-      ? (): void => this.dialogueBox.show({ id: 'van_carry', speaker: 'narrator', text: carry }, playBandmateBeat, () => {})
+    // Then a money decision from an earlier city comes back (see ledgerEchoBeat).
+    const echo = this.ledgerEchoBeat(rng);
+    const afterCarry = echo
+      ? (): void => this.dialogueBox.show({ id: 'van_ledger_echo', speaker: 'narrator', text: echo }, playBandmateBeat, () => {})
       : playBandmateBeat;
+    const afterOpener = carry
+      ? (): void => this.dialogueBox.show({ id: 'van_carry', speaker: 'narrator', text: carry }, afterCarry, () => {})
+      : afterCarry;
 
     this.dialogueBox.show(
       { id: 'van_open', speaker: 'narrator', text: rng.pick(VAN_OPENERS) },
       afterOpener,
       () => {},
     );
+  }
+
+  /** The oldest money decision from an earlier city that has not come back yet: a line of story and
+   *  a small stat effect (src/game/ledger.ts ledgerEcho). Applied and marked at once, and saved, so
+   *  an interrupted drive that resumes at the Hub does not play it a second time. */
+  private ledgerEchoBeat(rng: ReturnType<typeof makeRng>): string | null {
+    const entry = (State.data.ledger ?? []).find((e) => !e.echoed && e.cityId !== this.cityId && LEDGER_TYPES.includes(e.type as LedgerType));
+    if (!entry) return null;
+    const tier: LedgerTier = entry.tier === 'rough' || entry.tier === 'perfect' ? entry.tier : 'good';
+    const echo = ledgerEcho(entry.type as LedgerType, tier, getCity(entry.cityId).name, (lines) => rng.pick(lines));
+    entry.echoed = true;
+    State.applyStatDeltas(echo.effects);
+    saveRun(State.data);
+    const fx = Object.entries(echo.effects).map(([k, v]) => `${k} ${v >= 0 ? '+' : ''}${v}`).join(', ');
+    return `${echo.text}\n\nThe ledger remembers: ${fx}.`;
   }
 
   /** The previous stop's show, phrased for the drive. Null on the very first leg (nothing to carry

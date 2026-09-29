@@ -129,7 +129,9 @@ export interface RunState {
    *  for everyone, which is exactly the setup stage they would have been in anyway. */
   arcScenesPlayed?: Record<string, number>;
   /** The Van Ledger: money decisions made this run, newest last. Additive; absent on older saves. */
-  ledger?: { cityId: string; label: string; funds: number }[];
+  /** Money decisions. `type`/`tier` (added 2026-09-29) let a decision echo on the next drive and
+   *  appear in the Scrapbook's ledger page; `echoed` marks one already brought back. */
+  ledger?: { cityId: string; label: string; funds: number; type?: string; tier?: string; echoed?: boolean }[];
   log: string[];
   currentCityIndex: number;
   midTourComplication: string;
@@ -240,7 +242,7 @@ class GameState {
     this.data.arcScenesPlayed[bandmate] = (this.data.arcScenesPlayed[bandmate] ?? 0) + 1;
   }
 
-  recordLedger(entry: { cityId: string; label: string; funds: number }): void {
+  recordLedger(entry: { cityId: string; label: string; funds: number; type?: string; tier?: string }): void {
     if (!this.data.ledger) this.data.ledger = [];
     this.data.ledger.push(entry);
     if (this.data.ledger.length > 12) this.data.ledger.shift();

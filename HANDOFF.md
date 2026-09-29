@@ -99,6 +99,19 @@ touch the art system, keep this split — don't "finish the job" by asset-ifying
 - e2e: `e2e/return-art-and-viewport.spec.ts`. The full local suite is very slow on this machine;
   CI runs the same four-profile config on Linux and is the full-suite gate.
 
+## 0b. Best-in-class pass (2026-09-29)
+
+- **Rapport changes the game** (`src/game/bandHelp.ts`, `MiniGameScene.hostStrip/offerHelp`): for a
+  bandmate-hosted minigame, relationship >= 32 is *close* (help every question), >= 18 *steady*
+  (one "Ask <name>"), below that *distant* (a quiet line). Hints are pure functions and each is
+  unit-tested against the real answer. `wrongToRemove` never greys the last wrong option.
+- **Ledger echoes** (`ledgerEcho`/`LEDGER_LESSONS` in `src/game/ledger.ts`): ledger records now
+  carry `type`/`tier`; the next VanScene plays the oldest un-echoed one (story line + small stat
+  effect), marks it `echoed` and saves at once, so a resume never replays it. The Scrapbook shows
+  "What the ledger taught us" when any typed record exists.
+- **Van art**: four drives, seeded order (`src/game/vanArt.ts`), variants in `img/later/`.
+- e2e: `e2e/band-help-and-echo.spec.ts`.
+
 ## 1. How to run, test, and deploy
 
 ```bash
