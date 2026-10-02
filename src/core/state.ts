@@ -132,6 +132,9 @@ export interface RunState {
   /** Money decisions. `type`/`tier` (added 2026-09-29) let a decision echo on the next drive and
    *  appear in the Scrapbook's ledger page; `echoed` marks one already brought back. */
   ledger?: { cityId: string; label: string; funds: number; type?: string; tier?: string; echoed?: boolean }[];
+  /** Bandmate-hosted minigames played this run, oldest first, so a host can remember the last one
+   *  they ran with you (src/game/craft.ts hostReaction). Optional: older saves simply have none. */
+  hostedGames?: { host: BandmateId; title: string; tier: 1 | 2 | 3 }[];
   log: string[];
   currentCityIndex: number;
   midTourComplication: string;
@@ -240,6 +243,12 @@ class GameState {
   recordArcScene(bandmate: string): void {
     if (!this.data.arcScenesPlayed) this.data.arcScenesPlayed = {};
     this.data.arcScenesPlayed[bandmate] = (this.data.arcScenesPlayed[bandmate] ?? 0) + 1;
+  }
+
+  recordHostedGame(entry: { host: BandmateId; title: string; tier: 1 | 2 | 3 }): void {
+    if (!this.data.hostedGames) this.data.hostedGames = [];
+    this.data.hostedGames.push(entry);
+    if (this.data.hostedGames.length > 16) this.data.hostedGames.shift();
   }
 
   recordLedger(entry: { cityId: string; label: string; funds: number; type?: string; tier?: string }): void {

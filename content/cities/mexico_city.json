@@ -180,21 +180,24 @@
           "prompt": "\"What's the tour actually about?\"",
           "optionA": "\"Chasing something honest\"",
           "optionB": "\"Just seeing the world, mostly\"",
-          "warmerOption": "A"
+          "warmerOption": "A",
+          "coach": "Give the story a stake. Every tour \"sees the world\"; \"honest\" makes the writer ask what you mean."
         },
         {
           "id": "q2",
           "prompt": "\"Any regrets so far?\"",
           "optionA": "\"None we'd say out loud\"",
           "optionB": "\"A few, but they're ours\"",
-          "warmerOption": "B"
+          "warmerOption": "B",
+          "coach": "Own it. \"None we would say out loud\" sounds guarded; an honest yes sounds human."
         },
         {
           "id": "q3",
           "prompt": "\"What happens when the tour ends?\"",
           "optionA": "\"We figure that out later\"",
           "optionB": "\"We're already writing the next one\"",
-          "warmerOption": "B"
+          "warmerOption": "B",
+          "coach": "Point forward. A writer wants a next chapter; \"we figure it out later\" ends the conversation."
         }
       ],
       "outroTextPerfect": "The journalist stops taking notes and just talks to you. That is the good version."
@@ -229,21 +232,24 @@
           "prompt": "\"What's the tour taught you so far?\"",
           "optionA": "\"Slow down more than we thought\"",
           "optionB": "\"Say yes more than we thought\"",
-          "warmerOption": "B"
+          "warmerOption": "B",
+          "coach": "Pick the answer with energy in it. \"Say yes\" invites a story; \"slow down\" sounds like a warning."
         },
         {
           "id": "q2",
           "prompt": "\"One word for tonight?\"",
           "optionA": "\"Nervous\"",
           "optionB": "\"Ready\"",
-          "warmerOption": "B"
+          "warmerOption": "B",
+          "coach": "Nerves are honest, but one word on air sets the mood. Give listeners a reason to show up."
         },
         {
           "id": "q3",
           "prompt": "\"Any shoutouts?\"",
           "optionA": "\"Just each other, honestly\"",
           "optionB": "\"Ximena — she got us this mic\"",
-          "warmerOption": "B"
+          "warmerOption": "B",
+          "coach": "Name the person who helped. A specific thank-you builds the local ties a band lives on."
         }
       ],
       "outroTextPerfect": "Callers keep coming. The host lets the segment run long because it is working."

@@ -1697,3 +1697,24 @@ User-reported: the exchange minigame's hint line hidden behind the Market stall 
   owning scene is paused/invisible — a DOM input sits above every scene, and a missed PAUSE event
   left "Replay a seed" floating over other screens.
 - Text bumps: ledgerFrame sub 15→17px, ledger tips 14→15px, Hub corkboard 12→14px.
+
+## 21. Minigame and character depth pass (2026-10-02)
+
+Research-led pass. Full critique, rankings and before/after:
+`C:\Users\Jbthi\Claude Cowork\BAIS_Minigames_Depth_BeforeAfter_2026-10-02.md`.
+
+- **Craft games teach the craft** (`src/game/craft.ts`, pure; drawn in MiniGameScene):
+  timing = gain staging (`gainVerdict`: quiet / sweet / clip, red clip region, per-round channel
+  name from `GAIN_CHANNELS`, verdict line per tap, button "Set level"); drag = weight-aware
+  (`heavyItems` on the def, validated as a strict subset of `dragItems`; bottom row is the floor,
+  sized to the heavy count; `packIssue` line; perfect = all placed and no heavy up top; slots stay
+  190x60 rectangles so `e2e/drag.spec.ts` still finds them); choice/pressure = `coach` per question
+  (validated <= 120 chars), shown 2.6 s after each answer; sequence = pads labelled
+  `SIGNAL_CHAIN`; sustain = CLIP line + headroom copy. `CRAFT_LESSON` adds an "On the road:" line
+  to `finish()` for those six types.
+- **Gear call**: the comparison is behind "Show the math"; the live line asks the player to work it
+  out first. Choice buttons moved to 678/750/822.
+- **Hosts react and remember**: `hostReaction(host, tier, close, prior)` (24 reactions + 16
+  callbacks), `priorHosted`; `State.recordHostedGame` keeps an optional `hostedGames` list (max 16,
+  not in practice mode). Drawn in `finish()` under the reward line.
+- Tests: `src/tests/craft.test.ts` (8).

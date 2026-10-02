@@ -183,21 +183,24 @@
           "prompt": "\"So — who are you, in one sentence?\"",
           "optionA": "\"Four people who like the same three chords.\"",
           "optionB": "\"Ask us again after tonight.\"",
-          "warmerOption": "A"
+          "warmerOption": "A",
+          "coach": "A funny, concrete line gives listeners a picture. A dodge sounds like there is nothing to say."
         },
         {
           "id": "q_tour",
           "prompt": "\"What's the tour been like so far?\"",
           "optionA": "\"Long. Good long.\"",
           "optionB": "\"We're still speaking to each other, which is a win.\"",
-          "warmerOption": "B"
+          "warmerOption": "B",
+          "coach": "One honest, specific detail beats a summary. \"Long. Good long.\" gives them nothing to repeat."
         },
         {
           "id": "q_city",
           "prompt": "\"Anything you want to say to the city?\"",
           "optionA": "\"Come early, the room sounds better when it's full.\"",
           "optionB": "\"Thanks for having us. Genuinely.\"",
-          "warmerOption": "A"
+          "warmerOption": "A",
+          "coach": "End on an invitation. A thank-you is polite; a reason to come early fills the room."
         }
       ],
       "chordProgression": "C-G-Am-F",
@@ -269,6 +272,7 @@
         "Water jugs"
       ],
       "dragTimeSec": 16,
+      "heavyItems": ["Amps", "Cable snake", "Water jugs"],
       "outroTextPerfect": "Two flights, every cab, no scraped knuckles. The stairs lose for once."
     },
     {
