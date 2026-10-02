@@ -213,6 +213,7 @@
         "Snacks"
       ],
       "dragTimeSec": 18,
+      "heavyItems": ["Amps", "Suitcase", "Merch box"],
       "outroTextPerfect": "Everything in, nothing rattling, door shut on the first try. Theo actually sits down."
     },
     {

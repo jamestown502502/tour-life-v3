@@ -26,19 +26,20 @@ import { addHelpButton } from './HelpButton';
 import { addMenuButton } from './MenuButton';
 import type { MiniGameDef, MiniGameQuestion, MiniGameReward } from '../../content/schema';
 import { minigamePlayedFlag, timingRoundsForHarmony } from '../game/minigame';
-import { fillTemplate, DEFAULT_LEDGER, resolveSplit, resolvePricing, resolvePerDiem, resolveGearCall, resolveExchange, doorTake, breakEvenTurnout, demandAt, perDiemForecast, type LedgerOutcome } from '../game/ledger';
+import { fillTemplate, DEFAULT_LEDGER, resolveSplit, resolvePricing, resolvePerDiem, resolveGearCall, resolveExchange, exchangeWorking, exchangeCalcQuestion, doorTake, breakEvenTurnout, demandAt, perDiemForecast, type LedgerOutcome } from '../game/ledger';
 import { chordFrequencies, splitChord, transposeChord, QUALITY_LABELS, QUALITY_HINTS } from '../core/musicTheory';
 import { rapportFor, RAPPORT_LABEL, HOST_NAMES, quietLine, wrongToRemove, chordHint, transposeHint, meterHint, tempoHint, splitHint, pricingHint, perDiemHint, gearHint, type Rapport } from '../game/bandHelp';
 import { getSong } from '../game/content';
 import { makeRng } from '../core/rng';
+import { gainVerdict, GAIN_FEEDBACK, GAIN_CHANNELS, isHeavy, packIssue, SIGNAL_CHAIN, CRAFT_LESSON, hostReaction, priorHosted, type Tier } from '../game/craft';
 
 const HELP_TEXT: Record<MiniGameDef['type'], string> = {
-  timing: 'Tap the button when the needle is inside the gold zone. A few rounds, no penalty for missing.',
-  drag: 'Drag each item into any open slot before the timer runs out.',
-  choice: 'Pick whichever answer feels right — there\'s no wrong one, just different flavor.',
-  sequence: 'Watch the pads light up, then tap them back in the same order. Each round is one longer.',
-  sustain: 'Hold BOTH faders inside the moving gold zone. Drag them up and down to keep them there.',
-  pressure: 'Answer fast. Stay quiet long enough and the silence answers for you — which is also an answer.',
+  timing: 'Set the level: tap when the needle is in the gold sweet spot. Left of it is too quiet (hiss), right of it clips (distortion). No penalty for missing.',
+  drag: 'Load the gear before the timer runs out. Heavy items (marked) go on the floor row at the bottom; light gear goes on top.',
+  choice: 'Pick the answer you would give. Neither is wrong, but one lands better, and after each answer you are told why.',
+  sequence: 'The pads are a synth, in signal order: oscillator, filter, envelope, amp. Watch them light, then tap them back in order.',
+  sustain: 'Keep BOTH faders inside the moving gold window: the headroom under the clip line. Drag them to follow it.',
+  pressure: 'Answer fast, live on air. Silence answers for you, which is also an answer. Each answer is explained.',
   interval: 'Two notes play. Pick the interval between them. You can replay it as often as you like, and every answer tells you what it actually was — getting it wrong still teaches you the sound.',
   clave: 'A rhythm plays. Pick the row of dots that matches it — filled dots are strokes. Replay it as often as you like; each answer names the pattern either way.',
   split: 'Two deals: a flat guarantee, or a share of the door. Set how full you think the room will be, then choose. The break-even point is the number worth knowing.',
@@ -213,15 +214,16 @@ export class MiniGameScene extends Phaser.Scene {
   private estimate(): { seconds: number; rounds: number } {
     const mg = this.mg;
     switch (mg.type) {
-      case 'timing': { const r = this.timingRoundsSec; return { seconds: r.reduce((a, b) => a + b, 0) * 1.6 + r.length * 0.6, rounds: r.length }; }
+      case 'timing': { const r = this.timingRoundsSec; return { seconds: r.reduce((a, b) => a + b, 0) * 1.6 + r.length * 1.5, rounds: r.length }; }
       case 'drag': return { seconds: mg.dragTimeSec ?? 30, rounds: (mg.dragItems ?? []).length || 6 };
-      case 'choice': return { seconds: (mg.questions ?? []).length * 5, rounds: (mg.questions ?? []).length };
-      case 'pressure': return { seconds: (mg.questions ?? []).length * (mg.pressureSeconds ?? 4), rounds: (mg.questions ?? []).length };
+      case 'choice': return { seconds: (mg.questions ?? []).length * 7, rounds: (mg.questions ?? []).length };
+      case 'pressure': return { seconds: (mg.questions ?? []).length * ((mg.pressureSeconds ?? 4) + 2.5), rounds: (mg.questions ?? []).length };
       case 'sequence': { const r = mg.sequenceRounds ?? [3, 4, 5]; return { seconds: r.reduce((a, b) => a + b * 0.34 * 2 + 2.2, 0), rounds: r.length }; }
       case 'sustain': return { seconds: (mg.sustainSeconds ?? 12) * 1.4, rounds: 1 };
       case 'interval': case 'clave': case 'chordquality': case 'transpose': case 'meter': return { seconds: (mg.theoryRounds ?? 4) * 8, rounds: mg.theoryRounds ?? 4 };
       case 'tempo': return { seconds: (mg.theoryRounds ?? 2) * 14, rounds: mg.theoryRounds ?? 2 };
-      case 'split': case 'pricing': case 'perdiem': case 'gearcall': case 'exchange': return { seconds: 35, rounds: 1 };
+      case 'exchange': return { seconds: 50, rounds: 2 };
+      case 'split': case 'pricing': case 'perdiem': case 'gearcall': return { seconds: 35, rounds: 1 };
       default: return { seconds: 30, rounds: 3 };
     }
   }
@@ -281,12 +283,24 @@ export class MiniGameScene extends Phaser.Scene {
     const barX = 90, barW = W - 180, barY = 420, barH = 28;
     const zoneW = this.mg.timingZoneW ?? 140;
     const zoneX = barX + (barW - zoneW) / 2;
+    // A level meter, not an abstract gauge (2026-10-02): left of the gold window is too quiet (the
+    // noise floor comes up with it later), right of it is clipping (distortion you cannot undo).
     this.contentLayer.add(this.add.rectangle(barX, barY, barW, barH, 0x000000, 0.3).setOrigin(0, 0));
+    this.contentLayer.add(this.add.rectangle(zoneX + zoneW, barY, barX + barW - zoneX - zoneW, barH, 0xc0392b, 0.45).setOrigin(0, 0));
     this.contentLayer.add(this.add.rectangle(zoneX, barY, zoneW, barH, PALETTE.gold, 0.55).setOrigin(0, 0));
-    this.contentLayer.add(addTextScrim(this, W / 2, barY - 40, 320, 48));
+    this.contentLayer.add(addTextScrim(this, W / 2, barY + barH + 24, barW + 20, 34));
+    const zoneLabel = (x: number, text: string) => this.contentLayer.add(this.add.text(x, barY + barH + 24, text, textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0.5));
+    zoneLabel(barX + (zoneX - barX) / 2, 'too quiet');
+    zoneLabel(zoneX + zoneW / 2, 'sweet spot');
+    zoneLabel(zoneX + zoneW + (barX + barW - zoneX - zoneW) / 2, 'clipping');
+    const channel = GAIN_CHANNELS[makeRng(`${State.data.seed}:gain:${this.mg.id}:${this.timingRound}`).int(0, GAIN_CHANNELS.length)];
+    this.contentLayer.add(addTextScrim(this, W / 2, barY - 40, 420, 48));
     // h2's default sky measures 2.90:1 on this scrim (just under the 3:1 large-text floor).
-    this.contentLayer.add(this.add.text(W / 2, barY - 40, `Round ${this.timingRound + 1} of ${rounds.length}`,
+    this.contentLayer.add(this.add.text(W / 2, barY - 40, `Level ${this.timingRound + 1} of ${rounds.length}: ${channel}`,
       textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
+    const verdictText = this.add.text(W / 2, barY + barH + 74, '', textStyle('small', { fontSize: '17px', color: PALETTE_HEX.cream, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);
+    const verdictScrim = addTextScrim(this, W / 2, barY + barH + 74, W - 80, 52).setVisible(false);
+    this.contentLayer.add([verdictScrim, verdictText]);
 
     this.needle = this.add.circle(barX, barY + barH / 2, 14, PALETTE.cream, 1);
     this.contentLayer.add(this.needle);
@@ -296,21 +310,24 @@ export class MiniGameScene extends Phaser.Scene {
     });
 
     let resolved = false;
-    const resolve = (hit: boolean) => {
+    const resolve = (verdict: 'quiet' | 'sweet' | 'clip' | null) => {
       if (resolved) return;
       resolved = true;
       this.needleTween?.stop();
+      const hit = verdict === 'sweet';
       audio.playSfx(hit ? 'perfect' : 'ok');
-      if (hit) this.timingHits++;
+      if (hit) { this.timingHits++; spawnRingPulse(this, this.needle!.x, barY + barH / 2, PALETTE.gold); } else if (verdict === 'clip') shake(this, 3);
+      // Say what the level did, so a miss teaches the same lesson a hit does.
+      verdictScrim.setVisible(true);
+      verdictText.setText(verdict ? GAIN_FEEDBACK[verdict] : 'No level set. The engineer moves on.');
       this.timingRound++;
-      this.time.delayedCall(400, () => this.runTimingRound());
+      this.time.delayedCall(1300, () => this.runTimingRound());
     };
     // Safety timeout: a player who never taps still advances — no-fail is structural, not just a design intent.
-    this.time.delayedCall(sweepMs * 3, () => resolve(false));
+    this.time.delayedCall(sweepMs * 3, () => resolve(null));
 
-    const btn = createButton(this, W / 2 - 130, 560, 260, 70, 'Tap!', () => {
-      const x = this.needle!.x;
-      resolve(x >= zoneX && x <= zoneX + zoneW);
+    const btn = createButton(this, W / 2 - 130, 580, 260, 70, 'Set level', () => {
+      resolve(gainVerdict(this.needle!.x, zoneX, zoneW));
     }, { fillColor: PALETTE.terracotta, fontSize: '22px' });
     this.contentLayer.add(btn);
   }
@@ -324,23 +341,46 @@ export class MiniGameScene extends Phaser.Scene {
     const chipW = 190, chipH = 60, slotW = 190, slotH = 60;
     const startX = (W - (cols * (chipW + 14) - 14)) / 2;
 
-    const slots: { rect: Phaser.GameObjects.Rectangle; filled: boolean }[] = [];
+    // Weight-aware (2026-10-02): when the def names heavyItems, the bottom row of slots is the floor
+    // and is sized to fit exactly the heavy items; light gear rides on top. Any drop still lands
+    // (no-fail), but a heavy item up top is called out, and only a load with every heavy item on
+    // the floor is perfect. Without heavyItems the layout is the original 3-wide grid.
+    const heavy = this.mg.heavyItems ?? [];
+    const floorCount = heavy.length;
+    const topCount = items.length - floorCount;
+    const slots: { rect: Phaser.GameObjects.Rectangle; filled: boolean; floor: boolean; tag: Phaser.GameObjects.Text | null }[] = [];
     items.forEach((_, i) => {
-      const col = i % cols, row = Math.floor(i / cols);
-      const x = startX + col * (slotW + 14), y = 700 + row * (slotH + 16);
-      const slot = this.add.rectangle(x, y, slotW, slotH, 0x000000, 0.25).setOrigin(0, 0);
+      let x: number, y: number, floor = false;
+      if (floorCount > 0) {
+        floor = i >= topCount;
+        const k = floor ? i - topCount : i, inRow = floor ? floorCount : topCount;
+        const rowW = inRow * (slotW + 14) - 14;
+        x = (W - rowW) / 2 + k * (slotW + 14);
+        y = floor ? 776 : 700;
+      } else {
+        const col = i % cols, row = Math.floor(i / cols);
+        x = startX + col * (slotW + 14); y = 700 + row * (slotH + 16);
+      }
+      const slot = this.add.rectangle(x, y, slotW, slotH, floor ? 0x3a2410 : 0x000000, floor ? 0.45 : 0.25).setOrigin(0, 0);
       slot.setStrokeStyle(2, PALETTE.gold, 0.6);
       this.contentLayer.add(slot);
-      slots.push({ rect: slot, filled: false });
+      let tag: Phaser.GameObjects.Text | null = null;
+      if (floorCount > 0) {
+        tag = this.add.text(x + slotW / 2, y + slotH / 2, floor ? 'floor: heavy' : 'top: light', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0.5).setAlpha(0.85);
+        this.contentLayer.add(tag);
+      }
+      slots.push({ rect: slot, filled: false, floor, tag });
     });
 
     let placedCount = 0;
+    let heavyUpTop = 0;
     this.contentLayer.add(addTextScrim(this, W / 2, 500, 340, 90));
     // Both default to gold/sky, which measure 2.77:1 / 2.90:1 on this scrim (just under 3:1) —
     // cream reliably clears it, see docs/contrast-audit.md.
     const timerText = this.add.text(W / 2, 480, `${timeSec}s`, textStyle('h1', { fontSize: '26px', color: PALETTE_HEX.cream })).setOrigin(0.5);
     this.contentLayer.add(timerText);
-    this.contentLayer.add(this.add.text(W / 2, 520, 'Drag each item into an open slot', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0.5));
+    const dragHint = this.add.text(W / 2, 520, floorCount > 0 ? 'Heavy items on the floor row, light gear on top' : 'Drag each item into an open slot', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0.5);
+    this.contentLayer.add(dragHint);
 
     let secondsLeft = timeSec;
     let finished = false;
@@ -348,7 +388,8 @@ export class MiniGameScene extends Phaser.Scene {
       if (finished) return;
       finished = true;
       timerEvent.destroy();
-      this.finish(placedCount >= items.length);
+      const all = placedCount >= items.length;
+      this.finish(all, all && floorCount > 0 && heavyUpTop === 0);
     };
     const timerEvent = this.time.addEvent({
       delay: 1000, loop: true,
@@ -364,7 +405,9 @@ export class MiniGameScene extends Phaser.Scene {
       const startPosX = startX + col * (chipW + 14), startPosY = 570 + row * (chipH + 10);
       const key = ensureRoundedRect(this, chipW, chipH, 12);
       const chip = this.add.image(startPosX, startPosY, key).setOrigin(0, 0).setTint(PALETTE.terracotta).setInteractive({ draggable: true, useHandCursor: true });
-      const label_ = this.add.text(startPosX + chipW / 2, startPosY + chipH / 2, label, textStyle('button', { fontSize: '15px' })).setOrigin(0.5);
+      const heavyItem = isHeavy(label, heavy);
+      if (heavyItem) chip.setTint(PALETTE.plum);
+      const label_ = this.add.text(startPosX + chipW / 2, startPosY + chipH / 2, heavyItem ? `${label} (heavy)` : label, textStyle('button', { fontSize: '15px' })).setOrigin(0.5);
       this.contentLayer.add([chip, label_]);
       let homeX = startPosX, homeY = startPosY, placed = false;
 
@@ -389,6 +432,9 @@ export class MiniGameScene extends Phaser.Scene {
           target.filled = true;
           placed = true;
           placedCount++;
+          target.tag?.setVisible(false);
+          const issue = packIssue(label, heavy, target.floor);
+          if (issue) { heavyUpTop++; dragHint.setText(issue); shake(this, 2); } else if (floorCount > 0 && heavyItem) dragHint.setText(`${label} on the floor. Solid.`);
           audio.playSfx('pickup');
           // Chip and slot are the same size, so aligning their top-left corners seats the chip
           // exactly over the slot it was dropped on.
@@ -413,7 +459,7 @@ export class MiniGameScene extends Phaser.Scene {
     if (this.questionIndex >= questions.length) { this.finish(this.warmerCount >= Math.ceil(questions.length / 2)); return; }
     this.clearContent();
     const q = questions[this.questionIndex];
-    this.card(300, 460);
+    this.card(300, q.coach ? 520 : 460);
     this.contentLayer.add(this.add.text(W / 2, 60 + 280, `Question ${this.questionIndex + 1} of ${questions.length}`,
       textStyle('small', { color: PALETTE_HEX.plum })).setOrigin(0.5));
     this.contentLayer.add(this.add.text(W / 2, 350, q.prompt, textStyle('dialogue', {
@@ -424,11 +470,20 @@ export class MiniGameScene extends Phaser.Scene {
     const advance = (picked: 'A' | 'B' | null) => {
       if (answered) return;
       answered = true;
-      if (picked === q.warmerOption) this.warmerCount++;
+      const warm = picked === q.warmerOption;
+      if (warm) this.warmerCount++;
       audio.playSfx('choiceConfirm');
       this.questionIndex++;
-      this.time.delayedCall(250, () => this.runChoiceQuestion());
+      // Media coaching (2026-10-02): say why the warmer answer works, whichever was picked. Without
+      // a note the interview moves straight on, exactly as before.
+      if (q.coach) {
+        coachText.setText(`${warm ? 'That lands.' : picked ? 'Fine, but the other one lands better.' : 'Silence on air.'} ${q.coach}`);
+        coachText.setVisible(true);
+        this.time.delayedCall(2600, () => this.runChoiceQuestion());
+      } else this.time.delayedCall(250, () => this.runChoiceQuestion());
     };
+    const coachText = this.add.text(W / 2, 700, '', textStyle('small', { fontSize: '17px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center' })).setOrigin(0.5, 0).setVisible(false);
+    this.contentLayer.add(coachText);
     // 'choice' stays forgiving (6.5s, no visible clock). 'pressure' is the same interview with
     // the clock turned up AND shown, because knowing it is running is most of the difficulty.
     // Both still advance on silence — a no-fail game does not get to punish hesitation.
@@ -487,6 +542,12 @@ export class MiniGameScene extends Phaser.Scene {
         .setOrigin(0, 0).setStrokeStyle(3, PALETTE.cream, 0.9);
       this.contentLayer.add(pad);
       pads.push(pad);
+      // Each pad is a module, left to right in signal order (2026-10-02), so the pattern is a patch.
+      this.contentLayer.add(this.add.text(pad.x + padW / 2, padY + padH / 2, SIGNAL_CHAIN[i], textStyle('button', { fontSize: '20px' })).setOrigin(0.5));
+    }
+    if (this.sequenceRound === 0) {
+      this.contentLayer.add(addTextScrim(this, W / 2, padY + padH + 84, W - 80, 40));
+      this.contentLayer.add(this.add.text(W / 2, padY + padH + 84, 'Sound flows left to right: make it, shape it, move it, send it.', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0.5));
     }
     // Progress dots: one per step, filled as the player enters them — the "did that count?"
     // question answered on screen.
@@ -588,7 +649,7 @@ export class MiniGameScene extends Phaser.Scene {
     this.contentLayer.add(this.add.text(W / 2, 224, 'Hold the mix', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
     // Reported live as needing clearer instruction: the mechanic is not guessable from two
     // rectangles, so the screen says it outright while you play.
-    this.contentLayer.add(this.add.text(W / 2, 262, 'Drag BOTH bars into the gold zone and keep them there',
+    this.contentLayer.add(this.add.text(W / 2, 262, 'Keep BOTH faders in the gold headroom window, under the clip line',
       textStyle('small', { color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5));
 
     const zone = this.add.rectangle(W / 2 - 210, trackY + 110, 420, zoneH, PALETTE.gold, 0.25).setOrigin(0, 0);
@@ -596,6 +657,10 @@ export class MiniGameScene extends Phaser.Scene {
     this.tweens.add({
       targets: zone, y: trackY + trackH - zoneH - 30, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
+
+    // The clip line along the top of both tracks: the gold window is the headroom beneath it.
+    this.contentLayer.add(this.add.rectangle(W / 2 - 210, trackY - 12, 420, 8, 0xc0392b, 0.85).setOrigin(0, 0));
+    this.contentLayer.add(this.add.text(W / 2 + 222, trackY - 8, 'CLIP', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0, 0.5));
 
     const faders: Phaser.GameObjects.Rectangle[] = [];
     for (const x of xs) {
@@ -691,6 +756,25 @@ export class MiniGameScene extends Phaser.Scene {
       this.contentLayer.add(this.add.text(W / 2, y, earned, textStyle('small', { fontSize: '17px', color: PALETTE_HEX.plum, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5, 0));
       y += 46;
     }
+    // The host answers in their own voice and remembers the last game they ran with you (2026-10-02).
+    const host = this.mg.hostBandmate;
+    if (host && !this.practice) {
+      const prior = priorHosted(State.data.hostedGames, host);
+      const { reaction, callback } = hostReaction(host, tier as Tier, this.rapport === 'close', prior);
+      for (const line of [reaction, callback]) {
+        if (!line) continue;
+        const t = this.add.text(W / 2, y, line, textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: W - 140 }, align: 'center', lineSpacing: 4 })).setOrigin(0.5, 0);
+        this.contentLayer.add(t);
+        y = t.y + t.height + 12;
+      }
+    }
+    // The craft games end on the skill they practised: one line to take off the tour with you.
+    const lesson = CRAFT_LESSON[this.mg.type];
+    if (lesson) {
+      const t = this.add.text(W / 2, y + 4, `On the road: ${lesson}`, textStyle('small', { fontSize: '17px', color: PALETTE_HEX.teal, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5, 0);
+      this.contentLayer.add(t);
+      y = t.y + t.height + 12;
+    }
     const cardImg = this.card(top, Math.max(300, y - top + 12));
     this.contentLayer.sendToBack(cardImg);
     const btnY = Math.min(Math.max(y + 24, 560), SAFE_BOTTOM_Y - 66);
@@ -709,8 +793,13 @@ export class MiniGameScene extends Phaser.Scene {
       State.applyStatDeltas({ funds: this.ledgerOutcome.funds });
       State.recordLedger({ cityId: this.cityId, label: this.ledgerOutcome.label, funds: this.ledgerOutcome.funds, type: this.mg.type, tier: this.ledgerOutcome.tier });
     }
-    // A hosted minigame is time spent with that bandmate: it moves their arc like a scene does.
-    if (this.mg.hostBandmate) State.recordArcScene(this.mg.hostBandmate);
+    // A hosted minigame is time spent with that bandmate: it moves their arc like a scene does, and
+    // they remember how it went (recorded here, with the played flag, so a resumed save never has a
+    // host remembering a game the run has not finished).
+    if (this.mg.hostBandmate) {
+      State.recordArcScene(this.mg.hostBandmate);
+      State.recordHostedGame({ host: this.mg.hostBandmate, title: this.mg.title, tier: this.outcomePerfect ? 3 : this.outcomeGood ? 2 : 1 });
+    }
     const reward = this.rewardFor(this.outcomeGood, this.outcomePerfect);
     if (reward) {
       State.applyStatDeltas(reward.effects);
@@ -994,27 +1083,61 @@ export class MiniGameScene extends Phaser.Scene {
     const vars = { price: d.price, rentPerShow: d.rentPerShow, shows, rentTotal: showsLeft * d.rentPerShow };
     const gearCopy = { thing: this.mg.copy?.thing, passLine: this.mg.copy?.passLine };
     const live = this.ledgerFrame(this.copyText('heading', 'The synth', vars), this.copyText('setup', `A used synth Jun has wanted for a year. $${d.price} to buy, or $${d.rentPerShow} a night to rent. ${shows} left on this tour.`, vars));
-    live.setText(this.copyText('detail', `Renting for the rest of the tour: ${showsLeft} × $${d.rentPerShow} = $${showsLeft * d.rentPerShow}.\nBuying: $${d.price}, and it comes home with you.`, vars));
+    // Work it out first (2026-10-02): the full comparison used to be printed before the choice, so
+    // the decision was read off the screen rather than made. Now the player is asked to do the
+    // multiplication, and "Show the math" reveals it for anyone who wants it. Doing the sum yourself
+    // is what makes it stick (the generation effect).
+    const detail = this.copyText('detail', `Renting for the rest of the tour: ${showsLeft} × $${d.rentPerShow} = $${showsLeft * d.rentPerShow}.\nBuying: $${d.price}, and it comes home with you.`, vars);
+    live.setText(`Work it out first: ${shows} at $${d.rentPerShow} each, or $${d.price} once.`);
+    const reveal = createButton(this, W / 2 - 120, 604, 240, 52, 'Show the math', () => { live.setText(detail); reveal.setVisible(false); audio.playSfx('tap'); }, { fillColor: PALETTE.plum, fontSize: '17px' });
+    this.contentLayer.add(reveal);
     const mk = (y: number, label: string, choice: 'buy' | 'rent' | 'pass', color: number) =>
       this.contentLayer.add(createButton(this, W / 2 - 220, y, 440, 62, label, () => this.settleLedger(resolveGearCall(d, showsLeft, choice, gearCopy)), { fillColor: color, fontSize: '19px' }));
-    mk(660, this.copyText('buyLabel', `Buy it ($${d.price})`, vars), 'buy', PALETTE.terracotta);
-    mk(736, this.copyText('rentLabel', `Rent it ($${d.rentPerShow} a show)`, vars), 'rent', PALETTE.teal);
-    mk(812, this.copyText('passLabel', 'Pass — the old rig is fine', vars), 'pass', PALETTE.plum);
+    mk(678, this.copyText('buyLabel', `Buy it ($${d.price})`, vars), 'buy', PALETTE.terracotta);
+    mk(750, this.copyText('rentLabel', `Rent it ($${d.rentPerShow} a show)`, vars), 'rent', PALETTE.teal);
+    mk(822, this.copyText('passLabel', 'Pass — the old rig is fine', vars), 'pass', PALETTE.plum);
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolveGearCall(d, showsLeft, 'pass', gearCopy), true));
     this.offerHelp(this.hostStrip(), () => gearHint(this.mg.hostBandmate!, d.price, d.rentPerShow, showsLeft), W / 2 - 88, 900);
   }
 
   private runExchange(): void {
     const rates: { label: string; rate: number; feePct: number }[] = [...(this.mg.ledger?.rates ?? DEFAULT_LEDGER.exchange.rates)];
+    // Step 1, the fee calculator (2026-10-02): before choosing, work out what the best-looking
+    // window really pays. Answer or not, the working is shown, then the choice opens.
+    const calc = exchangeCalcQuestion(rates);
+    const work = exchangeWorking(calc.window);
+    const live = this.ledgerFrame('Changing money', `First, the trap. ${calc.window.label} shows the best rate, ${calc.window.rate.toFixed(2)}, with a ${calc.window.feePct}% fee. What does $200 really get you there?`);
+    live.setText('Rate times 200, then take the fee off that.');
+    let stepDone = false;
+    const toChoice = (picked: number | null) => {
+      if (stepDone) return;
+      stepDone = true;
+      const right = picked === calc.answer;
+      if (right) { spawnPerfectSpark(this, W / 2, 560); hitstop(this, 40); } else if (picked !== null) shake(this, 3);
+      live.setText(`${right ? 'Right.' : picked === null ? 'Here is the working.' : `Not ${picked}.`} ${work.line}.`);
+      this.time.delayedCall(3200, () => this.runExchangeChoice(rates));
+    };
+    this.theoryRng.shuffle(calc.options).forEach((v, i) => {
+      this.contentLayer.add(createButton(this, W / 2 - 260, 664 + i * 86, 520, 70, `${v} local`, () => toChoice(v), { fillColor: i % 2 === 0 ? PALETTE.teal : PALETTE.plum, fontSize: '19px' }));
+    });
+    this.time.delayedCall(THEORY_IDLE_MS, () => toChoice(null));
+  }
+
+  /** Step 2: pick the window. The live line asks for the comparison; Show the math does every sum. */
+  private runExchangeChoice(rates: { label: string; rate: number; feePct: number }[]): void {
     const live = this.ledgerFrame('Changing money', 'Three windows, three rates, three fees. $200 of the float needs to become local money for the week.');
-    live.setText('What you get is the rate with the fee taken off. Pick the window.');
+    live.setText('Work it out first: compare what you keep after the fee.');
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolveExchange(rates, 0), true));
-    // Buttons start at 640, BELOW the live hint line ledgerFrame places at y=560 — they used to
-    // start at 380, which put the third window exactly on top of the hint (reported live as a
-    // line of text hidden behind the Market stall button). Every other ledger game already keeps
-    // its buttons in this 640+ band.
+    const reveal = createButton(this, W / 2 - 120, 604, 240, 52, 'Show the math', () => {
+      live.setText(rates.map((r) => exchangeWorking(r).short).join('\n'));
+      reveal.setVisible(false);
+      audio.playSfx('tap');
+    }, { fillColor: PALETTE.plum, fontSize: '17px' });
+    this.contentLayer.add(reveal);
+    // Window buttons sit below the live line ledgerFrame places at y=560 and the reveal button
+    // (they once started at 380 and buried the hint; see round 3 in HANDOFF.md §20).
     rates.forEach((r, i) => {
-      this.contentLayer.add(createButton(this, W / 2 - 260, 640 + i * 90, 520, 74, `${r.label}\nrate ${r.rate.toFixed(2)} · fee ${r.feePct}%`, () => this.settleLedger(resolveExchange(rates, i)), { fillColor: i % 2 === 0 ? PALETTE.teal : PALETTE.plum, fontSize: '17px' }));
+      this.contentLayer.add(createButton(this, W / 2 - 260, 664 + i * 86, 520, 74, `${r.label}\nrate ${r.rate.toFixed(2)} · fee ${r.feePct}%`, () => this.settleLedger(resolveExchange(rates, i)), { fillColor: i % 2 === 0 ? PALETTE.teal : PALETTE.plum, fontSize: '17px' }));
     });
   }
 

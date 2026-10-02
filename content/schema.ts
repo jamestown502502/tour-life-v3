@@ -129,6 +129,9 @@ export interface MiniGameQuestion {
   optionB: string;
   /** Which option is treated as the "warmer" (full reward) pick. The other still gets `roughReward`, never nothing. */
   warmerOption: 'A' | 'B';
+  /** Optional media-coaching note shown after the answer, whichever was picked: WHY the warmer
+   *  answer works (2026-10-02). Kept short; validateSceneGraph caps it. */
+  coach?: string;
 }
 
 export interface LedgerNumbers {
@@ -212,6 +215,9 @@ export interface MiniGameDef {
   dragItems?: string[];
   /** 'drag' only: seconds allowed to place every item. */
   dragTimeSec?: number;
+  /** 'drag' only: which of `dragItems` are heavy. They belong on the floor row (the bottom row of
+   *  slots, sized to fit them); placing every heavy item there is what makes a load-in perfect. */
+  heavyItems?: string[];
   /** 'choice' and 'pressure': exactly 3 questions. */
   questions?: MiniGameQuestion[];
   /** 'sequence' only: how many pads light per round. Each entry is one round, and the rounds get
@@ -432,6 +438,14 @@ function validateMiniGames(minigames: unknown, path: string, errors: string[]): 
       if (!isNumber(mg.dragTimeSec) || mg.dragTimeSec! <= 0) {
         fail(errors, `${p}: drag type needs a positive dragTimeSec`);
       }
+      if (mg.heavyItems !== undefined) {
+        const items = (mg.dragItems ?? []) as string[];
+        if (!isArray(mg.heavyItems) || (mg.heavyItems as unknown[]).some((h) => !isString(h) || !items.includes(h as string))) {
+          fail(errors, `${p}: every heavyItems entry must be one of dragItems`);
+        } else if ((mg.heavyItems as string[]).length === 0 || (mg.heavyItems as string[]).length >= items.length) {
+          fail(errors, `${p}: heavyItems must name some, but not all, of dragItems`);
+        }
+      }
     } else if (mg.type === 'sequence') {
       if (!isArray(mg.sequenceRounds) || mg.sequenceRounds.length < 1) {
         fail(errors, `${p}: sequence type needs sequenceRounds with >= 1 entry`);
@@ -453,6 +467,9 @@ function validateMiniGames(minigames: unknown, path: string, errors: string[]): 
           if (!isString(q.id) || !isString(q.prompt) || !isString(q.optionA) || !isString(q.optionB) ||
               (q.warmerOption !== 'A' && q.warmerOption !== 'B')) {
             fail(errors, `${p}: each question needs id/prompt/optionA/optionB and warmerOption 'A'|'B'`);
+          }
+          if (q.coach !== undefined && (!isString(q.coach) || q.coach.length > 120)) {
+            fail(errors, `${p}.${q.id}: coach must be a string of at most 120 characters`);
           }
         }
       }
