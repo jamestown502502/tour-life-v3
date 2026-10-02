@@ -896,7 +896,9 @@ export class MiniGameScene extends Phaser.Scene {
     this.clearContent();
     this.card(220, 760);
     this.contentLayer.add(this.add.text(W / 2, 250, title, textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5));
-    this.contentLayer.add(this.add.text(W / 2, 286, sub, textStyle('small', { fontSize: '15px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center' })).setOrigin(0.5, 0));
+    // 17px, was 15: the setup line is the game's whole premise, and 15px on a phone read as fine
+    // print (round 3 feedback: the intro text was hard to read).
+    this.contentLayer.add(this.add.text(W / 2, 286, sub, textStyle('small', { fontSize: '17px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center' })).setOrigin(0.5, 0));
     const live = this.add.text(W / 2, 560, '', textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center', lineSpacing: 4 })).setOrigin(0.5, 0);
     this.contentLayer.add(live);
     return live;
@@ -942,7 +944,7 @@ export class MiniGameScene extends Phaser.Scene {
     this.contentLayer.add(createButton(this, W / 2 - 300, 700, 290, 66, `Take the $${d.guarantee}`, () => this.settleLedger(resolveSplit(d, 'guarantee', est.v / 100, actual)), { fillColor: PALETTE.teal, fontSize: '18px' }));
     this.contentLayer.add(createButton(this, W / 2 + 10, 700, 290, 66, 'Take the door', () => this.settleLedger(resolveSplit(d, 'door', est.v / 100, actual)), { fillColor: PALETTE.terracotta, fontSize: '18px' }));
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolveSplit(d, 'guarantee', est.v / 100, actual), true));
-    this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'A sure thing is worth something. So is being right about the room.', vars), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+    this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'A sure thing is worth something. So is being right about the room.', vars), textStyle('small', { fontSize: '15px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
     this.offerHelp(this.hostStrip(), () => splitHint(this.mg.hostBandmate!, actual), W / 2 - 88, 900);
   }
 
@@ -959,7 +961,7 @@ export class MiniGameScene extends Phaser.Scene {
     update();
     this.contentLayer.add(createButton(this, W / 2 - 150, 700, 300, 66, 'Open the table', () => this.settleLedger(resolvePricing(d, price.v)), { fillColor: PALETTE.terracotta }));
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolvePricing(d, price.v), true));
-    this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'Margin is price minus cost, times how many actually buy.', vars), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+    this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'Margin is price minus cost, times how many actually buy.', vars), textStyle('small', { fontSize: '15px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
     this.offerHelp(this.hostStrip(), () => pricingHint(this.mg.hostBandmate!, d), W / 2 - 88, 900);
   }
 
@@ -981,7 +983,7 @@ export class MiniGameScene extends Phaser.Scene {
     update();
     this.contentLayer.add(createButton(this, W / 2 - 150, 700, 300, 66, 'Set the budget', () => this.settleLedger(resolvePerDiem(d, { ...a }, over)), { fillColor: PALETTE.teal }));
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolvePerDiem(d, { ...a }, over), true));
-    this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'Every dollar not spent on one thing was spent on another. That is the whole idea.', vars), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
+    this.contentLayer.add(this.add.text(W / 2, 800, this.copyText('tip', 'Every dollar not spent on one thing was spent on another. That is the whole idea.', vars), textStyle('small', { fontSize: '15px', color: PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0));
     this.offerHelp(this.hostStrip(), () => perDiemHint(this.mg.hostBandmate!, d.budget, lbl), W / 2 - 88, 900);
   }
 
@@ -1007,8 +1009,12 @@ export class MiniGameScene extends Phaser.Scene {
     const live = this.ledgerFrame('Changing money', 'Three windows, three rates, three fees. $200 of the float needs to become local money for the week.');
     live.setText('What you get is the rate with the fee taken off. Pick the window.');
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolveExchange(rates, 0), true));
+    // Buttons start at 640, BELOW the live hint line ledgerFrame places at y=560 — they used to
+    // start at 380, which put the third window exactly on top of the hint (reported live as a
+    // line of text hidden behind the Market stall button). Every other ledger game already keeps
+    // its buttons in this 640+ band.
     rates.forEach((r, i) => {
-      this.contentLayer.add(createButton(this, W / 2 - 260, 380 + i * 90, 520, 74, `${r.label}\nrate ${r.rate.toFixed(2)} · fee ${r.feePct}%`, () => this.settleLedger(resolveExchange(rates, i)), { fillColor: i % 2 === 0 ? PALETTE.teal : PALETTE.plum, fontSize: '17px' }));
+      this.contentLayer.add(createButton(this, W / 2 - 260, 640 + i * 90, 520, 74, `${r.label}\nrate ${r.rate.toFixed(2)} · fee ${r.feePct}%`, () => this.settleLedger(resolveExchange(rates, i)), { fillColor: i % 2 === 0 ? PALETTE.teal : PALETTE.plum, fontSize: '17px' }));
     });
   }
 

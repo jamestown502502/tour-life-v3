@@ -45,6 +45,18 @@ export function createFloatingInput(
   const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false;
   let focused = false;
   const reposition = () => {
+    // The input is a real DOM element above the whole canvas, so Phaser's scene stack cannot
+    // cover it. Visibility is enforced here, every tick, from the owning scene's own state:
+    // paused or hidden (Settings or How to Play on top) means the field must not float over the
+    // overlay (round 3: a stray "Replay a seed" box was seen sitting on other screens). The
+    // scene's PAUSE/RESUME handlers still flip visibility instantly; this is the backstop.
+    const covered = scene.sys.isPaused() || !scene.sys.isVisible() || !scene.sys.isActive();
+    if (covered) {
+      if (document.activeElement === el) el.blur(); // also sends the mobile keyboard away
+      el.style.visibility = 'hidden';
+      return;
+    }
+    if (el.style.visibility === 'hidden') el.style.visibility = '';
     const vv = window.visualViewport;
     if (focused && coarse && vv) {
       const hPx = 48;

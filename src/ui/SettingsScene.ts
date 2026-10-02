@@ -44,6 +44,13 @@ export class SettingsScene extends Phaser.Scene {
 
   create(): void {
     markSettingsOpened();
+    // Round 3: mid-song Settings paused the chart but not the song (Web Audio runs on its own
+    // clock), so the rest of that song graded out of sync. Hold ALL audio while Settings covers
+    // the rhythm game; released on Back, on Home, and on shutdown as a backstop.
+    if (this.returnTo === 'Rhythm') {
+      audio.holdAll(true);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => audio.holdAll(false));
+    }
     // 0.82, not the old 0.98. Settings is an OVERLAY (scene.launch keeps the scene beneath
     // rendering — pause stops update, not render), so a near-opaque fill threw away the painted
     // world behind it and made the panel read as one more barren navy screen. Dimming instead of
@@ -137,6 +144,7 @@ export class SettingsScene extends Phaser.Scene {
     // offered when this screen was opened FROM the home screen.
     const inGame = this.returnTo !== 'Title';
     createButton(this, inGame ? W / 2 - 250 : W / 2 - 110, y + 12, inGame ? 230 : 220, 60, inGame ? 'Resume game' : 'Back', () => {
+      audio.holdAll(false);
       this.scene.stop();
       this.scene.resume(this.returnTo);
     }, { fillColor: 0x3e7c7b, fontSize: '18px' });
@@ -151,6 +159,7 @@ export class SettingsScene extends Phaser.Scene {
     // downstream would ever call playAmbience again to crossfade it out.
     if (inGame) {
       createButton(this, W / 2 + 20, y + 12, 230, 60, 'Home (tour saved)', () => {
+        audio.holdAll(false);
         saveRun(State.data); // Continue on the home screen picks up exactly here
         this.scene.stop(this.returnTo);
         audio.stopMusic();
@@ -172,6 +181,9 @@ export class SettingsScene extends Phaser.Scene {
    *  offered as "Apply" rather than written automatically — a bad tap-along (distracted, wrong
    *  rhythm) should never silently overwrite a working setting. */
   private runCalibration(onOffsetSet: (ms: number) => void): void {
+    // Calibration needs live audio. If Settings is holding the context (opened mid-song), release
+    // it: the song resumes quietly underneath, which is the pre-fix behavior for this rare path.
+    audio.holdAll(false);
     const overlay = this.add.container(0, 0).setDepth(200);
     overlay.add(this.add.rectangle(0, 0, W, this.cameras.main.height, 0x1a2436, 0.94).setOrigin(0, 0).setInteractive());
     const title = this.add.text(W / 2, 300, 'Tap along with the beat', textStyle('h2')).setOrigin(0.5);
