@@ -37,7 +37,7 @@
       "id": "taiko_arcade",
       "name": "A rain-slicked taiko drum arcade",
       "sound": "drum_cascade",
-      "sceneId": "tok_loc_pachinko"
+      "sceneId": "tok_loc_taiko"
     },
     {
       "id": "vending_alley",
@@ -666,15 +666,15 @@
       "speaker": "narrator",
       "text": "He queues one more, insists it is the last, and is lying. Nobody minds. Nobody stops him either."
     },
-    "tok_loc_pachinko": {
-      "id": "tok_loc_pachinko",
+    "tok_loc_taiko": {
+      "id": "tok_loc_taiko",
       "speaker": "narrator",
       "text": "A row of drum-game cabinets thundering under neon, and one grandmother playing the hardest song on the machine like she owns the building.",
       "choices": [
         {
           "id": "try_drums",
           "label": "Grab the sticks and play a round",
-          "next": "tok_loc_pachinko_try",
+          "next": "tok_loc_taiko_try",
           "effects": {
             "funds": -8,
             "harmony": 2
@@ -683,32 +683,32 @@
         {
           "id": "watch_gran",
           "label": "Just watch the grandmother work",
-          "next": "tok_loc_pachinko_watch",
+          "next": "tok_loc_taiko_watch",
           "effects": {
             "inspiration": 2
           }
         }
       ]
     },
-    "tok_loc_pachinko_try": {
-      "id": "tok_loc_pachinko_try",
+    "tok_loc_taiko_try": {
+      "id": "tok_loc_taiko_try",
       "speaker": "narrator",
       "text": "You last thirty seconds on the easiest song and somehow leave grinning.",
-      "next": "tok_loc_pachinko_try_after"
+      "next": "tok_loc_taiko_try_after"
     },
-    "tok_loc_pachinko_try_after": {
-      "id": "tok_loc_pachinko_try_after",
+    "tok_loc_taiko_try_after": {
+      "id": "tok_loc_taiko_try_after",
       "speaker": "narrator",
       "text": "Theo reads your score on the walk out and stops halfway through. Some numbers are better left unread."
     },
-    "tok_loc_pachinko_watch": {
-      "id": "tok_loc_pachinko_watch",
+    "tok_loc_taiko_watch": {
+      "id": "tok_loc_taiko_watch",
       "speaker": "narrator",
       "text": "She never once looks at the screen. Twenty years of muscle memory, still ringing.",
-      "next": "tok_loc_pachinko_watch_after"
+      "next": "tok_loc_taiko_watch_after"
     },
-    "tok_loc_pachinko_watch_after": {
-      "id": "tok_loc_pachinko_watch_after",
+    "tok_loc_taiko_watch_after": {
+      "id": "tok_loc_taiko_watch_after",
       "speaker": "narrator",
       "text": "You catch yourself counting her rhythm against the song in your head. It fits. Of course it fits."
     },

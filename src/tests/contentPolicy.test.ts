@@ -7,7 +7,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-const BANNED = /\b(beers?|wines?|wine glass|vodka|whisk(e)?y|tequila|mezcal|rum|gin and|cocktails?|booze|drunk|drinking|hangover|hungover|bartenders?|liquor|alcohol(ic)?|champagne|cerveza|brewer(y|ies)|tipsy|pints?|lager|sake|biergarten|beer garden|toasts?|buys? (the band|the house)? ?a round|a round of drinks|pachinko|casino|slot machines?|betting|bet on)\b/i;
+// Lookarounds rather than \b: '_' is a word character, so \b missed ids like "tok_loc_pachinko".
+const BANNED = /(?<![a-z])(beers?|wines?|wine glass|vodka|whisk(e)?y|tequila|mezcal|rum|gin and|cocktails?|booze|drunk|drinking|hangover|hungover|bartenders?|liquor|alcohol(ic)?|champagne|cerveza|brewer(y|ies)|tipsy|pints?|lager|sake|biergarten|beer garden|toasts?|buys? (the band|the house)? ?a round|a round of drinks|pachinko|casino|slot machines?|betting|bet on)(?![a-z])/i;
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
