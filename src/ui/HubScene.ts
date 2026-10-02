@@ -226,7 +226,7 @@ export class HubScene extends Phaser.Scene {
     this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 14, 'Souvenirs', textStyle('stat', { fontSize: '13px', color: '#FFFFFF' })).setOrigin(0.5);
     const items = State.data.inventory.slice(0, 4);
     if (items.length === 0) {
-      this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 60, 'Nothing yet', textStyle('small', { fontSize: '12px', color: '#FFFFFF' })).setOrigin(0.5);
+      this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 60, 'Nothing yet', textStyle('small', { fontSize: '14px', color: '#FFFFFF' })).setOrigin(0.5);
       return;
     }
     items.forEach((item, i) => {
@@ -244,7 +244,7 @@ export class HubScene extends Phaser.Scene {
       // "Souvenirs" header above.
       // QA #7: this used to be plain text. It opens the full list now.
       const more = this.add.text(CORKBOARD_X + 75, CORKBOARD_Y + 40 + 4 * 34, `+${State.data.inventory.length - 4} more`,
-        textStyle('small', { fontSize: '12px', color: '#FFFFFF', fontStyle: '700' })).setOrigin(0.5);
+        textStyle('small', { fontSize: '14px', color: '#FFFFFF', fontStyle: '700' })).setOrigin(0.5);
       more.setInteractive(new Phaser.Geom.Rectangle(-30, -14, more.width + 60, more.height + 28), Phaser.Geom.Rectangle.Contains);
       more.input!.cursor = 'pointer';
       more.on('pointerdown', () => this.showSouvenirs());

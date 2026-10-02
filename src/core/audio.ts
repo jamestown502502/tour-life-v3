@@ -64,13 +64,30 @@ class AudioSystem {
     this.unlocked = true;
   }
 
+  /** A gameplay hold (round 3): SettingsScene opens over a PAUSED RhythmScene, but Web Audio
+   *  runs on its own clock, so the song played on while the chart stood still and the rest of
+   *  that song graded out of sync (the trade-off RhythmScene.create documented). Holding the
+   *  context pauses the song in step with the paused scene; releasing resumes both together. */
+  private held = false;
+  holdAll(on: boolean): void {
+    this.held = on;
+    this.syncSuspend();
+  }
+
+  private backgrounded = false;
+  private syncSuspend(): void {
+    if (!this.ctx) return;
+    const wantSuspended = this.held || this.backgrounded;
+    if (wantSuspended && this.ctx.state === 'running') this.ctx.suspend().catch(() => {});
+    else if (!wantSuspended && this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+  }
+
   /** The app went behind another app (or the screen locked). A web page's audio keeps playing
    *  there unless the page stops it, which is what QA round 2 #5 heard on Android. Suspending the
    *  context silences music, ambience and SFX at once; resuming picks up where it left off. */
   setBackgrounded(hidden: boolean): void {
-    if (!this.ctx) return;
-    if (hidden && this.ctx.state === 'running') this.ctx.suspend().catch(() => {});
-    else if (!hidden && this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+    this.backgrounded = hidden;
+    this.syncSuspend();
   }
 
   isUnlocked(): boolean {

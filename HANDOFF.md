@@ -1678,3 +1678,22 @@ Tester report: 12 rows (`Tour Life - Issue Report Round 2.xlsx`). Full before/af
 - Settings: Resume game / Home (tour saved); Hub: Home button; capitalised labels.
 - Tests: 291 unit + dist smoke 4/4 locally; the full e2e matrix runs on CI (too slow here).
   CI's `no-barren-screens` Van check still needs PR #4 (test-only fix) merged.
+
+## 20. Round 3: text audit + settings-pause fixes (2026-10-02, same day)
+
+User-reported: the exchange minigame's hint line hidden behind the Market stall button, and
+"games break after going to settings".
+
+- **Exchange layout** (`runExchange`): buttons moved 380→640+i*90, below the live hint that
+  `ledgerFrame` puts at y=560. The only text-under-button in all 30 minigames (verified by sweep).
+- **Audit + guard:** a world-space geometry audit (text under buttons / text-text overlap /
+  off-screen / <13px) now runs over every minigame of every city as `e2e/text-under-ui.spec.ts`
+  (registered in playwright.config testMatch). The contrast suite could never catch this class.
+- **Rhythm + Settings desync** (the documented trade-off in RhythmScene.create): `audio.holdAll()`
+  suspends the context while Settings covers Rhythm (SettingsScene.create when returnTo==='Rhythm'),
+  released on Resume/Home/shutdown and by runCalibration. Composes with setBackgrounded via
+  `syncSuspend()`.
+- **Seed input backstop** (`htmlOverlay.ts`): reposition() now hides+blurs the field whenever the
+  owning scene is paused/invisible — a DOM input sits above every scene, and a missed PAUSE event
+  left "Replay a seed" floating over other screens.
+- Text bumps: ledgerFrame sub 15→17px, ledger tips 14→15px, Hub corkboard 12→14px.
