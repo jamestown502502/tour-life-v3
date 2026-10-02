@@ -140,3 +140,43 @@ export function priorHosted(list: readonly HostedGame[] | undefined, host: Bandm
   const mine = (list ?? []).filter((g) => g.host === host);
   return mine[mine.length - 1];
 }
+
+// ---- spaced recall on the drive (2026-10-02) ---------------------------------------------------
+//
+// A lesson met once fades; one met again a city later sticks (retrieval practice: recalling beats
+// re-reading, and spacing beats massing). So the van between cities now quizzes ONE skill from a
+// minigame played in an earlier city, never the city it is driving to, and each skill only once
+// per run. The answer is always explained; a right one is worth a little inspiration. `options[0]`
+// is the answer in the data; the van shuffles the display order.
+
+export interface RecallQuestion { type: MiniGameType; asker: BandmateId; q: string; options: [string, string, string]; why: string }
+
+export const RECALL: readonly RecallQuestion[] = [
+  { type: 'timing', asker: 'theo', q: 'Quiz from soundcheck. The needle went past the gold. What did that do to the sound?', options: ['It clipped and distorted', 'It got quieter', 'Nothing, it was just loud'], why: GAIN_FEEDBACK.clip },
+  { type: 'drag', asker: 'rowan', q: 'Load-in quiz. Where do the amps ride in the van?', options: ['On the floor, in first', 'On top, easy to grab', 'Wherever there is room'], why: CRAFT_LESSON.drag! },
+  { type: 'choice', asker: 'mira', q: 'Interview quiz. What makes an answer stick with a listener?', options: ['A specific story', 'A careful general answer', 'Keeping it vague'], why: CRAFT_LESSON.choice! },
+  { type: 'pressure', asker: 'mira', q: 'Live radio quiz. The host asks something hard. Best move?', options: ['A short, concrete answer', 'A long pause to think', 'A long, careful answer'], why: CRAFT_LESSON.pressure! },
+  { type: 'sequence', asker: 'jun', q: 'Signal-flow quiz. Which module actually makes the sound?', options: ['The oscillator', 'The filter', 'The amp'], why: CRAFT_LESSON.sequence! },
+  { type: 'sustain', asker: 'jun', q: 'Mix quiz. What is headroom?', options: ['The space below clipping', 'The top of the fader', 'The quiet before a song'], why: CRAFT_LESSON.sustain! },
+  { type: 'interval', asker: 'jun', q: 'Ear quiz. Which interval makes a chord sound sad?', options: ['A minor third', 'A major third', 'A fifth'], why: 'The minor third is three half steps: the reason a minor chord aches.' },
+  { type: 'chordquality', asker: 'jun', q: 'Chord quiz. Which kind of chord sounds sad?', options: ['Minor', 'Major', 'Major seventh'], why: 'Minor chords carry the minor third; major chords sound bright.' },
+  { type: 'clave', asker: 'rowan', q: 'Clave quiz. How does the 3-2 son clave start?', options: ['Three strokes, then two', 'Two strokes, then three', 'Four even strokes'], why: 'Three strokes then two: the backbone of most of what Mexico City dances to.' },
+  { type: 'transpose', asker: 'mira', q: 'Transpose quiz. Move a C chord up a whole step. What is it now?', options: ['D', 'C sharp', 'E'], why: 'A whole step is two half steps, two frets: C to D, same shape.' },
+  { type: 'meter', asker: 'theo', q: 'Count-in quiz. ONE two three, ONE two three. What time signature?', options: ['3/4', '4/4', '6/8'], why: 'Three beats, the heavy one first: a waltz, a lullaby, 3/4.' },
+  { type: 'tempo', asker: 'theo', q: 'Tempo quiz. You keep landing ahead of the click. Rushing or dragging?', options: ['Rushing', 'Dragging', 'Neither'], why: 'Ahead of the beat is rushing. Relax the shoulders and listen for the heavy beat.' },
+  { type: 'split', asker: 'rowan', q: 'Door deal quiz. When does a share of the door beat the guarantee?', options: ['When turnout clears break-even', 'Always, it is a percentage', 'Never'], why: 'Below the break-even turnout the guarantee pays more; above it, the door does.' },
+  { type: 'pricing', asker: 'mira', q: 'Merch quiz. What is margin?', options: ['Price minus cost, per sale', 'The price on the tag', 'The shirts left over'], why: 'Margin is what each sale keeps after its cost. Times how many sell, that is profit.' },
+  { type: 'perdiem', asker: 'theo', q: 'Per diem quiz. Spend nothing on a bed and you save money. What does it cost you?', options: ['The band mood tomorrow', 'Nothing at all', 'Only time'], why: 'A real bed feeds harmony: nobody fights after sleeping flat. Saving on it is spending tomorrow.' },
+  { type: 'gearcall', asker: 'jun', q: 'Gear quiz. Rent at $45 a show or buy at $240. When does buying win?', options: ['From the sixth show', 'From the second show', 'Never'], why: '$240 / $45 is 5.3 shows, so renting costs more from the sixth show on.' },
+  { type: 'exchange', asker: 'theo', q: 'Exchange quiz. How do you compare money windows?', options: ['What you keep after the fee', 'The biggest rate', 'The shortest line'], why: 'The fee is part of the rate. Compare what you actually receive.' },
+];
+
+export function recallFlag(type: MiniGameType): string {
+  return `recall_${type}`;
+}
+
+/** Skills that can be quizzed on the drive to `toCityId`: played in another city, not yet quizzed. */
+export function recallCandidates(played: readonly { type: MiniGameType; cityId: string }[], toCityId: string, hasFlag: (f: string) => boolean): RecallQuestion[] {
+  const types = new Set(played.filter((p) => p.cityId !== toCityId).map((p) => p.type));
+  return RECALL.filter((r) => types.has(r.type) && !hasFlag(recallFlag(r.type)));
+}

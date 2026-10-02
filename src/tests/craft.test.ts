@@ -1,7 +1,8 @@
 // The craft minigames teach the craft, and hosts react and remember (2026-10-02). Pure rules from
 // src/game/craft.ts, plus the content that feeds them.
 import { describe, expect, it } from 'vitest';
-import { gainVerdict, GAIN_FEEDBACK, GAIN_CHANNELS, isHeavy, packIssue, SIGNAL_CHAIN, CRAFT_LESSON, hostReaction, priorHosted, type HostedGame } from '../game/craft';
+import { gainVerdict, GAIN_FEEDBACK, GAIN_CHANNELS, isHeavy, packIssue, SIGNAL_CHAIN, CRAFT_LESSON, hostReaction, priorHosted, RECALL, recallCandidates, recallFlag, type HostedGame } from '../game/craft';
+import { exchangeWorking, exchangeCalcQuestion, resolveExchange, DEFAULT_LEDGER } from '../game/ledger';
 import { CITIES } from '../game/content';
 import type { BandmateId, MiniGameDef } from '../../content/schema';
 
@@ -93,5 +94,45 @@ describe('hosts react in their own voice and remember', () => {
     expect(priorHosted(list, 'mira')?.title).toBe('C');
     expect(priorHosted(list, 'theo')).toBeUndefined();
     expect(priorHosted(undefined, 'jun')).toBeUndefined();
+  });
+});
+
+
+describe('exchange: a fee calculator step before the choice', () => {
+  it('the working agrees with what the exchange actually pays', () => {
+    const rates = [...DEFAULT_LEDGER.exchange.rates];
+    rates.forEach((r, i) => {
+      const w = exchangeWorking(r);
+      expect(w.gross - w.fee).toBe(w.net);
+      expect(resolveExchange(rates, i).label).toContain(`${w.net} local`);
+    });
+  });
+  it('the calculator asks about the best HEADLINE rate, with the two classic mistakes as wrong answers', () => {
+    for (const c of CITIES) for (const m of (c.minigames ?? []).filter((x) => x.type === 'exchange')) {
+      const rates = [...(m.ledger?.rates ?? DEFAULT_LEDGER.exchange.rates)];
+      const q = exchangeCalcQuestion(rates);
+      expect(q.window.rate, m.id).toBe(Math.max(...rates.map((r) => r.rate)));
+      expect(q.options, m.id).toContain(q.answer);
+      expect(q.options, m.id).toContain(exchangeWorking(q.window).gross); // rate alone, fee forgotten
+      expect(new Set(q.options).size, m.id).toBe(q.options.length);
+    }
+  });
+});
+
+describe('spaced recall on the drive', () => {
+  it('every minigame type has a quiz, with three distinct options and a reason', () => {
+    const types = new Set(ALL.map((m) => m.type));
+    for (const t of types) expect(RECALL.some((r) => r.type === t), t).toBe(true);
+    for (const r of RECALL) {
+      expect(new Set(r.options).size, r.type).toBe(3);
+      expect(r.q.length, r.type).toBeLessThanOrEqual(100);
+      expect(r.why.length, r.type).toBeLessThanOrEqual(120);
+    }
+  });
+  it('only skills from another city, and each only once', () => {
+    const played = [{ type: 'timing' as const, cityId: 'lisbon' }, { type: 'drag' as const, cityId: 'tokyo' }];
+    expect(recallCandidates(played, 'tokyo', () => false).map((r) => r.type)).toEqual(['timing']);
+    expect(recallCandidates(played, 'berlin', (f) => f === recallFlag('timing')).map((r) => r.type)).toEqual(['drag']);
+    expect(recallCandidates([], 'berlin', () => false)).toEqual([]);
   });
 });

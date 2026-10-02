@@ -152,6 +152,30 @@ export function resolveGearCall(def: { price: number; rentPerShow: number }, sho
 
 // ---- exchange: reading the fee ----------------------------------------------------------------
 export function effectiveRate(r: { rate: number; feePct: number }): number { return r.rate * (1 - r.feePct / 100); }
+
+/** One window's sum, step by step: the headline amount, the fee taken off it, what you keep.
+ *  `net` is rounded exactly as resolveExchange rounds, so the working never disagrees with it. */
+export function exchangeWorking(r: { label: string; rate: number; feePct: number }, amount = 200): { gross: number; fee: number; net: number; line: string; short: string } {
+  const gross = Math.round(amount * r.rate);
+  const net = Math.round(amount * effectiveRate(r));
+  const fee = gross - net;
+  return {
+    gross, fee, net,
+    line: `${r.label}: ${amount} × ${r.rate.toFixed(2)} = ${gross}, minus the ${r.feePct}% fee (${fee}) = ${net}`,
+    // one line per window when all three are shown at once
+    short: `${r.label}: ${gross} - ${fee} fee = ${net}`,
+  };
+}
+
+/** The fee-calculator step (2026-10-02): work out what the window with the best HEADLINE rate
+ *  really pays. That window is the trap the whole lesson is about, so the wrong answers are the
+ *  two mistakes people make: reading the rate alone, and forgetting to convert at all. */
+export function exchangeCalcQuestion(rates: readonly { label: string; rate: number; feePct: number }[], amount = 200): { window: { label: string; rate: number; feePct: number }; answer: number; options: number[] } {
+  const window = rates.reduce((a, b) => (b.rate > a.rate ? b : a));
+  const w = exchangeWorking(window, amount);
+  const options = [w.net, w.gross, amount].filter((v, i, all) => all.indexOf(v) === i);
+  return { window, answer: w.net, options };
+}
 export function resolveExchange(rates: readonly { label: string; rate: number; feePct: number }[], pick: number, amount = 200): LedgerOutcome {
   const eff = rates.map(effectiveRate);
   const best = Math.max(...eff);

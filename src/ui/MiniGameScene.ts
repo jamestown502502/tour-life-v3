@@ -26,7 +26,7 @@ import { addHelpButton } from './HelpButton';
 import { addMenuButton } from './MenuButton';
 import type { MiniGameDef, MiniGameQuestion, MiniGameReward } from '../../content/schema';
 import { minigamePlayedFlag, timingRoundsForHarmony } from '../game/minigame';
-import { fillTemplate, DEFAULT_LEDGER, resolveSplit, resolvePricing, resolvePerDiem, resolveGearCall, resolveExchange, doorTake, breakEvenTurnout, demandAt, perDiemForecast, type LedgerOutcome } from '../game/ledger';
+import { fillTemplate, DEFAULT_LEDGER, resolveSplit, resolvePricing, resolvePerDiem, resolveGearCall, resolveExchange, exchangeWorking, exchangeCalcQuestion, doorTake, breakEvenTurnout, demandAt, perDiemForecast, type LedgerOutcome } from '../game/ledger';
 import { chordFrequencies, splitChord, transposeChord, QUALITY_LABELS, QUALITY_HINTS } from '../core/musicTheory';
 import { rapportFor, RAPPORT_LABEL, HOST_NAMES, quietLine, wrongToRemove, chordHint, transposeHint, meterHint, tempoHint, splitHint, pricingHint, perDiemHint, gearHint, type Rapport } from '../game/bandHelp';
 import { getSong } from '../game/content';
@@ -222,7 +222,8 @@ export class MiniGameScene extends Phaser.Scene {
       case 'sustain': return { seconds: (mg.sustainSeconds ?? 12) * 1.4, rounds: 1 };
       case 'interval': case 'clave': case 'chordquality': case 'transpose': case 'meter': return { seconds: (mg.theoryRounds ?? 4) * 8, rounds: mg.theoryRounds ?? 4 };
       case 'tempo': return { seconds: (mg.theoryRounds ?? 2) * 14, rounds: mg.theoryRounds ?? 2 };
-      case 'split': case 'pricing': case 'perdiem': case 'gearcall': case 'exchange': return { seconds: 35, rounds: 1 };
+      case 'exchange': return { seconds: 50, rounds: 2 };
+      case 'split': case 'pricing': case 'perdiem': case 'gearcall': return { seconds: 35, rounds: 1 };
       default: return { seconds: 30, rounds: 3 };
     }
   }
@@ -1101,15 +1102,42 @@ export class MiniGameScene extends Phaser.Scene {
 
   private runExchange(): void {
     const rates: { label: string; rate: number; feePct: number }[] = [...(this.mg.ledger?.rates ?? DEFAULT_LEDGER.exchange.rates)];
+    // Step 1, the fee calculator (2026-10-02): before choosing, work out what the best-looking
+    // window really pays. Answer or not, the working is shown, then the choice opens.
+    const calc = exchangeCalcQuestion(rates);
+    const work = exchangeWorking(calc.window);
+    const live = this.ledgerFrame('Changing money', `First, the trap. ${calc.window.label} shows the best rate, ${calc.window.rate.toFixed(2)}, with a ${calc.window.feePct}% fee. What does $200 really get you there?`);
+    live.setText('Rate times 200, then take the fee off that.');
+    let stepDone = false;
+    const toChoice = (picked: number | null) => {
+      if (stepDone) return;
+      stepDone = true;
+      const right = picked === calc.answer;
+      if (right) { spawnPerfectSpark(this, W / 2, 560); hitstop(this, 40); } else if (picked !== null) shake(this, 3);
+      live.setText(`${right ? 'Right.' : picked === null ? 'Here is the working.' : `Not ${picked}.`} ${work.line}.`);
+      this.time.delayedCall(3200, () => this.runExchangeChoice(rates));
+    };
+    this.theoryRng.shuffle(calc.options).forEach((v, i) => {
+      this.contentLayer.add(createButton(this, W / 2 - 260, 664 + i * 86, 520, 70, `${v} local`, () => toChoice(v), { fillColor: i % 2 === 0 ? PALETTE.teal : PALETTE.plum, fontSize: '19px' }));
+    });
+    this.time.delayedCall(THEORY_IDLE_MS, () => toChoice(null));
+  }
+
+  /** Step 2: pick the window. The live line asks for the comparison; Show the math does every sum. */
+  private runExchangeChoice(rates: { label: string; rate: number; feePct: number }[]): void {
     const live = this.ledgerFrame('Changing money', 'Three windows, three rates, three fees. $200 of the float needs to become local money for the week.');
-    live.setText('What you get is the rate with the fee taken off. Pick the window.');
+    live.setText('Work it out first: compare what you keep after the fee.');
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolveExchange(rates, 0), true));
-    // Buttons start at 640, BELOW the live hint line ledgerFrame places at y=560 — they used to
-    // start at 380, which put the third window exactly on top of the hint (reported live as a
-    // line of text hidden behind the Market stall button). Every other ledger game already keeps
-    // its buttons in this 640+ band.
+    const reveal = createButton(this, W / 2 - 120, 604, 240, 52, 'Show the math', () => {
+      live.setText(rates.map((r) => exchangeWorking(r).short).join('\n'));
+      reveal.setVisible(false);
+      audio.playSfx('tap');
+    }, { fillColor: PALETTE.plum, fontSize: '17px' });
+    this.contentLayer.add(reveal);
+    // Window buttons sit below the live line ledgerFrame places at y=560 and the reveal button
+    // (they once started at 380 and buried the hint; see round 3 in HANDOFF.md §20).
     rates.forEach((r, i) => {
-      this.contentLayer.add(createButton(this, W / 2 - 260, 640 + i * 90, 520, 74, `${r.label}\nrate ${r.rate.toFixed(2)} · fee ${r.feePct}%`, () => this.settleLedger(resolveExchange(rates, i)), { fillColor: i % 2 === 0 ? PALETTE.teal : PALETTE.plum, fontSize: '17px' }));
+      this.contentLayer.add(createButton(this, W / 2 - 260, 664 + i * 86, 520, 74, `${r.label}\nrate ${r.rate.toFixed(2)} · fee ${r.feePct}%`, () => this.settleLedger(resolveExchange(rates, i)), { fillColor: i % 2 === 0 ? PALETTE.teal : PALETTE.plum, fontSize: '17px' }));
     });
   }
 

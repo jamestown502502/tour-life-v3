@@ -20,7 +20,10 @@ import { bedForCity } from '../game/ambience';
 import { VAN_BEATS, VAN_CARRY, VAN_OPENERS } from '../../content/van';
 import { ledgerEcho, LEDGER_TYPES, type LedgerTier, type LedgerType } from '../game/ledger';
 import { saveRun } from '../core/save';
-import type { BandmateId } from '../../content/schema';
+import { CITIES } from '../game/content';
+import { minigamePlayedFlag } from '../game/minigame';
+import { recallCandidates, recallFlag, type RecallQuestion } from '../game/craft';
+import type { BandmateId, DialogueChoice } from '../../content/schema';
 
 const BANDMATES: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
 
@@ -82,9 +85,12 @@ export class VanScene extends Phaser.Scene {
     const carry = this.carryBeat(rng);
     // Then a money decision from an earlier city comes back (see ledgerEchoBeat).
     const echo = this.ledgerEchoBeat(rng);
+    // Then one skill from an earlier city, quizzed (spaced recall; see recallBeat).
+    const recall = this.recallQuestion(rng);
+    const afterEcho = recall ? (): void => this.recallBeat(recall, rng, playBandmateBeat) : playBandmateBeat;
     const afterCarry = echo
-      ? (): void => this.dialogueBox.show({ id: 'van_ledger_echo', speaker: 'narrator', text: echo }, playBandmateBeat, () => {})
-      : playBandmateBeat;
+      ? (): void => this.dialogueBox.show({ id: 'van_ledger_echo', speaker: 'narrator', text: echo }, afterEcho, () => {})
+      : afterEcho;
     const afterOpener = carry
       ? (): void => this.dialogueBox.show({ id: 'van_carry', speaker: 'narrator', text: carry }, afterCarry, () => {})
       : afterCarry;
@@ -109,6 +115,30 @@ export class VanScene extends Phaser.Scene {
     saveRun(State.data);
     const fx = Object.entries(echo.effects).map(([k, v]) => `${k} ${v >= 0 ? '+' : ''}${v}`).join(', ');
     return `${echo.text}\n\nThe ledger remembers: ${fx}.`;
+  }
+
+  /** A skill from a minigame played in another city and not yet quizzed this run, or null. */
+  private recallQuestion(rng: ReturnType<typeof makeRng>): RecallQuestion | null {
+    const played = CITIES.flatMap((c) => (c.minigames ?? [])
+      .filter((m) => State.hasFlag(minigamePlayedFlag(m.id)))
+      .map((m) => ({ type: m.type, cityId: c.id })));
+    const pool = recallCandidates(played, this.cityId, (f) => State.hasFlag(f));
+    return pool.length ? rng.pick(pool) : null;
+  }
+
+  /** Spaced recall (2026-10-02): a bandmate quizzes one earlier skill. Marked and saved the moment
+   *  it is answered, so a resumed drive never asks it twice; a right answer is +1 inspiration. */
+  private recallBeat(r: RecallQuestion, rng: ReturnType<typeof makeRng>, then: () => void): void {
+    const choices: DialogueChoice[] = rng.shuffle(r.options.map((label, i) => ({ id: `recall_${i}`, label, next: i === 0 ? 'right' : 'wrong' })));
+    this.dialogueBox.show({ id: 'van_recall', speaker: r.asker, text: r.q, choices }, () => {}, (choice) => {
+      const right = choice.next === 'right';
+      State.addFlag(recallFlag(r.type));
+      if (right) State.applyStatDeltas({ inspiration: 1 });
+      saveRun(State.data);
+      audio.playSfx(right ? 'perfect' : 'ok');
+      const text = `${right ? 'Right.' : `It is: ${r.options[0]}.`} ${r.why}${right ? '\n\nInspiration +1.' : ''}`;
+      this.dialogueBox.show({ id: 'van_recall_answer', speaker: r.asker, text }, then, () => {});
+    });
   }
 
   /** The previous stop's show, phrased for the drive. Null on the very first leg (nothing to carry

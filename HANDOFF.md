@@ -1718,3 +1718,13 @@ Research-led pass. Full critique, rankings and before/after:
   callbacks), `priorHosted`; `State.recordHostedGame` keeps an optional `hostedGames` list (max 16,
   not in practice mode). Drawn in `finish()` under the reward line.
 - Tests: `src/tests/craft.test.ts` (8).
+
+### 21a. Part 2, same day: exchange calculator and spaced recall
+
+- **Exchange** is two steps: `runExchange` asks what the best-HEADLINE-rate window really pays
+  (`exchangeCalcQuestion`: answer, rate-only, and unconverted), shows `exchangeWorking(...).line`
+  either way, then `runExchangeChoice` (one-line prompt, Show the math -> three `.short` lines,
+  windows at 664/750/836). Estimate 50 s / 2 rounds.
+- **Recall on the drive** (`RECALL`, `recallCandidates`, `recallFlag` in craft.ts; `recallBeat` in
+  VanScene): one quiz per drive about a minigame type played in another city, flag
+  `recall_<type>`, saved on answer; right = +1 inspiration. Every one of the 17 types has a quiz.
