@@ -21,16 +21,40 @@ export function createFloatingInput(
   const el = document.createElement('input');
   el.placeholder = placeholder;
   el.maxLength = 30;
+  // Colours are set explicitly, text fill included. Left to the browser, an iPhone in dark mode
+  // can draw the typed text in a colour that disappears on the field (QA round 2 #2).
   Object.assign(el.style, {
     position: 'fixed', zIndex: '1000', textAlign: 'center', borderRadius: '8px',
-    border: 'none', padding: '6px', boxSizing: 'border-box' as const,
+    border: '2px solid #D9A441', padding: '4px 8px', boxSizing: 'border-box' as const,
+    background: '#F5EBDD', color: '#2B3A55', caretColor: '#C4704F', opacity: '1',
+    fontFamily: 'Nunito, system-ui, sans-serif', fontWeight: '700', outline: 'none',
   });
+  el.style.setProperty('-webkit-text-fill-color', '#2B3A55');
+  el.style.colorScheme = 'light';
+  el.autocomplete = 'off';
+  el.spellcheck = false;
+  el.setAttribute('autocapitalize', 'off');
+  el.enterKeyHint = 'done';
   el.style.touchAction = 'manipulation';
   document.body.appendChild(el);
   // Belt and braces for the same iOS behaviour: snap the visual viewport back when the keyboard closes.
   el.addEventListener('blur', () => { try { window.scrollTo(0, 0); } catch { /* ignore */ } });
 
+  // Touch devices: while the keyboard is up, the field docks just above it, full width, so what
+  // you type is always on screen (QA round 2 #2: on iPhone the field sat behind the keyboard).
+  const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+  let focused = false;
   const reposition = () => {
+    const vv = window.visualViewport;
+    if (focused && coarse && vv) {
+      const hPx = 48;
+      el.style.left = `${vv.offsetLeft + 16}px`;
+      el.style.width = `${vv.width - 32}px`;
+      el.style.height = `${hPx}px`;
+      el.style.top = `${vv.offsetTop + Math.max(16, vv.height - hPx - 16)}px`;
+      el.style.fontSize = '18px';
+      return;
+    }
     const canvas = document.querySelector('canvas');
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -45,8 +69,14 @@ export function createFloatingInput(
     // Never under 16px: iOS Safari zooms the whole page into any focused input smaller than that,
     // and the zoom does not fully undo on blur — reported as the welcome screen being stuck
     // half-scrolled. 16px is the documented threshold.
-    el.style.fontSize = `${Math.max(16, 16 * scaleY)}px`;
+    // QA round 2 #8: 16px is the floor only where iOS needs it (touch). With a mouse, the field
+    // scales with the canvas like every other line of text instead of towering over it.
+    el.style.fontSize = coarse ? `${Math.max(16, 16 * scaleY)}px` : `${Math.max(11, Math.min(18, 20 * scaleY))}px`;
   };
+  el.addEventListener('focus', () => { focused = true; reposition(); });
+  el.addEventListener('blur', () => { focused = false; reposition(); });
+  window.visualViewport?.addEventListener('resize', reposition);
+  window.visualViewport?.addEventListener('scroll', reposition);
 
   reposition();
   window.addEventListener('resize', reposition);
@@ -57,6 +87,8 @@ export function createFloatingInput(
     if (destroyed) return;
     destroyed = true;
     window.removeEventListener('resize', reposition);
+    window.visualViewport?.removeEventListener('resize', reposition);
+    window.visualViewport?.removeEventListener('scroll', reposition);
     window.clearInterval(interval);
     el.remove();
   };

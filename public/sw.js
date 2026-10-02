@@ -5,7 +5,8 @@
 // immutable per deploy — a cache-first miss just falls through to network and caches the
 // result). CACHE_NAME is bumped whenever the caching *strategy* itself changes, not per
 // content change — content changes are covered by cache-first's network fallback.
-const CACHE_NAME = 'tourlife-v4'; // v3 -> v4: manifest.json becomes network-first (a strategy change), AND the bump evicts every stale manifest a v3 client is pinned to
+const CACHE_NAME = 'tourlife-v5'; // v4 -> v5 (2026-10-02): six paintings were edited IN PLACE under the same filenames (alcohol removed for Play), and cache-first would keep serving the old ones to returning players forever. Evict.
+// (previous) 'tourlife-v4' // v3 -> v4: manifest.json becomes network-first (a strategy change), AND the bump evicts every stale manifest a v3 client is pinned to
 // The navigation document itself was never actually cached anywhere — the fetch handler below
 // only ever READ from caches.match('/index.html') as an offline fallback, so "offline reload"
 // could never work (confirmed live: e2e/dist-smoke.spec.ts's offline test failed with

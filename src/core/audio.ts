@@ -64,6 +64,15 @@ class AudioSystem {
     this.unlocked = true;
   }
 
+  /** The app went behind another app (or the screen locked). A web page's audio keeps playing
+   *  there unless the page stops it, which is what QA round 2 #5 heard on Android. Suspending the
+   *  context silences music, ambience and SFX at once; resuming picks up where it left off. */
+  setBackgrounded(hidden: boolean): void {
+    if (!this.ctx) return;
+    if (hidden && this.ctx.state === 'running') this.ctx.suspend().catch(() => {});
+    else if (!hidden && this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+  }
+
   isUnlocked(): boolean {
     return this.unlocked;
   }
@@ -260,6 +269,7 @@ class AudioSystem {
     // Arpeggio: an 8th-note pluck cycling through the current chord, one octave up.
     let arpStep = 0;
     const arpInterval = window.setInterval(() => {
+      if (ctx.state !== 'running') return; // backgrounded: don't queue notes on a frozen clock
       const freqs = chords[chordIndex % chords.length];
       const freq = freqs[arpStep % freqs.length] * 2;
       arpStep++;
@@ -270,6 +280,7 @@ class AudioSystem {
     // Bass pulse on beat 1 of every bar.
     let bar = 0;
     const bassInterval = window.setInterval(() => {
+      if (ctx.state !== 'running') return;
       const freqs = chords[bar % chords.length];
       this.tone(freqs[0] / 2, freqs[0] / 2, 0.4, 0.09, 'sine', padGain);
       bar++;

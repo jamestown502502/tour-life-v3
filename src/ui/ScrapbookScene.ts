@@ -5,6 +5,7 @@ import { PALETTE, PALETTE_HEX, W } from '../const';
 import { ensureDialoguePanel, ensureScrapbookCard, ensureSceneBackdrop } from '../art/sprites';
 import { spawnConfetti, applyVignette } from '../art/effects';
 import { createButton } from './Button';
+import { wildcardFor, goalFor } from '../game/wildcard';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
 import { getCity, getSong } from '../game/content';
@@ -73,8 +74,13 @@ export class ScrapbookScene extends Phaser.Scene {
       textStyle('dialogue', { fontSize: '14px', shadow: undefined, wordWrap: { width: W - 180 }, align: 'center' })).setOrigin(0.5, 0);
 
     const rel = Object.entries(State.data.relationships).map(([id, v]) => `${id} ${Math.round(v)}`).join('  ');
-    this.add.text(W / 2, Math.min(560, souvenirText.y + souvenirText.height + 16), `Where the band landed: ${rel}`,
+    const relText = this.add.text(W / 2, Math.min(560, souvenirText.y + souvenirText.height + 16), `Where the band landed: ${rel}`,
       textStyle('dialogue', { fontSize: '14px', shadow: undefined, wordWrap: { width: W - 180 }, align: 'center' })).setOrigin(0.5, 0);
+    // The run's wildcard and whether the tour goal was met (src/game/wildcard.ts).
+    const wc = wildcardFor(State.data.seed), goal = goalFor(State.data.seed);
+    const met = goal.check(State.data);
+    this.add.text(W / 2, Math.min(650, relText.y + relText.height + 14), `${wc.name}  ·  Tour goal ${met ? 'met' : 'missed'}: ${goal.text}`,
+      textStyle('dialogue', { fontSize: '15px', shadow: undefined, color: met ? PALETTE_HEX.teal : PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0);
 
     // QA #13: all three buttons share the default label size now (one used to override to 18px).
     createButton(this, W / 2 - 150, 720, 300, 66, 'Read the epilogue', () => this.toggleEpilogue(), { fillColor: 0xd9a441 });

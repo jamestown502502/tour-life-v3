@@ -10,12 +10,12 @@ import { hasTitleTheme } from '../core/assets';
 import { DEFAULT_AMBIENCE_BPM, DEFAULT_AMBIENCE_CHORDS } from '../core/musicTheory';
 import { dailySeed, generateSeed } from '../core/rng';
 import { State } from '../core/state';
-import { hasSave, loadRun, loadFromSlot, saveToSlot, SAVE_SLOTS, type SaveSlot } from '../core/save';
+import { loadRun, loadFromSlot, saveToSlot, SAVE_SLOTS, type SaveSlot } from '../core/save';
 import type { RunState } from '../core/state';
 import { hasSeenHowToPlay } from '../core/onboarding';
 import { createFloatingInput, type FloatingInput } from './htmlOverlay';
 import { addTextScrim, textStyle } from './textStyles';
-import { resumeTarget } from '../game/resume';
+import { resumeTarget, isResumable, continueLabel } from '../game/resume';
 
 export class TitleScene extends Phaser.Scene {
   constructor() { super('Title'); }
@@ -108,17 +108,19 @@ export class TitleScene extends Phaser.Scene {
 
     const continueY = btnY;
     btnY += BTN_GAP;
-    hasSave().then((exists) => {
-      this.saveExists = exists;
-      if (exists) {
-        createButton(this, W / 2 - 160, continueY, 320, BTN_ROW, 'Continue', async () => {
-          const saved = await loadRun();
-          if (saved) {
-            State.data = saved;
-            const { key, data } = resumeTarget(saved.progress);
-            goTo(this, key, data);
-          }
-        }, { fillColor: 0xd9a441 });
+    // Continue only for a run that actually started (QA round 2 #1). Toggling a setting on this
+    // screen saves State.data while its progress is still 'title', and Continue then "resumed" to
+    // the Title screen itself: the app appeared to refresh and nothing started. The label says
+    // where Continue goes, so returning players know before they tap.
+    loadRun().then((saved) => {
+      const resumable = !!saved && isResumable(saved);
+      this.saveExists = resumable;
+      if (resumable && saved) {
+        createButton(this, W / 2 - 160, continueY, 320, BTN_ROW, `Continue: ${continueLabel(saved)}`, () => {
+          State.data = saved;
+          const { key, data } = resumeTarget(saved.progress);
+          goTo(this, key, data);
+        }, { fillColor: 0xd9a441, fontSize: '17px' });
       }
     });
 
@@ -288,12 +290,12 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private buildSeedEntry(seedLabel: Phaser.GameObjects.Text): void {
-    this.seedInput = createFloatingInput(this, W / 2, 950, 320, 'Or type a seed to replay a run');
+    this.seedInput = createFloatingInput(this, W / 2, 950, 320, 'Replay a seed');
     createButton(this, W / 2 - 100, 1000, 200, 44, 'Use this seed', () => {
       const val = this.seedInput?.el.value.trim();
       if (val) {
         this.currentSeed = val;
-        seedLabel.setText(`Today's tour: ${this.currentSeed}`);
+        seedLabel.setText(`Custom seed: ${this.currentSeed}`);
       }
     }, { fillColor: 0x3e7c7b, fontSize: '18px' });
   }

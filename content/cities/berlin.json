@@ -22,10 +22,10 @@
       "sceneId": "ber_loc_records"
     },
     {
-      "id": "biergarten",
-      "name": "A graffiti-covered courtyard beer garden",
-      "sound": "glass_clink_and_chatter",
-      "sceneId": "ber_loc_biergarten"
+      "id": "courtyard",
+      "name": "A graffiti-covered courtyard café",
+      "sound": "cups_and_chatter",
+      "sceneId": "ber_loc_courtyard"
     },
     {
       "id": "tower",
@@ -355,7 +355,7 @@
       "type": "perdiem",
       "hostBandmate": "theo",
       "title": "The Late-Night Budget",
-      "introText": "Berlin shows start at midnight and end at breakfast. Theo counts out the per diem on the club bar. \"Food, a couch that is not the van, and sleep. Pick.\"",
+      "introText": "Berlin shows start at midnight and end at breakfast. Theo counts out the per diem on the merch table. \"Food, a couch that is not the van, and sleep. Pick.\"",
       "outroText": "Everyone eats, everyone sleeps somewhere soft, and there is money left over.",
       "outroTextRough": "Someone goes without something. Theo says it is fine. It is not quite fine.",
       "outroTextPerfect": "Food, a couch, a lie-in, and change in the envelope. Theo checks it twice.",
@@ -549,15 +549,15 @@
       "speaker": "narrator",
       "text": "She won't let anyone else touch it until she has heard it through once, alone, with the door shut."
     },
-    "ber_loc_biergarten": {
-      "id": "ber_loc_biergarten",
+    "ber_loc_courtyard": {
+      "id": "ber_loc_courtyard",
       "speaker": "narrator",
       "text": "Fairy lights strung between murals of faces nobody remembers the names of anymore. Somebody's dog is peacefully asleep under every third table in the courtyard.",
       "choices": [
         {
-          "id": "toast",
-          "label": "Toast to nothing in particular",
-          "next": "ber_loc_biergarten_toast",
+          "id": "singalong",
+          "label": "Join the long table's sing-along",
+          "next": "ber_loc_courtyard_song",
           "effects": {
             "harmony": 3
           }
@@ -565,32 +565,32 @@
         {
           "id": "quiet",
           "label": "Find the quietest corner and just breathe",
-          "next": "ber_loc_biergarten_quiet",
+          "next": "ber_loc_courtyard_quiet",
           "effects": {
             "energy": 4
           }
         }
       ]
     },
-    "ber_loc_biergarten_toast": {
-      "id": "ber_loc_biergarten_toast",
+    "ber_loc_courtyard_song": {
+      "id": "ber_loc_courtyard_song",
       "speaker": "narrator",
-      "text": "Glasses clink around the table. Nobody actually asks what for. That's apparently just how it's done here, no explanation required.",
-      "next": "ber_loc_biergarten_toast_after"
+      "text": "Somebody at the long table starts a song. Nobody actually asks what it is. That's apparently just how it's done here, no explanation required.",
+      "next": "ber_loc_courtyard_song_after"
     },
-    "ber_loc_biergarten_toast_after": {
-      "id": "ber_loc_biergarten_toast_after",
+    "ber_loc_courtyard_song_after": {
+      "id": "ber_loc_courtyard_song_after",
       "speaker": "narrator",
-      "text": "The table beside yours toasts too, for reasons of their own. You never find out what. It does not matter."
+      "text": "The table beside yours joins in, in a different key, for reasons of their own. You never find out what the song was. It does not matter."
     },
-    "ber_loc_biergarten_quiet": {
-      "id": "ber_loc_biergarten_quiet",
+    "ber_loc_courtyard_quiet": {
+      "id": "ber_loc_courtyard_quiet",
       "speaker": "narrator",
       "text": "For twenty whole minutes, the only job in the world is existing quietly in a plastic chair. You turn out to be surprisingly good at it.",
-      "next": "ber_loc_biergarten_quiet_after"
+      "next": "ber_loc_courtyard_quiet_after"
     },
-    "ber_loc_biergarten_quiet_after": {
-      "id": "ber_loc_biergarten_quiet_after",
+    "ber_loc_courtyard_quiet_after": {
+      "id": "ber_loc_courtyard_quiet_after",
       "speaker": "narrator",
       "text": "Theo falls asleep sitting upright. Nobody wakes him. The chair holds. The evening holds."
     },
@@ -1138,7 +1138,7 @@
     "ber_aftershow_broke": {
       "id": "ber_aftershow_broke",
       "speaker": "narrator",
-      "text": "The club owner slides four beers across without asking for money. Nobody argues. Rowan writes it in the ledger anyway, under gifts.",
+      "text": "The club owner slides four cold waters and a paper bag of pretzels across without asking for money. Nobody argues. Rowan writes it in the ledger anyway, under gifts.",
       "condition": "stat.funds<=430",
       "fallback": "ber_aftershow",
       "next": "ber_aftershow"

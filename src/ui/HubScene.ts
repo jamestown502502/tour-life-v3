@@ -15,11 +15,12 @@ import { DEFAULT_AMBIENCE_BPM, DEFAULT_AMBIENCE_CHORDS } from '../core/musicTheo
 import { generateEnding } from '../game/endings';
 import { completeRun } from '../game/meta';
 import type { StatKey } from '../../content/schema';
-import { textStyle } from './textStyles';
+import { addTextScrim, textStyle } from './textStyles';
 import { DialogueBox } from './DialogueBox';
 import { addHelpButton } from './HelpButton';
 import { COMPLICATION_LABELS } from './RoutePlanScene';
 import { routeArcRole } from '../game/route';
+import { wildcardFor, goalFor, describeDeltas } from '../game/wildcard';
 
 const ONBOARD_FLAG = 'onboard_hub_seen';
 const COMPLICATION_APPLIED_FLAG = 'mid_tour_complication_applied';
@@ -87,29 +88,37 @@ export class HubScene extends Phaser.Scene {
     }
 
     this.add.text(W / 2, 60, State.data.band.name, textStyle('h1')).setOrigin(0.5);
+    // QA round 2 #4: the Hub's supporting lines were 13-14px terracotta/gold straight on the
+    // painted bus, unreadable on a phone. Each now sits on a scrim, at 16px, in cream.
     if (complicationNote) {
-      this.add.text(W / 2, 92, complicationNote, textStyle('small', {
-        fontSize: '13px', color: PALETTE_HEX.terracotta, wordWrap: { width: W - 140 }, align: 'center',
+      addTextScrim(this, W / 2, 98, W - 100, 44, 0.8);
+      this.add.text(W / 2, 98, complicationNote, textStyle('small', {
+        fontSize: '16px', color: PALETTE_HEX.cream, wordWrap: { width: W - 140 }, align: 'center',
       })).setOrigin(0.5);
     }
 
     this.renderStats();
     this.renderLedgerCard();
+    this.renderTourCard();
     this.renderCorkboard(hasRealAsset(bgKey));
 
     if (stop) {
       const city = getCity(stop.cityId);
-      this.add.text(W / 2, 766, `Next stop: ${city.name}`, textStyle('body', { fontSize: '22px' })).setOrigin(0.5);
+      addTextScrim(this, W / 2, 786, W - 120, 70, 0.8);
+      this.add.text(W / 2, 768, `Next stop: ${city.name}`, textStyle('body', { fontSize: '22px' })).setOrigin(0.5);
       // Item D: mirrors RoutePlanScene's opener/midpoint/finale framing for this same route, so
       // the city about to be traveled to reads as a specific point in this run's arc, not just
       // the next item in a list.
       const objective = this.objectiveLineFor(State.data.currentCityIndex);
       if (objective) {
-        this.add.text(W / 2, 794, objective, textStyle('small', {
-          fontSize: '13px', color: PALETTE_HEX.gold, wordWrap: { width: W - 140 }, align: 'center',
+        this.add.text(W / 2, 800, objective, textStyle('small', {
+          fontSize: '16px', color: PALETTE_HEX.cream, wordWrap: { width: W - 140 }, align: 'center',
         })).setOrigin(0.5);
       }
-      createButton(this, W / 2 - 160, 820, 320, 66, `Travel to ${city.name}`, () => {
+      createButton(this, W / 2 - 160, 828, 320, 66, `Travel to ${city.name}`, () => {
+        // The wildcard's per-city effect lands once per stop, as the van leaves.
+        const stopFlag = `wildcard_stop_${State.data.currentCityIndex}`;
+        if (!State.hasFlag(stopFlag)) { State.applyStatDeltas(wildcardFor(State.data.seed).perStop); State.addFlag(stopFlag); }
         State.setProgress({ screen: 'city', cityId: city.id });
         saveRun(State.data);
         // Addendum v2, Item 9b: hub -> city travel uses 'drive'.
@@ -119,25 +128,33 @@ export class HubScene extends Phaser.Scene {
       }, { fillColor: 0x3e7c7b });
       // Left-anchored (not centered) and clipped short of the corkboard's x-range (CORKBOARD_X
       // starts at W-190) so this can't visually collide with the souvenir chips beside it.
-      this.add.text(40, 892, `Tonight: soundcheck, then whatever ${city.collaborator.npcName} has waiting.`,
-        textStyle('small', { fontSize: '14px', wordWrap: { width: 460 } }));
+      addTextScrim(this, 40 + 240, 932, 480, 48, 0.8);
+      this.add.text(52, 932, `Tonight: soundcheck, then whatever ${city.collaborator.npcName} has waiting.`,
+        textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream, wordWrap: { width: 456 } })).setOrigin(0, 0.5);
     } else {
       this.add.text(W / 2, 780, 'The last show is behind you.', textStyle('body', { fontSize: '22px' })).setOrigin(0.5);
       createButton(this, W / 2 - 160, 820, 320, 66, 'Wrap the tour', () => this.wrapTour(), { fillColor: 0xd9a441 });
     }
 
     if (State.data.meta.unlockedDecor.length > 0) {
-      this.add.text(W / 2, 920, `Décor: ${State.data.meta.unlockedDecor.map((d) => d.replace(/_/g, ' ')).join(', ')}`,
+      this.add.text(W / 2, 966, `Décor: ${State.data.meta.unlockedDecor.map((d) => d.replace(/_/g, ' ')).join(', ')}`,
         textStyle('small', { wordWrap: { width: W - 100 }, align: 'center' })).setOrigin(0.5);
     }
 
     // QA #9 (decision D6): replay any minigame from this run's route without rewards or flags.
     createButton(this, W / 2 - 160, 990, 320, 56, 'Practice a minigame', () => this.showPractice(), { fillColor: 0x8a6fa3, fontSize: '17px' });
 
-    createButton(this, W / 2 - 100, 1140, 200, 66, 'Settings', () => {
+    createButton(this, W / 2 - 220, 1140, 200, 66, 'Settings', () => {
       this.scene.launch('Settings', { returnTo: 'Hub' });
       this.scene.pause();
     }, { fillColor: 0x8fb7c9, fontSize: '18px' });
+    // QA round 2 #7: a plain way back to the home screen. The run is saved first, so Continue there
+    // returns to this bus.
+    createButton(this, W / 2 + 20, 1140, 200, 66, 'Home', () => {
+      saveRun(State.data);
+      audio.stopMusic();
+      goTo(this, 'Title');
+    }, { fillColor: 0x8a6fa3, fontSize: '18px' });
 
     this.events.on(Phaser.Scenes.Events.RESUME, () => fadeIn(this));
   }
@@ -161,19 +178,37 @@ export class HubScene extends Phaser.Scene {
     });
   }
 
+  /** THIS TOUR: the run's wildcard and tour goal (src/game/wildcard.ts), with the goal ticked off
+   *  live. Sits under the ledger card (or in its place before any ledger game has been played). */
+  private renderTourCard(): void {
+    const wc = wildcardFor(State.data.seed), goal = goalFor(State.data.seed);
+    const ledgerRows = Math.min(3, (State.data.ledger ?? []).length);
+    const x = 60, w = W - 120;
+    const y = ledgerRows > 0 ? 318 + 34 + ledgerRows * 24 + 14 : 318;
+    const done = goal.check(State.data);
+    addTextScrim(this, x + w / 2, y + 66, w, 132, 0.8);
+    this.add.text(x + 14, y + 10, 'This tour', textStyle('stat', { fontSize: '15px', color: PALETTE_HEX.gold }));
+    this.add.text(x + 14, y + 32, `${wc.name}: ${wc.text}`, textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream, wordWrap: { width: w - 28 } }));
+    const per = describeDeltas(wc.perStop);
+    if (per) this.add.text(x + w - 14, y + 10, `each city: ${per}`, textStyle('small', { fontSize: '13px', color: PALETTE_HEX.cream })).setOrigin(1, 0);
+    this.add.text(x + 14, y + 94, `${done ? 'Goal met' : 'Tour goal'}: ${goal.text}${done ? '  ✓' : ''}`, textStyle('small', {
+      fontSize: '15px', color: done ? PALETTE_HEX.gold : PALETTE_HEX.cream, wordWrap: { width: w - 28 },
+    }));
+  }
+
   /** The Van Ledger card: the run's last money decisions, so `funds` reads as a story rather
    *  than a bar. Only appears once a ledger minigame has been played. */
   private renderLedgerCard(): void {
     const entries = (State.data.ledger ?? []).slice(-3).reverse();
     if (entries.length === 0) return;
-    const x = 60, y = 318, w = 400;
-    const h = 30 + entries.length * 22;
+    const x = 60, y = 318, w = 420;
+    const h = 34 + entries.length * 24;
     this.add.rectangle(x, y, w, h, PALETTE.night, 0.62).setOrigin(0, 0).setStrokeStyle(1, PALETTE.gold, 0.5);
-    this.add.text(x + 12, y + 8, 'Van ledger', textStyle('stat', { fontSize: '13px', color: PALETTE_HEX.gold }));
+    this.add.text(x + 12, y + 8, 'Van ledger', textStyle('stat', { fontSize: '15px', color: PALETTE_HEX.gold }));
     entries.forEach((e, i) => {
       const sign = e.funds > 0 ? '+' : e.funds < 0 ? '-' : '±';
-      this.add.text(x + 12, y + 30 + i * 22, `${getCity(e.cityId).name}: ${e.label}`, textStyle('small', { fontSize: '13px', color: PALETTE_HEX.cream }));
-      this.add.text(x + w - 12, y + 30 + i * 22, `${sign}${Math.abs(e.funds)} funds`, textStyle('small', { fontSize: '13px', color: e.funds >= 0 ? PALETTE_HEX.gold : PALETTE_HEX.softRed })).setOrigin(1, 0);
+      this.add.text(x + 12, y + 32 + i * 24, `${getCity(e.cityId).name}: ${e.label}`, textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream }));
+      this.add.text(x + w - 12, y + 32 + i * 24, `${sign}${Math.abs(e.funds)} funds`, textStyle('small', { fontSize: '15px', color: e.funds >= 0 ? PALETTE_HEX.gold : PALETTE_HEX.cream })).setOrigin(1, 0);
     });
   }
 

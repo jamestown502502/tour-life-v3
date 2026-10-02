@@ -4,7 +4,8 @@
 // calls getCity(), which throws on an unknown id — that used to freeze the game mid-transition
 // instead of landing anywhere; see src/game/resume.ts's own comment).
 import { describe, expect, it } from 'vitest';
-import { resumeTarget } from '../game/resume';
+import { resumeTarget, isResumable, continueLabel } from '../game/resume';
+import { State } from '../core/state';
 import type { ScreenName } from '../core/state';
 
 const ALL_SCREENS: ScreenName[] = [
@@ -52,6 +53,26 @@ describe('resumeTarget (Workstream 2: every resume path lands playable)', () => 
     for (const screen of ['rhythm', 'results', 'settings'] as ScreenName[]) {
       expect(resumeTarget({ screen }).key).toBe('Hub');
     }
+  });
+
+  // QA round 2 #1: Continue "just refreshed the app". A save written from the Title screen (a
+  // Settings toggle) had progress 'title', so Continue resumed to Title itself.
+  it("a 'title' progress never resumes to Title (that read as a page refresh)", () => {
+    expect(resumeTarget({ screen: 'title' }).key).toBe('BandCreator');
+  });
+
+  it('only a run that got past the title screen offers Continue, and the label says where it goes', () => {
+    State.newRun('qa-seed');
+    const fresh = structuredClone(State.data);
+    expect(isResumable(fresh)).toBe(false);
+    fresh.band.name = 'The Testers';
+    fresh.route = [{ cityId: 'lisbon' } as never, { cityId: 'tokyo' } as never];
+    fresh.currentCityIndex = 1;
+    fresh.progress = { screen: 'hub' };
+    expect(isResumable(fresh)).toBe(true);
+    expect(continueLabel(fresh)).toBe('Tokyo (stop 2 of 2)');
+    fresh.progress = { screen: 'scrapbook' };
+    expect(continueLabel(fresh)).toBe('the scrapbook');
   });
 
   it('scrapbook resolves to Scrapbook', () => {

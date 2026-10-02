@@ -160,7 +160,7 @@ export const MINIGAME_POSTS_BY_TITLE: Record<string, { good: string; rough: stri
     rough: 'the {city} stairs won. the stairs usually win.',
   },
   'Synth Soundcheck': {
-    good: 'the synth check in {city} was done before I had finished queueing at the bar. show-offs.',
+    good: 'the synth check in {city} was done before I had finished queueing at the merch table. show-offs.',
     rough: 'they were still chasing a level on the synth in {city} well past doors. we waited. it was fine.',
   },
   'Interview': {
@@ -177,7 +177,7 @@ export const MINIGAME_POSTS_BY_TITLE: Record<string, { good: string; rough: stri
 export const RETURN_POSTS: Record<'triumph' | 'solid' | 'rough', string[]> = {
   triumph: [
     'they are back in {city} tonight. this one will sell out and I am smug about having gone last time.',
-    'round two in {city}. the bar is somewhere near the ceiling.',
+    'round two in {city}. the standard is somewhere near the ceiling.',
   ],
   solid: [
     'back in {city} tonight. curious whether they have grown into it.',

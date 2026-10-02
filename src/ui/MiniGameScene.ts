@@ -652,15 +652,54 @@ export class MiniGameScene extends Phaser.Scene {
     this.outcomeGood = good;
     this.outcomePerfect = perfect && good;
     this.clearContent();
-    this.card(300, 260);
+    // A result header above the outro (2026-10-02, "clear feedback after mini-games"): a tier
+    // title, one to three stars, the score where there is one, and what the result earned, so the
+    // ending says how you did against the goal instead of only how the moment felt.
+    const tier = this.outcomePerfect ? 3 : good ? 2 : 1;
+    const title = tier === 3 ? 'Nailed it' : tier === 2 ? 'Solid' : 'Rough, but done';
+    const top = 196;
+    this.contentLayer.add(this.add.text(W / 2, top + 40, title, textStyle('h1', { fontSize: '34px', color: tier === 1 ? PALETTE_HEX.terracotta : PALETTE_HEX.teal })).setOrigin(0.5));
+    const stars: Phaser.GameObjects.Text[] = [];
+    for (let i = 0; i < 3; i++) {
+      const on = i < tier;
+      const st = this.add.text(W / 2 + (i - 1) * 64, top + 98, '★', textStyle('title', { fontSize: '52px', color: on ? PALETTE_HEX.gold : '#B9A88A' })).setOrigin(0.5);
+      this.contentLayer.add(st);
+      if (on && !State.data.accessibility.reducedMotion) {
+        st.setScale(0.2).setAlpha(0);
+        this.tweens.add({ targets: st, scale: 1, alpha: 1, duration: 260, delay: 160 + i * 140, ease: 'Back.easeOut' });
+      }
+      stars.push(st);
+    }
+    if (this.outcomePerfect && !State.data.accessibility.reducedMotion) this.time.delayedCall(600, () => spawnPerfectSpark(this, W / 2, top + 98));
+    let y = top + 142;
+    const THEORY = ['interval', 'clave', 'chordquality', 'transpose', 'meter', 'tempo'];
+    if (THEORY.includes(this.mg.type)) {
+      const rounds = this.mg.theoryRounds ?? (this.mg.type === 'tempo' ? 2 : 4);
+      this.contentLayer.add(this.add.text(W / 2, y, `${this.theoryHits} of ${rounds} right`, textStyle('body', { fontSize: '20px', color: PALETTE_HEX.plum })).setOrigin(0.5, 0));
+      y += 34;
+    }
     const text = !good ? this.mg.outroTextRough
       : (this.outcomePerfect && this.mg.outroTextPerfect) ? this.mg.outroTextPerfect
       : this.mg.outroText;
-    this.contentLayer.add(this.add.text(W / 2, 330, text, textStyle('dialogue', {
-      fontSize: '24px', wordWrap: { width: W - 140 }, align: 'center', lineSpacing: 6,
-    })).setOrigin(0.5, 0));
-    const btnY = Math.min(560, SAFE_BOTTOM_Y - 66);
+    const outro = this.add.text(W / 2, y + 6, text, textStyle('dialogue', {
+      fontSize: '22px', wordWrap: { width: W - 140 }, align: 'center', lineSpacing: 6,
+    })).setOrigin(0.5, 0);
+    this.contentLayer.add(outro);
+    y = outro.y + outro.height + 16;
+    const earned = this.practice ? 'Practice round: nothing changes on the tour.' : rewardLine(this.rewardFor(good, this.outcomePerfect), this.ledgerOutcome?.funds);
+    if (earned) {
+      this.contentLayer.add(this.add.text(W / 2, y, earned, textStyle('small', { fontSize: '17px', color: PALETTE_HEX.plum, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5, 0));
+      y += 46;
+    }
+    const cardImg = this.card(top, Math.max(300, y - top + 12));
+    this.contentLayer.sendToBack(cardImg);
+    const btnY = Math.min(Math.max(y + 24, 560), SAFE_BOTTOM_Y - 66);
     this.contentLayer.add(createButton(this, W / 2 - 130, btnY, 260, 66, 'Continue', () => this.applyRewardAndReturn(), { fillColor: 0xd9a441 }));
+  }
+
+  /** The reward that applies for this outcome (the same choice applyRewardAndReturn makes). */
+  private rewardFor(good: boolean, perfect: boolean): MiniGameReward | undefined {
+    return !good ? (this.mg.roughReward ?? this.mg.reward) : (perfect ? (this.mg.perfectReward ?? this.mg.reward) : this.mg.reward);
   }
 
   private applyRewardAndReturn(): void {
@@ -672,9 +711,7 @@ export class MiniGameScene extends Phaser.Scene {
     }
     // A hosted minigame is time spent with that bandmate: it moves their arc like a scene does.
     if (this.mg.hostBandmate) State.recordArcScene(this.mg.hostBandmate);
-    const reward: MiniGameReward | undefined = !this.outcomeGood
-      ? (this.mg.roughReward ?? this.mg.reward)
-      : (this.outcomePerfect ? (this.mg.perfectReward ?? this.mg.reward) : this.mg.reward);
+    const reward = this.rewardFor(this.outcomeGood, this.outcomePerfect);
     if (reward) {
       State.applyStatDeltas(reward.effects);
       State.applyRelationshipDeltas(reward.relationshipEffects);
@@ -1188,4 +1225,16 @@ export class MiniGameScene extends Phaser.Scene {
     this.time.delayedCall(20000, () => { if (!settled) { if (this.tempoTaps.length >= 2) settle(); else { settled = true; hint.setText('Moving on - no penalty'); this.theoryRound++; this.time.delayedCall(900, () => this.runTempoRound()); } } });
   }
 
+}
+
+const REWARD_STAT_LABELS: Record<string, string> = { energy: 'Energy', harmony: 'Harmony', inspiration: 'Inspiration', funds: 'Funds' };
+
+/** "Harmony +3 · Inspiration +2 · Mira +4", from a reward plus any ledger money. */
+export function rewardLine(reward: MiniGameReward | undefined, ledgerFunds?: number): string {
+  const parts: string[] = [];
+  const fx: Record<string, number | undefined> = { ...(reward?.effects ?? {}) };
+  if (ledgerFunds) fx.funds = (fx.funds ?? 0) + ledgerFunds;
+  for (const [k, v] of Object.entries(fx)) if (v) parts.push(`${REWARD_STAT_LABELS[k] ?? k} ${v > 0 ? '+' : ''}${v}`);
+  for (const [k, v] of Object.entries(reward?.relationshipEffects ?? {})) if (v) parts.push(`${k.charAt(0).toUpperCase()}${k.slice(1)} ${v > 0 ? '+' : ''}${v}`);
+  return parts.length ? parts.join('  ·  ') : '';
 }
