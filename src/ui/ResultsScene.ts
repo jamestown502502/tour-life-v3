@@ -11,6 +11,7 @@ import { bedForCity } from '../game/ambience';
 import { hasRealAsset } from '../core/assets';
 import { ensureCrowdFigure, ensureRhythmStageBackdrop } from '../art/sprites';
 import { addCoverBackground } from '../art/background';
+import { FULL_COMBO_FLAG } from '../game/wildcard';
 
 // Addendum v2, Item 7: same 5-member crowd set Rhythm uses, at the run's FINAL mood
 // (crowdConnection is already the same 0-100 scale RhythmScene's own live `crowd` value uses —
@@ -54,6 +55,13 @@ export class ResultsScene extends Phaser.Scene {
     // Letter plate: stamps in from oversized-and-transparent to settled. Presentational only —
     // like everything else on this screen, it never gates the story.
     const letter = letterGrade(this.result.ratio ?? 0);
+    // QA round 2 #12: a bare "B" at the top did not say whether it was the score. It is labelled as
+    // the show grade, with the scale beside it.
+    addTextScrim(this, W / 2, 62, 300, 40, 0.8);
+    this.add.text(W / 2, 62, 'SHOW GRADE', textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.cream })).setOrigin(0.5);
+    addTextScrim(this, W / 2, 232, 420, 32, 0.8);
+    this.add.text(W / 2, 232, `${letter} on a scale of S, A, B, C, D, E  ·  from notes landed`,
+      textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0.5);
     const plate = this.add.text(W / 2, 150, letter, textStyle('title', { fontSize: '120px', color: PALETTE_HEX.gold }))
       .setOrigin(0.5).setAlpha(0).setScale(2.2);
     if (State.data.accessibility.reducedMotion) {
@@ -107,6 +115,7 @@ export class ResultsScene extends Phaser.Scene {
     }
 
     if (landed > 0 && jc.miss === 0) {
+      State.addFlag(FULL_COMBO_FLAG); // counts toward the "one whole show without dropping a note" tour goal
       const fc = this.add.text(W / 2, 552, 'FULL COMBO — not one note dropped',
         textStyle('body', { fontSize: '19px', color: PALETTE_HEX.gold })).setOrigin(0.5);
       if (!State.data.accessibility.reducedMotion) {

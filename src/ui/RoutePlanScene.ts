@@ -15,6 +15,7 @@ import { addTextScrim, textStyle } from './textStyles';
 import { TOUR_PROMISES } from '../../content/promises';
 import { DialogueBox } from './DialogueBox';
 import { addMenuButton } from './MenuButton';
+import { wildcardFor } from '../game/wildcard';
 
 const ONBOARD_FLAG = 'onboard_routeplan_seen';
 
@@ -59,7 +60,7 @@ export class RoutePlanScene extends Phaser.Scene {
     // contrast suite passed it, because the suite only ever saw the onboarding dialogue that
     // covers this screen on a first run and returns early. The header block and the route list
     // are the two densest stacks, so each gets one scrim rather than a dozen.
-    addTextScrim(this, W / 2, 118, W - 60, 116);
+    addTextScrim(this, W / 2, 120, W - 60, 120);
     this.add.text(W / 2, 80, `${possessive} Route`, textStyle('h1')).setOrigin(0.5);
     this.add.text(W / 2, 130, `Seed: ${State.data.seed}`, textStyle('small', { color: PALETTE_HEX.cream })).setOrigin(0.5);
     // Stuck-screen-hardening follow-up, Item D: the why-tour pick (BandCreatorScene.ts) was
@@ -84,13 +85,18 @@ export class RoutePlanScene extends Phaser.Scene {
     // and both were cream/terracotta directly on pale paper.
     // 0.82, not the 0.72 default: a five-stop route puts its last row near the scrim's edge over
     // the map's brightest area, and the city line measured 4.46:1 against a 4.5 floor at 0.72.
-    addTextScrim(this, W / 2, 210 + (generated.stops.length - 1) * rowH / 2 + 12,
-      W - 40, generated.stops.length * rowH + 40, 0.82);
+    // QA round 2 #6: the three backing scrims on this screen used to overlap each other (header
+    // into list, list into the promise block), and two 72-82% navy layers on top of each other
+    // read as a stray border cutting through the text. Each block now gets one scrim whose edges
+    // are computed from its own rows, with a gap before the next block starts.
+    const LIST_TOP = 192, FIRST_ROW = 214;
+    const listBottom = FIRST_ROW + (generated.stops.length - 1) * rowH + 46;
+    addTextScrim(this, W / 2, (LIST_TOP + listBottom) / 2, W - 40, listBottom - LIST_TOP, 0.82);
 
     generated.stops.forEach((stop, i) => {
       const city = getCity(stop.cityId);
       stop.weather = generated.weatherByCity[stop.cityId];
-      const y = 210 + i * rowH;
+      const y = FIRST_ROW + i * rowH;
       this.add.text(W / 2, y, `${i + 1}. ${city.name} — ${stop.weather?.replace(/_/g, ' ')}`,
         textStyle('body', { fontSize: '22px' })).setOrigin(0.5);
       const role = routeArcRole(i, generated.stops.length);
@@ -108,7 +114,7 @@ export class RoutePlanScene extends Phaser.Scene {
       }
     });
 
-    const buttonY = 210 + generated.stops.length * rowH + 10;
+    const buttonY = listBottom + 44;
 
     // 66px (not the original 56): at the measured 390px-width scale (0.5417x), a raw button
     // needs h>=66 — (66+16)*0.5417=44.4 CSS px — to actually clear the 44px floor including
@@ -119,14 +125,15 @@ export class RoutePlanScene extends Phaser.Scene {
     // no stated intent, so the ending could only summarise what happened, never whether it was
     // what you set out to do. Purely additive: a run with no promise flag simply gets no promise
     // paragraph, which is what every save written before this did.
-    addTextScrim(this, W / 2, buttonY - 8, 420, 52);
+    // One scrim for the whole promise block: heading, the three choices, and the chosen line.
+    const promiseTop = buttonY - 30, promiseBottom = buttonY + 34 + TOUR_PROMISES.length * 74 + 30;
+    addTextScrim(this, W / 2, (promiseTop + promiseBottom) / 2, W - 60, promiseBottom - promiseTop, 0.78);
     // h2's default sky measures ~2.4-2.9:1 on a standard scrim — under even the 3:1 large-text
     // floor. MiniGameScene already carries this exact note; cream is the same answer here.
     this.add.text(W / 2, buttonY - 8, 'What is this tour for?',
       textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
     let promiseChosen: string | null = null;
     const promiseButtons: Phaser.GameObjects.Container[] = [];
-    addTextScrim(this, W / 2, buttonY + 34 + TOUR_PROMISES.length * 74, W - 100, 46);
     const promiseLine = this.add.text(W / 2, buttonY + 34 + TOUR_PROMISES.length * 74, '', textStyle('small', {
       color: PALETTE_HEX.cream, wordWrap: { width: W - 120 }, align: 'center',
     })).setOrigin(0.5);
@@ -140,8 +147,10 @@ export class RoutePlanScene extends Phaser.Scene {
       promiseButtons.push(btn);
     });
 
-    createButton(this, W / 2 - 150, buttonY + 60 + TOUR_PROMISES.length * 74, 300, 66, 'Confirm route', () => {
+    createButton(this, W / 2 - 150, promiseBottom + 18, 300, 66, 'Confirm route', () => {
       if (promiseChosen) State.addFlag(promiseChosen);
+      // The tour's wildcard sets its starting numbers once (src/game/wildcard.ts).
+      if (!State.hasFlag('wildcard_start')) { State.applyStatDeltas(wildcardFor(State.data.seed).start); State.addFlag('wildcard_start'); }
       State.data.route = generated.stops;
       State.data.midTourComplication = generated.midTourComplication;
       for (const stop of generated.stops) {

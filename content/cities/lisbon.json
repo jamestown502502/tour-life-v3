@@ -441,7 +441,7 @@
             "feePct": 2.5
           },
           {
-            "label": "The bar's back office",
+            "label": "The café's back office",
             "rate": 1.05,
             "feePct": 9.5
           }
@@ -608,8 +608,8 @@
           }
         },
         {
-          "id": "buy_round",
-          "label": "Buy the house a round",
+          "id": "buy_pastries",
+          "label": "Buy the room a tray of custard tarts",
           "next": "lis_loc_fado_round",
           "effects": {
             "funds": -20,
@@ -632,13 +632,13 @@
     "lis_loc_fado_round": {
       "id": "lis_loc_fado_round",
       "speaker": "narrator",
-      "text": "The bartender remembers your face now. Small victories.",
+      "text": "The owner remembers your face now. Small victories.",
       "next": "lis_loc_fado_round_after"
     },
     "lis_loc_fado_round_after": {
       "id": "lis_loc_fado_round_after",
       "speaker": "narrator",
-      "text": "She waves off the thanks and pours one more anyway. You will think about this bar for years."
+      "text": "She waves off the thanks and slides one more custard tart your way anyway. You will think about this room for years."
     },
     "lis_loc_records": {
       "id": "lis_loc_records",
@@ -1117,7 +1117,7 @@
       "id": "lis_rel_theo_why",
       "speaker": "theo",
       "portrait": "tense",
-      "text": "\"I quit for eight months, after the last band,\" Theo says, quiet. \"This tour is me finding out if I can do this without it wrecking me again.\"",
+      "text": "\"I quit music for eight months, after the last band,\" Theo says, quiet. \"Burned all the way out. This tour is me finding out if I can do this without burning out again.\"",
       "condition": "relationship.theo>=40",
       "fallback": "lis_rel_theo_why_fallback",
       "choices": [
@@ -1131,7 +1131,7 @@
         },
         {
           "id": "watch_for_it",
-          "label": "I'll watch for it, if you want me to",
+          "label": "I'll tell you if you look run down",
           "next": "lis_rel_theo_why_b",
           "relationshipEffects": {
             "theo": 6
@@ -1269,14 +1269,14 @@
     "lis_aftershow_a": {
       "id": "lis_aftershow_a",
       "speaker": "narrator",
-      "text": "Inês buys the band a round, still impressed by how fast the gear came up those stairs. Someone else's tab, gladly.",
+      "text": "Inês buys the band dinner, still impressed by how fast the gear came up those stairs. Someone else's tab, gladly.",
       "condition": "flag:smooth_load_in",
       "fallback": "lis_aftershow_a_generic"
     },
     "lis_aftershow_a_generic": {
       "id": "lis_aftershow_a_generic",
       "speaker": "narrator",
-      "text": "Someone buys the band a round they can't really afford. Worth it."
+      "text": "Someone buys the band a late dinner they can't really afford. Worth it."
     },
     "lis_aftershow_b": {
       "id": "lis_aftershow_b",

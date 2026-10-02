@@ -95,8 +95,8 @@ test.describe('Settings is reachable from every resumable screen and Back return
     await canvasClick(page, 360, 665); // Continue
     expect(await waitForActiveScene(page, 'Hub')).toContain('Hub');
 
-    // HubScene.ts: Settings button at (W/2-100, 1140, 200, 66) — center (360, 1173).
-    await canvasClick(page, 360, 1173);
+    // HubScene.ts: Settings button at (W/2-220, 1140, 200, 66) — center (240, 1173); Home sits to its right.
+    await canvasClick(page, 240, 1173);
     expect(await waitForActiveScene(page, 'Settings')).toContain('Settings');
 
     await canvasClick(page, 720 / 2 - 150 + 72, SETTINGS_ROW_Y); // Back (left half)

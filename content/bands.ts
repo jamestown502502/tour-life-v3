@@ -15,7 +15,7 @@ export const GENRES: GenreDef[] = [
 ];
 
 export const WHY_TOUR_BEATS: string[] = [
-  'One last shot before day jobs win.',
+  'One last try before day jobs win.',
   'A label finally said yes.',
   'A promise made at a funeral.',
   'Nothing left to lose at home.',

@@ -77,6 +77,13 @@ async function boot(): Promise<void> {
     scene: [BootScene, TitleScene, BandCreatorScene, OpeningScene, RoutePlanScene, HubScene, VanScene, CityScene, RhythmScene, ResultsScene, ScrapbookScene, SettingsScene, HowToPlayScene, MiniGameScene, TransitionScene],
   });
 
+  // Background = silence (QA round 2 #5): switching apps, locking the screen, or minimising the
+  // browser suspends every sound; coming back resumes it. pagehide covers iOS app-switching,
+  // which does not always fire visibilitychange first.
+  document.addEventListener('visibilitychange', () => audio.setBackgrounded(document.hidden));
+  window.addEventListener('pagehide', () => audio.setBackgrounded(true));
+  window.addEventListener('pageshow', () => audio.setBackgrounded(document.hidden));
+
   if (import.meta.env.DEV) { (window as any).__game = game; (window as any).__audio = audio; (window as any).__state = State; }
 }
 

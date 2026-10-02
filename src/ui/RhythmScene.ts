@@ -67,6 +67,14 @@ interface NoteState {
 }
 interface CueState { cue: ChartCue; handled: boolean; banner?: Phaser.GameObjects.Container; }
 
+/** The five painted fans per city, by slot, named to match who each painting shows. */
+const CROWD_NAMES: Record<string, string[]> = {
+  berlin: ['Klaus', 'Nia', 'Brigitte', 'Arjun', 'Sasha'],
+  lisbon: ['Rita', 'Tiago', 'Wilson', 'Leonor', 'Joaquim'],
+  tokyo: ['Yui', 'Ren', 'Keiko', 'Aoi', 'Hiroshi'],
+  mexico_city: ['Camila', 'Arturo', 'Mateo', 'Rosa', 'Alex'],
+};
+
 export class RhythmScene extends Phaser.Scene {
   constructor() { super('Rhythm'); }
 
@@ -212,15 +220,24 @@ export class RhythmScene extends Phaser.Scene {
     // generated at a visibly wider framing than the bad/arms-crossed pose across every member —
     // a real, measured quirk of this asset batch, not something worth re-generating 40 images
     // over when normalizing the display size fixes it just as well).
+    // QA round 2 #11: the five fans were small and anonymous. They are larger now and each has a
+    // name under them, matched to who the painting shows (scripts/generate-crowds.sh), so the
+    // crowd you are winning over reads as people.
     this.hasRealCrowd = hasRealAsset(`crowd_${this.cityId}_m1_good`);
-    const crowdY = H - 40;
+    const crowdY = H - 44;
     const crowdSpan = LANE_W * song.lanes - 80;
+    const names = CROWD_NAMES[this.cityId];
     for (let i = 0; i < CROWD_MEMBER_COUNT; i++) {
       const x = LANE_X_START + 40 + (crowdSpan / (CROWD_MEMBER_COUNT - 1)) * i;
       const key = this.hasRealCrowd ? `crowd_${this.cityId}_m${i + 1}_bad` : ensureCrowdFigure(this, false);
       const fig = this.add.image(x, crowdY, key).setOrigin(0.5, 1).setDepth(50);
-      if (this.hasRealCrowd) fig.setDisplaySize(60, 84); else fig.setDisplaySize(28, 37);
+      if (this.hasRealCrowd) fig.setDisplaySize(78, 109); else fig.setDisplaySize(36, 48);
       this.crowdFigures.push(fig);
+      if (this.hasRealCrowd && names) {
+        this.add.text(x, crowdY + 14, names[i], textStyle('small', {
+          fontSize: '16px', fontStyle: '700', color: PALETTE_HEX.cream, stroke: '#1a2436', strokeThickness: 4,
+        })).setOrigin(0.5).setDepth(51);
+      }
     }
     this.updateCrowdFigures();
 
@@ -700,7 +717,15 @@ export class RhythmScene extends Phaser.Scene {
     const upKey = ensureCrowdFigure(this, true);
     this.crowdFigures.forEach((fig, i) => {
       const good = i < raisedCount;
+      const was = fig.getData('good') === true;
       fig.setTexture(this.hasRealCrowd ? `crowd_${this.cityId}_m${i + 1}_${good ? 'good' : 'bad'}` : (good ? upKey : downKey));
+      fig.setData('good', good);
+      // A fan who just came around jumps once: the crowd meter, felt rather than read.
+      if (good && !was && !State.data.accessibility.reducedMotion && fig.getData('baseY') === undefined) {
+        fig.setData('baseY', fig.y);
+        this.tweens.add({ targets: fig, y: fig.y - 16, duration: 140, yoyo: true, ease: 'Quad.easeOut',
+          onComplete: () => { fig.y = fig.getData('baseY'); fig.setData('baseY', undefined); } });
+      }
     });
   }
 

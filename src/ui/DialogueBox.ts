@@ -3,7 +3,7 @@
 // a merged hit area lets an impatient tap accidentally fire a choice).
 import Phaser from 'phaser';
 import type { DialogueChoice, DialogueNode } from '../../content/schema';
-import { PALETTE, PALETTE_HEX, SAFE_BOTTOM_Y, TYPEWRITER_CHARS_PER_SEC, W } from '../const';
+import { H, PALETTE, PALETTE_HEX, SAFE_BOTTOM_Y, TYPEWRITER_CHARS_PER_SEC, W } from '../const';
 import { ensureDialoguePanel, ensurePortrait, ensurePortraitFrame, ensureRoundedRect } from '../art/sprites';
 import type { BandmateId } from '../../content/schema';
 import { textStyle } from './textStyles';
@@ -320,22 +320,13 @@ export class DialogueBox {
     // otherwise (confirmed live: a 3rd/4th choice row overlapped the Close button's zone).
     this.container.setVisible(false);
     const panelKey = ensureDialoguePanel(this.scene);
-    // Panel bottom (y+h) at 1080, Close button at 1100-1166 — comfortably clear of
-    // SAFE_BOTTOM_Y (1230), matching every other bottom-of-screen control in the game.
-    const x = 30, y = 100, w = W - 60, h = 980;
+    // QA round 2 #10: the panel used to be a fixed 980px tall, so a backlog of two lines opened as
+    // a mostly empty box. The text is laid out first and the panel is sized to it, up to the old
+    // 980 maximum (past which it scrolls, as before). Close sits right under it.
+    const x = 30, w = W - 60, MAX_H = 980;
+    const padX = 24, padTop = 64;
     const root = this.scene.add.container(0, 0).setDepth(160);
-    const bg = this.scene.add.image(x, y, panelKey).setOrigin(0, 0).setDisplaySize(w, h);
-    root.add(bg);
-
-    const padX = 24, padTop = 20;
-    const maskShape = this.scene.make.graphics({});
-    maskShape.fillRect(x + padX, y + padTop, w - padX * 2, h - padTop - 16);
-    const mask = maskShape.createGeometryMask();
-
-    const content = this.scene.add.container(x + padX, y + padTop);
-    content.setMask(mask);
-    root.add(content);
-
+    const content = this.scene.add.container(0, 0);
     let cursorY = 0;
     const entries = this.backlog.length > 0 ? this.backlog : [{ speaker: 'narrator', text: '(Nothing said yet.)' }];
     for (const line of entries) {
@@ -349,8 +340,22 @@ export class DialogueBox {
       cursorY += t.height + 16;
     }
     const contentH = cursorY;
+    const h = Math.min(MAX_H, Math.max(220, contentH + padTop + 24));
+    const y = Math.max(100, Math.round((H - (h + 80)) / 2)); // panel + Close, centred on screen
+    const bg = this.scene.add.image(x, y, panelKey).setOrigin(0, 0).setDisplaySize(w, h);
+    root.add(bg);
+    root.add(this.scene.add.text(x + w / 2, y + 30, 'Story so far', textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+    content.setPosition(x + padX, y + padTop);
+
+    const maskShape = this.scene.make.graphics({});
+    maskShape.fillRect(x + padX, y + padTop, w - padX * 2, h - padTop - 16);
+    const mask = maskShape.createGeometryMask();
+    content.setMask(mask);
+    root.add(content);
+
     const viewH = h - padTop - 16;
     const minY = Math.min(0, viewH - contentH);
+    const baseY = y + padTop;
 
     // Drag-to-scroll: a transparent zone over the masked area tracks pointer delta-Y onto the
     // content container's own y, clamped so it never scrolls past either end.
@@ -360,11 +365,13 @@ export class DialogueBox {
     dragZone.on('pointerdown', (p: Phaser.Input.Pointer) => { dragging = true; dragStartY = p.y; contentStartY = content.y; });
     dragZone.on('pointermove', (p: Phaser.Input.Pointer) => {
       if (!dragging) return;
-      content.y = Phaser.Math.Clamp(contentStartY + (p.y - dragStartY), minY, 0);
+      content.y = Phaser.Math.Clamp(contentStartY + (p.y - dragStartY), baseY + minY, baseY);
     });
     const endDrag = () => { dragging = false; };
     dragZone.on('pointerup', endDrag);
     dragZone.on('pointerout', endDrag);
+    // Open on the newest lines when the log is longer than the panel.
+    content.y = baseY + minY;
 
     const closeBtn = createButton(this.scene, W / 2 - 130, y + h + 14, 260, 66, 'Close', () => this.toggleBacklog(), {
       fillColor: 0xc4704f,

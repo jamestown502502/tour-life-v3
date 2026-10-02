@@ -1651,3 +1651,30 @@ Worth noting against §12's open items: the hold-rail timing flake that kept ear
 160/164 did not recur, which is consistent with the armed-hold fix in §18.1 removing the
 press-timing margin that test was fighting. `git checkout -- docs/polish-before-after/` after any e2e run: some specs
 regenerate those PNGs and they should not be committed as noise.
+
+## 19. QA round 2 + Play policy pass (2026-10-02)
+
+Tester report: 12 rows (`Tour Life - Issue Report Round 2.xlsx`). Full before/after:
+`C:\Users\Jbthi\Claude Cowork\BAIS_Round2_QA_StoreCopy_BeforeAfter_2026-10-02.md`.
+
+- **No alcohol, no gambling:** text rewritten (Berlin `biergarten` -> `courtyard` and its scene ids
+  renamed; Tokyo `pachinko_parlor` -> `taiko_arcade`). Six paintings edited in place with Gemini
+  (`gemini-3-pro-image`) and re-verified by a `gemini-3.5-flash` vision scan of all 120 images;
+  `public/sw.js` cache bumped to v5 because the art filenames did not change.
+  `src/tests/contentPolicy.test.ts` fails on any alcohol or gambling term in `content/`.
+  The IARC questionnaire answers for alcohol must be updated in Play Console (now "No").
+- **Continue:** `isResumable` / `continueLabel` in `src/game/resume.ts`; a 'title' progress
+  resumes to BandCreator. Settings toggles on the Title screen write such saves.
+- **Seed input** (`htmlOverlay.ts`): explicit colours incl. `-webkit-text-fill-color`; on coarse
+  pointers it docks above the keyboard via `visualViewport` while focused.
+- **Landscape phones:** `#rotate-prompt` in `index.html` (landscape + height <= 500 + coarse).
+- **Audio:** `audio.setBackgrounded()` on visibilitychange / pagehide / pageshow; ambience
+  intervals skip while the context is not running.
+- **Replayability:** `src/game/wildcard.ts`, seed-derived (no save fields): wildcard start deltas
+  on Confirm route (flag `wildcard_start`), per-stop deltas on Travel (flag `wildcard_stop_<i>`),
+  Hub "This tour" card, Scrapbook verdict, `goal_full_combo` flag from Results.
+- **Feedback:** minigame `finish()` leads with tier, stars, theory score and `rewardLine()`;
+  Results labels the letter ("SHOW GRADE" + scale); named crowd with a hop on turning.
+- Settings: Resume game / Home (tour saved); Hub: Home button; capitalised labels.
+- Tests: 291 unit + dist smoke 4/4 locally; the full e2e matrix runs on CI (too slow here).
+  CI's `no-barren-screens` Van check still needs PR #4 (test-only fix) merged.

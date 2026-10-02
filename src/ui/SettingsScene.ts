@@ -29,6 +29,9 @@ const BOOL_ROWS: { key: BoolKey; label: string }[] = [
 
 const RHYTHM_MODES: RhythmMode[] = ['relaxed', 'standard', 'expert'];
 const VOLUME_KEYS: (keyof typeof State.data.accessibility.volumes)[] = ['master', 'music', 'sfx', 'metronome'];
+// Display names, capitalised like every other heading on this screen (QA round 2 #9: the raw keys
+// 'master', 'sfx' were printed as-is).
+const VOLUME_LABELS: Record<(typeof VOLUME_KEYS)[number], string> = { master: 'Master', music: 'Music', sfx: 'Sound effects', metronome: 'Metronome' };
 
 export class SettingsScene extends Phaser.Scene {
   constructor() { super('Settings'); }
@@ -96,11 +99,12 @@ export class SettingsScene extends Phaser.Scene {
     y += ROW_INCREMENT;
 
     this.add.text(60, y, 'Rhythm mode', textStyle('body', { fontSize: '16px' }));
-    const modeBtn = createButton(this, W - 230, y - (ROW_H / 2 - 8), 170, ROW_H, State.data.accessibility.rhythmMode, () => {
+    const modeLabel = () => { const m = State.data.accessibility.rhythmMode; return m.charAt(0).toUpperCase() + m.slice(1); };
+    const modeBtn = createButton(this, W - 230, y - (ROW_H / 2 - 8), 170, ROW_H, modeLabel(), () => {
       const idx = RHYTHM_MODES.indexOf(State.data.accessibility.rhythmMode);
       State.data.accessibility.rhythmMode = RHYTHM_MODES[(idx + 1) % RHYTHM_MODES.length];
       saveRun(State.data);
-      getButtonText(modeBtn)?.setText(State.data.accessibility.rhythmMode);
+      getButtonText(modeBtn)?.setText(modeLabel());
     }, { fontSize: '16px' });
     y += ROW_INCREMENT;
 
@@ -120,7 +124,7 @@ export class SettingsScene extends Phaser.Scene {
     y += 36;
     const VOL_BTN = 70, VOL_BTN_H = 68;
     VOLUME_KEYS.forEach((key) => {
-      this.add.text(60, y, key, textStyle('body', { fontSize: '15px' }));
+      this.add.text(60, y, VOLUME_LABELS[key], textStyle('body', { fontSize: '15px' }));
       const valueText = this.add.text(230, y, `${Math.round(State.data.accessibility.volumes[key] * 100)}%`, textStyle('small', { fontSize: '15px' }));
       const minusX = 340, plusX = 440; // 30px gap once Button.ts's 8px-each-side pad is subtracted
       createButton(this, minusX, y - (VOL_BTN_H / 2 - 8), VOL_BTN, VOL_BTN_H, '-', () => this.adjustVolume(key, -0.1, valueText), { fontSize: '20px' });
@@ -128,10 +132,14 @@ export class SettingsScene extends Phaser.Scene {
       y += ROW_INCREMENT;
     });
 
-    createButton(this, W / 2 - 150, y + 12, 145, 56, 'Back', () => {
+    // QA round 2 #7: players could not find a way home once a run had started. The two exits are
+    // now named for what they do, and Home is wide enough to read at phone size. Home is not
+    // offered when this screen was opened FROM the home screen.
+    const inGame = this.returnTo !== 'Title';
+    createButton(this, inGame ? W / 2 - 250 : W / 2 - 110, y + 12, inGame ? 230 : 220, 60, inGame ? 'Resume game' : 'Back', () => {
       this.scene.stop();
       this.scene.resume(this.returnTo);
-    }, { fillColor: 0xc4704f, fontSize: '18px' });
+    }, { fillColor: 0x3e7c7b, fontSize: '18px' });
     // Workstream 2 (navigation fix pass): City/Rhythm/MiniGame had no way back to the menu at
     // all before this — the only exits were Title and Hub's own Settings button. this.returnTo
     // is stopped (not just left paused) so its own SHUTDOWN cleanup actually runs (un-duck
@@ -141,11 +149,14 @@ export class SettingsScene extends Phaser.Scene {
     // gate, so audio.unlock() only ever runs once) — landing back on Title mid-song via Quit to
     // Title otherwise left a Rhythm song's audio playing forever underneath it, since nothing
     // downstream would ever call playAmbience again to crossfade it out.
-    createButton(this, W / 2 + 5, y + 12, 145, 56, 'Quit to Title', () => {
-      this.scene.stop(this.returnTo);
-      audio.stopMusic();
-      goTo(this, 'Title');
-    }, { fillColor: 0x8a6fa3, fontSize: '14px' });
+    if (inGame) {
+      createButton(this, W / 2 + 20, y + 12, 230, 60, 'Home (tour saved)', () => {
+        saveRun(State.data); // Continue on the home screen picks up exactly here
+        this.scene.stop(this.returnTo);
+        audio.stopMusic();
+        goTo(this, 'Title');
+      }, { fillColor: 0x8a6fa3, fontSize: '17px' });
+    }
   }
 
   private adjustVolume(key: keyof typeof State.data.accessibility.volumes, delta: number, label: Phaser.GameObjects.Text): void {

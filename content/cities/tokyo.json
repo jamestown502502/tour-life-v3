@@ -34,9 +34,9 @@
       "sceneId": "tok_loc_karaoke"
     },
     {
-      "id": "pachinko_parlor",
-      "name": "A rain-slicked pachinko parlor",
-      "sound": "bell_cascade",
+      "id": "taiko_arcade",
+      "name": "A rain-slicked taiko drum arcade",
+      "sound": "drum_cascade",
       "sceneId": "tok_loc_pachinko"
     },
     {
@@ -533,9 +533,9 @@
       "text": "Steam fogs the window. The owner slides four bowls across without being asked twice.",
       "choices": [
         {
-          "id": "toast",
-          "label": "Toast to the tour, loudly",
-          "next": "tok_loc_ramen_toast",
+          "id": "thank_owner",
+          "label": "Thank the owner loudly, in terrible Japanese",
+          "next": "tok_loc_ramen_thanks",
           "effects": {
             "harmony": 3
           }
@@ -550,14 +550,14 @@
         }
       ]
     },
-    "tok_loc_ramen_toast": {
-      "id": "tok_loc_ramen_toast",
+    "tok_loc_ramen_thanks": {
+      "id": "tok_loc_ramen_thanks",
       "speaker": "narrator",
       "text": "The owner laughs and refuses to let you pay full price.",
-      "next": "tok_loc_ramen_toast_after"
+      "next": "tok_loc_ramen_thanks_after"
     },
-    "tok_loc_ramen_toast_after": {
-      "id": "tok_loc_ramen_toast_after",
+    "tok_loc_ramen_thanks_after": {
+      "id": "tok_loc_ramen_thanks_after",
       "speaker": "narrator",
       "text": "Mira tries to leave the difference under a bowl. He finds it before you reach the door and refuses that too."
     },
@@ -669,11 +669,11 @@
     "tok_loc_pachinko": {
       "id": "tok_loc_pachinko",
       "speaker": "narrator",
-      "text": "A wall of chrome balls and chiming lights, and one grandmother playing three machines at once like she owns the building.",
+      "text": "A row of drum-game cabinets thundering under neon, and one grandmother playing the hardest song on the machine like she owns the building.",
       "choices": [
         {
-          "id": "try_luck",
-          "label": "Feed a machine a few coins",
+          "id": "try_drums",
+          "label": "Grab the sticks and play a round",
           "next": "tok_loc_pachinko_try",
           "effects": {
             "funds": -8,
@@ -693,18 +693,18 @@
     "tok_loc_pachinko_try": {
       "id": "tok_loc_pachinko_try",
       "speaker": "narrator",
-      "text": "You lose every coin in under a minute and somehow leave grinning.",
+      "text": "You last thirty seconds on the easiest song and somehow leave grinning.",
       "next": "tok_loc_pachinko_try_after"
     },
     "tok_loc_pachinko_try_after": {
       "id": "tok_loc_pachinko_try_after",
       "speaker": "narrator",
-      "text": "Theo does the math on the walk out and stops halfway through. Some numbers are better left unfinished."
+      "text": "Theo reads your score on the walk out and stops halfway through. Some numbers are better left unread."
     },
     "tok_loc_pachinko_watch": {
       "id": "tok_loc_pachinko_watch",
       "speaker": "narrator",
-      "text": "She never once looks at the balls. Forty years of muscle memory, still ringing.",
+      "text": "She never once looks at the screen. Twenty years of muscle memory, still ringing.",
       "next": "tok_loc_pachinko_watch_after"
     },
     "tok_loc_pachinko_watch_after": {
@@ -715,11 +715,11 @@
     "tok_loc_vending": {
       "id": "tok_loc_vending",
       "speaker": "narrator",
-      "text": "An alley of vending machines hums floor to ceiling — hot coffee, cold coffee, canned soup, something in a bottle none of you can read.",
+      "text": "An alley of vending machines hums floor to ceiling — hot coffee, cold coffee, canned soup, a soda in a bottle none of you can read.",
       "choices": [
         {
           "id": "mystery_can",
-          "label": "Buy the unlabeled bottle, no questions",
+          "label": "Buy the mystery soda, no questions",
           "next": "tok_loc_vending_mystery",
           "effects": {
             "funds": -3,
@@ -1107,7 +1107,7 @@
       "choices": [
         {
           "id": "afterparty",
-          "label": "Say yes to the afterparty",
+          "label": "Say yes to the late-night ramen run",
           "next": "tok_aftershow_a",
           "relationshipEffects": {
             "jun": 2,
@@ -1134,7 +1134,7 @@
       "choices": [
         {
           "id": "afterparty2",
-          "label": "Say yes to the afterparty",
+          "label": "Say yes to the late-night ramen run",
           "next": "tok_aftershow_a",
           "relationshipEffects": {
             "jun": 2,
@@ -1157,7 +1157,7 @@
     "tok_aftershow_a": {
       "id": "tok_aftershow_a",
       "speaker": "narrator",
-      "text": "You don't remember half the conversations. You remember feeling wanted."
+      "text": "You lose half the conversations to the noise. You remember feeling wanted."
     },
     "tok_aftershow_b": {
       "id": "tok_aftershow_b",
@@ -1221,7 +1221,7 @@
     "tok_aftershow_broke": {
       "id": "tok_aftershow_broke",
       "speaker": "narrator",
-      "text": "The after-party is a vending machine on a station platform. Four cans, one long silence, and then Jun laughs at nothing and everyone joins in.",
+      "text": "The after-show hang is a vending machine on a station platform. Four hot cocoas, one long silence, and then Jun laughs at nothing and everyone joins in.",
       "condition": "stat.funds<=430",
       "fallback": "tok_aftershow",
       "next": "tok_aftershow"
