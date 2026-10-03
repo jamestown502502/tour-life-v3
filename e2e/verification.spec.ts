@@ -47,6 +47,13 @@ test.describe('Item 4a — keyboard lanes physically dispatched, not just assume
     const results: Record<string, string> = {};
     for (let lane = 0; lane < LANE_KEYS.length; lane++) {
       const key = LANE_KEYS[lane];
+      // Up to 3 notes per lane: on a slow runner the CDP dispatch itself can land a real press
+      // past a single note's window (see Item 4b's comment). One registered hit from a real
+      // keypress is still the proof; a miss just moves on to that lane's next note.
+      let hit = false;
+      let before = { score: 0, judgements: 0 };
+      let after: any = null;
+      for (let attempt = 0; attempt < 3 && !hit; attempt++) {
       // Find the next not-yet-judged, not-yet-missed note in this lane, using the scene's own
       // clock/hitMsFor so this stays correct regardless of how much real time earlier lanes' own
       // polling took.
@@ -66,7 +73,7 @@ test.describe('Item 4a — keyboard lanes physically dispatched, not just assume
       }, lane);
       expect(target, `lane ${lane} (${key}) should still have an upcoming note in this chart`).not.toBeNull();
 
-      const before = await page.evaluate(() => {
+      before = await page.evaluate(() => {
         const s = (window as any).__game.scene.getScene('Rhythm');
         return { score: s.score, judgements: s.judgements.length };
       });
@@ -81,14 +88,12 @@ test.describe('Item 4a — keyboard lanes physically dispatched, not just assume
       }, target!.hitMs, { timeout: 15000, polling: 10 });
       await page.keyboard.press(key);
 
-      const after = await page.evaluate(() => {
+      after = await page.evaluate(() => {
         const s = (window as any).__game.scene.getScene('Rhythm');
         return { score: s.score, judgements: s.judgements.length, lastJudgement: s.judgements[s.judgements.length - 1] };
       });
-      const registered = after.judgements > before.judgements.length ? true : after.judgements > before.judgements;
-      // (judgements.length is a number both sides; the above is just belt-and-suspenders against
-      // a stray keystroke landing between the two evaluates)
-      const hit = after.judgements > before.judgements;
+      hit = after.judgements > before.judgements;
+      }
       results[key] = hit ? `PASS (${after.lastJudgement}, score ${before.score} -> ${after.score})` : 'FAIL (no judgement recorded)';
       expect(hit, `lane ${lane} (key ${key}) should have registered a judgement from the real keypress`).toBe(true);
     }
