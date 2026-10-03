@@ -545,6 +545,46 @@
         "thing": "the kit",
         "passLine": "Theo borrows the opener's kit."
       }
+    },
+    {
+      "id": "lis_long_haul",
+      "type": "longhaul",
+      "title": "The Long Haul",
+      "introText": "Three days, three towns, one van and $100 in the float. Theo hands you the route map. \"Keep us fed, keep us rested, keep us out of the red.\"",
+      "outroText": "Three towns, and the float came home fatter than it left. Theo naps the whole drive back, and has earned it.",
+      "outroTextRough": "The float made it back thin and the band made it back tired. Everybody learned where the money really goes.",
+      "outroTextPerfect": "You squeezed every dollar the road had in it. Theo writes the route in the notebook under BEST.",
+      "reward": {
+        "effects": {
+          "harmony": 2
+        },
+        "relationshipEffects": {
+          "theo": 3
+        },
+        "flags": [
+          "leg_in_the_black"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "harmony": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 3,
+          "energy": 2
+        },
+        "relationshipEffects": {
+          "theo": 4
+        },
+        "flags": [
+          "leg_in_the_black"
+        ]
+      },
+      "chordProgression": "C-G-Am-F",
+      "bpm": 92,
+      "waveform": "triangle"
     }
   ],
   "scenes": {

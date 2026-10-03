@@ -520,6 +520,47 @@
       "copy": {
         "setup": "Question {round} of {rounds} - The son moves between six and three. Feel where the heavy beat lands."
       }
+    },
+    {
+      "id": "mex_setlist",
+      "type": "setlist",
+      "title": "Tonight's Order",
+      "introText": "Mira wants the loud one first and the sad one never. \"Build me a set that breathes,\" she says. \"This city will dance if we let it.\"",
+      "outroText": "The set breathes: big, softer, bigger, biggest. The room dances right through the changes.",
+      "outroTextRough": "The order fights itself. Mira saves the night with a joke between songs, and gives you a look.",
+      "outroTextPerfect": "Mira sings the last chorus standing on the monitor. The order did half the work.",
+      "reward": {
+        "effects": {
+          "inspiration": 3,
+          "harmony": 2
+        },
+        "relationshipEffects": {
+          "mira": 3
+        },
+        "flags": [
+          "set_flowed"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "inspiration": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "inspiration": 5,
+          "harmony": 3
+        },
+        "relationshipEffects": {
+          "mira": 4
+        },
+        "flags": [
+          "set_flowed"
+        ]
+      },
+      "chordProgression": "Am-Dm-E7-Am",
+      "bpm": 104,
+      "waveform": "triangle"
     }
   ],
   "scenes": {

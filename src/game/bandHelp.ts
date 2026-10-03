@@ -95,3 +95,8 @@ export function gearHint(host: BandmateId, price: number, rentPerShow: number, s
   const breakEven = Math.ceil(price / rentPerShow);
   return `${HOST_NAMES[host]}: "Renting costs more than buying after ${breakEven} show${breakEven === 1 ? '' : 's'}. There ${showsLeft === 1 ? 'is' : 'are'} ${showsLeft} left."`;
 }
+
+/** The Setlist: where the best set from this hand starts and ends; the middle is still yours. */
+export function setlistHint(host: BandmateId, opener: string, closer: string): string {
+  return `${HOST_NAMES[host]}: "Open with ${opener}. Close with ${closer}. Make the middle keys sit side by side."`;
+}

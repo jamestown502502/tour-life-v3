@@ -28,9 +28,11 @@ import type { MiniGameDef, MiniGameQuestion, MiniGameReward } from '../../conten
 import { minigamePlayedFlag, timingRoundsForHarmony } from '../game/minigame';
 import { fillTemplate, DEFAULT_LEDGER, resolveSplit, resolvePricing, resolvePerDiem, resolveGearCall, resolveExchange, exchangeWorking, exchangeCalcQuestion, doorTake, breakEvenTurnout, demandAt, perDiemForecast, type LedgerOutcome } from '../game/ledger';
 import { chordFrequencies, splitChord, transposeChord, QUALITY_LABELS, QUALITY_HINTS } from '../core/musicTheory';
-import { rapportFor, RAPPORT_LABEL, HOST_NAMES, quietLine, wrongToRemove, chordHint, transposeHint, meterHint, tempoHint, splitHint, pricingHint, perDiemHint, gearHint, type Rapport } from '../game/bandHelp';
+import { rapportFor, RAPPORT_LABEL, HOST_NAMES, quietLine, wrongToRemove, chordHint, transposeHint, meterHint, tempoHint, splitHint, pricingHint, perDiemHint, gearHint, setlistHint, type Rapport } from '../game/bandHelp';
 import { getSong } from '../game/content';
 import { makeRng } from '../core/rng';
+import { drawHand, bestSet, segue, arc, scoreSet, setTier, CIRCLE_MAJORS, CIRCLE_MINORS, type SetCard, type SegueVerdict } from '../game/setbuilder';
+import { haulOffers, bestHaul, playDay, doorPay, breakEven, turnoutFor, haulTier, HAUL_DAYS, HAUL_FLOAT, MOTEL, TIRED_MAX, TIRED_TURNOUT, HAUL_LESSON, type Deal, type Bed } from '../game/longhaul';
 import { gainVerdict, GAIN_FEEDBACK, GAIN_CHANNELS, isHeavy, packIssue, SIGNAL_CHAIN, CRAFT_LESSON, hostReaction, priorHosted, type Tier } from '../game/craft';
 
 const HELP_TEXT: Record<MiniGameDef['type'], string> = {
@@ -51,6 +53,8 @@ const HELP_TEXT: Record<MiniGameDef['type'], string> = {
   transpose: 'A chord from tonight\'s set has to move by the interval named. Pick the chord it becomes. Every answer plays both so you hear the move.',
   meter: 'A count-in plays. Pick its time signature from the feel of the accents — three, four, or six. Replay as often as you like.',
   tempo: 'A click plays at the crowd\'s tempo. Tap along at least five times and the game reads your BPM. Close counts.',
+  setlist: 'Pick 4 of your 6 songs, in order. Keys side by side on the circle of fifths flow; a big jump or a tempo lurch clashes. Open strong, give them a breather, build, and close on the biggest song.',
+  longhaul: 'Three days on the road. Each day: a stop, a deal, a bed. Fuel and beds are paid before the show pays you, so watch the float. A tired band draws a smaller crowd.',
 };
 
 // No-fail, structurally: the header of this file promises every path reaches an outro, "including
@@ -223,6 +227,8 @@ export class MiniGameScene extends Phaser.Scene {
       case 'interval': case 'clave': case 'chordquality': case 'transpose': case 'meter': return { seconds: (mg.theoryRounds ?? 4) * 8, rounds: mg.theoryRounds ?? 4 };
       case 'tempo': return { seconds: (mg.theoryRounds ?? 2) * 14, rounds: mg.theoryRounds ?? 2 };
       case 'exchange': return { seconds: 50, rounds: 2 };
+      case 'setlist': return { seconds: 90, rounds: 1 };
+      case 'longhaul': return { seconds: 120, rounds: 3 };
       case 'split': case 'pricing': case 'perdiem': case 'gearcall': return { seconds: 35, rounds: 1 };
       default: return { seconds: 30, rounds: 3 };
     }
@@ -268,6 +274,8 @@ export class MiniGameScene extends Phaser.Scene {
     else if (this.mg.type === 'transpose') this.runTransposeRound();
     else if (this.mg.type === 'meter') this.runMeterRound();
     else if (this.mg.type === 'tempo') this.runTempoRound();
+    else if (this.mg.type === 'setlist') this.runSetlist();
+    else if (this.mg.type === 'longhaul') this.runLongHaul();
     else this.runChoiceQuestion();
   }
 
@@ -708,6 +716,205 @@ export class MiniGameScene extends Phaser.Scene {
     // No-fail ceiling: however the mix went, the round always resolves. Half the target still
     // counts as a good outcome — this is a cozy game, not a mixing exam.
     this.time.delayedCall(totalMs * 2.4, () => { timer.remove(); end(held >= totalMs * 0.5); });
+  }
+
+  // =============================================================================================
+  // Long-form (2026-10-03). Rules live in src/game/setbuilder.ts and src/game/longhaul.ts.
+  // =============================================================================================
+
+  // ---- The Setlist: order four songs; circle-of-fifths segues and an energy arc. ----
+  private runSetlist(): void {
+    const hand = drawHand(makeRng(`${State.data.seed}:setlist:${this.mg.id}`));
+    const best = bestSet(hand);
+    const picked: SetCard[] = [];
+    let played = false;
+    let hostSaid: string | null = null;
+    const VERDICT_COLOR: Record<SegueVerdict, string> = { smooth: PALETTE_HEX.teal, okay: PALETTE_HEX.plum, clash: PALETTE_HEX.terracotta };
+    const dots = (e: number) => '●'.repeat(e) + '○'.repeat(5 - e);
+
+    const draw = (): void => {
+      this.clearContent();
+      this.card(196, 900);
+      this.contentLayer.add(this.add.text(W / 2, 226, 'Tonight\'s set', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5));
+      this.contentLayer.add(this.add.text(W / 2, 254, 'Pick 4 of 6, in order. Neighbors on the circle flow. Open strong, dip, build, close big.', textStyle('small', { fontSize: '16px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center' })).setOrigin(0.5, 0));
+      // the circle of fifths, majors over their relative minors; keys in the set light up
+      const inSet = new Set(picked.map((c) => c.key));
+      const colW = 76, x0 = (W - colW * 8) / 2;
+      this.contentLayer.add(this.add.text(W / 2, 322, 'The circle of fifths: side by side = smooth', textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+      [CIRCLE_MAJORS, CIRCLE_MINORS].forEach((row, r) => row.forEach((k, i) => {
+        const on = inSet.has(k);
+        this.contentLayer.add(this.add.text(x0 + i * colW + colW / 2, 352 + r * 26, k, textStyle('small', { fontSize: on ? '19px' : '16px', fontStyle: on ? 'bold' : 'normal', color: on ? PALETTE_HEX.teal : PALETTE_HEX.plum })).setOrigin(0.5));
+      }));
+      // the four slots
+      const sw = 148, gap = 10, sx = (W - (sw * 4 + gap * 3)) / 2, sy = 432;
+      ['Opener', 'Second', 'Third', 'Closer'].forEach((lbl, i) => {
+        const x = sx + i * (sw + gap);
+        this.contentLayer.add(this.add.text(x + sw / 2, sy - 14, lbl, textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+        const slot = this.add.rectangle(x, sy, sw, 112, 0x000000, picked[i] ? 0.12 : 0.05).setOrigin(0, 0).setStrokeStyle(2, PALETTE.gold, 0.7);
+        this.contentLayer.add(slot);
+        const c = picked[i];
+        if (!c) return;
+        slot.setInteractive({ useHandCursor: true }).on('pointerdown', () => { if (!played) { picked.splice(i, 1); audio.playSfx('tap'); draw(); } });
+        this.contentLayer.add(this.add.text(x + sw / 2, sy + 10, c.name, textStyle('small', { fontSize: '15px', fontStyle: 'bold', color: PALETTE_HEX.plum, wordWrap: { width: sw - 14 }, align: 'center' })).setOrigin(0.5, 0));
+        this.contentLayer.add(this.add.text(x + sw / 2, sy + 66, `${c.key} · ${c.bpm} bpm`, textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+        this.contentLayer.add(this.add.text(x + sw / 2, sy + 90, dots(c.energy), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.terracotta })).setOrigin(0.5));
+      });
+      // live segue verdicts, under the gap between each pair of slots
+      for (let i = 0; i + 1 < picked.length; i++) {
+        const s = segue(picked[i], picked[i + 1]);
+        this.contentLayer.add(this.add.text(sx + (i + 1) * (sw + gap) - gap / 2, sy + 132, s.verdict, textStyle('small', { fontSize: '15px', fontStyle: 'bold', color: VERDICT_COLOR[s.verdict] })).setOrigin(0.5));
+      }
+      // the hand
+      const cw = 196, ch = 100, cg = 12, cx0 = (W - (cw * 3 + cg * 2)) / 2;
+      hand.forEach((c, i) => {
+        const used = picked.includes(c);
+        const b = createButton(this, cx0 + (i % 3) * (cw + cg), 612 + Math.floor(i / 3) * (ch + 12), cw, ch, `${c.name}\n${c.key} · ${c.bpm} bpm\n${dots(c.energy)}`, () => {
+          if (played || used || picked.length >= 4) return;
+          picked.push(c); audio.playSfx('tap'); draw();
+        }, { fillColor: used ? PALETTE.night : (i % 2 === 0 ? PALETTE.teal : PALETTE.plum), fontSize: '15px' });
+        // Button.ts fades buttons in; stop that tween or it would restore full alpha afterwards
+        if (used) { this.tweens.killTweensOf(b); b.setScale(1).setAlpha(0.35); }
+        this.contentLayer.add(b);
+      });
+      if (picked.length === 4) {
+        this.contentLayer.add(createButton(this, W / 2 - 130, 846, 260, 66, 'Play the set', () => play(picked.slice()), { fillColor: 0xd9a441 }));
+      } else {
+        this.contentLayer.add(this.add.text(W / 2, 872, `Pick ${4 - picked.length} more. Tap a placed song to take it back.`, textStyle('small', { fontSize: '16px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+      }
+      const line = this.hostStrip();
+      if (hostSaid && line) line.setText(hostSaid);
+      else this.offerHelp(line, () => (hostSaid = setlistHint(this.mg.hostBandmate!, best.set[0].name, best.set[3].name)), W / 2 - 88, 1000);
+    };
+
+    const play = (set: SetCard[]): void => {
+      if (played) return;
+      played = true;
+      this.clearContent();
+      this.card(196, 860);
+      this.contentLayer.add(this.add.text(W / 2, 226, 'The set', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5));
+      set.forEach((c, i) => {
+        const y = 276 + i * 124;
+        this.time.delayedCall(i * 850, () => {
+          this.contentLayer.add(this.add.text(W / 2, y, `${i + 1}. ${c.name}`, textStyle('dialogue', { fontSize: '20px', color: PALETTE_HEX.plum })).setOrigin(0.5, 0));
+          this.contentLayer.add(this.add.text(W / 2, y + 28, `${c.key} · ${c.bpm} bpm · ${dots(c.energy)}`, textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum })).setOrigin(0.5, 0));
+          if (i > 0) {
+            const s = segue(set[i - 1], c);
+            this.contentLayer.add(this.add.text(W / 2, y - 40, `${s.verdict === 'smooth' ? 'Smooth' : s.verdict === 'okay' ? 'Okay' : 'Clash'}: ${s.why}`, textStyle('small', { fontSize: '15px', fontStyle: 'bold', color: VERDICT_COLOR[s.verdict], wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5, 0));
+            s.verdict === 'clash' ? shake(this, 2) : spawnRingPulse(this, W / 2, y + 10, PALETTE.gold);
+          }
+          audio.playSfx(i % 2 ? 'ok' : 'perfect');
+        });
+      });
+      this.time.delayedCall(4 * 850 + 200, () => {
+        const checks = arc(set);
+        checks.forEach((c, i) => this.contentLayer.add(this.add.text(W / 2, 784 + i * 26, `${c.ok ? '✓' : '✗'} ${c.label}`, textStyle('small', { fontSize: '16px', color: c.ok ? PALETTE_HEX.teal : PALETTE_HEX.terracotta })).setOrigin(0.5, 0)));
+        const score = scoreSet(set);
+        const tier = setTier(score, best.score);
+        this.contentLayer.add(this.add.text(W / 2, 900, `Set score ${score} · best from this hand ${best.score}`, textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+        if (tier === 3) { spawnPerfectSpark(this, W / 2, 900); hitstop(this, 40); }
+        this.contentLayer.add(createButton(this, W / 2 - 130, 946, 260, 66, 'Continue', () => this.finish(tier >= 2, tier === 3), { fillColor: 0xd9a441 }));
+      });
+    };
+
+    draw();
+    // No-fail: an untouched hand fills itself in order and plays.
+    this.time.delayedCall(60000, () => {
+      if (played) return;
+      for (const c of hand) if (picked.length < 4 && !picked.includes(c)) picked.push(c);
+      play(picked.slice());
+    });
+  }
+
+  // ---- The Long Haul: three days of stop, deal and bed out of the van float. ----
+  private runLongHaul(): void {
+    const offers = haulOffers(`${State.data.seed}:${this.mg.id}`);
+    const best = bestHaul(offers);
+    let day = 0, float = HAUL_FLOAT, tired = 0;
+    let idle: Phaser.Time.TimerEvent | null = null;
+    const arm = (fn: () => void): void => { idle?.remove(); idle = this.time.delayedCall(LEDGER_IDLE_MS, fn); };
+    const pips = (n: number) => '●'.repeat(n) + '○'.repeat(TIRED_MAX - n);
+    const frame = (step: string): Phaser.GameObjects.Text => {
+      this.clearContent();
+      this.card(196, 900);
+      this.contentLayer.add(this.add.text(W / 2, 226, `Day ${day + 1} of ${HAUL_DAYS}: ${step}`, textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5));
+      this.contentLayer.add(this.add.text(W / 2, 262, `Float $${float}   ·   Tired ${pips(tired)}`, textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+      this.contentLayer.add(this.add.text(W / 2, 292, 'Fuel and beds come out first. The show pays after.', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+      const live = this.add.text(W / 2, 760, '', textStyle('small', { fontSize: '17px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center' })).setOrigin(0.5, 0);
+      this.contentLayer.add(live);
+      return live;
+    };
+
+    const chooseStop = (): void => {
+      const live = frame('pick a stop');
+      offers[day].forEach((s, i) => {
+        const afford = s.fuel <= float;
+        const label = `${s.venue}\n${s.miles} mi · fuel $${s.fuel}\n$${s.guarantee} flat, or ${s.doorPct}% of the door\n${s.capacity} seats at $${s.ticket} · read ${s.hintLo}-${s.hintHi}% full`;
+        this.contentLayer.add(createButton(this, 60, 340 + i * 196, W - 120, 172, label, () => {
+          if (!afford) { live.setText(`Not enough float for $${s.fuel} of fuel. Costs come due before the pay.`); shake(this, 3); audio.playSfx('miss'); return; }
+          chooseDeal(i as 0 | 1);
+        }, { fillColor: afford ? (i ? PALETTE.plum : PALETTE.teal) : PALETTE.night, fontSize: '21px' }));
+      });
+      live.setText('A far stop pays more, but its fuel comes out of tonight\'s float.');
+      arm(() => chooseDeal(offers[day][0].fuel <= float ? 0 : 1));
+    };
+
+    const chooseDeal = (ix: 0 | 1): void => {
+      const s = offers[day][ix];
+      const live = frame('the deal');
+      this.contentLayer.add(this.add.text(W / 2, 352, `${s.venue}: ${s.capacity} seats at $${s.ticket}. The band reads ${s.hintLo}-${s.hintHi}% full${tired ? `, minus ${tired * Math.round(TIRED_TURNOUT * 100)}% for a tired band` : ''}.`, textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center' })).setOrigin(0.5, 0));
+      this.contentLayer.add(this.add.text(W / 2, 450, `The door beats $${s.guarantee} once the room is ${Math.round(breakEven(s) * 100)}% full.`, textStyle('dialogue', { fontSize: '19px', fontStyle: 'bold', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center' })).setOrigin(0.5, 0));
+      this.contentLayer.add(createButton(this, 80, 530, W - 160, 70, `Take the $${s.guarantee} flat`, () => chooseBed(ix, 'flat'), { fillColor: PALETTE.teal, fontSize: '19px' }));
+      this.contentLayer.add(createButton(this, 80, 620, W - 160, 70, `Take ${s.doorPct}% of the door`, () => chooseBed(ix, 'door'), { fillColor: PALETTE.terracotta, fontSize: '19px' }));
+      live.setText('A sure thing is worth something. So is being right about the room.');
+      this.offerHelp(this.hostStrip(), () => splitHint(this.mg.hostBandmate!, turnoutFor(s, tired)), W / 2 - 88, 900);
+      arm(() => chooseBed(ix, 'flat'));
+    };
+
+    const chooseBed = (ix: 0 | 1, deal: Deal): void => {
+      const s = offers[day][ix];
+      const after = float - s.fuel;
+      const live = frame('a bed');
+      this.contentLayer.add(this.add.text(W / 2, 360, `After $${s.fuel} of fuel, the float is $${after}.`, textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum })).setOrigin(0.5, 0));
+      this.contentLayer.add(createButton(this, 80, 440, W - 160, 76, 'Sleep in the van\n(free, wake up more tired)', () => resolve(ix, deal, 'van'), { fillColor: PALETTE.plum, fontSize: '20px' }));
+      const canMotel = after >= MOTEL;
+      this.contentLayer.add(createButton(this, 80, 540, W - 160, 76, `Motel, $${MOTEL}\n(wake up rested)`, () => {
+        if (!canMotel) { live.setText(`$${after} left: not enough for a $${MOTEL} motel tonight.`); shake(this, 3); audio.playSfx('miss'); return; }
+        resolve(ix, deal, 'motel');
+      }, { fillColor: canMotel ? PALETTE.teal : PALETTE.night, fontSize: '20px' }));
+      live.setText(tired >= 2 ? 'The band is running on fumes. A tired band plays a smaller night.' : 'Rest costs money tonight and pays at tomorrow\'s door.');
+      arm(() => resolve(ix, deal, 'van'));
+    };
+
+    const resolve = (ix: 0 | 1, deal: Deal, bed: Bed): void => {
+      idle?.remove();
+      const s = offers[day][ix];
+      const r = playDay(s, { stop: ix, deal, bed }, float, tired)!;
+      const other = deal === 'flat' ? `The door would have paid $${doorPay(s, r.turnout)}.` : `The flat was $${s.guarantee}.`;
+      const lines = [
+        `${s.venue}: ${Math.round(r.turnout * 100)}% full${tired ? ` (tired: -${tired * Math.round(TIRED_TURNOUT * 100)}%)` : ''}.`,
+        `${deal === 'flat' ? 'The flat' : 'The door'} paid $${r.pay}. ${other}`,
+        `Fuel -$${s.fuel}${bed === 'motel' ? `, motel -$${MOTEL}` : ''}. Float now $${r.floatAfter}.`,
+      ];
+      float = r.floatAfter; tired = r.tiredAfter;
+      const live = frame('the night');
+      this.contentLayer.add(this.add.text(W / 2, 360, lines.join('\n\n'), textStyle('dialogue', { fontSize: '20px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center', lineSpacing: 4 })).setOrigin(0.5, 0));
+      if (r.pay >= s.guarantee) spawnRingPulse(this, W / 2, 400, PALETTE.gold); else shake(this, 2);
+      live.setText(bed === 'van' ? 'Free tonight. Tomorrow\'s crowd pays for it.' : 'Paid tonight. Rested for tomorrow.');
+      const last = day === HAUL_DAYS - 1;
+      let moved = false;
+      const next = (): void => {
+        if (moved) return;
+        moved = true;
+        idle?.remove();
+        if (!last) { day++; chooseStop(); return; }
+        const profit = float - HAUL_FLOAT;
+        this.settleLedger({ tier: haulTier(float, best), funds: Math.round(profit / 20), label: `Long haul, ${profit >= 0 ? '+' : '-'}$${Math.abs(profit)}`, explain: `Three days: $${HAUL_FLOAT} became $${float}. The best this leg allowed was $${best}. ${HAUL_LESSON}` });
+      };
+      this.contentLayer.add(createButton(this, W / 2 - 130, 640, 260, 66, last ? 'Settle up' : 'Next day', next, { fillColor: 0xd9a441 }));
+      arm(next);
+    };
+
+    chooseStop();
   }
 
   private finish(good: boolean, perfect = false): void {

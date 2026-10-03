@@ -112,7 +112,10 @@ export type MiniGameType = 'timing' | 'drag' | 'choice' | 'sequence' | 'sustain'
   | 'chordquality' // major / minor / dominant 7 / major 7 by ear
   | 'transpose'    // move a chord from the set by a named interval
   | 'meter'        // 3/4, 4/4, 6/8 from a count-in
-  | 'tempo';       // tap the tempo of a click, read the BPM
+  | 'tempo'        // tap the tempo of a click, read the BPM
+  // Long-form (2026-10-03): a few minutes each, harder, and built on the systems around them.
+  | 'setlist'      // order four songs: circle-of-fifths segues and an energy arc (src/game/setbuilder.ts)
+  | 'longhaul';    // a three-day leg out of the van float: cash flow vs profit (src/game/longhaul.ts)
 
 export interface MiniGameReward {
   effects?: StatDeltas;
@@ -473,7 +476,7 @@ function validateMiniGames(minigames: unknown, path: string, errors: string[]): 
           }
         }
       }
-    } else if (['split', 'pricing', 'perdiem', 'gearcall', 'exchange'].includes(mg.type as string)) {
+    } else if (['split', 'pricing', 'perdiem', 'gearcall', 'exchange', 'setlist', 'longhaul'].includes(mg.type as string)) {
       if (mg.hostBandmate !== undefined && !BANDMATE_IDS.includes(mg.hostBandmate)) {
         fail(errors, `${p}: hostBandmate must be one of ${BANDMATE_IDS.join('/')}`);
       }

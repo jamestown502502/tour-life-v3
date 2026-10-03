@@ -401,6 +401,46 @@
         "overBudgetLine": "That's ${over} over the ${budget}. Jun covers it and writes it in the ledger in pencil.",
         "tip": "Every dollar not spent on one thing was spent on another."
       }
+    },
+    {
+      "id": "ber_long_haul",
+      "type": "longhaul",
+      "title": "The Long Haul",
+      "introText": "Between Berlin shows there are three free nights and three small rooms that want you. Rowan has read every one. \"I'll read the rooms. You keep the van moving.\"",
+      "outroText": "Three rooms, three good nights, and the float came back ahead. Rowan reads the door numbers out loud twice.",
+      "outroTextRough": "The rooms were thinner than the reads, and the van was colder than promised. The float limps back to Berlin.",
+      "outroTextPerfect": "Every read right, every mile worth it. Rowan says it was a team effort and clearly means you.",
+      "reward": {
+        "effects": {
+          "harmony": 2
+        },
+        "relationshipEffects": {
+          "rowan": 3
+        },
+        "flags": [
+          "leg_in_the_black"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "harmony": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "harmony": 3,
+          "energy": 2
+        },
+        "relationshipEffects": {
+          "rowan": 4
+        },
+        "flags": [
+          "leg_in_the_black"
+        ]
+      },
+      "chordProgression": "Dm-Bb-F-C",
+      "bpm": 110,
+      "waveform": "triangle"
     }
   ],
   "scenes": {

@@ -1728,3 +1728,26 @@ Research-led pass. Full critique, rankings and before/after:
 - **Recall on the drive** (`RECALL`, `recallCandidates`, `recallFlag` in craft.ts; `recallBeat` in
   VanScene): one quiz per drive about a minigame type played in another city, flag
   `recall_<type>`, saved on answer; right = +1 inspiration. Every one of the 17 types has a quiz.
+
+## 22. Long-form minigames: The Setlist and The Long Haul (2026-10-03)
+
+Scaled-down builds of two pitched long-form games. Before/after:
+`C:\Users\Jbthi\Claude Cowork\BAIS_LongForm_Minigames_BeforeAfter_2026-10-03.md`.
+
+- **The Setlist** (`type: 'setlist'`, `src/game/setbuilder.ts`): 14 cards (the 8 songs, key from the
+  first chord, energy from bpm; plus 6 B-sides spanning the circle). `drawHand` redraws until
+  `bestSet` >= 85. Segues: circle-of-fifths steps 0-1 smooth / 2 okay / 3+ clash, a >30 bpm lurch
+  knocks one down; arc = open >= 3, dip, build, closer biggest; score = 60% segues + 40% arc;
+  `setTier` is against the hand's best. Defs: `tok_setlist`, `mex_setlist`.
+- **The Long Haul** (`type: 'longhaul'`, `src/game/longhaul.ts`): 3 days, float $100, two seeded
+  offers a day (near small room / far bigger room), guarantee pegged so the door wins only above
+  ~45-65% full; fuel then bed are paid before the pay; van +1 tired, motel -1; each tired level
+  -8% turnout. `bestHaul` brute-forces 512 paths; `haulTier` vs best profit. Settles through
+  `settleLedger` (funds = profit / 20, ledger type `longhaul`, ignored by Scrapbook lessons).
+  Defs: `lis_long_haul`, `ber_long_haul`.
+- **Not hosted on purpose:** every city hosts exactly one game per bandmate (minigameSlots test),
+  so these sit in the craft slot; the bandmates appear in the text only.
+- Art: copies of existing paintings (`bg_scene_van_2/4`, `bg_rhythm_<city>_return`) under the new
+  `bg_mini_*` keys in `img/later/`, manifest rebuilt. Flags `set_flowed` / `leg_in_the_black` read
+  by `MINIGAME_EPILOGUE_CALLBACKS`. Van recall has a quiz for both types.
+- Tests: `src/tests/longform.test.ts` (12).

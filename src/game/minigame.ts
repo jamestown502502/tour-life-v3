@@ -22,8 +22,8 @@ export function nextUnplayedMinigame(minigames: MiniGameDef[] | undefined, hasFl
  *  rest only on a return leg (~25%). Every run played the same two minigames in every city. */
 export type MinigameSlot = 'band' | 'craft';
 
-export const MONEY_TYPES: readonly string[] = ['split', 'pricing', 'perdiem', 'gearcall', 'exchange'];
-export const MUSIC_TYPES: readonly string[] = ['chordquality', 'transpose', 'meter', 'tempo', 'interval', 'clave'];
+export const MONEY_TYPES: readonly string[] = ['split', 'pricing', 'perdiem', 'gearcall', 'exchange', 'longhaul'];
+export const MUSIC_TYPES: readonly string[] = ['chordquality', 'transpose', 'meter', 'tempo', 'interval', 'clave', 'setlist'];
 
 export interface BandTally { money: number; music: number }
 
