@@ -80,6 +80,9 @@ const MINIGAME_EPILOGUE_CALLBACKS: [flag: string, line: string][] = [
   ['radio_callin_warm', " The two-question radio spot Ximena talked them into is still saved somewhere, on a station nobody outside that block has ever heard of."],
   ['warm_interview', ' Somebody still has the clipping from that interview, folded into a case pocket, going soft at the creases.'],
   ['lisbon_soundcheck_clean', ' The Lisbon soundcheck is the one they describe to sound engineers who ask what they are going for.'],
+  // Long-form (2026-10-03): The Setlist and The Long Haul.
+  ['set_flowed', ' They still argue about the order of that one set, which is how you know it mattered.'],
+  ['leg_in_the_black', ' The three-town leg is the one they point to when anyone asks how a band keeps a van on the road.'],
 ];
 
 // The return leg — the tour books one city twice, and coming back to a room that already has an

@@ -432,6 +432,47 @@
       "copy": {
         "setup": "Round {round} of {rounds} - Jun wants the click matched to the room. Tap along with the count, at least five times."
       }
+    },
+    {
+      "id": "tok_setlist",
+      "type": "setlist",
+      "title": "Tonight's Set",
+      "introText": "Jun spreads the song cards across the green room floor. \"Six songs, four slots. Tokyo crowds notice a clumsy key change. So do I.\"",
+      "outroText": "The set flows. Between songs the room stays leaning forward, which is the whole trick.",
+      "outroTextRough": "Two changes grind and the room checks its phones between songs. The songs themselves were fine.",
+      "outroTextPerfect": "Every change lands like it was written that way. Jun tapes the list to the monitor without a word, which from Jun is high praise.",
+      "reward": {
+        "effects": {
+          "inspiration": 3,
+          "harmony": 2
+        },
+        "relationshipEffects": {
+          "jun": 3
+        },
+        "flags": [
+          "set_flowed"
+        ]
+      },
+      "roughReward": {
+        "effects": {
+          "inspiration": 1
+        }
+      },
+      "perfectReward": {
+        "effects": {
+          "inspiration": 5,
+          "harmony": 3
+        },
+        "relationshipEffects": {
+          "jun": 4
+        },
+        "flags": [
+          "set_flowed"
+        ]
+      },
+      "chordProgression": "Em-Bm-C-G",
+      "bpm": 100,
+      "waveform": "triangle"
     }
   ],
   "scenes": {

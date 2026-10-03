@@ -168,6 +168,8 @@ export const RECALL: readonly RecallQuestion[] = [
   { type: 'pricing', asker: 'mira', q: 'Merch quiz. What is margin?', options: ['Price minus cost, per sale', 'The price on the tag', 'The shirts left over'], why: 'Margin is what each sale keeps after its cost. Times how many sell, that is profit.' },
   { type: 'perdiem', asker: 'theo', q: 'Per diem quiz. Spend nothing on a bed and you save money. What does it cost you?', options: ['The band mood tomorrow', 'Nothing at all', 'Only time'], why: 'A real bed feeds harmony: nobody fights after sleeping flat. Saving on it is spending tomorrow.' },
   { type: 'gearcall', asker: 'jun', q: 'Gear quiz. Rent at $45 a show or buy at $240. When does buying win?', options: ['From the sixth show', 'From the second show', 'Never'], why: '$240 / $45 is 5.3 shows, so renting costs more from the sixth show on.' },
+  { type: 'setlist', asker: 'jun', q: 'Set quiz. Which key flows straight out of a song in C?', options: ['G, its neighbor on the circle', 'F sharp, across the circle', 'Any key at all'], why: 'C sits between F and G on the circle of fifths. Neighbors share most of their notes, so the change sounds smooth.' },
+  { type: 'longhaul', asker: 'theo', q: 'Road quiz. A great week ahead, but $20 in the float and $60 of fuel to the next show. What now?', options: ['Take the nearer show', 'Drive anyway, it pays later', 'Book the motel first'], why: 'Cash flow is not profit. Costs come due before the show pays, so tonight has to be affordable tonight.' },
   { type: 'exchange', asker: 'theo', q: 'Exchange quiz. How do you compare money windows?', options: ['What you keep after the fee', 'The biggest rate', 'The shortest line'], why: 'The fee is part of the rate. Compare what you actually receive.' },
 ];
 

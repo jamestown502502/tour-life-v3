@@ -20,6 +20,10 @@
     "file": "img/later/bg_mini_ber_beatmatch.webp"
   },
   {
+    "key": "bg_mini_ber_long_haul",
+    "file": "img/later/bg_mini_ber_long_haul.webp"
+  },
+  {
     "key": "bg_mini_ber_night_budget",
     "file": "img/later/bg_mini_ber_night_budget.webp"
   },
@@ -48,6 +52,10 @@
     "file": "img/later/bg_mini_lis_exchange.webp"
   },
   {
+    "key": "bg_mini_lis_long_haul",
+    "file": "img/later/bg_mini_lis_long_haul.webp"
+  },
+  {
     "key": "bg_mini_lis_step_down",
     "file": "img/later/bg_mini_lis_step_down.webp"
   },
@@ -68,6 +76,10 @@
     "file": "img/later/bg_mini_mex_per_diem.webp"
   },
   {
+    "key": "bg_mini_mex_setlist",
+    "file": "img/later/bg_mini_mex_setlist.webp"
+  },
+  {
     "key": "bg_mini_mex_son_meter",
     "file": "img/later/bg_mini_mex_son_meter.webp"
   },
@@ -86,6 +98,10 @@
   {
     "key": "bg_mini_tok_merch_table",
     "file": "img/later/bg_mini_tok_merch_table.webp"
+  },
+  {
+    "key": "bg_mini_tok_setlist",
+    "file": "img/later/bg_mini_tok_setlist.webp"
   },
   {
     "key": "bg_rhythm_berlin_return",
