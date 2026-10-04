@@ -1051,7 +1051,11 @@ export class MiniGameScene extends Phaser.Scene {
     const btnY = Math.min(Math.max(y + 24, 560), SAFE_BOTTOM_Y - 66);
     const cont = createButton(this, W / 2 - 130, btnY, 260, 66, 'Continue', () => this.applyRewardAndReturn(), { fillColor: 0xd9a441 });
     this.contentLayer.add(cont);
-    this.time.delayedCall(600, () => { if (cont.active) beatPulse(this, cont, beat); });
+    // Continue sits where the last round's button was, so a tap meant for that button skipped the
+    // whole result card (found by the playthrough audit, 2026-10-05). It wakes with its pulse.
+    const contBg = cont.list.find((o) => (o as Phaser.GameObjects.Image).input) as Phaser.GameObjects.Image;
+    contBg.disableInteractive();
+    this.time.delayedCall(600, () => { if (cont.active) { contBg.setInteractive(); beatPulse(this, cont, beat); } });
     // The Encore: a perfect run only, never in practice
     if (shouldEncore(tier as Tier, this.practice)) this.time.delayedCall(250, () => encore(this, host));
   }
