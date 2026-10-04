@@ -31,6 +31,8 @@ import { chordFrequencies, splitChord, transposeChord, QUALITY_LABELS, QUALITY_H
 import { rapportFor, RAPPORT_LABEL, HOST_NAMES, quietLine, wrongToRemove, chordHint, transposeHint, meterHint, tempoHint, splitHint, pricingHint, perDiemHint, gearHint, setlistHint, type Rapport } from '../game/bandHelp';
 import { getSong } from '../game/content';
 import { makeRng } from '../core/rng';
+import { stamp, countUp, cameo, verbSplash, beatPulse, encore, buzz } from '../art/juice';
+import { VERB, resultStamp, ledgerStamp, LEVEL_STAMP, cameoMood, beatMs, shouldEncore } from '../game/juiceRules';
 import { drawHand, bestSet, segue, arc, scoreSet, setTier, CIRCLE_MAJORS, CIRCLE_MINORS, type SetCard, type SegueVerdict } from '../game/setbuilder';
 import { haulOffers, bestHaul, playDay, doorPay, breakEven, turnoutFor, haulTier, HAUL_DAYS, HAUL_FLOAT, MOTEL, TIRED_MAX, TIRED_TURNOUT, HAUL_LESSON, type Deal, type Bed } from '../game/longhaul';
 import { gainVerdict, GAIN_FEEDBACK, GAIN_CHANNELS, isHeavy, packIssue, SIGNAL_CHAIN, CRAFT_LESSON, hostReaction, priorHosted, type Tier } from '../game/craft';
@@ -80,6 +82,7 @@ export class MiniGameScene extends Phaser.Scene {
   private theoryHits = 0;
   private theoryRng!: ReturnType<typeof makeRng>;
   private contentLayer!: Phaser.GameObjects.Container;
+  private titleText!: Phaser.GameObjects.Text;
   // timing
   private timingRound = 0;
   private timingHits = 0;
@@ -157,7 +160,7 @@ export class MiniGameScene extends Phaser.Scene {
     addTextScrim(this, W / 2, 60, 420, 66);
     // h1's default gold measures 2.77:1 on this scrim (just under the 3:1 large-text floor) —
     // cream reliably clears it (5.28:1), see docs/contrast-audit.md.
-    this.add.text(W / 2, 60, this.mg.title, textStyle('h1', { color: PALETTE_HEX.cream })).setOrigin(0.5);
+    this.titleText = this.add.text(W / 2, 60, this.mg.title, textStyle('h1', { color: PALETTE_HEX.cream })).setOrigin(0.5);
     addHelpButton(this, HELP_TEXT[this.mg.type]);
     addMenuButton(this, 'MiniGame');
 
@@ -250,6 +253,7 @@ export class MiniGameScene extends Phaser.Scene {
 
   private beginGame(): void {
     this.clearContent();
+    verbSplash(this, VERB[this.mg.type], this.titleText);
     // Each minigame can carry its own music bed (content/schema.ts MiniGameDef). Without one a
     // minigame just keeps playing the city's ambience — which is what every minigame did before,
     // and is still the fallback for any entry that omits these fields. Started here rather than
@@ -306,6 +310,17 @@ export class MiniGameScene extends Phaser.Scene {
     // h2's default sky measures 2.90:1 on this scrim (just under the 3:1 large-text floor).
     this.contentLayer.add(this.add.text(W / 2, barY - 40, `Level ${this.timingRound + 1} of ${rounds.length}: ${channel}`,
       textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
+    // LED ladder above the meter: segments light as the needle passes, in the zone's own color
+    const leds: Phaser.GameObjects.Rectangle[] = [];
+    const ledN = 18, ledW = barW / ledN;
+    for (let k = 0; k < ledN; k++) {
+      const lx = barX + k * ledW;
+      const col = lx + ledW / 2 < zoneX ? 0x4caf50 : lx + ledW / 2 <= zoneX + zoneW ? PALETTE.gold : 0xe53935;
+      const led = this.add.rectangle(lx + 2, barY - 13, ledW - 4, 8, col, 0.18).setOrigin(0, 0);
+      leds.push(led);
+      this.contentLayer.add(led);
+    }
+    const lightLeds = (): void => { const nx = this.needle?.x ?? barX; leds.forEach((l) => l.setFillStyle(l.fillColor, l.x <= nx ? 0.95 : 0.18)); };
     const verdictText = this.add.text(W / 2, barY + barH + 74, '', textStyle('small', { fontSize: '17px', color: PALETTE_HEX.cream, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);
     const verdictScrim = addTextScrim(this, W / 2, barY + barH + 74, W - 80, 52).setVisible(false);
     this.contentLayer.add([verdictScrim, verdictText]);
@@ -315,6 +330,7 @@ export class MiniGameScene extends Phaser.Scene {
     const sweepMs = rounds[this.timingRound] * 1000;
     this.needleTween = this.tweens.add({
       targets: this.needle, x: barX + barW, duration: sweepMs, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      onUpdate: lightLeds,
     });
 
     let resolved = false;
@@ -328,6 +344,7 @@ export class MiniGameScene extends Phaser.Scene {
       // Say what the level did, so a miss teaches the same lesson a hit does.
       verdictScrim.setVisible(true);
       verdictText.setText(verdict ? GAIN_FEEDBACK[verdict] : 'No level set. The engineer moves on.');
+      if (verdict) this.contentLayer.add(stamp(this, W / 2, 712, LEVEL_STAMP[verdict], verdict === 'sweet' ? PALETTE.teal : PALETTE.terracotta, 28));
       this.timingRound++;
       this.time.delayedCall(1300, () => this.runTimingRound());
     };
@@ -443,6 +460,15 @@ export class MiniGameScene extends Phaser.Scene {
           target.tag?.setVisible(false);
           const issue = packIssue(label, heavy, target.floor);
           if (issue) { heavyUpTop++; dragHint.setText(issue); shake(this, 2); } else if (floorCount > 0 && heavyItem) dragHint.setText(`${label} on the floor. Solid.`);
+          if (heavyItem) {
+            // weight: a thud, a dust ring, a nudge of the camera; up top, the stack wobbles
+            shake(this, 2); buzz('thud'); audio.playPitch(98, 0.14, 0, 'square');
+            spawnRingPulse(this, target.rect.x + slotW / 2, target.rect.y + slotH, PALETTE.sand);
+            if (issue && !State.data.accessibility.reducedMotion) this.tweens.add({ targets: chip, angle: { from: -4, to: 4 }, duration: 90, yoyo: true, repeat: 3, onComplete: () => chip.setAngle(0) });
+          } else if (!State.data.accessibility.reducedMotion) {
+            this.tweens.add({ targets: chip, scaleX: 1.06, scaleY: 1.06, duration: 70, yoyo: true });
+            buzz('tick');
+          }
           audio.playSfx('pickup');
           // Chip and slot are the same size, so aligning their top-left corners seats the chip
           // exactly over the slot it was dropped on.
@@ -487,10 +513,13 @@ export class MiniGameScene extends Phaser.Scene {
       if (q.coach) {
         coachText.setText(`${warm ? 'That lands.' : picked ? 'Fine, but the other one lands better.' : 'Silence on air.'} ${q.coach}`);
         coachText.setVisible(true);
+        // a producer's sticky note slapped onto the card
+        if (!State.data.accessibility.reducedMotion) { coachText.setScale(1.15).setAlpha(0); this.tweens.add({ targets: coachText, scale: 1, alpha: 1, duration: 180, ease: 'Back.easeOut' }); }
+        buzz('tick');
         this.time.delayedCall(2600, () => this.runChoiceQuestion());
       } else this.time.delayedCall(250, () => this.runChoiceQuestion());
     };
-    const coachText = this.add.text(W / 2, 700, '', textStyle('small', { fontSize: '17px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center' })).setOrigin(0.5, 0).setVisible(false);
+    const coachText = this.add.text(W / 2, 700, '', textStyle('small', { fontSize: '17px', color: PALETTE_HEX.plum, wordWrap: { width: W - 190 }, align: 'center', backgroundColor: '#F6E7A1', padding: { x: 14, y: 10 } })).setOrigin(0.5, 0).setVisible(false).setAngle(1.5);
     this.contentLayer.add(coachText);
     // 'choice' stays forgiving (6.5s, no visible clock). 'pressure' is the same interview with
     // the clock turned up AND shown, because knowing it is running is most of the difficulty.
@@ -630,6 +659,8 @@ export class MiniGameScene extends Phaser.Scene {
             idle?.remove();
             this.sequenceHits++;
             label.setText('Got it');
+            // the signal flows OSC -> FILTER -> ENV -> AMP
+            if (!State.data.accessibility.reducedMotion) pads.forEach((p, k) => this.tweens.add({ targets: p, scaleY: 1.12, duration: 90, yoyo: true, delay: k * 80 }));
             spawnPerfectSpark(this, W / 2, 430);
             hitstop(this, 40);
             hint.setText('Nice — one longer next time');
@@ -710,6 +741,7 @@ export class MiniGameScene extends Phaser.Scene {
         if (inZone) held += 100;
         meter.setText(`${(held / 1000).toFixed(1)}s / ${seconds}s`);
         for (const f of faders) f.setFillStyle(inZone ? PALETTE.gold : PALETTE.cream, 0.95);
+        zone.setFillStyle(PALETTE.gold, inZone ? 0.42 : 0.25);
         if (held >= totalMs) { timer.remove(); end(true); }
       },
     });
@@ -799,7 +831,9 @@ export class MiniGameScene extends Phaser.Scene {
           this.contentLayer.add(this.add.text(W / 2, y + 28, `${c.key} · ${c.bpm} bpm · ${dots(c.energy)}`, textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum })).setOrigin(0.5, 0));
           if (i > 0) {
             const s = segue(set[i - 1], c);
-            this.contentLayer.add(this.add.text(W / 2, y - 40, `${s.verdict === 'smooth' ? 'Smooth' : s.verdict === 'okay' ? 'Okay' : 'Clash'}: ${s.why}`, textStyle('small', { fontSize: '15px', fontStyle: 'bold', color: VERDICT_COLOR[s.verdict], wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5, 0));
+            const seg = this.add.text(W / 2, y - 40, `${s.verdict === 'smooth' ? 'Smooth' : s.verdict === 'okay' ? 'Okay' : 'Clash'}: ${s.why}`, textStyle('small', { fontSize: '15px', fontStyle: 'bold', color: VERDICT_COLOR[s.verdict], wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5, 0);
+            this.contentLayer.add(seg);
+            if (!State.data.accessibility.reducedMotion) { seg.setScale(0.85); this.tweens.add({ targets: seg, scale: 1, duration: 160, ease: 'Back.easeOut' }); }
             s.verdict === 'clash' ? shake(this, 2) : spawnRingPulse(this, W / 2, y + 10, PALETTE.gold);
           }
           audio.playSfx(i % 2 ? 'ok' : 'perfect');
@@ -810,13 +844,20 @@ export class MiniGameScene extends Phaser.Scene {
         checks.forEach((c, i) => this.contentLayer.add(this.add.text(W / 2, 784 + i * 26, `${c.ok ? '✓' : '✗'} ${c.label}`, textStyle('small', { fontSize: '16px', color: c.ok ? PALETTE_HEX.teal : PALETTE_HEX.terracotta })).setOrigin(0.5, 0)));
         const score = scoreSet(set);
         const tier = setTier(score, best.score);
-        this.contentLayer.add(this.add.text(W / 2, 900, `Set score ${score} · best from this hand ${best.score}`, textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+        const scoreText = this.add.text(W / 2, 900, '', textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.plum })).setOrigin(0.5);
+        this.contentLayer.add(scoreText);
+        countUp(this, scoreText, score, (v) => `Set score ${v} · best from this hand ${best.score}`, 800);
         if (tier === 3) { spawnPerfectSpark(this, W / 2, 900); hitstop(this, 40); }
         this.contentLayer.add(createButton(this, W / 2 - 130, 946, 260, 66, 'Continue', () => this.finish(tier >= 2, tier === 3), { fillColor: 0xd9a441 }));
       });
     };
 
     draw();
+    // house lights come up on the hand
+    if (!State.data.accessibility.reducedMotion) {
+      const lights = this.add.rectangle(0, 0, W, 1400, 0x000000, 0.6).setOrigin(0, 0).setDepth(300);
+      this.tweens.add({ targets: lights, fillAlpha: 0, duration: 700, delay: 150, onComplete: () => lights.destroy() });
+    }
     // No-fail: an untouched hand fills itself in order and plays.
     this.time.delayedCall(60000, () => {
       if (played) return;
@@ -830,6 +871,7 @@ export class MiniGameScene extends Phaser.Scene {
     const offers = haulOffers(`${State.data.seed}:${this.mg.id}`);
     const best = bestHaul(offers);
     let day = 0, float = HAUL_FLOAT, tired = 0;
+    let vanAt = 0;   // the day the van was last drawn at, so it only drives when a new day starts
     let idle: Phaser.Time.TimerEvent | null = null;
     const arm = (fn: () => void): void => { idle?.remove(); idle = this.time.delayedCall(LEDGER_IDLE_MS, fn); };
     const pips = (n: number) => '●'.repeat(n) + '○'.repeat(TIRED_MAX - n);
@@ -841,6 +883,21 @@ export class MiniGameScene extends Phaser.Scene {
       this.contentLayer.add(this.add.text(W / 2, 292, 'Fuel and beds come out first. The show pays after.', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.plum })).setOrigin(0.5));
       const live = this.add.text(W / 2, 760, '', textStyle('small', { fontSize: '17px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center' })).setOrigin(0.5, 0);
       this.contentLayer.add(live);
+      // the route strip: three stops on a dotted road, the van at today's
+      const rx = (d: number): number => 180 + d * 180;
+      const road = this.add.graphics();
+      road.lineStyle(4, PALETTE.plum, 0.35);
+      for (let x = rx(0); x < rx(HAUL_DAYS - 1); x += 18) road.lineBetween(x, 1010, x + 9, 1010);
+      this.contentLayer.add(road);
+      for (let d = 0; d < HAUL_DAYS; d++) {
+        this.contentLayer.add(this.add.circle(rx(d), 1010, 9, d < day ? PALETTE.teal : PALETTE.plum, d <= day ? 1 : 0.35));
+        this.contentLayer.add(this.add.text(rx(d), 1040, `Day ${d + 1}`, textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum })).setOrigin(0.5, 0));
+      }
+      const van = this.add.rectangle(rx(vanAt), 990, 34, 18, PALETTE.terracotta, 1).setStrokeStyle(2, PALETTE.plum, 1);
+      this.contentLayer.add(van);
+      if (day > vanAt && !State.data.accessibility.reducedMotion) this.tweens.add({ targets: van, x: rx(day), duration: 600, ease: 'Sine.easeInOut' });
+      else van.x = rx(day);
+      vanAt = day;
       return live;
     };
 
@@ -928,26 +985,29 @@ export class MiniGameScene extends Phaser.Scene {
     // title, one to three stars, the score where there is one, and what the result earned, so the
     // ending says how you did against the goal instead of only how the moment felt.
     const tier = this.outcomePerfect ? 3 : good ? 2 : 1;
-    const title = tier === 3 ? 'Nailed it' : tier === 2 ? 'Solid' : 'Rough, but done';
     const top = 196;
-    this.contentLayer.add(this.add.text(W / 2, top + 40, title, textStyle('h1', { fontSize: '34px', color: tier === 1 ? PALETTE_HEX.terracotta : PALETTE_HEX.teal })).setOrigin(0.5));
+    // The tier is a rubber stamp in the minigame's own words (2026-10-04): STOWED, FLAT BOARD, ROUGH.
+    this.contentLayer.add(stamp(this, W / 2, top + 40, resultStamp(this.mg.type, tier as Tier), tier === 1 ? PALETTE.terracotta : PALETTE.teal, 30));
+    const beat = beatMs(this.mg.bpm);
     const stars: Phaser.GameObjects.Text[] = [];
     for (let i = 0; i < 3; i++) {
       const on = i < tier;
       const st = this.add.text(W / 2 + (i - 1) * 64, top + 98, '★', textStyle('title', { fontSize: '52px', color: on ? PALETTE_HEX.gold : '#B9A88A' })).setOrigin(0.5);
       this.contentLayer.add(st);
       if (on && !State.data.accessibility.reducedMotion) {
+        // the stars land on the music's beat, one per beat
         st.setScale(0.2).setAlpha(0);
-        this.tweens.add({ targets: st, scale: 1, alpha: 1, duration: 260, delay: 160 + i * 140, ease: 'Back.easeOut' });
+        this.tweens.add({ targets: st, scale: 1, alpha: 1, duration: 220, delay: 240 + i * beat, ease: 'Back.easeOut', onStart: () => { audio.playPitch(660 + i * 220, 0.08, 0, 'triangle'); buzz('tick'); } });
       }
       stars.push(st);
     }
-    if (this.outcomePerfect && !State.data.accessibility.reducedMotion) this.time.delayedCall(600, () => spawnPerfectSpark(this, W / 2, top + 98));
     let y = top + 142;
     const THEORY = ['interval', 'clave', 'chordquality', 'transpose', 'meter', 'tempo'];
     if (THEORY.includes(this.mg.type)) {
       const rounds = this.mg.theoryRounds ?? (this.mg.type === 'tempo' ? 2 : 4);
-      this.contentLayer.add(this.add.text(W / 2, y, `${this.theoryHits} of ${rounds} right`, textStyle('body', { fontSize: '20px', color: PALETTE_HEX.plum })).setOrigin(0.5, 0));
+      const hits = this.add.text(W / 2, y, '', textStyle('body', { fontSize: '20px', color: PALETTE_HEX.plum })).setOrigin(0.5, 0);
+      this.contentLayer.add(hits);
+      countUp(this, hits, this.theoryHits, (v) => `${v} of ${rounds} right`, 500);
       y += 34;
     }
     const text = !good ? this.mg.outroTextRough
@@ -968,9 +1028,13 @@ export class MiniGameScene extends Phaser.Scene {
     if (host && !this.practice) {
       const prior = priorHosted(State.data.hostedGames, host);
       const { reaction, callback } = hostReaction(host, tier as Tier, this.rapport === 'close', prior);
-      for (const line of [reaction, callback]) {
-        if (!line) continue;
-        const t = this.add.text(W / 2, y, line, textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: W - 140 }, align: 'center', lineSpacing: 4 })).setOrigin(0.5, 0);
+      // the host's painted portrait, in a mood that matches the result, beside their line
+      const r = this.add.text(W / 2 + 46, y, reaction, textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: W - 250 }, align: 'center', lineSpacing: 4 })).setOrigin(0.5, 0);
+      this.contentLayer.add(r);
+      this.contentLayer.add(cameo(this, host, cameoMood(tier as Tier), 112, y + Math.max(42, r.height / 2), 84));
+      y = Math.max(r.y + r.height, y + 84) + 12;
+      if (callback) {
+        const t = this.add.text(W / 2, y, callback, textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: W - 140 }, align: 'center', lineSpacing: 4 })).setOrigin(0.5, 0);
         this.contentLayer.add(t);
         y = t.y + t.height + 12;
       }
@@ -985,7 +1049,11 @@ export class MiniGameScene extends Phaser.Scene {
     const cardImg = this.card(top, Math.max(300, y - top + 12));
     this.contentLayer.sendToBack(cardImg);
     const btnY = Math.min(Math.max(y + 24, 560), SAFE_BOTTOM_Y - 66);
-    this.contentLayer.add(createButton(this, W / 2 - 130, btnY, 260, 66, 'Continue', () => this.applyRewardAndReturn(), { fillColor: 0xd9a441 }));
+    const cont = createButton(this, W / 2 - 130, btnY, 260, 66, 'Continue', () => this.applyRewardAndReturn(), { fillColor: 0xd9a441 });
+    this.contentLayer.add(cont);
+    this.time.delayedCall(600, () => { if (cont.active) beatPulse(this, cont, beat); });
+    // The Encore: a perfect run only, never in practice
+    if (shouldEncore(tier as Tier, this.practice)) this.time.delayedCall(250, () => encore(this, host));
   }
 
   /** The reward that applies for this outcome (the same choice applyRewardAndReturn makes). */
@@ -1208,6 +1276,7 @@ export class MiniGameScene extends Phaser.Scene {
     this.clearContent();
     this.card(300, 320);
     this.contentLayer.add(this.add.text(W / 2, 330, 'The ledger', textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5));
+    this.contentLayer.add(stamp(this, W / 2 + 190, 300, ledgerStamp(this.mg.type, outcome.tier), outcome.tier === 'rough' ? PALETTE.terracotta : PALETTE.teal, 20));
     this.contentLayer.add(this.add.text(W / 2, 372, outcome.explain, textStyle('dialogue', {
       fontSize: '20px', color: PALETTE_HEX.plum, wordWrap: { width: W - 150 }, align: 'center', lineSpacing: 5,
     })).setOrigin(0.5, 0));

@@ -1751,3 +1751,19 @@ Scaled-down builds of two pitched long-form games. Before/after:
   `bg_mini_*` keys in `img/later/`, manifest rebuilt. Flags `set_flowed` / `leg_in_the_black` read
   by `MINIGAME_EPILOGUE_CALLBACKS`. Van recall has a quiz for both types.
 - Tests: `src/tests/longform.test.ts` (12).
+
+## 23. Polish pass: the Tour Diary kit (2026-10-04)
+
+Before/after: `C:\Users\Jbthi\Claude Cowork\BAIS_Minigame_Polish_BeforeAfter_2026-10-04.md`.
+
+- `src/game/juiceRules.ts` (pure): `VERB` per type, `resultStamp` / `ledgerStamp` words,
+  `LEVEL_STAMP`, `cameoMood`, `beatMs`, `tickPitch`, `HAPTIC`, `shouldEncore` (tier 3, not practice).
+- `src/art/juice.ts`: `stamp` (cream-backed, squash and stretch, 40 ms hit-stop, thud), `countUp`
+  (rising-pitch ticks), `cameo` (real portraits), `verbSplash`, `beatPulse`, `buzz`, `encore`.
+- MiniGameScene: verb splash in `beginGame`; result title is now a stamp; stars land on the bed's
+  beat; theory hits count up; host cameo beside the reaction; Continue breathes on the beat; Encore
+  on a perfect run. Soundcheck LED ladder + verdict stamp at y 712; load-in thud/dust/wobble; coach
+  line as a sticky note; ledger stamp; modular flow pulse; mix window glow; setlist house lights +
+  segue pop + score count-up; long-haul route strip with the van (`vanAt`).
+- Reduced motion: stamps and cameos fade in, splash/pulse/wobble skipped, Encore is a soft dim.
+- Tests: `src/tests/juice.test.ts` (7).
