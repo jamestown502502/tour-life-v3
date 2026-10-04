@@ -1767,3 +1767,22 @@ Before/after: `C:\Users\Jbthi\Claude Cowork\BAIS_Minigame_Polish_BeforeAfter_202
   segue pop + score count-up; long-haul route strip with the van (`vanAt`).
 - Reduced motion: stamps and cameos fade in, splash/pulse/wobble skipped, Encore is a soft dim.
 - Tests: `src/tests/juice.test.ts` (7).
+
+## 24. "Stuck" audit: hit-stop clock fix + real-time playthrough (2026-10-05)
+
+Before/after: `C:\Users\Jbthi\Claude Cowork\BAIS_Minigame_Stuck_Audit_BeforeAfter_2026-10-05.md`.
+
+- Root cause of the "stuck after the polish update" report: `hitstop` (src/art/effects.ts) saved
+  `timeScale` and restored it with `scene.time.delayedCall` on the clock it had just slowed. A second
+  hit-stop inside that window (a perfect ledger + its stamp, two perfect rhythm notes) saved 0.05 as
+  the "original" and restored it last, so the clock stayed at 5%; Phaser keeps a reused scene's
+  clock speed, so every later minigame crawled. Now: one remembered base speed per scene (WeakMap),
+  nested stops only extend the dip, and the undo runs on a real `window.setTimeout`.
+- Result card: Continue ignores taps for its first 600 ms (it sits where the last round's button
+  was, so a fast tap skipped the whole card).
+- `e2e/minigame-playthrough.spec.ts` (Pixel 7 only): plays all 34 minigames to the result card and
+  back to the city with real taps/drags/holds on the game's own clock, fails on a clock below full
+  speed for over 1.2 s; plus the nested hit-stop regression (fails on the old code at 0.05).
+  `MG_ONLY=id1,id2` limits a run. Local headless runs at ~6-7 fps, so a city takes 6-8 minutes.
+- Known local-only: `fullrun.spec.ts` exceeds its 300 s budget on this PC at 6 fps on production
+  code too (it reaches the final journal); it passes on CI.

@@ -33,12 +33,26 @@ export function comboPop(scene: Phaser.Scene, target: Phaser.GameObjects.Text): 
   scene.tweens.add({ targets: target, scale: 1.15, duration: 80, ease: 'Cubic.easeOut', yoyo: true });
 }
 
-/** Brief timescale dip on a perfect hit. Skipped under reducedMotion. */
+/** Per scene: the clock speed before the current hit-stop began, and the real-time undo timer. */
+const hitstops = new WeakMap<Phaser.Scene, { base: number; timer: number }>();
+
+/** Brief timescale dip on a perfect hit. Skipped under reducedMotion.
+ *
+ *  2026-10-05: this used to save `timeScale` and restore it with `scene.time.delayedCall` — on the
+ *  very clock it had just slowed to 5%, so a 40 ms stop really lasted ~800 ms, and a second stop
+ *  inside that window saved 0.05 as the "original" and restored it last. The clock then stayed at
+ *  5% for good, and because Phaser keeps a reused scene's clock speed, every later minigame (or
+ *  the rest of a song, after two perfect notes in a row) ran 20x slow: the "stuck" reports. Now
+ *  the true speed is remembered once per scene, a nested stop only extends the dip, and the undo
+ *  runs on a real timer the slowed clock cannot stretch. */
 export function hitstop(scene: Phaser.Scene, ms = 30): void {
   if (State.data.accessibility.reducedMotion) return;
-  const original = scene.time.timeScale;
+  const live = hitstops.get(scene);
+  if (live) clearTimeout(live.timer);
+  const base = live ? live.base : scene.time.timeScale;
   scene.time.timeScale = 0.05;
-  scene.time.delayedCall(ms, () => { scene.time.timeScale = original; }, [], scene);
+  const timer = window.setTimeout(() => { scene.time.timeScale = base; hitstops.delete(scene); }, ms);
+  hitstops.set(scene, { base, timer });
 }
 
 export function shake(scene: Phaser.Scene, px = 4): void {
