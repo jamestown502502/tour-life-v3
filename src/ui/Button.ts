@@ -11,6 +11,9 @@ export interface ButtonOptions {
   radius?: number;
   /** SFX played on press. Defaults to 'tap' — pass 'choiceConfirm' for dialogue choices, etc. */
   tapSfx?: SfxName;
+  /** false: appear at once, without the entrance pop. For controls redrawn in place (the Practice
+   *  picker's city tabs), where a fresh fade on every tap read as the list blinking (QA round 3 #7). */
+  entrance?: boolean;
 }
 
 // WCAG relative luminance / contrast (see scripts/contrast-audit.mjs for the same math applied
@@ -70,7 +73,7 @@ export function legibleFill(fill: number): number {
  *  screens with a mutually-exclusive picker (genre, "why this tour") that used to reach into
  *  the button's raw shape; that shape is now a baked texture, so this is the supported way. */
 export function setButtonSelected(container: Phaser.GameObjects.Container, selected: boolean): void {
-  const ring = container.getData('selectedRing') as Phaser.GameObjects.Image | undefined;
+  const ring = container.getData('selectedRing') as Phaser.GameObjects.Graphics | undefined;
   ring?.setVisible(selected);
 }
 
@@ -142,8 +145,11 @@ export function createButton(
   const hoverGlow = scene.add.image(w / 2, finalH / 2, shapeKey).setOrigin(0.5)
     .setDisplaySize(w + 10, finalH + 10).setTint(PALETTE.gold).setAlpha(0);
   const bg = scene.add.image(0, 0, btnKey).setOrigin(0, 0);
-  const selectedRing = scene.add.image(w / 2, finalH / 2, shapeKey).setOrigin(0.5)
-    .setDisplaySize(w + 6, finalH + 6).setTint(PALETTE.gold).setAlpha(0.9).setVisible(false);
+  // An OUTLINE, not a filled shape: the ring used to be the button's own shape tinted gold, drawn
+  // over the fill, so a selected button's label sat on gold at ~2:1 (found by the legibility suite
+  // in QA round 3, once the band creator started showing its default picks as selected).
+  const selectedRing = scene.add.graphics().lineStyle(4, PALETTE.gold, 1)
+    .strokeRoundedRect(-4, -4, w + 8, finalH + 8, radius + 4).setVisible(false);
 
   container.add([shadow, hoverGlow, bg, selectedRing, text]);
   container.setData('selectedRing', selectedRing);
@@ -178,6 +184,7 @@ export function createButton(
   }
 
   // Entrance pop — a light random stagger so a screen's buttons don't all snap in at once.
+  if (opts.entrance === false) return container;
   container.setScale(0.9).setAlpha(0);
   scene.tweens.add({
     targets: container, scale: 1, alpha: 1, duration: 180, ease: 'Back.easeOut',

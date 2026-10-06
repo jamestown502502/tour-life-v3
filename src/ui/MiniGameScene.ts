@@ -75,6 +75,7 @@ export class MiniGameScene extends Phaser.Scene {
   /** QA #9 / decision D6: launched from the Hub's Practice picker. No reward, no relationship
    *  change, no played-flag, no memory entry; returns to the Hub instead of the city. */
   private practice = false;
+  private practiceBack: Phaser.GameObjects.Container | null = null;
   private outcomeGood = false;
   /** True only when the player aced it outright, not merely passed. Gates outroTextPerfect. */
   private outcomePerfect = false;
@@ -166,6 +167,16 @@ export class MiniGameScene extends Phaser.Scene {
 
     this.contentLayer = this.add.container(0, 0);
     this.showIntro();
+    // Practice has a way out at every moment, not only at the result card (QA round 3 #6). Bottom
+    // centre: the one strip no minigame draws into (the title owns the top, the host strip and
+    // every game's content sit above y=1100). Nothing is at stake, so it leaves without asking.
+    this.practiceBack = null;
+    if (this.practice) {
+      this.practiceBack = createButton(this, W / 2 - 150, SAFE_BOTTOM_Y - 74, 300, 66, '← Back to practice', () => {
+        audio.stopMusic();
+        goTo(this, 'Hub', { practiceCity: this.cityId });
+      }, { fillColor: PALETTE.plum, fontSize: '18px' }).setDepth(300);
+    }
   }
 
   private clearContent(): void {
@@ -975,6 +986,8 @@ export class MiniGameScene extends Phaser.Scene {
   }
 
   private finish(good: boolean, perfect = false): void {
+    // The result card has its own Continue (back to practice) where this button sits.
+    this.practiceBack?.setVisible(false);
     // Remembered for the return leg's social feed — the concrete callback ("they still talk about
     // that load-out") rather than a generic one about the show.
     if (!this.practice) recordMinigame(this.cityId, good, this.mg.title);
@@ -1066,7 +1079,7 @@ export class MiniGameScene extends Phaser.Scene {
   }
 
   private applyRewardAndReturn(): void {
-    if (this.practice) { goTo(this, 'Hub'); return; }
+    if (this.practice) { goTo(this, 'Hub', { practiceCity: this.cityId }); return; }
     // Ledger money lands on top of the authored reward, and the decision is remembered for the Hub card.
     if (this.ledgerOutcome) {
       State.applyStatDeltas({ funds: this.ledgerOutcome.funds });
@@ -1291,11 +1304,14 @@ export class MiniGameScene extends Phaser.Scene {
 
   private stepper(y: number, label: string, get: () => number, set: (v: number) => void, fmt: (v: number) => string, step: number, min: number, max: number, onChange: () => void): void {
     this.contentLayer.add(this.add.text(90, y + 28, label, textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum })).setOrigin(0, 0.5));
-    const value = this.add.text(W - 250, y + 28, fmt(get()), textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.plum })).setOrigin(0.5);
+    // The value sits exactly midway between the − and + buttons (QA round 3 #11: it was 28px left
+    // of centre, crowding the −).
+    const minusX = W - 340, plusX = W - 160, btn = 56;
+    const value = this.add.text((minusX + btn + plusX) / 2, y + 28, fmt(get()), textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.plum })).setOrigin(0.5);
     this.contentLayer.add(value);
     const bump = (d: number) => { set(Phaser.Math.Clamp(get() + d, min, max)); value.setText(fmt(get())); audio.playSfx('tap'); onChange(); };
-    this.contentLayer.add(createButton(this, W - 340, y, 56, 56, '−', () => bump(-step), { fillColor: PALETTE.plum, fontSize: '26px' }));
-    this.contentLayer.add(createButton(this, W - 160, y, 56, 56, '+', () => bump(step), { fillColor: PALETTE.plum, fontSize: '26px' }));
+    this.contentLayer.add(createButton(this, minusX, y, btn, btn, '−', () => bump(-step), { fillColor: PALETTE.plum, fontSize: '26px' }));
+    this.contentLayer.add(createButton(this, plusX, y, btn, btn, '+', () => bump(step), { fillColor: PALETTE.plum, fontSize: '26px' }));
   }
 
   private runSplit(): void {

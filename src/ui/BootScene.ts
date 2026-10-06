@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { SONGS } from '../game/content';
-import { PALETTE, PALETTE_HEX, W } from '../const';
+import { BOOT_PROCESS_GRACE_MS, BOOT_STALL_MS, PALETTE, PALETTE_HEX, W } from '../const';
 import { LATER_MANIFEST_PATH, assetBaseUrl, fetchManifest, markPending, markRealAsset, markTitleThemeLoaded, settlePending } from '../core/assets';
 import { textStyle } from './textStyles';
 
@@ -45,15 +45,39 @@ export class BootScene extends Phaser.Scene {
       const fallback = file.key === 'title_theme' ? 'the procedural title ambience' : 'code-drawn';
       console.warn(`[assets] could not load "${file.src}" for key "${file.key}" — falling back to ${fallback}`);
     });
-    this.load.on(Phaser.Loader.Events.PROGRESS, (value: number) => this.setProgress(value));
-    this.load.once(Phaser.Loader.Events.COMPLETE, () => {
+    // QA round 3 #1: "stuck on the loading screen sometimes after a refresh" on iPhone and Android,
+    // with the bar full and the label reading "Ready". The bar fills when every file has DOWNLOADED;
+    // the hand-off waits for every file to be PROCESSED too, and the title theme's processing is an
+    // audio decode, which a phone can leave hanging forever right after a reload (the audio session
+    // of the page being replaced is still being torn down). Two changes, either one enough alone:
+    // the theme is no longer in this gating batch (loadAudioInBackground fetches it), and a
+    // wall-clock watchdog hands off if this loader ever goes quiet, so no single file can hold the
+    // game hostage. A file that has not arrived by then falls back like any missing asset.
+    let handedOff = false;
+    let lastProgressAt = performance.now();
+    const handOff = (): void => {
+      if (handedOff) return;
+      handedOff = true;
+      window.clearInterval(watchdog);
       this.setProgress(1);
       this.loadAudioInBackground();
       void this.loadImagesInBackground();
       // The themed-transition overlay scene lives for the whole session, above everything.
       this.scene.launch('Transition');
       this.scene.start('Title');
-    });
+    };
+    const watchdog = window.setInterval(() => {
+      const quiet = performance.now() - lastProgressAt;
+      // Downloads all done but processing never finished, or nothing at all for a long time.
+      if ((this.load.progress >= 1 && quiet > BOOT_PROCESS_GRACE_MS) || quiet > BOOT_STALL_MS) {
+        console.warn(`[boot] loader quiet for ${Math.round(quiet)} ms at ${Math.round(this.load.progress * 100)}% — starting without the rest`);
+        handOff();
+      }
+    }, 500);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.clearInterval(watchdog));
+    this.load.on(Phaser.Loader.Events.PROGRESS, (value: number) => { lastProgressAt = performance.now(); this.setProgress(value); });
+    this.load.on(Phaser.Loader.Events.FILE_COMPLETE, () => { lastProgressAt = performance.now(); });
+    this.load.once(Phaser.Loader.Events.COMPLETE, handOff);
     // Addendum v2, Item 7's 40 crowd sprites pushed the manifest past Phaser's default
     // maxParallelDownloads (32) for the first time — confirmed live (a debug PROGRESS/
     // FILE_COMPLETE trace): the loader silently stalled at ~50% (exactly the first 32-file
@@ -68,18 +92,18 @@ export class BootScene extends Phaser.Scene {
     for (const entry of entries) {
       this.load.image(entry.key, `${assetBaseUrl()}assets/${entry.file}`);
     }
-    // The title theme is the one audio file worth waiting for: it plays on the very screen this
-    // hands off to, and at ~0.7MB it is a tenth of the backing tracks. Loading it here is what
-    // stops the opening music arriving several seconds late.
-    this.load.audio('title_theme', `${assetBaseUrl()}audio/title_theme.mp3`);
     this.load.start();
   }
 
   /** Queues the rhythm backing tracks AFTER the game is already playable. Nothing waits on these:
    *  RhythmScene checks the cache and uses the procedural bed for anything not yet arrived, which
-   *  is the same fallback it uses when a track is missing entirely. */
+   *  is the same fallback it uses when a track is missing entirely. The title theme goes first
+   *  (it no longer gates boot, see create()); TitleScene switches to it if it lands after the
+   *  procedural bed has already started. */
   private loadAudioInBackground(): void {
     const loader = new Phaser.Loader.LoaderPlugin(this);
+    loader.audio('title_theme', `${assetBaseUrl()}audio/title_theme.mp3`);
+    loader.on(Phaser.Loader.Events.FILE_COMPLETE, (key: string) => { if (key === 'title_theme') markTitleThemeLoaded(); });
     for (const song of SONGS) {
       if (song.audioFile) loader.audio(`song_${song.id}`, `${assetBaseUrl()}audio/${song.audioFile}`);
     }

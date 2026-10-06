@@ -4,7 +4,7 @@ import { ensureBusHubBackground, ensureHubWindowPane } from '../art/sprites';
 import { applyVignette, spawnFireflies, type WeatherHandle } from '../art/effects';
 import { addCoverBackground } from '../art/background';
 import { hasRealAsset } from '../core/assets';
-import { createButton } from './Button';
+import { createButton, setButtonSelected } from './Button';
 import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
 import { bedForCity } from '../game/ambience';
@@ -45,7 +45,9 @@ export class HubScene extends Phaser.Scene {
 
   private fireflies: WeatherHandle | null = null;
 
-  create(): void {
+  create(data?: { practiceCity?: string }): void {
+    this.practiceIndex = -1;
+    this.practiceReturn = data?.practiceCity ?? null;
     fadeIn(this);
     // The bus bed is the NEXT city's song, slowed right down — the sound of heading somewhere
     // specific rather than one fixed loop played between every pair of cities.
@@ -157,6 +159,16 @@ export class HubScene extends Phaser.Scene {
     }, { fillColor: 0x8a6fa3, fontSize: '18px' });
 
     this.events.on(Phaser.Scenes.Events.RESUME, () => fadeIn(this));
+
+    // Back from a practice round (its Back button or its result card): the picker opens again on
+    // the same city, so trying another game is one tap (QA round 3 #6).
+    if (this.practiceReturn) {
+      const ids: string[] = [];
+      for (const stop of State.data.route) if (!ids.includes(stop.cityId)) ids.push(stop.cityId);
+      const i = ids.indexOf(this.practiceReturn);
+      this.practiceReturn = null;
+      if (i >= 0) this.showPractice(i);
+    }
   }
 
   private renderStats(): void {
@@ -312,19 +324,32 @@ export class HubScene extends Phaser.Scene {
    *  Grouped by city with a tab row because the flat list it replaced was capped at nine rows, and
    *  the route carries around thirty minigames — so everything past the first city's was
    *  unreachable from here. */
+  private practiceIndex = -1;
+  private practiceReturn: string | null = null;
+
   private showPractice(cityIndex = 0): void {
-    this.children.getByName('practicePanel')?.destroy();
     const cityIds: string[] = [];
     for (const stop of State.data.route) if (!cityIds.includes(stop.cityId)) cityIds.push(stop.cityId);
     if (cityIds.length === 0) return;
-    const current = cityIds[Math.max(0, Math.min(cityIndex, cityIds.length - 1))];
+    const index = Math.max(0, Math.min(cityIndex, cityIds.length - 1));
+    const open = this.children.getByName('practicePanel');
+    // Tapping the city already showing does nothing (QA round 3 #7: it rebuilt the panel, and the
+    // rebuild blinked). Switching city redraws in place with no entrance pop, so the list never
+    // vanishes for a beat (#8), and the card keeps one height for every city.
+    if (open && index === this.practiceIndex) return;
+    const switching = !!open;
+    open?.destroy();
+    this.practiceIndex = index;
+    const current = cityIds[index];
     const rows = (getCity(current).minigames ?? []);
     const w = 640, rowH = 64;
-    const h = 250 + rows.length * rowH;
+    const mostRows = Math.max(...cityIds.map((id) => (getCity(id).minigames ?? []).length));
+    const h = 250 + mostRows * rowH;
     const x = W / 2 - w / 2, y = Math.max(60, (this.cameras.main.height - h) / 2);
     const panel = this.add.container(0, 0).setName('practicePanel').setDepth(200);
+    const closePanel = (): void => { panel.destroy(); this.practiceIndex = -1; };
     const backdrop = this.add.rectangle(0, 0, W, this.cameras.main.height, 0x000000, 0.55).setOrigin(0, 0).setInteractive();
-    backdrop.on('pointerdown', () => panel.destroy());
+    backdrop.on('pointerdown', closePanel);
     const card = this.add.rectangle(x, y, w, h, PALETTE.sand, 0.98).setOrigin(0, 0).setInteractive();
     card.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event: { stopPropagation: () => void }) => event.stopPropagation());
     panel.add([backdrop, card]);
@@ -333,17 +358,19 @@ export class HubScene extends Phaser.Scene {
     const tabW = (w - 40) / cityIds.length;
     cityIds.forEach((id, i) => {
       const on = id === current;
-      panel.add(createButton(this, x + 20 + i * tabW, y + 84, tabW - 8, 54, getCity(id).name, () => this.showPractice(i),
-        { fillColor: on ? 0xd9a441 : 0x8fb7c9, fontSize: '15px' }));
+      const tab = createButton(this, x + 20 + i * tabW, y + 84, tabW - 8, 54, getCity(id).name, () => this.showPractice(i),
+        { fillColor: on ? 0xd9a441 : 0x8fb7c9, fontSize: '15px', entrance: !switching });
+      setButtonSelected(tab, on);
+      panel.add(tab);
     });
     rows.forEach((mg, i) => {
       const tag = mg.hostBandmate ? ` · ${mg.hostBandmate[0].toUpperCase()}${mg.hostBandmate.slice(1)}` : '';
       panel.add(createButton(this, x + 30, y + 156 + i * rowH, w - 60, 54, `${mg.title}${tag}`, () => {
-        panel.destroy();
+        closePanel();
         goTo(this, 'MiniGame', { cityId: current, minigameId: mg.id, returnPhase: 'locations', practice: true });
-      }, { fillColor: mg.hostBandmate ? 0x8a6fa3 : 0x3e7c7b, fontSize: '16px' }));
+      }, { fillColor: mg.hostBandmate ? 0x8a6fa3 : 0x3e7c7b, fontSize: '16px', entrance: !switching }));
     });
-    panel.add(createButton(this, x + w / 2 - 110, y + h - 72, 220, 56, 'Close', () => panel.destroy(), { fillColor: 0x8fb7c9 }));
+    panel.add(createButton(this, x + w / 2 - 110, y + h - 72, 220, 56, 'Close', closePanel, { fillColor: 0x8fb7c9, entrance: !switching }));
   }
 
   private wrapTour(): void {

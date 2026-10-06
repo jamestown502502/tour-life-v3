@@ -68,6 +68,12 @@ export const RHYTHM_LANE_X_START = 30;
 // Bottom edge of the "safe" interactive region (game px). Nothing tappable below this line.
 export const SAFE_BOTTOM_Y = 1230;
 
+// Boot watchdog (BootScene, QA round 3 #1): how long the loader may sit with every file downloaded
+// but not yet processed, and how long it may go with no progress at all, before the game starts
+// without whatever is still outstanding.
+export const BOOT_PROCESS_GRACE_MS = 4000;
+export const BOOT_STALL_MS = 30000;
+
 export const TYPEWRITER_CHARS_PER_SEC = 45;
 export const SCREEN_FADE_MS = 250;
 

@@ -6,7 +6,7 @@ import { addCoverBackground } from '../art/background';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { audio } from '../core/audio';
-import { hasTitleTheme } from '../core/assets';
+import { hasTitleTheme, onTitleThemeLoaded } from '../core/assets';
 import { DEFAULT_AMBIENCE_BPM, DEFAULT_AMBIENCE_CHORDS } from '../core/musicTheory';
 import { dailySeed, generateSeed } from '../core/rng';
 import { State } from '../core/state';
@@ -44,7 +44,15 @@ export class TitleScene extends Phaser.Scene {
       // "coming out of nowhere". 0.8s (the default, tuned for crossfading between rhythm tracks)
       // is abrupt when it is the first sound the game has made. 2.6s reads as the room arriving.
       if (themeBuffer instanceof AudioBuffer) audio.playMusicTrack(themeBuffer, 0, true, 2.6);
-      else audio.playAmbience(DEFAULT_AMBIENCE_CHORDS, DEFAULT_AMBIENCE_BPM);
+      else {
+        audio.playAmbience(DEFAULT_AMBIENCE_CHORDS, DEFAULT_AMBIENCE_BPM);
+        // The theme loads in the background now (QA round 3 #1): if it lands while the title is
+        // still up, it takes over from the procedural bed with the same slow fade.
+        onTitleThemeLoaded(() => {
+          const late = this.cache.audio.get('title_theme') as AudioBuffer | undefined;
+          if (late instanceof AudioBuffer && this.sys.isActive()) audio.playMusicTrack(late, 0, true, 2.6);
+        });
+      }
     });
     fadeIn(this);
 
@@ -136,7 +144,7 @@ export class TitleScene extends Phaser.Scene {
     createButton(this, W / 2 - 160, btnY, 320, BTN_ROW, 'Saves', () => this.openSavesPicker(), { fillColor: 0x6b8a5a });
 
     // Small, non-primary — sits below the seed-entry UI, not competing with New Run/Continue.
-    createButton(this, W / 2 - 120, 1060, 240, 44, 'How to Play', () => this.openHowToPlay(), { fillColor: 0x8a6fa3, fontSize: '17px' });
+    createButton(this, W / 2 - 120, 1090, 240, 54, 'How to Play', () => this.openHowToPlay(), { fillColor: 0x8a6fa3, fontSize: '18px' });
 
     // First run auto-opens How to Play — but NOT in this tick. openHowToPlay() pauses Title, and a
     // paused scene still renders while it stops updating, so the camera fade-in started at the top
@@ -289,9 +297,15 @@ export class TitleScene extends Phaser.Scene {
     container.add([cancelBtn, confirmBtn]);
   }
 
+  /** One row, read left to right (QA round 3 #10): a label above, then the field and its button
+   *  side by side at the same height, clear of the Saves button above. The field used to float
+   *  alone between Saves and its button, and on a phone its text overflowed the box. */
   private buildSeedEntry(seedLabel: Phaser.GameObjects.Text): void {
-    this.seedInput = createFloatingInput(this, W / 2, 950, 320, 'Replay a seed');
-    createButton(this, W / 2 - 100, 1000, 200, 44, 'Use this seed', () => {
+    const rowY = 1006, rowH = 60;
+    addTextScrim(this, W / 2, 960, 330, 34, 0.82);
+    this.add.text(W / 2, 960, 'Have a seed? Replay it:', textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream })).setOrigin(0.5);
+    this.seedInput = createFloatingInput(this, W / 2 - 80, rowY + rowH / 2, 320, 'Paste a seed', rowH);
+    createButton(this, W / 2 + 92, rowY, 148, rowH, 'Use seed', () => {
       const val = this.seedInput?.el.value.trim();
       if (val) {
         this.currentSeed = val;

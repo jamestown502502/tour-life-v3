@@ -83,6 +83,9 @@ async function boot(): Promise<void> {
   document.addEventListener('visibilitychange', () => audio.setBackgrounded(document.hidden));
   window.addEventListener('pagehide', () => audio.setBackgrounded(true));
   window.addEventListener('pageshow', () => audio.setBackgrounded(document.hidden));
+  // A browser may refuse to resume audio outside a tap; the next tap always tries again.
+  window.addEventListener('pointerup', () => audio.wake(), { passive: true });
+  window.addEventListener('touchend', () => audio.wake(), { passive: true });
 
   if (import.meta.env.DEV) { (window as any).__game = game; (window as any).__audio = audio; (window as any).__state = State; }
 }

@@ -10,18 +10,37 @@ import { markHowToPlaySeen } from '../core/onboarding';
 
 interface Page { title: string; body: string; }
 
+// QA round 3 #9: three pages were not enough for a game this size. One idea per page, in the order
+// a first tour meets them (goal, the loop, a city, the show, minigames, the band, where help is),
+// each short enough to read in a few seconds, with the controls named exactly as they appear.
 const PAGES: Page[] = [
   {
-    title: 'The Tour',
-    body: 'Pick a route through cities, and live on the bus between shows. Every choice along the way shapes the story — there\'s no wrong answer, just a different tour.',
+    title: 'Your tour',
+    body: 'You run an indie band\'s first international tour: Mira, Theo, Jun and Rowan, four cities, one route you choose.\n\nThere is no game over. Every choice writes a different tour, and at the end it all becomes your Scrapbook.',
   },
   {
-    title: 'The Show',
-    body: 'Tap notes as they reach the gold line. Hold notes: press and hold until they end. Choice cues: tap the banner when it appears. Prefer it chill? Relaxed mode and autoplay are in Settings — score never blocks the story.',
+    title: 'The road',
+    body: 'First, plan the route and pick the promise this tour is for.\n\nBetween cities, the bus is home base: check on the band, then tap Travel. The drive is where the band talks, and where a skill from an earlier city comes back as a quick question.',
   },
   {
-    title: 'The Band',
-    body: 'Watch your stats, grow relationships with your bandmates, and collect souvenirs along the way. At the end of the tour, it all becomes your Scrapbook — a one-of-a-kind ending.',
+    title: 'In each city',
+    body: 'Pick where to go. Each place is a scene with the band and the locals, and some are minigames.\n\nYour choices move the band\'s stats and how close you are to each bandmate. When you are ready, it is showtime.',
+  },
+  {
+    title: 'The show',
+    body: 'Tap notes as they reach the gold line. Hold notes: press until they end. Choice cues: tap the banner.\n\nA low score never blocks the story. Relaxed rhythm mode, autoplay, wiggle room and audio sync are in Settings.',
+  },
+  {
+    title: 'Minigames',
+    body: 'Load-ins, soundchecks, deals, setlists and more, each teaching a real music or money skill. When a bandmate hosts one, the closer you are, the more they help.\n\nNone can be failed. Replay any of them from the bus with Practice a minigame.',
+  },
+  {
+    title: 'Your band',
+    body: 'Four stats: Energy, Harmony, Inspiration and Funds. The bus screen shows where each one stands.\n\nEach bandmate wants something different. Time spent with them moves their story on, and how you treat them shapes the ending.',
+  },
+  {
+    title: 'Help is always here',
+    body: 'Tap ? on any screen for a quick tip, and the gear for Settings: volumes, accessibility and rhythm options.\n\nThe game saves as you go. Continue picks up where you left off, Saves holds three extra slots, and this guide is on the title screen.',
   },
 ];
 
@@ -47,6 +66,8 @@ export class HowToPlayScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Above whatever opened it, whatever the registration order (see SettingsScene.create).
+    if (this.scene.get(this.returnTo)) this.scene.moveAbove(this.returnTo);
     markHowToPlaySeen();
     // Same overlay reasoning as SettingsScene: dim the scene behind rather than hide it, so the
     // how-to-play card sits over the painted Title art instead of flat navy.

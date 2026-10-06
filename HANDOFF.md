@@ -1786,3 +1786,31 @@ Before/after: `C:\Users\Jbthi\Claude Cowork\BAIS_Minigame_Stuck_Audit_BeforeAfte
   `MG_ONLY=id1,id2` limits a run. Local headless runs at ~6-7 fps, so a city takes 6-8 minutes.
 - Known local-only: `fullrun.spec.ts` exceeds its 300 s budget on this PC at 6 fps on production
   code too (it reaches the final journal); it passes on CI.
+
+## 25. QA round 3 (2026-10-06)
+
+Tester report: 11 rows (`Tour Life - Issue Report Round 3.xlsx`). Before/after:
+`C:\Users\Jbthi\Claude Cowork\BAIS_QA_Round3_BeforeAfter_2026-10-06.md`.
+
+- **Settings opened UNDER every minigame** (#2, "page freezes"): Phaser draws scenes in registration
+  order and MiniGame is registered after Settings, so the gear paused the game and opened an invisible
+  menu. `SettingsScene.create` and `HowToPlayScene.create` now `moveAbove(returnTo)`. Any new overlay
+  scene launched over another must do the same.
+- **Boot can no longer hang on "Ready"** (#1): the title theme left the gating loader (it loads with
+  the backing tracks; Title crossfades to it if it lands after the procedural bed started, via
+  `onTitleThemeLoaded`), and a wall-clock watchdog hands off if the loader goes quiet
+  (`BOOT_PROCESS_GRACE_MS` 4 s with all files downloaded, `BOOT_STALL_MS` 30 s with no progress).
+- **Practice** (#6-#8): "← Back to practice" on every practice minigame (hidden at the result card);
+  Hub `create({ practiceCity })` reopens the picker on that city; re-tapping the open city does nothing;
+  switching redraws with `createButton({ entrance: false })` at a fixed card height; open tab ringed.
+- **Help panel** (#4): a full-screen catcher closes it on any tap (and swallows that tap); the panel
+  grows to its text and says "Tap anywhere to close". No timer.
+- **Name your band** (#3, #5): first genre and first reason start selected (what Hit the road applied
+  silently); "Say hi" is a card above the faces with a gold ring on the speaker, another face swaps
+  it, same face/card closes it; Jun "wants new sounds" (one line).
+- **Title seed row** (#10): label, field and "Use seed" button on one row; `createFloatingInput` takes
+  a height and never draws a box shorter than its own text (`fontPx * 1.25 + 12`).
+- **Ledger stepper** (#11): value centred between − and +.
+- **How to Play** (#9): 7 pages (tour, road, city, show, minigames, band, help).
+- **Audio:** `syncSuspend` resumes `interrupted` (iOS) as well as `suspended`; `audio.wake()` on every tap.
+- Tests: `e2e/qa-round3.spec.ts` (9, registered in testMatch), incl. draw order and a hung-asset boot.

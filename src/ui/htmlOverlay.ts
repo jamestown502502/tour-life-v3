@@ -16,7 +16,7 @@ export interface FloatingInput {
  *  measured 1.11:1 because a stray white text field was sitting on it. Callers may still call
  *  destroy() early — it is idempotent. */
 export function createFloatingInput(
-  scene: Phaser.Scene, gameX: number, gameY: number, widthPx: number, placeholder: string,
+  scene: Phaser.Scene, gameX: number, gameY: number, widthPx: number, placeholder: string, heightUnits = 34,
 ): FloatingInput {
   const el = document.createElement('input');
   el.placeholder = placeholder;
@@ -73,7 +73,11 @@ export function createFloatingInput(
     const scaleX = rect.width / W;
     const scaleY = rect.height / H;
     const wPx = widthPx * scaleX;
-    const hPx = 34 * scaleY;
+    const fontPx = coarse ? Math.max(16, 16 * scaleY) : Math.max(11, Math.min(18, 20 * scaleY));
+    // Tall enough for its own text (QA round 3 #10: on a phone the 16px floor below sat in a box
+    // 34 game units = ~18 CSS px tall, so the text spilled past the border and the field looked
+    // misaligned). Grown boxes stay centred on gameY.
+    const hPx = Math.max(heightUnits * scaleY, fontPx * 1.25 + 12);
     el.style.left = `${rect.left + gameX * scaleX - wPx / 2}px`;
     el.style.top = `${rect.top + gameY * scaleY - hPx / 2}px`;
     el.style.width = `${wPx}px`;
@@ -83,7 +87,7 @@ export function createFloatingInput(
     // half-scrolled. 16px is the documented threshold.
     // QA round 2 #8: 16px is the floor only where iOS needs it (touch). With a mouse, the field
     // scales with the canvas like every other line of text instead of towering over it.
-    el.style.fontSize = coarse ? `${Math.max(16, 16 * scaleY)}px` : `${Math.max(11, Math.min(18, 20 * scaleY))}px`;
+    el.style.fontSize = `${fontPx}px`;
   };
   el.addEventListener('focus', () => { focused = true; reposition(); });
   el.addEventListener('blur', () => { focused = false; reposition(); });
