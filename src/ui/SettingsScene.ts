@@ -43,6 +43,11 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   create(): void {
+    // QA round 3 #2 ("the page freezes when I tap Settings in a minigame"): Phaser draws scenes in
+    // the order they are registered, and MiniGame is registered AFTER Settings, so Settings opened
+    // underneath the paused minigame. The game stopped, the menu was invisible, and every tap went
+    // to buttons nobody could see. Settings now always sits directly above whatever opened it.
+    if (this.scene.get(this.returnTo)) this.scene.moveAbove(this.returnTo);
     markSettingsOpened();
     // Round 3: mid-song Settings paused the chart but not the song (Web Audio runs on its own
     // clock), so the rest of that song graded out of sync. Hold ALL audio while Settings covers

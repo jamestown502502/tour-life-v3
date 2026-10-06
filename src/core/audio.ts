@@ -79,7 +79,15 @@ class AudioSystem {
     if (!this.ctx) return;
     const wantSuspended = this.held || this.backgrounded;
     if (wantSuspended && this.ctx.state === 'running') this.ctx.suspend().catch(() => {});
-    else if (!wantSuspended && this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+    // Not just 'suspended': iOS Safari parks a context in 'interrupted' after an app switch or a
+    // call, and only resuming 'suspended' left the game silent until a reload (the same bug QA
+    // round 3 #7 found in Side Hustle City).
+    else if (!wantSuspended && this.ctx.state !== 'running' && (this.ctx.state as string) !== 'closed') this.ctx.resume().catch(() => {});
+  }
+
+  /** Called on every tap (main.ts): a resume refused outside a user gesture is retried inside one. */
+  wake(): void {
+    this.syncSuspend();
   }
 
   /** The app went behind another app (or the screen locked). A web page's audio keeps playing

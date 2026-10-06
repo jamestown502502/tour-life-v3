@@ -3,7 +3,7 @@ import type { BandmateDef, GenreDef } from './schema';
 export const BANDMATES: BandmateDef[] = [
   { id: 'mira', name: 'Mira', instrument: 'vocals', wants: 'recognition', fears: 'selling out' },
   { id: 'theo', name: 'Theo', instrument: 'drums', wants: 'rest', fears: 'burning out again' },
-  { id: 'jun', name: 'Jun', instrument: 'guitar/production', wants: 'sonic experimentation', fears: 'creative stagnation' },
+  { id: 'jun', name: 'Jun', instrument: 'guitar/production', wants: 'new sounds', fears: 'creative stagnation' },
   { id: 'rowan', name: 'Rowan', instrument: 'bass', wants: 'to be seen', fears: 'being replaceable' },
 ];
 

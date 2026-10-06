@@ -11,9 +11,8 @@ import { saveRun } from '../core/save';
 import { createFloatingInput, type FloatingInput } from './htmlOverlay';
 import { addTextScrim, textStyle } from './textStyles';
 import { addMenuButton } from './MenuButton';
-import { DialogueBox } from './DialogueBox';
 import { OPENING_GRAPH } from '../../content/opening';
-import { ensurePortrait, ensurePortraitFrame } from '../art/sprites';
+import { ensurePortrait, ensurePortraitFrame, ensureRoundedRect } from '../art/sprites';
 import { suggestBandName } from '../game/bandName';
 
 export class BandCreatorScene extends Phaser.Scene {
@@ -22,7 +21,10 @@ export class BandCreatorScene extends Phaser.Scene {
   private genre = '';
   private whyTour = '';
   private nameInput!: FloatingInput;
-  private meetBox: DialogueBox | null = null;
+  private meetCard: Phaser.GameObjects.Container | null = null;
+  private meetId: string | null = null;
+  private faceRings = new Map<string, Phaser.GameObjects.Arc>();
+  private castY = 0;
 
   create(): void {
     fadeIn(this);
@@ -45,8 +47,8 @@ export class BandCreatorScene extends Phaser.Scene {
     // player who taps straight through still gets a real name rather than "The Unnamed".
     this.nameInput.el.value = suggestBandName(State.data.seed);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.nameInput.destroy());
-    addTextScrim(this, W / 2, 166, 380, 30, 0.6);
-    this.add.text(W / 2, 166, 'We picked one — tap the name to change it.', textStyle('small', { fontSize: '13px', color: PALETTE_HEX.cream })).setOrigin(0.5);
+    addTextScrim(this, W / 2, 170, 380, 30, 0.6);
+    this.add.text(W / 2, 170, 'We picked one — tap the name to change it.', textStyle('small', { fontSize: '13px', color: PALETTE_HEX.cream })).setOrigin(0.5);
     // QA #12: an explicit way back to the welcome screen from setup. Top-right: the menu gear
     // already owns the top-left corner (MenuButton.ts).
     createButton(this, W - 150, 20, 130, 54, '← Back', () => goTo(this, 'Title'), { fillColor: PALETTE.plum, fontSize: '17px' });
@@ -63,6 +65,9 @@ export class BandCreatorScene extends Phaser.Scene {
     this.add.text(W / 2, 200, 'Genre', textStyle('h2')).setOrigin(0.5);
     const genres = [...GENRES, ...State.data.meta.unlockedGenres.map((id) => ({ id, label: id.replace(/_/g, ' ') }))];
     const genreLabels: Phaser.GameObjects.Container[] = [];
+    // The pick is always visible (QA round 3 #3): the first option starts selected, which is what
+    // "Hit the road" used to apply silently, and a tap on another one moves the ring.
+    this.genre = genres[0].id;
     genres.forEach((g, i) => {
       const col = i % 2, row = Math.floor(i / 2);
       const btn = createButton(this, W / 2 - 300 + col * 310, 240 + row * GRID_INCREMENT, 290, GRID_ROW_H, g.label, () => {
@@ -70,6 +75,7 @@ export class BandCreatorScene extends Phaser.Scene {
         genreLabels.forEach((b) => setButtonSelected(b, false));
         setButtonSelected(btn, true);
       });
+      if (i === 0) setButtonSelected(btn, true);
       genreLabels.push(btn);
     });
 
@@ -77,12 +83,14 @@ export class BandCreatorScene extends Phaser.Scene {
     addTextScrim(this, W / 2, whyY, 320, 52);
     this.add.text(W / 2, whyY, 'Why this tour?', textStyle('h2')).setOrigin(0.5);
     const whyLabels: Phaser.GameObjects.Container[] = [];
+    this.whyTour = WHY_TOUR_BEATS[0];
     WHY_TOUR_BEATS.forEach((beat, i) => {
       const btn = createButton(this, W / 2 - 300, whyY + 40 + i * GRID_INCREMENT, 600, GRID_ROW_H, beat, () => {
         this.whyTour = beat;
         whyLabels.forEach((b) => setButtonSelected(b, false));
         setButtonSelected(btn, true);
       }, { fontSize: '18px' });
+      if (i === 0) setButtonSelected(btn, true);
       whyLabels.push(btn);
     });
 
@@ -96,6 +104,10 @@ export class BandCreatorScene extends Phaser.Scene {
     addTextScrim(this, W / 2, membersY, 260, 52);
     this.add.text(W / 2, membersY, 'The band', textStyle('h2')).setOrigin(0.5);
     const castY = membersY + 100;
+    this.castY = castY;
+    this.faceRings.clear();
+    this.meetCard = null;
+    this.meetId = null;
     // One strip behind the whole roster: four columns of name/instrument/want plus the tap hint.
     // Per-column scrims would leave the busiest part of the backdrop showing between them.
     addTextScrim(this, W / 2, castY + 112, W - 40, 142, 0.86);
@@ -104,6 +116,9 @@ export class BandCreatorScene extends Phaser.Scene {
       const cx = castStep * (i + 1);
       const frameKey = ensurePortraitFrame(this);
       const portraitKey = ensurePortrait(this, b.id, 'happy');
+      // Gold ring on the bandmate whose line is showing, so it is clear who is talking and that
+      // another face can be tapped straight away.
+      this.faceRings.set(b.id, this.add.circle(cx, castY + 2, 58, PALETTE.gold, 0.9).setVisible(false));
       const frame = this.add.image(cx, castY, frameKey).setScale(0.55);
       const portrait = this.add.image(cx, castY + 4, portraitKey).setScale(0.32);
       const hitR = 50;
@@ -122,8 +137,8 @@ export class BandCreatorScene extends Phaser.Scene {
         fontSize: '14px', color: PALETTE_HEX.cream, wordWrap: { width: castStep - 10 }, align: 'center',
       })).setOrigin(0.5, 0);
     });
-    // castY+166, not +150: one bandmate's want ("wants sonic experimentation") wraps to two lines,
-    // whose second line ended ~3px above this hint. Not an overlap by bounds, but visibly crowded.
+    // Every want fits on one line (QA round 3 #5: Jun's "wants sonic experimentation" wrapped to two
+    // and broke the row's alignment; it reads "wants new sounds" now).
     this.add.text(W / 2, castY + 166, 'Tap a face to say hi.', textStyle('small', { fontSize: '14px' })).setOrigin(0.5);
 
     createButton(this, W / 2 - 150, castY + 200, 300, GRID_ROW_H, "Hit the road", () => {
@@ -143,12 +158,41 @@ export class BandCreatorScene extends Phaser.Scene {
     }, { fillColor: 0xc4704f });
   }
 
-  /** Lazily creates one DialogueBox and reuses it for every "meet the band" tap — same instance,
-   *  new node each time, matching how CityScene reuses its own single DialogueBox across an
-   *  entire scene graph walk. */
+  /** "Say hi": the bandmate's line in a card ABOVE the row of faces (QA round 3 #3). It used to
+   *  open the full dialogue box over the bottom of the screen, covering the very faces it came
+   *  from, so meeting someone else meant dismissing it first. Now another face swaps the line at
+   *  once, the same face (or the card, or its ×) closes it. */
   private meetBandmate(id: string): void {
-    if (!this.meetBox) this.meetBox = new DialogueBox(this);
+    const wasOpen = this.meetId;
+    this.closeMeet();
+    if (wasOpen === id) return;
     const node = OPENING_GRAPH[id];
-    this.meetBox.show(node, () => this.meetBox?.setVisible(false), () => {});
+    const mate = BANDMATES.find((b) => b.id === id);
+    if (!node || !mate) return;
+    this.meetId = id;
+    this.faceRings.get(id)?.setVisible(true);
+    const w = W - 80, x = 40;
+    const body = this.add.text(x + 28, 0, `"${node.text}"`, textStyle('dialogue', {
+      fontSize: '19px', wordWrap: { width: w - 56 }, lineSpacing: 4,
+    }));
+    const h = body.height + 82;
+    const y = this.castY - 72 - h;
+    body.setY(y + 52);
+    const card = this.add.container(0, 0).setDepth(120);
+    const bg = this.add.image(x, y, ensureRoundedRect(this, w, h, 22)).setOrigin(0, 0).setTint(PALETTE.sand).setAlpha(0.98)
+      .setInteractive();
+    bg.on('pointerdown', () => this.closeMeet());
+    const border = this.add.graphics().lineStyle(2, PALETTE.gold, 0.7).strokeRoundedRect(x, y, w, h, 22);
+    const name = this.add.text(x + 28, y + 18, `${mate.name} · ${mate.instrument}`, textStyle('h2', { fontSize: '20px', color: PALETTE_HEX.plum }));
+    const close = this.add.text(x + w - 24, y + 14, '×', textStyle('h1', { fontSize: '30px', color: PALETTE_HEX.plum })).setOrigin(1, 0);
+    card.add([bg, border, name, close, body]);
+    this.meetCard = card;
+  }
+
+  private closeMeet(): void {
+    this.meetCard?.destroy();
+    this.meetCard = null;
+    if (this.meetId) this.faceRings.get(this.meetId)?.setVisible(false);
+    this.meetId = null;
   }
 }

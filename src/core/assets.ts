@@ -75,8 +75,17 @@ export function isPending(key: string): boolean { return pendingKeys.has(key); }
 // procedural DEFAULT_AMBIENCE it already had.
 let titleThemeLoaded = false;
 
+const titleThemeListeners: (() => void)[] = [];
+
 export function markTitleThemeLoaded(): void {
   titleThemeLoaded = true;
+  titleThemeListeners.splice(0).forEach((fn) => fn());
+}
+
+/** Runs `fn` once, when the title theme finishes loading (now, if it already has). The theme
+ *  loads in the background since QA round 3 #1, so it can land after the title screen is up. */
+export function onTitleThemeLoaded(fn: () => void): void {
+  if (titleThemeLoaded) fn(); else titleThemeListeners.push(fn);
 }
 
 export function hasTitleTheme(): boolean {
