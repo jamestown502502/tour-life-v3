@@ -72,7 +72,7 @@ test('#6 a practice minigame has a Back that returns to the same city in the pic
     walk(panel.list);
     return titles;
   });
-  expect(tab.some((t) => t.includes('Hold the Mix'))).toBe(true);
+  expect(tab.some((t) => t.includes('Fix the Mix'))).toBe(true);
 });
 
 test('#7 #8 the practice picker: re-tapping the open city does nothing; switching never blinks or resizes', async ({ page }) => {

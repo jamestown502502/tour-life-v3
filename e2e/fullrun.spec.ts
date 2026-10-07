@@ -121,7 +121,9 @@ test('a full real playthrough of one city loop never gets stuck', async ({ page 
 
   // Every city now ends on a "Stop N of M complete" card (2026-10-07); Keep driving goes on.
   expect(await waitForCondition(page, () => !!(window as any).__game.scene.getScene('City').children.getByName('stopComplete'), 15000)).toBe(true);
-  await clickButtonByLabel(page, 'City', 'Keep driving');
+  // "Keep driving" with stops left, "Back to the bus" after the last one
+  const onward = await page.evaluate(() => { const p: any = (window as any).__game.scene.getScene('City').children.getByName('stopComplete'); return p.list.some((o: any) => o.getData && o.getData('labelText')?.text === 'Keep driving') ? 'Keep driving' : 'Back to the bus'; });
+  await clickButtonByLabel(page, 'City', onward);
   // The full loop should land back on Hub.
   expect(await waitForActiveScene(page, 'Hub', 15000)).toContain('Hub');
   expect(errors, errors.join('\n')).toEqual([]);
