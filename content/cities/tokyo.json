@@ -158,10 +158,10 @@
     {
       "id": "tok_mix_hold",
       "type": "sustain",
-      "title": "Hold the Mix",
-      "introText": "The house desk has two faders that will not stay where you put them. \"Old board,\" the engineer says. \"It has opinions.\"",
-      "outroText": "You hold it steady long enough that the engineer stops hovering and goes to find a coffee.",
-      "outroTextRough": "It drifts more than it holds. The engineer rides the faders himself all night and never mentions it.",
+      "title": "Fix the Mix",
+      "introText": "The house desk keeps misbehaving tonight: a channel spikes, another drops out. \"Old board,\" the engineer says. \"Listen, find it, fix it.\"",
+      "outroText": "Every problem found and fixed. The engineer stops hovering and goes to find a coffee.",
+      "outroTextRough": "The engineer has to reach over a few times. He rides the faders himself all night and never mentions it.",
       "reward": {
         "effects": {
           "harmony": 4
@@ -175,11 +175,11 @@
           "harmony": 1
         }
       },
-      "sustainSeconds": 16,
+      "sustainSeconds": 22,
       "chordProgression": "Em-Bm-C-G",
       "bpm": 100,
       "waveform": "triangle",
-      "outroTextPerfect": "Both faders never left the zone. The room stays exactly where you put it."
+      "outroTextPerfect": "Every channel back in the pocket within seconds. The room never heard a thing go wrong."
     },
     {
       "id": "tok_pack_van",
@@ -213,7 +213,11 @@
         "Snacks"
       ],
       "dragTimeSec": 18,
-      "heavyItems": ["Amps", "Suitcase", "Merch box"],
+      "heavyItems": [
+        "Amps",
+        "Suitcase",
+        "Merch box"
+      ],
       "outroTextPerfect": "Everything in, nothing rattling, door shut on the first try. Theo actually sits down."
     },
     {

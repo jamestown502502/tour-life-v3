@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { PALETTE, PALETTE_HEX, W } from '../const';
-import { ensureCityBackground } from '../art/sprites';
+import { ensureCityBackground, ensureRoundedRect } from '../art/sprites';
 import { applyVignette, spawnFireflies, spawnRain, type WeatherHandle } from '../art/effects';
 import { addCoverBackground } from '../art/background';
 import { CITY_TINTS, NIGHT_TINTS } from '../art/palette';
@@ -76,11 +76,17 @@ export class CityScene extends Phaser.Scene {
    *  re-render a previous node through the exact same walk() path forward navigation uses. */
   private currentOnDone: (() => void) | null = null;
   private backButton: Phaser.GameObjects.Container | null = null;
+  /** The app closed during this city's show: offer the stage again, not the whole city. */
+  private interrupted = false;
 
   init(data: { cityId: string; phase?: string; dialogueNodeId?: string; locationsVisited?: string[]; relationshipsPlayed?: string[] }): void {
     this.city = getCity(data.cityId);
-    // 'preshow-done' (mid-transition to Rhythm) and any unrecognized value fall back to
-    // 'arrival' — the only truly unsafe resume points are ones with no matching phase handler.
+    // 'preshow-done' is saved the moment the show starts. Resuming from it used to fall back to
+    // 'arrival' and replay the whole city; now the band simply takes the stage again, with the
+    // arrangement already chosen (2026-10-07, "if Android kills the app during a show").
+    this.interrupted = data.phase === 'preshow-done';
+    if (this.interrupted) data = { ...data, phase: 'preshow-choices' };
+    // Any other unrecognized value falls back to 'arrival'.
     this.phase = data.phase && (VALID_PHASES as string[]).includes(data.phase) ? (data.phase as CityPhase) : 'arrival';
     // Validated against this city's real scene graph — a stale id (renamed/removed content since
     // the save was written) falls back to null exactly like an unrecognized phase falls back to
@@ -156,7 +162,7 @@ export class CityScene extends Phaser.Scene {
       case 'locations': this.startLocationPicker(); break;
       case 'relationship': this.startRelationship(); break;
       case 'preshow': this.startPreshow(); break;
-      case 'preshow-choices': this.renderPreShowChoices(); break;
+      case 'preshow-choices': if (this.interrupted) this.renderInterruptedRestart(); else this.renderPreShowChoices(); break;
       case 'afterShow': this.walk(this.consumeResumeNode(this.city.afterShowSceneId), () => this.startJournal()); break;
       case 'journal': this.startJournal(); break;
     }
@@ -513,6 +519,22 @@ export class CityScene extends Phaser.Scene {
     });
   }
 
+  /** Back after the app closed mid-show: one clear way back on stage. The pre-show choice was
+   *  already made (and paid for), so it is not asked again. */
+  private renderInterruptedRestart(): void {
+    this.dialogueBox.setVisible(false);
+    const panel = this.add.container(0, 0).setDepth(80).setName('interruptedShow');
+    panel.add(addTextScrim(this, W / 2, 860, W - 80, 120, 0.9));
+    panel.add(this.add.text(W / 2, 840, 'The show was cut short.', textStyle('h2', { color: PALETTE_HEX.gold })).setOrigin(0.5));
+    panel.add(this.add.text(W / 2, 884, 'Nothing lost. The band is still set up and the crowd is still here.',
+      textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5));
+    panel.add(createButton(this, W / 2 - 170, 950, 340, 70, 'Take the stage again', () => {
+      State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'preshow-done' });
+      saveRun(State.data);
+      goTo(this, 'Rhythm', { cityId: this.city.id }, { theme: 'lights', label: 'Showtime' });
+    }, { fillColor: 0xc4704f, fontSize: '20px' }));
+  }
+
   private startJournal(): void {
     this.phase = 'journal';
     State.setProgress({ screen: 'city', cityId: this.city.id, nodeId: 'journal' });
@@ -533,10 +555,48 @@ export class CityScene extends Phaser.Scene {
     // By index, not by id — the return leg books one city twice (see currentStopFor).
     const stop = currentStopFor(State.data.route, State.data.currentCityIndex, this.city.id);
     if (stop) stop.visited = true;
+    const stopNumber = State.data.currentCityIndex + 1;
     State.data.currentCityIndex += 1;
     State.setProgress({ screen: 'hub' });
     saveRun(State.data);
-    // Addendum v2, Item 9b: city -> hub travel uses 'drive', mirroring hub -> city.
-    goTo(this, 'Hub', undefined, { theme: 'pages', label: 'Back on the bus' });
+    this.showStopComplete(stopNumber);
+  }
+
+  /** STOP COMPLETE (2026-10-07): every city ends on a real stopping point. A run is two to three
+   *  hours; on a phone that is several sittings, and closing the app should feel like finishing a
+   *  chapter, not abandoning one. The run is already saved; "Stop here for now" is a promise that
+   *  nothing is lost. */
+  private showStopComplete(stopNumber: number): void {
+    this.dialogueBox.setVisible(false);
+    const total = State.data.route.length;
+    const memory = (State.data.cityMemories ?? []).find((m) => m.cityId === this.city.id);
+    const night = memory?.secondShow ?? memory?.show;
+    const showLine = night === 'triumph' ? 'A triumph of a show' : night === 'solid' ? 'A solid show' : night === 'rough' ? 'A rough show, and the room stayed' : 'The show is done';
+    const ids = Object.keys(State.data.relationships) as (keyof typeof State.data.relationships)[];
+    const closest = ids.reduce((a, b) => (State.data.relationships[b] > State.data.relationships[a] ? b : a), ids[0]);
+    const next = State.data.route[State.data.currentCityIndex];
+    const lines = [
+      `${showLine} in ${this.city.name}.`,
+      `The town's love for you: ${Math.round(State.data.localLove[this.city.id] ?? 0)}  ·  Funds: $${Math.round(State.data.stats.funds)}`,
+      `Closest to you right now: ${closest[0].toUpperCase()}${closest.slice(1)}.`,
+      next ? `Next stop: ${getCity(next.cityId).name}${next.revisit ? ' (again)' : ''}.` : 'That was the last stop. Time to wrap the tour.',
+    ];
+    const panel = this.add.container(0, 0).setDepth(300).setName('stopComplete');
+    panel.add(this.add.rectangle(0, 0, W, this.cameras.main.height, 0x000000, 0.6).setOrigin(0, 0).setInteractive());
+    const top = 360, h = 520;
+    panel.add(this.add.image(40, top, ensureRoundedRect(this, W - 80, h, 26)).setOrigin(0, 0).setTint(PALETTE.sand).setAlpha(0.98));
+    panel.add(this.add.text(W / 2, top + 50, `Stop ${stopNumber} of ${total} complete`, textStyle('h1', { fontSize: '32px', color: PALETTE_HEX.plum })).setOrigin(0.5));
+    lines.forEach((line, i) => panel.add(this.add.text(W / 2, top + 120 + i * 46, line,
+      textStyle('dialogue', { fontSize: '20px', wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5)));
+    panel.add(this.add.text(W / 2, top + 312, 'Your tour is saved. Stop here and Continue brings you straight back.',
+      textStyle('small', { fontSize: '15px', color: PALETTE_HEX.plum, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5));
+    panel.add(createButton(this, 70, top + h - 120, 280, 70, 'Stop here for now', () => {
+      audio.stopMusic();
+      goTo(this, 'Title');
+    }, { fillColor: 0x8a6fa3, fontSize: '18px' }));
+    panel.add(createButton(this, W - 350, top + h - 120, 280, 70, next ? 'Keep driving' : 'Back to the bus', () => {
+      // Addendum v2, Item 9b: city -> hub travel uses 'drive', mirroring hub -> city.
+      goTo(this, 'Hub', undefined, { theme: 'pages', label: 'Back on the bus' });
+    }, { fillColor: 0x3e7c7b, fontSize: '18px' }));
   }
 }

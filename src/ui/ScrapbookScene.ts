@@ -10,7 +10,7 @@ import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
 import { getCity, getSong } from '../game/content';
 import { songForVisit } from '../game/setlist';
-import { generateEnding } from '../game/endings';
+import { explainEnding, generateEnding } from '../game/endings';
 import { clearSave } from '../core/save';
 import { textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
@@ -93,11 +93,33 @@ export class ScrapbookScene extends Phaser.Scene {
       createButton(this, W / 2 - 150, 990, 300, 66, 'What the ledger taught us', () => this.toggleLedger(), { fillColor: 0x3e7c7b, fontSize: '19px' });
     }
 
+    createButton(this, W / 2 - 150, 1080, 300, 66, 'Why this ending', () => this.toggleWhy(), { fillColor: 0xc4704f });
+
     createButton(this, W / 2 - 150, 900, 300, 66, 'Start a new tour', async () => {
       await clearSave();
       State.data.progress = { screen: 'title' };
       goTo(this, 'Title');
     }, { fillColor: 0x3e7c7b });
+  }
+
+  /** Why this ending, and which other ending came closest (src/game/endings.ts explainEnding). */
+  private toggleWhy(): void {
+    const existing = this.children.getByName('whyPanel');
+    if (existing) { existing.destroy(); return; }
+    const e = explainEnding(State.data);
+    const panelKey = ensureDialoguePanel(this);
+    const x = 40, y = 220, w = W - 80;
+    const panel = this.add.container(0, 0).setName('whyPanel').setDepth(160);
+    const overlay = this.add.rectangle(0, 0, W, this.cameras.main.height, 0x000000, 0.55).setOrigin(0, 0).setInteractive();
+    overlay.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event: { stopPropagation: () => void }) => event.stopPropagation());
+    const bg = this.add.image(x, y, panelKey).setOrigin(0, 0);
+    const title = this.add.text(x + w / 2, y + 44, `Why "${e.label}"`, textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5);
+    const body = this.add.text(x + 36, y + 90, [...e.reasons, '', e.nearly, '', 'Endings come from Harmony, Inspiration, Funds, how close the band is, and how the towns feel about you. A different tour moves different numbers.'].join('\n'),
+      textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: w - 72 }, lineSpacing: 6 }));
+    const h = 90 + body.height + 110;
+    bg.setDisplaySize(w, h);
+    const closeBtn = createButton(this, x + w / 2 - 110, y + h - 80, 220, 60, 'Close', () => this.toggleWhy(), { fillColor: 0x8fb7c9 });
+    panel.add([overlay, bg, title, body, closeBtn]);
   }
 
   /** Each kind of money decision this run made: what the band chose, and the lesson. */

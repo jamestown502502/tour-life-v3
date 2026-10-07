@@ -21,7 +21,7 @@ async function look(page: Page) {
     const g: any = (window as any).__game;
     const m: any = g.scene.getScene('MiniGame');
     const active = g.scene.isActive('MiniGame');
-    if (!active || !m.contentLayer) return { active, buttons: [], chips: [], slots: [], faders: [], result: false, clock: 1, tweens: 1 };
+    if (!active || !m.contentLayer) return { active, buttons: [], chips: [], slots: [], faders: [], mix: null, result: false, clock: 1, tweens: 1 };
     const shown = (o: any) => { let p = o; while (p) { if (p.visible === false || p.alpha === 0) return false; p = p.parentContainer; } return true; };
     const buttons: { label: string; x: number; y: number }[] = [];
     let result = false;
@@ -44,7 +44,7 @@ async function look(page: Page) {
     // Modular Check's four module pads are tappable rectangles, not buttons
     kids.filter((o: any) => o.type === 'Rectangle' && o.width === 150 && o.height === 150 && o.input?.enabled)
       .forEach((o: any) => buttons.push({ label: 'pad', x: o.x + 75, y: o.y + 75 }));
-    return { active, buttons, chips, slots, faders, result, clock: m.time.timeScale, tweens: m.tweens.timeScale };
+    return { active, buttons, chips, slots, faders, mix: m.mixHint ?? null, result, clock: m.time.timeScale, tweens: m.tweens.timeScale };
   });
 }
 
@@ -112,6 +112,15 @@ async function playOne(page: Page, cityId: string, mgId: string): Promise<string
       return problems;
     }
     if (s.chips.length && s.slots.length) { last = 'drag'; await drag(page, s.chips[0], s.slots[slotIx++ % s.slots.length]); continue; }
+    if (s.mix) {
+      // Fix the Mix: drag the problem channel's fader to where its meter sits in the pocket
+      last = 'mix';
+      // a press anywhere on the strip moves the knob to the finger, so press at the target
+      const b = await toPage(page, s.mix.x, s.mix.y);
+      await page.mouse.move(b.x, b.y); await page.mouse.down(); await page.mouse.move(b.x, b.y + 1); await page.mouse.up();
+      await page.waitForTimeout(300);
+      continue;
+    }
     if (s.faders.length) {
       // hold a finger on the first track and sweep it; the rest of the time the no-fail ceiling ends it
       const f = await toPage(page, s.faders[0].x, s.faders[0].y);

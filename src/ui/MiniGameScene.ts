@@ -35,6 +35,7 @@ import { stamp, countUp, cameo, verbSplash, beatPulse, encore, buzz } from '../a
 import { VERB, resultStamp, ledgerStamp, LEVEL_STAMP, cameoMood, beatMs, shouldEncore } from '../game/juiceRules';
 import { drawHand, bestSet, segue, arc, scoreSet, setTier, CIRCLE_MAJORS, CIRCLE_MINORS, type SetCard, type SegueVerdict } from '../game/setbuilder';
 import { haulOffers, bestHaul, playDay, doorPay, breakEven, turnoutFor, haulTier, HAUL_DAYS, HAUL_FLOAT, MOTEL, TIRED_MAX, TIRED_TURNOUT, HAUL_LESSON, type Deal, type Bed } from '../game/longhaul';
+import { problemSequence, channelLevel, inPocket, masterLevel, mixOutcome, MIX_CHANNELS, POCKET, CLIP_AT, FADER_MAX, FIX_WINDOW, PROBLEM_GAP, DRIVE, PROBLEM_LINE, type MixProblem } from '../game/mixdesk';
 import { gainVerdict, GAIN_FEEDBACK, GAIN_CHANNELS, isHeavy, packIssue, SIGNAL_CHAIN, CRAFT_LESSON, hostReaction, priorHosted, type Tier } from '../game/craft';
 
 const HELP_TEXT: Record<MiniGameDef['type'], string> = {
@@ -42,7 +43,7 @@ const HELP_TEXT: Record<MiniGameDef['type'], string> = {
   drag: 'Load the gear before the timer runs out. Heavy items (marked) go on the floor row at the bottom; light gear goes on top.',
   choice: 'Pick the answer you would give. Neither is wrong, but one lands better, and after each answer you are told why.',
   sequence: 'The pads are a synth, in signal order: oscillator, filter, envelope, amp. Watch them light, then tap them back in order.',
-  sustain: 'Keep BOTH faders inside the moving gold window: the headroom under the clip line. Drag them to follow it.',
+  sustain: 'Listen for what goes wrong: a channel spikes into the red, or drops out. Find it and drag its fader until its meter sits in the green pocket.',
   pressure: 'Answer fast, live on air. Silence answers for you, which is also an answer. Each answer is explained.',
   interval: 'Two notes play. Pick the interval between them. You can replay it as often as you like, and every answer tells you what it actually was — getting it wrong still teaches you the sound.',
   clave: 'A rhythm plays. Pick the row of dots that matches it — filled dots are strokes. Replay it as often as you like; each answer names the pattern either way.',
@@ -76,6 +77,8 @@ export class MiniGameScene extends Phaser.Scene {
    *  change, no played-flag, no memory entry; returns to the Hub instead of the city. */
   private practice = false;
   private practiceBack: Phaser.GameObjects.Container | null = null;
+  /** Fix the Mix: the current problem's fader and its target (read by e2e/minigame-playthrough). */
+  mixHint: { x: number; y: number } | null = null;
   private outcomeGood = false;
   /** True only when the player aced it outright, not merely passed. Gates outroTextPerfect. */
   private outcomePerfect = false;
@@ -689,76 +692,134 @@ export class MiniGameScene extends Phaser.Scene {
   // The only minigame that asks for sustained attention rather than one correct action, and the
   // only one needing two pointers at once — activePointers is already 4 (set for rhythm chords),
   // so this needs no input config of its own.
+  // ---- FIX THE MIX (2026-10-07): hear a problem, find the channel, ride its fader. ----
+  // Four channels, each with a fader and a meter, and a real four-stem band playing through them
+  // (audio.startStems). Problems arrive one at a time: a channel spikes into the red or drops out.
+  // Find it (by ear and by meter) and drag its fader until the meter sits in the green pocket.
+  // Replaces "Hold the Mix", which asked the player to chase a drifting window. src/game/mixdesk.ts.
   private runSustain(): void {
     this.clearContent();
-    const seconds = this.mg.sustainSeconds ?? 12;
-    const trackY = 300, trackH = 420, trackW = 90, zoneH = 150;
-    const xs = [W / 2 - 150, W / 2 + 60];
+    const problems = problemSequence(`${State.data.seed}:${this.mg.id}`);
+    const n = MIX_CHANNELS.length;
+    const stripW = 120, gap = 42, left = (W - (n * stripW + (n - 1) * gap)) / 2;
+    const trackTop = 380, trackH = 380;
+    const faders = MIX_CHANNELS.map(() => 0.7);
+    const drives = MIX_CHANNELS.map(() => 1);
+    const fixTimes: (number | null)[] = [];
+    let current: { p: MixProblem; at: number } | null = null;
+    let index = 0, nextAt = 1.4, t = 0, done = false;
+    const stems = audio.startStems(this.mg.bpm ?? 100);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => stems?.stop());
+    this.events.on(Phaser.Scenes.Events.PAUSE, () => MIX_CHANNELS.forEach((_, i) => stems?.setLevel(i, 0)));
 
-    this.contentLayer.add(addTextScrim(this, W / 2, 240, 560, 96));
-    this.contentLayer.add(this.add.text(W / 2, 224, 'Hold the mix', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
-    // Reported live as needing clearer instruction: the mechanic is not guessable from two
-    // rectangles, so the screen says it outright while you play.
-    this.contentLayer.add(this.add.text(W / 2, 262, 'Keep BOTH faders in the gold headroom window, under the clip line',
-      textStyle('small', { color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5));
+    this.contentLayer.add(addTextScrim(this, W / 2, 232, W - 60, 120));
+    this.contentLayer.add(this.add.text(W / 2, 196, 'Fix the mix', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5));
+    const talk = this.add.text(W / 2, 236, 'Listen. Every channel is in the pocket for now.', textStyle('small', {
+      fontSize: '17px', color: PALETTE_HEX.gold, wordWrap: { width: W - 120 }, align: 'center',
+    })).setOrigin(0.5, 0);
+    this.contentLayer.add(talk);
 
-    const zone = this.add.rectangle(W / 2 - 210, trackY + 110, 420, zoneH, PALETTE.gold, 0.25).setOrigin(0, 0);
-    this.contentLayer.add(zone);
-    this.tweens.add({
-      targets: zone, y: trackY + trackH - zoneH - 30, duration: 2600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-    });
-
-    // The clip line along the top of both tracks: the gold window is the headroom beneath it.
-    this.contentLayer.add(this.add.rectangle(W / 2 - 210, trackY - 12, 420, 8, 0xc0392b, 0.85).setOrigin(0, 0));
-    this.contentLayer.add(this.add.text(W / 2 + 222, trackY - 8, 'CLIP', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0, 0.5));
-
-    const faders: Phaser.GameObjects.Rectangle[] = [];
-    for (const x of xs) {
-      this.contentLayer.add(this.add.rectangle(x, trackY, trackW, trackH, PALETTE.night, 0.35).setOrigin(0, 0));
-      // 72px tall (was 48) with a hit area padded well beyond the visual: a drifting target that
-      // must be held is far more frustrating to grab than a one-shot drag, and this was reported
-      // as needing better input before anything else about it.
-      // The track itself follows a held finger: tap-and-hold anywhere on it and the fader comes to
-      // you. Reported as "tap and holding has no response" when only the fader body was draggable.
-      const track = this.add.rectangle(x, trackY, trackW, trackH, 0x000000, 0.001).setOrigin(0, 0).setInteractive();
+    const fy = (v: number) => trackTop + trackH - (v / FADER_MAX) * trackH;          // fader value -> y
+    const fv = (y: number) => Phaser.Math.Clamp(((trackTop + trackH - y) / trackH) * FADER_MAX, 0, FADER_MAX);
+    const meterMax = 1.4;
+    const my = (v: number) => trackTop + trackH - (Math.min(v, meterMax) / meterMax) * trackH;
+    const knobs: Phaser.GameObjects.Rectangle[] = [];
+    const meters: Phaser.GameObjects.Rectangle[] = [];
+    const states: Phaser.GameObjects.Text[] = [];
+    MIX_CHANNELS.forEach((name, i) => {
+      const x = left + i * (stripW + gap);
+      // a solid strip and label plate: the desk painting behind is busy, the controls must not be
+      this.contentLayer.add(this.add.rectangle(x, trackTop - 10, stripW, trackH + 90, PALETTE.night, 0.86).setOrigin(0, 0));
+      // the meter: the pocket in green, the clip zone in red
+      const mx = x + stripW - 30;
+      this.contentLayer.add(this.add.rectangle(mx, trackTop, 18, trackH, 0x000000, 0.45).setOrigin(0, 0));
+      this.contentLayer.add(this.add.rectangle(mx, my(POCKET.hi), 18, my(POCKET.lo) - my(POCKET.hi), 0x4caf50, 0.35).setOrigin(0, 0));
+      this.contentLayer.add(this.add.rectangle(mx, trackTop, 18, my(CLIP_AT) - trackTop, 0xc0392b, 0.4).setOrigin(0, 0));
+      const meter = this.add.rectangle(mx + 3, my(0), 12, 1, PALETTE.gold, 0.95).setOrigin(0, 0);
+      this.contentLayer.add(meter); meters.push(meter);
+      // the fader: tap or drag anywhere on the strip and the knob follows the finger
+      const track = this.add.rectangle(x, trackTop - 10, stripW - 34, trackH + 20, 0x000000, 0.001).setOrigin(0, 0).setInteractive();
       this.contentLayer.add(track);
-      const fader = this.add.rectangle(x, trackY + trackH / 2 - 36, trackW, 72, PALETTE.cream, 0.95).setOrigin(0, 0);
-      const follow = (p: Phaser.Input.Pointer): void => { fader.y = Phaser.Math.Clamp(p.y - 36, trackY, trackY + trackH - 72); };
+      this.contentLayer.add(this.add.rectangle(x + (stripW - 34) / 2 - 3, trackTop, 6, trackH, PALETTE.cream, 0.35).setOrigin(0, 0));
+      const knob = this.add.rectangle(x + 6, fy(faders[i]) - 22, stripW - 46, 44, PALETTE.cream, 0.95).setOrigin(0, 0);
+      this.contentLayer.add(knob); knobs.push(knob);
+      const follow = (p: Phaser.Input.Pointer): void => { if (!done) faders[i] = fv(p.y); };
       track.on('pointerdown', follow);
       track.on('pointermove', (p: Phaser.Input.Pointer) => { if (p.isDown) follow(p); });
-      fader.setInteractive(new Phaser.Geom.Rectangle(-30, -30, trackW + 60, 72 + 60), Phaser.Geom.Rectangle.Contains);
-      fader.input!.draggable = true;
-      this.input.setDraggable(fader);
-      fader.on('drag', (_p: Phaser.Input.Pointer, _dx: number, dy: number) => {
-        fader.y = Phaser.Math.Clamp(dy - 36, trackY, trackY + trackH - 72);
-      });
-      this.contentLayer.add(fader);
-      faders.push(fader);
-    }
+      this.contentLayer.add(this.add.text(x + stripW / 2, trackTop + trackH + 30, name, textStyle('small', { fontSize: '17px', fontStyle: '700', color: PALETTE_HEX.cream })).setOrigin(0.5));
+      const st = this.add.text(x + stripW / 2, trackTop + trackH + 56, 'OK', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0.5);
+      this.contentLayer.add(st); states.push(st);
+    });
+    this.contentLayer.add(this.add.text(W / 2, trackTop - 34, 'Green = in the pocket   ·   Red = clipping', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0.5));
+    // the master: the whole mix, what the room hears
+    const masterY = trackTop + trackH + 96;
+    this.contentLayer.add(addTextScrim(this, W / 2, masterY, W - 100, 44, 0.8));
+    this.contentLayer.add(this.add.text(left, masterY, 'Master', textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream })).setOrigin(0, 0.5));
+    const mbX = left + 90, mbW = W - left * 2 - 180;
+    this.contentLayer.add(this.add.rectangle(mbX, masterY - 8, mbW, 16, 0x000000, 0.5).setOrigin(0, 0));
+    const masterBar = this.add.rectangle(mbX, masterY - 8, 1, 16, 0x4caf50, 0.95).setOrigin(0, 0);
+    this.contentLayer.add(masterBar);
+    const progress = this.add.text(W - left, masterY, '', textStyle('small', { fontSize: '16px', color: PALETTE_HEX.gold })).setOrigin(1, 0.5);
+    this.contentLayer.add(progress);
 
-    const totalMs = seconds * 1000;
-    let held = 0;
-    let done = false;
-    const meter = this.add.text(W / 2, trackY + trackH + 44, '', textStyle('h2', { color: PALETTE_HEX.gold })).setOrigin(0.5);
-    this.contentLayer.add(meter);
-
-    const end = (good: boolean): void => { if (!done) { done = true; this.finish(good); } };
-    const timer = this.time.addEvent({
-      delay: 100,
-      loop: true,
-      callback: () => {
-        if (done) { timer.remove(); return; }
-        const inZone = faders.every((f) => f.y + 36 >= zone.y && f.y + 36 <= zone.y + zoneH);
-        if (inZone) held += 100;
-        meter.setText(`${(held / 1000).toFixed(1)}s / ${seconds}s`);
-        for (const f of faders) f.setFillStyle(inZone ? PALETTE.gold : PALETTE.cream, 0.95);
-        zone.setFillStyle(PALETTE.gold, inZone ? 0.42 : 0.25);
-        if (held >= totalMs) { timer.remove(); end(true); }
+    const finishMix = (): void => {
+      if (done) return;
+      done = true;
+      stems?.stop();
+      const out = mixOutcome(fixTimes);
+      this.finish(out.good, out.perfect);
+    };
+    const tick = this.time.addEvent({
+      delay: 50, loop: true, callback: () => {
+        if (done) { tick.remove(); return; }
+        t += 0.05;
+        // a new problem arrives
+        if (!current && index < problems.length && t >= nextAt) {
+          const p = problems[index++];
+          drives[p.ch] = DRIVE[p.kind];
+          current = { p, at: t };
+          talk.setText(PROBLEM_LINE[p.kind](MIX_CHANNELS[p.ch]));
+          audio.playSfx(p.kind === 'hot' ? 'ok' : 'miss');
+        }
+        const levels = faders.map((f, i) => channelLevel(f, drives[i]));
+        levels.forEach((lv, i) => {
+          stems?.setLevel(i, lv);
+          knobs[i].y = fy(faders[i]) - 22;
+          // grow upward from the meter's floor: position at the level, size down to the floor
+          const top = my(lv);
+          meters[i].setPosition(meters[i].x, top).setSize(12, Math.max(1, my(0) - top));
+          meters[i].setFillStyle(lv > CLIP_AT ? 0xe53935 : inPocket(lv) ? 0x4caf50 : PALETTE.gold, 0.95);
+          const hot = lv > POCKET.hi, low = lv < POCKET.lo;
+          states[i].setText(lv > CLIP_AT ? 'CLIPPING' : hot ? 'TOO HOT' : low ? 'TOO QUIET' : 'OK');
+          states[i].setColor(hot || low ? '#ffb3a8' : PALETTE_HEX.cream);
+        });
+        const m = masterLevel(levels);
+        masterBar.setSize(Math.max(1, Math.min(1, m / meterMax) * mbW), 16);
+        masterBar.setFillStyle(levels.some((lv) => lv > CLIP_AT) ? 0xe53935 : 0x4caf50, 0.95);
+        progress.setText(`Fixed ${fixTimes.filter((x) => x !== null).length} of ${problems.length}`);
+        // the current problem: fixed when its channel is back in the pocket
+        if (current) {
+          const ch = current.p.ch;
+          if (inPocket(levels[ch])) {
+            fixTimes.push(t - current.at);
+            talk.setText(`${MIX_CHANNELS[ch]} is back in the pocket. ${t - current.at <= 3 ? 'Quick hands.' : 'Got there.'}`);
+            this.contentLayer.add(stamp(this, left + ch * (stripW + gap) + stripW / 2, trackTop + 40, 'FIXED', PALETTE.teal, 22));
+            current = null; nextAt = t + PROBLEM_GAP;
+          } else if (t - current.at > FIX_WINDOW) {
+            // no-fail: the engineer steps in, sets the channel right, and the night goes on
+            fixTimes.push(null);
+            faders[ch] = ((POCKET.lo + POCKET.hi) / 2) / drives[ch];
+            talk.setText(`The engineer reaches over and fixes the ${MIX_CHANNELS[ch].toLowerCase()} himself.`);
+            current = null; nextAt = t + PROBLEM_GAP;
+          }
+        }
+        if (!current && index >= problems.length && t >= nextAt) finishMix();
+        // For the real-time playthrough test: where the problem is, and where its fader should go.
+        this.mixHint = current ? { x: left + current.p.ch * (stripW + gap) + (stripW - 34) / 2, y: fy(((POCKET.lo + POCKET.hi) / 2) / drives[current.p.ch]) } : null;
       },
     });
-    // No-fail ceiling: however the mix went, the round always resolves. Half the target still
-    // counts as a good outcome — this is a cozy game, not a mixing exam.
-    this.time.delayedCall(totalMs * 2.4, () => { timer.remove(); end(held >= totalMs * 0.5); });
+    // No-fail ceiling, as before: the round always resolves.
+    this.time.delayedCall((problems.length * (FIX_WINDOW + PROBLEM_GAP) + 4) * 1000, finishMix);
   }
 
   // =============================================================================================

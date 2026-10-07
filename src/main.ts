@@ -17,6 +17,7 @@ import { TransitionScene } from './ui/TransitionScene';
 import { audio } from './core/audio';
 import { BootScene } from './ui/BootScene';
 import { State } from './core/state';
+import { handleBack } from './ui/backButton';
 
 // Wait for the self-hosted webfonts before booting: Phaser Text drawn before a font finishes
 // loading silently falls back to the browser default and never re-renders once the font
@@ -87,7 +88,33 @@ async function boot(): Promise<void> {
   window.addEventListener('pointerup', () => audio.wake(), { passive: true });
   window.addEventListener('touchend', () => audio.wake(), { passive: true });
 
+  // Android Back / browser back: a guard history entry keeps Back inside the game (ui/backButton.ts).
+  // At a root screen the first Back shows a hint and the second, within 2 s, leaves.
+  try {
+    history.pushState({ tourLife: true }, '');
+    let armedAt = 0;
+    window.addEventListener('popstate', () => {
+      if (handleBack(game)) { history.pushState({ tourLife: true }, ''); return; }
+      armedAt = performance.now();
+      showToast('Press back again to leave Tour Life');
+      window.setTimeout(() => {
+        if (armedAt && performance.now() - armedAt >= 1900) { armedAt = 0; history.pushState({ tourLife: true }, ''); }
+      }, 2000);
+    });
+  } catch { /* no history API: Back simply leaves */ }
+
   if (import.meta.env.DEV) { (window as any).__game = game; (window as any).__audio = audio; (window as any).__state = State; }
+}
+
+/** A small hint above the game, for a moment (the Back-to-leave prompt). */
+function showToast(text: string): void {
+  const el = document.createElement('div');
+  el.textContent = text;
+  el.setAttribute('role', 'status');
+  Object.assign(el.style, { position: 'fixed', left: '50%', bottom: '12%', transform: 'translateX(-50%)', background: 'rgba(26,36,54,0.92)',
+    color: '#F5EBDD', padding: '10px 18px', borderRadius: '18px', font: '600 15px Nunito, system-ui, sans-serif', zIndex: '2000', pointerEvents: 'none' });
+  document.body.appendChild(el);
+  window.setTimeout(() => el.remove(), 1900);
 }
 
 boot();

@@ -131,8 +131,8 @@ export const MINIGAME_POSTS_BY_TITLE: Record<string, { good: string; rough: stri
     good: 'someone in {city} played an entire modular patch back to their guitarist in order, from memory, and the guitarist made a noise about it. we all heard.',
     rough: 'the modular thing in {city} did not go to plan and honestly that is the most relatable a band has been all year.',
   },
-  'Hold the Mix': {
-    good: 'whoever rode the desk in {city} did not let it drift once. you can hear that kind of thing even when you cannot name it.',
+  'Fix the Mix': {
+    good: 'the desk in {city} kept throwing problems and whoever was on it caught every one. you can hear that kind of thing even when you cannot name it.',
     rough: 'the mix wandered a bit in {city}. it happens. the songs held it together.',
   },
   'Live on Air': {

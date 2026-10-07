@@ -6,7 +6,7 @@
 // the tap-to-skip-typewriter bug: it never taps anything). This is the "did I miss anything else"
 // check for Workstream 2's navigation-fix pass.
 import { test, expect } from '@playwright/test';
-import { bootGame, canvasClick, collectConsoleErrors, playAnyPendingMinigame, skipFirstTimeOnboarding, waitForActiveScene, waitForCondition, walkDialogueToSceneChange, clickPreShowChoice } from './helpers';
+import { bootGame, canvasClick, collectConsoleErrors, playAnyPendingMinigame, skipFirstTimeOnboarding, waitForActiveScene, waitForCondition, walkDialogueToSceneChange, clickPreShowChoice, clickButtonByLabel } from './helpers';
 
 test('a full real playthrough of one city loop never gets stuck', async ({ page }) => {
   // 180s wasn't enough headroom for the whole chain in this sandboxed session — confirmed live
@@ -119,6 +119,9 @@ test('a full real playthrough of one city loop never gets stuck', async ({ page 
   taps = await walkDialogueToSceneChange(page, 'City'); // journal (if a separate dialogue leg)
   expect(taps, 'journal dialogue should not exhaust the tap budget').toBeLessThan(40);
 
+  // Every city now ends on a "Stop N of M complete" card (2026-10-07); Keep driving goes on.
+  expect(await waitForCondition(page, () => !!(window as any).__game.scene.getScene('City').children.getByName('stopComplete'), 15000)).toBe(true);
+  await clickButtonByLabel(page, 'City', 'Keep driving');
   // The full loop should land back on Hub.
   expect(await waitForActiveScene(page, 'Hub', 15000)).toContain('Hub');
   expect(errors, errors.join('\n')).toEqual([]);

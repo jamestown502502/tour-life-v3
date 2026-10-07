@@ -13,7 +13,7 @@ import { audio, type SfxName } from '../core/audio';
 import { getCity, getSong } from '../game/content';
 import { songForVisit, visitIndexFor } from '../game/setlist';
 import {
-  adjustedHitMs, buildPerformanceResult, combineHoldJudgement, effectiveWindows, judgeHit,
+  adjustedHitMs, buildPerformanceResult, letterGrade, combineHoldJudgement, effectiveWindows, judgeHit,
   pickArrangement, scoreForHit, type HitJudgement, type PerformanceContext,
 } from '../game/rhythm';
 import type { ChartCue, ChartNote, ChoiceCueType } from '../../content/schema';
@@ -31,6 +31,10 @@ import {
 } from '../core/onboarding';
 import type { RhythmMode } from '../core/state';
 import type { CityDef, SongDef } from '../../content/schema';
+import { bandPerks, showGoalFor, goalMet, chartPatternFor, remapLane, wildcardNight, goalReward, PATTERN_LABEL, type BandPerks, type ShowGoal, type GoalProgress, type WildcardNight } from '../game/showcraft';
+import { wildcardFor } from '../game/wildcard';
+import { routeArcRole } from '../game/route';
+import { stamp } from '../art/juice';
 
 const HIT_LINE_Y = RHYTHM_HIT_LINE_Y;
 const SPAWN_Y = RHYTHM_SPAWN_Y;
@@ -117,6 +121,13 @@ export class RhythmScene extends Phaser.Scene {
   private practiceHandOff: (() => void) | null = null;
   private holdHintShown = false;
   private cueHintShown = false;
+  // 2026-10-07: the show as the climax (src/game/showcraft.ts)
+  private perks!: BandPerks;
+  private goal!: ShowGoal;
+  private night!: WildcardNight;
+  private shieldLeft = 0;
+  private goalShown = false;
+  private progress: GoalProgress = { bestStreak: 0, holdsDropped: 0, cuesTaken: 0, cuesTotal: 0, misses: 0, crowdPeak: 0, holdsTotal: 0 };
 
   init(data: { cityId: string }): void {
     this.cityId = data.cityId;
@@ -151,6 +162,15 @@ export class RhythmScene extends Phaser.Scene {
     // reference here would crash the next updateCrowdFigures()/lane-flash call.
     this.crowdFigures = [];
     this.laneFlashes = [];
+    this.goalShown = false;
+    this.progress = { bestStreak: 0, holdsDropped: 0, cuesTaken: 0, cuesTotal: 0, misses: 0, crowdPeak: 0, holdsTotal: 0 };
+  }
+
+  /** Tonight's timing windows: the player's mode and wiggle room, widened if Theo is close. */
+  private windows() {
+    const w = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
+    const k = this.perks?.windowScale ?? 1;
+    return { perfect: w.perfect * k, good: w.good * k, ok: w.ok * k };
   }
 
   create(): void {
@@ -174,6 +194,13 @@ export class RhythmScene extends Phaser.Scene {
     // middle third so notes and judgement text stay legible over it); falls back to the
     // original flat night rect otherwise — same graceful seam every other background uses.
     this.visit = visit;
+    // Who is on your side tonight, what tonight asks, and what the tour's wildcard brings to it.
+    this.perks = bandPerks(State.data.relationships);
+    this.goal = showGoalFor(State.data.seed, city.id, visit);
+    const stopIndex = Math.max(0, State.data.currentCityIndex);
+    this.night = wildcardNight(wildcardFor(State.data.seed).id, routeArcRole(stopIndex, State.data.route.length));
+    this.shieldLeft = this.perks.comboShield;
+    this.crowd = Phaser.Math.Clamp(this.crowd + this.perks.crowdStart + this.night.crowdStart, 0, 100);
     const stageBgKey = ensureRhythmStageBackdrop(this, city.id, visit);
     addCoverBackground(this, stageBgKey);
     if (hasRealAsset(stageBgKey)) this.veilStageBackdrop();
@@ -334,12 +361,18 @@ export class RhythmScene extends Phaser.Scene {
       bandHarmony: State.data.stats.harmony, energy: State.data.stats.energy,
       audienceMood: State.data.stats.harmony, storyFlags: State.data.flags,
     };
-    this.notes = arrangement.notes.map((note) => ({ note, judged: false }));
+    // The same arrangement, re-fingered per run and visit (showcraft.ts): rhythm and chords stay, the
+    // lanes move. A first-ever show keeps the original.
+    const pattern = this.tutorialActive ? 'original' : chartPatternFor(State.data.seed, city.id, this.visit, this.night.newPattern);
+    this.notes = arrangement.notes.map((note) => ({ note: { ...note, l: remapLane(note.l, song.lanes, pattern) }, judged: false }));
     this.cues = arrangement.cues.map((cue) => ({ cue, handled: false }));
+    this.progress.cuesTotal = this.cues.length;
+    this.progress.holdsTotal = arrangement.notes.filter((n) => (n.dur ?? 0) > 0).length;
+    this.showTonightBanner();
     // Names the SONG as well as the arrangement. A city's two songs deliberately share
     // arrangement ids (so pre-show choices keep working), which meant this label read identically
     // on the first night and the return leg — the player could not tell the setlist had moved on.
-    this.cityLabel.setText(`${city.name} — ${song.name} · ${arrangement.label}`);
+    this.cityLabel.setText(`${city.name} — ${song.name} · ${arrangement.label} · ${PATTERN_LABEL[pattern]}`);
 
     if (this.tutorialActive) {
       this.add.text(W / 2, 140, 'TAP = touch the note   HOLD = press & hold   CUE = tap the banner',
@@ -469,7 +502,7 @@ export class RhythmScene extends Phaser.Scene {
     if (this.finished) return;
     const now = this.time.now;
     const t = (now - this.startTime) / 1000;
-    const windows = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
+    const windows = this.windows();
 
     for (const ns of this.notes) {
       const hitMs = this.hitMsFor(ns.note.t);
@@ -562,7 +595,7 @@ export class RhythmScene extends Phaser.Scene {
 
   private attemptHit(lane: number): void {
     const now = this.time.now;
-    const windows = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
+    const windows = this.windows();
     let best: NoteState | null = null;
     let bestDelta = Infinity;
     for (const ns of this.notes) {
@@ -605,12 +638,15 @@ export class RhythmScene extends Phaser.Scene {
 
   private finalizeHold(ns: NoteState, releaseAt: number): void {
     if (ns.judged) return;
-    const windows = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
+    const windows = this.windows();
     const dur = (ns.note.dur ?? 0.2) * 1000;
     const heldMs = releaseAt - (ns.holdStartAt ?? releaseAt);
     const completion = Phaser.Math.Clamp(dur > 0 ? heldMs / dur : 1, 0, 1);
     const startJudgement = judgeHit(ns.holdStartDelta ?? 0, windows);
-    const finalJudgement = combineHoldJudgement(startJudgement, completion);
+    // Mira close: a hold released at 70% keeps its grade (normally 85%).
+    const kept = completion >= (this.perks?.holdKeep ?? 0.85) ? Math.max(completion, 0.85) : completion;
+    const finalJudgement = combineHoldJudgement(startJudgement, kept);
+    if (finalJudgement !== startJudgement || finalJudgement === 'miss') this.progress.holdsDropped += 1;
     ns.judged = true;
     this.applyJudgement(finalJudgement, ns.note.l);
     ns.sprite?.destroy();
@@ -618,7 +654,7 @@ export class RhythmScene extends Phaser.Scene {
 
   private judgeNote(ns: NoteState, deltaMs: number): void {
     ns.judged = true;
-    const windows = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
+    const windows = this.windows();
     const judgement = judgeHit(deltaMs, windows);
     this.applyJudgement(judgement, ns.note.l);
     ns.sprite?.destroy();
@@ -632,7 +668,12 @@ export class RhythmScene extends Phaser.Scene {
 
   private applyJudgement(judgement: HitJudgement, lane: number): void {
     this.judgements.push(judgement);
-    this.combo = judgement === 'miss' ? 0 : this.combo + 1;
+    if (judgement === 'miss') this.progress.misses += 1;
+    // Jun close: the first few misses do not break the combo.
+    const shielded = judgement === 'miss' && this.combo > 0 && this.shieldLeft > 0;
+    if (shielded) { this.shieldLeft -= 1; this.showShieldText(lane); }
+    this.combo = judgement === 'miss' ? (shielded ? this.combo : 0) : this.combo + 1;
+    this.progress.bestStreak = Math.max(this.progress.bestStreak, this.combo);
     if (this.combo === 0) this.comboMilestonesShown.clear();
     const points = scoreForHit(judgement, this.combo, State.data.accessibility.easyScoring);
     this.score += points;
@@ -640,8 +681,10 @@ export class RhythmScene extends Phaser.Scene {
     this.comboText.setText(this.combo > 1 ? `Combo x${this.combo}` : '');
     comboPop(this, this.comboText);
     this.maybeShowComboStamp();
-    this.crowd = Phaser.Math.Clamp(this.crowd + (judgement === 'perfect' ? 3 : judgement === 'good' ? 1 : judgement === 'miss' ? -2 : 0), 0, 100);
+    this.crowd = Phaser.Math.Clamp(this.crowd + (judgement === 'perfect' ? 3 + (this.perks?.crowdPerPerfect ?? 0) : judgement === 'good' ? 1 : judgement === 'miss' ? -2 : 0), 0, 100);
+    this.progress.crowdPeak = Math.max(this.progress.crowdPeak, this.crowd);
     this.updateCrowdFigures();
+    this.checkGoalLive();
 
     // Feedback lands in the lane that was actually hit — previously every spark fired at a
     // fixed lane-0 x, which read as "the game didn't see my tap" on lanes 1-3.
@@ -769,6 +812,9 @@ export class RhythmScene extends Phaser.Scene {
     this.expressionChoices.push(cs.cue.type);
     audio.crowdSwell(0.6);
     this.crowd = Phaser.Math.Clamp(this.crowd + 4, 0, 100);
+    this.progress.cuesTaken += 1;
+    this.progress.crowdPeak = Math.max(this.progress.crowdPeak, this.crowd);
+    this.checkGoalLive();
     this.updateCrowdFigures();
     cs.banner?.destroy();
   }
@@ -780,14 +826,58 @@ export class RhythmScene extends Phaser.Scene {
     audio.stopMusic();
     const result = buildPerformanceResult(this.judgements, this.expressionChoices, { ...this.ctx, audienceMood: this.crowd });
     for (const flag of result.unlockedFlags) State.addFlag(flag);
+    // Tonight's goal: met or not, and what it was worth (showcraft.ts goalReward).
+    const met = goalMet(this.goal, this.progress, true);
+    const letter = letterGrade(result.ratio ?? 0);
+    if (met) {
+      const reward = goalReward(this.night);
+      State.applyStatDeltas(reward.deltas);
+      State.addLocalLove(this.cityId, reward.localLove);
+      State.addFlag(`show_goal_met_${this.cityId}_${this.visit}`);
+    }
+    const scoutImpressed = this.night.scouted && (letter === 'S' || letter === 'A');
+    if (scoutImpressed) State.addFlag('scout_impressed');
     State.applyStatDeltas({ inspiration: Math.round(result.crowdConnection / 20), energy: -4 });
     State.addLocalLove(this.cityId, Math.round(result.crowdConnection / 10));
     // Remember the night. The route can book this city again on the return leg, and when it does
     // the town's reaction to THIS show is what the social feed is built from.
     recordShow(this.cityId, showBandFor(result.grade), State.data.localLove[this.cityId] ?? 0);
+    // The show is recorded: if the app closes on the results screen, Continue resumes after the
+    // show, never replays it (2026-10-07).
+    State.setProgress({ screen: 'city', cityId: this.cityId, nodeId: 'afterShow' });
     saveRun(State.data);
     // recordShow() above has already marked this city's first show, so Results cannot re-derive
     // which visit this was — a first visit would read as a return. Hand it over explicitly.
-    goTo(this, 'Results', { cityId: this.cityId, result, visit: this.visit }, { theme: 'vinyl', label: 'That was the show' });
+    goTo(this, 'Results', { cityId: this.cityId, result, visit: this.visit,
+      tonight: { goal: this.goal.text, met, perks: this.perks.lines, night: this.night.line, scouted: this.night.scouted, scoutImpressed, letter } },
+      { theme: 'vinyl', label: 'That was the show' });
+  }
+
+  /** Before the first note: tonight's goal, who is helping, and the wildcard's twist. Fades on its
+   *  own; it is information, never a gate. */
+  private showTonightBanner(): void {
+    const lines = [`Tonight's goal: ${this.goal.text}`, ...this.perks.lines];
+    if (this.night.line) lines.push(this.night.line);
+    if (this.perks.lines.length === 0) lines.push('Grow close to a bandmate and they change how the show plays.');
+    const text = this.add.text(W / 2, 128, lines.join('\n'), textStyle('small', {
+      fontSize: '17px', color: PALETTE_HEX.cream, align: 'center', lineSpacing: 6, wordWrap: { width: W - 120 },
+    })).setOrigin(0.5, 0).setDepth(85);
+    const bg = this.add.rectangle(W / 2, 116, W - 80, text.height + 24, 0x1a2436, 0.86).setOrigin(0.5, 0).setDepth(84);
+    this.time.delayedCall(4200, () => {
+      this.tweens.add({ targets: [text, bg], alpha: 0, duration: 500, onComplete: () => { text.destroy(); bg.destroy(); } });
+    });
+  }
+
+  /** A goal met mid-song gets its moment straight away. */
+  private checkGoalLive(): void {
+    if (this.goalShown || !this.goal || !goalMet(this.goal, this.progress, false)) return;
+    this.goalShown = true;
+    stamp(this, W / 2, 330, 'GOAL!', PALETTE.teal, 34);
+    audio.crowdSwell(0.5);
+  }
+
+  private showShieldText(lane: number): void {
+    const t = this.add.text(this.laneCenterX(lane), HIT_LINE_Y - 100, 'Jun covers it', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold })).setOrigin(0.5).setDepth(90);
+    this.tweens.add({ targets: t, alpha: 0, y: t.y - 30, duration: 700, onComplete: () => t.destroy() });
   }
 }
