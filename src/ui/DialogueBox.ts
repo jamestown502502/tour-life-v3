@@ -2,6 +2,7 @@
 // separate hit target from choice buttons (known bug class — see game-dev-deploy-pipeline notes:
 // a merged hit area lets an impatient tap accidentally fire a choice).
 import Phaser from 'phaser';
+import { announce } from './a11yLive';
 import type { DialogueChoice, DialogueNode } from '../../content/schema';
 import { H, PALETTE, PALETTE_HEX, SAFE_BOTTOM_Y, TYPEWRITER_CHARS_PER_SEC, W } from '../const';
 import { ensureDialoguePanel, ensurePortrait, ensurePortraitFrame, ensureRoundedRect } from '../art/sprites';
@@ -214,6 +215,7 @@ export class DialogueBox {
     // through arguments, exhaustion and empty rooms. See game/mood.ts.
     this.setPortrait(node.speaker, moodForNode(node.portrait, node.text));
     this.fullText = node.text;
+    announce(isNarrator ? node.text : `${capitalize(node.speaker)}: ${node.text}`);
     this.bodyText.setText('');
     this.backlog.push({ speaker: node.speaker, text: node.text });
     if (this.backlog.length > BACKLOG_CAP) this.backlog.shift();

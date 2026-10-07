@@ -18,12 +18,12 @@ export interface Wildcard {
 }
 
 export const WILDCARDS: Wildcard[] = [
-  { id: 'shoestring', name: 'Shoestring Tour', text: 'The van fund starts $60 short, but every stop sells a little merch: +$15 per city.', start: { funds: -60 }, perStop: { funds: 15 } },
-  { id: 'scout', name: 'A Label Scout Is Watching', text: 'Inspiration starts high (+6), but the pressure wears on the band: Harmony -3 per city.', start: { inspiration: 6 }, perStop: { harmony: -3 } },
+  { id: 'shoestring', name: 'Shoestring Tour', text: 'The van fund starts $60 short, but every stop sells a little merch: +$15 per city, and $15 more from any show where you meet the goal.', start: { funds: -60 }, perStop: { funds: 15 } },
+  { id: 'scout', name: 'A Label Scout Is Watching', text: 'Inspiration starts high (+6), but the pressure wears on the band: Harmony -3 per city. The scout comes to your midpoint show, where the goal counts double.', start: { inspiration: 6 }, perStop: { harmony: -3 } },
   { id: 'oldVan', name: 'The Old Van', text: 'You saved $40 on the van, and every drive costs 5 Energy.', start: { funds: 40 }, perStop: { energy: -5 } },
-  { id: 'fanClub', name: 'A Fan Club Follows You', text: 'Friendly faces in every city: Harmony +5 to start and +2 per city.', start: { harmony: 5 }, perStop: { harmony: 2 } },
-  { id: 'newSongs', name: 'A Brand-New Setlist', text: 'Rehearsals ran late (Energy -8), but new songs keep coming: Inspiration +4 per city.', start: { energy: -8 }, perStop: { inspiration: 4 } },
-  { id: 'festival', name: 'Festival Season', text: 'Every city has a festival slot: +$20 per city, but the days are long (Energy -3 per city).', start: {}, perStop: { funds: 20, energy: -3 } },
+  { id: 'fanClub', name: 'A Fan Club Follows You', text: 'Friendly faces in every city: Harmony +5 to start and +2 per city, and two fans start every show on your side.', start: { harmony: 5 }, perStop: { harmony: 2 } },
+  { id: 'newSongs', name: 'A Brand-New Setlist', text: 'Rehearsals ran late (Energy -8), but new songs keep coming: Inspiration +4 per city, and every show is a fresh chart pattern.', start: { energy: -8 }, perStop: { inspiration: 4 } },
+  { id: 'festival', name: 'Festival Season', text: 'Every city has a festival slot: +$20 per city, but the days are long (Energy -3 per city). Festival crowds start warmer, and a met goal pays $20 more.', start: {}, perStop: { funds: 20, energy: -3 } },
 ];
 
 export interface TourGoal {

@@ -44,6 +44,15 @@ const PAGES: Page[] = [
   },
 ];
 
+// The first-launch welcome (2026-10-07). Seven pages before the first tap was too much: the critique
+// was right that a player needs four things up front and learns the rest in context (the "?" on
+// every screen, the first-show practice pass, each minigame's intro card). The full guide stays one
+// tap away, here and on the title screen.
+const WELCOME: Page = {
+  title: 'Welcome to Tour Life',
+  body: 'Name your band and pick a route through four cities.\n\nIn each city, explore, talk with the band and play a couple of minigames.\n\nEvery city ends with a show: tap the notes as they reach the gold line.\n\nNothing can end your tour. Missed notes and odd choices just become your story.',
+};
+
 const CARD_W = W - 80;
 const CARD_H = 620;
 const CARD_X = 40;
@@ -60,9 +69,13 @@ export class HowToPlayScene extends Phaser.Scene {
   private nextBtn!: Phaser.GameObjects.Container;
   private backBtn!: Phaser.GameObjects.Container;
 
-  init(data: { returnTo?: string }): void {
+  private welcome = false;
+  private guideBtn: Phaser.GameObjects.Container | null = null;
+
+  init(data: { returnTo?: string; welcome?: boolean }): void {
     this.returnTo = data.returnTo ?? 'Title';
     this.page = 0;
+    this.welcome = !!data.welcome;
   }
 
   create(): void {
@@ -97,12 +110,13 @@ export class HowToPlayScene extends Phaser.Scene {
     this.backBtn = createButton(this, CARD_X, CARD_Y + CARD_H + 30, 160, 54, 'Previous', () => this.go(-1), { fillColor: 0x8fb7c9 });
     createButton(this, W - 170, 130, 130, 50, 'Close', () => this.close(), { fillColor: PALETTE.plum, fontSize: '16px' });
     this.nextBtn = createButton(this, CARD_X + CARD_W - 220, CARD_Y + CARD_H + 30, 220, 54, 'Next', () => this.go(1), { fillColor: 0x3e7c7b });
+    this.guideBtn = createButton(this, CARD_X, CARD_Y + CARD_H + 30, 260, 54, 'Read the full guide', () => { this.welcome = false; this.renderPage(); }, { fillColor: 0x8fb7c9, fontSize: '17px' });
 
     this.renderPage();
   }
 
   private go(delta: number): void {
-    if (delta > 0 && this.page === PAGES.length - 1) {
+    if (this.welcome || (delta > 0 && this.page === PAGES.length - 1)) {
       this.close();
       return;
     }
@@ -111,15 +125,16 @@ export class HowToPlayScene extends Phaser.Scene {
   }
 
   private renderPage(): void {
-    const p = PAGES[this.page];
+    const p = this.welcome ? WELCOME : PAGES[this.page];
     this.heading.setText(p.title);
     this.body.setText(p.body);
-    this.dots.forEach((d, i) => d.setFillStyle(PALETTE.gold, i === this.page ? 1 : 0.3));
-    this.backBtn.setVisible(this.page > 0);
-    getButtonText(this.nextBtn)?.setText(this.page === PAGES.length - 1 ? 'Got it' : 'Next');
+    this.dots.forEach((d, i) => d.setFillStyle(PALETTE.gold, i === this.page ? 1 : 0.3).setVisible(!this.welcome));
+    this.backBtn.setVisible(!this.welcome && this.page > 0);
+    this.guideBtn?.setVisible(this.welcome);
+    getButtonText(this.nextBtn)?.setText(this.welcome ? "Let's go" : this.page === PAGES.length - 1 ? 'Got it' : 'Next');
   }
 
-  private close(): void {
+  close(): void {
     this.scene.stop();
     this.scene.resume(this.returnTo);
   }

@@ -31,10 +31,13 @@ export class ResultsScene extends Phaser.Scene {
   /** 0 first visit, 1 return. Passed by RhythmScene, because the show is already recorded by now. */
   private visit = 0;
 
-  init(data: { cityId: string; result: PerformanceResult; visit?: number }): void {
+  private tonight: { goal: string; met: boolean; perks: string[]; night: string | null; scouted: boolean; scoutImpressed: boolean } | null = null;
+
+  init(data: { cityId: string; result: PerformanceResult; visit?: number; tonight?: ResultsScene['tonight'] }): void {
     this.cityId = data.cityId;
     this.result = data.result;
     this.visit = data.visit ?? 0;
+    this.tonight = data.tonight ?? null;
   }
 
   create(): void {
@@ -129,9 +132,26 @@ export class ResultsScene extends Phaser.Scene {
 
     this.renderCrowdStrip(city.id);
 
+    this.renderTonight();
+
     createButton(this, W / 2 - 150, 700, 300, 64, 'Continue', () => {
       goTo(this, 'City', { cityId: this.cityId, phase: 'afterShow' });
     }, { fillColor: 0x3e7c7b });
+  }
+
+  /** Tonight's goal, whether it was met, and who changed how the show played (showcraft.ts). */
+  private renderTonight(): void {
+    const t = this.tonight;
+    if (!t) return;
+    const lines: string[] = [`Tonight's goal: ${t.goal}  ·  ${t.met ? 'MET' : 'not this time'}`];
+    lines.push(t.perks.length ? `On your side: ${t.perks.map((p) => p.split(':')[0]).join(' · ')}` : 'No bandmate close enough yet to change the show.');
+    if (t.scouted) lines.push(t.scoutImpressed ? 'The label scout was impressed.' : 'The label scout left before the encore.');
+    addTextScrim(this, W / 2, 830 + lines.length * 14, W - 60, lines.length * 30 + 30, 0.88);
+    lines.forEach((line, i) => {
+      this.add.text(W / 2, 830 + i * 30 + 12, line, textStyle('small', {
+        fontSize: '16px', color: i === 0 ? (t.met ? PALETTE_HEX.gold : PALETTE_HEX.cream) : PALETTE_HEX.cream, wordWrap: { width: W - 100 }, align: 'center',
+      })).setOrigin(0.5);
+    });
   }
 
   /** "The crowd" strip at the run's final mood — same 5 members Rhythm just showed, same

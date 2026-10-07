@@ -148,11 +148,8 @@ export class SettingsScene extends Phaser.Scene {
     // now named for what they do, and Home is wide enough to read at phone size. Home is not
     // offered when this screen was opened FROM the home screen.
     const inGame = this.returnTo !== 'Title';
-    createButton(this, inGame ? W / 2 - 250 : W / 2 - 110, y + 12, inGame ? 230 : 220, 60, inGame ? 'Resume game' : 'Back', () => {
-      audio.holdAll(false);
-      this.scene.stop();
-      this.scene.resume(this.returnTo);
-    }, { fillColor: 0x3e7c7b, fontSize: '18px' });
+    createButton(this, inGame ? W / 2 - 250 : W / 2 - 110, y + 12, inGame ? 230 : 220, 60, inGame ? 'Resume game' : 'Back', () => this.resumeGame(),
+      { fillColor: 0x3e7c7b, fontSize: '18px' });
     // Workstream 2 (navigation fix pass): City/Rhythm/MiniGame had no way back to the menu at
     // all before this — the only exits were Title and Hub's own Settings button. this.returnTo
     // is stopped (not just left paused) so its own SHUTDOWN cleanup actually runs (un-duck
@@ -171,6 +168,13 @@ export class SettingsScene extends Phaser.Scene {
         goTo(this, 'Title');
       }, { fillColor: 0x8a6fa3, fontSize: '17px' });
     }
+  }
+
+  /** Resume (also what Android Back does here, src/ui/backButton.ts). */
+  resumeGame(): void {
+    audio.holdAll(false);
+    this.scene.stop();
+    this.scene.resume(this.returnTo);
   }
 
   private adjustVolume(key: keyof typeof State.data.accessibility.volumes, delta: number, label: Phaser.GameObjects.Text): void {

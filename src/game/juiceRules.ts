@@ -7,7 +7,7 @@ export type Tier = 1 | 2 | 3;
 
 /** The one-word verb that punches in as a minigame starts (WarioWare-style). */
 export const VERB: Record<MiniGameType, string> = {
-  timing: 'LEVEL!', drag: 'LOAD!', choice: 'ANSWER!', pressure: 'ON AIR!', sequence: 'PATCH!', sustain: 'HOLD!',
+  timing: 'LEVEL!', drag: 'LOAD!', choice: 'ANSWER!', pressure: 'ON AIR!', sequence: 'PATCH!', sustain: 'MIX!',
   interval: 'LISTEN!', clave: 'LISTEN!', chordquality: 'LISTEN!', meter: 'COUNT!', tempo: 'TAP!', transpose: 'MOVE!',
   split: 'DEAL!', pricing: 'PRICE!', perdiem: 'BUDGET!', gearcall: 'DECIDE!', exchange: 'EXCHANGE!',
   setlist: 'SEQUENCE!', longhaul: 'ROUTE!',
@@ -16,7 +16,7 @@ export const VERB: Record<MiniGameType, string> = {
 /** The rubber stamp on a result card, per minigame kind and tier. Tier 3 is the type's own word. */
 const PERFECT_STAMP: Partial<Record<MiniGameType, string>> = {
   timing: 'FLAT BOARD', drag: 'STOWED', choice: 'ON THE RECORD', pressure: 'ON THE RECORD', sequence: 'PATCHED',
-  sustain: 'LOCKED IN', interval: 'PERFECT EAR', clave: 'PERFECT EAR', chordquality: 'PERFECT EAR', meter: 'IN THE POCKET',
+  sustain: 'CLEAN MIX', interval: 'PERFECT EAR', clave: 'PERFECT EAR', chordquality: 'PERFECT EAR', meter: 'IN THE POCKET',
   tempo: 'IN THE POCKET', transpose: 'PERFECT EAR', split: 'ROOM READ', pricing: 'SOLD OUT', perdiem: 'BALANCED',
   gearcall: 'SMART BUY', exchange: 'BEST RATE', setlist: 'ENCORE', longhaul: 'IN THE BLACK',
 };

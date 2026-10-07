@@ -10,7 +10,7 @@
 //   choice /
 //   pressure (Interviews)    media coaching after every answer: specific beats generic
 //   sequence (Modular)       signal flow: oscillator, filter, envelope, amp
-//   sustain  (Hold the Mix)  headroom: the window under the clip light
+//   sustain  (Fix the Mix)   find the problem channel by ear, ride it back into the pocket
 //
 // Learning lands best when it is the mechanic rather than a caption on it (Habgood & Ainsworth,
 // 2011), and when every answer comes with the reason (Wouters & van Oostendorp, 2013). Pure logic
@@ -61,7 +61,7 @@ export const CRAFT_LESSON: Partial<Record<MiniGameType, string>> = {
   choice: 'In an interview, a specific story beats a general answer. Give people something to repeat.',
   pressure: 'On live radio, a short concrete answer beats a long careful one. Silence reads as nerves.',
   sequence: 'Signal flow: the oscillator makes sound, the filter shapes it, the envelope moves it, the amp sends it out.',
-  sustain: 'Headroom is the space below clipping. Ride the faders in that window and the loud parts stay clean.',
+  sustain: 'Fix the channel that is wrong, not the whole desk: find it by ear, then ride its fader back into the pocket.',
 };
 
 // ---- hosts who react and remember ------------------------------------------------------------
@@ -157,7 +157,7 @@ export const RECALL: readonly RecallQuestion[] = [
   { type: 'choice', asker: 'mira', q: 'Interview quiz. What makes an answer stick with a listener?', options: ['A specific story', 'A careful general answer', 'Keeping it vague'], why: CRAFT_LESSON.choice! },
   { type: 'pressure', asker: 'mira', q: 'Live radio quiz. The host asks something hard. Best move?', options: ['A short, concrete answer', 'A long pause to think', 'A long, careful answer'], why: CRAFT_LESSON.pressure! },
   { type: 'sequence', asker: 'jun', q: 'Signal-flow quiz. Which module actually makes the sound?', options: ['The oscillator', 'The filter', 'The amp'], why: CRAFT_LESSON.sequence! },
-  { type: 'sustain', asker: 'jun', q: 'Mix quiz. What is headroom?', options: ['The space below clipping', 'The top of the fader', 'The quiet before a song'], why: CRAFT_LESSON.sustain! },
+  { type: 'sustain', asker: 'jun', q: 'Mix quiz. The guitar suddenly clips. What do you move?', options: ['The guitar fader, down', 'The master, down', 'Every fader, a little'], why: CRAFT_LESSON.sustain! },
   { type: 'interval', asker: 'jun', q: 'Ear quiz. Which interval makes a chord sound sad?', options: ['A minor third', 'A major third', 'A fifth'], why: 'The minor third is three half steps: the reason a minor chord aches.' },
   { type: 'chordquality', asker: 'jun', q: 'Chord quiz. Which kind of chord sounds sad?', options: ['Minor', 'Major', 'Major seventh'], why: 'Minor chords carry the minor third; major chords sound bright.' },
   { type: 'clave', asker: 'rowan', q: 'Clave quiz. How does the 3-2 son clave start?', options: ['Three strokes, then two', 'Two strokes, then three', 'Four even strokes'], why: 'Three strokes then two: the backbone of most of what Mexico City dances to.' },

@@ -1814,3 +1814,25 @@ Tester report: 11 rows (`Tour Life - Issue Report Round 3.xlsx`). Before/after:
 - **How to Play** (#9): 7 pages (tour, road, city, show, minigames, band, help).
 - **Audio:** `syncSuspend` resumes `interrupted` (iOS) as well as `suspended`; `audio.wake()` on every tap.
 - Tests: `e2e/qa-round3.spec.ts` (9, registered in testMatch), incl. draw order and a hung-asset boot.
+
+## 26. Depth pass from an outside critique (2026-10-07)
+
+Before/after: `C:\Users\Jbthi\Claude Cowork\BAIS_Critique_Depth_Pass_BeforeAfter_2026-10-07.md`.
+
+- **`src/game/showcraft.ts`** (tested in `src/tests/showcraft.test.ts`): `bandPerks` (close Theo wider
+  windows, Jun combo shield 3, Mira holds kept at 70%, Rowan crowd start), `showGoalFor`/`goalMet`,
+  `chartPatternFor`/`remapLane` (lane re-fingering per run+visit), `wildcardNight`/`goalReward`.
+  RhythmScene uses them (`windows()`, banner, live GOAL stamp, `progress`), passes `tonight` to Results.
+- **Fix the Mix** replaces Hold the Mix (type stays `sustain`, id `tok_mix_hold`): `src/game/mixdesk.ts`
+  rules, `runSustain` four strips + master, `audio.startStems(bpm)` four live synth stems.
+  `MiniGameScene.mixHint` exposes the current problem for `e2e/minigame-playthrough.spec.ts`.
+- **Resume:** progress 'preshow-done' now resumes to `renderInterruptedRestart` ("Take the stage
+  again") instead of replaying the city; RhythmScene.finish sets progress to afterShow before saving.
+- **Stop complete** card in `CityScene.finishCity` (Stop here for now / Keep driving). Specs that walk a
+  city back to the Hub must press "Keep driving" (fullrun.spec.ts does).
+- **Endings:** `endingCandidates`/`explainEnding`; Scrapbook "Why this ending".
+- **Onboarding:** first launch shows the HowToPlay `welcome` card; the 7 pages stay a tap away.
+- **Android Back:** `src/ui/backButton.ts` + popstate guard in main.ts. Settings exposes `resumeGame()`,
+  HowToPlay `close()`.
+- **A11y:** `src/ui/a11yLive.ts` announces each dialogue line (DialogueBox.show).
+- New e2e: `e2e/depth-pass.spec.ts` (DEPTH_SHOTS env writes screenshots elsewhere).

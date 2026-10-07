@@ -161,7 +161,7 @@ export class TitleScene extends Phaser.Scene {
     // painted and the card opens over it in the same tick, identically at 4fps and at 120fps.
     if (!hasSeenHowToPlay()) {
       this.cameras.main.resetFX();
-      this.openHowToPlay();
+      this.openHowToPlay(true);   // the short welcome; the full guide is one tap from it
     }
 
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
@@ -171,8 +171,8 @@ export class TitleScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.seedInput?.destroy());
   }
 
-  private openHowToPlay(): void {
-    this.scene.launch('HowToPlay', { returnTo: 'Title' });
+  private openHowToPlay(welcome = false): void {
+    this.scene.launch('HowToPlay', { returnTo: 'Title', welcome });
     this.scene.pause();
   }
 

@@ -220,6 +220,69 @@ class AudioSystem {
     }
   }
 
+  /** FIX THE MIX (src/game/mixdesk.ts): a small live band as four stems — vocals (a triangle
+   *  melody), guitar (filtered sawtooth stabs), bass (sine roots) and drums (noise kick and hats) —
+   *  each through its own gain, so the minigame's faders change what the player actually HEARS.
+   *  Scheduled on the audio clock with a short look-ahead; levels 0..~1.5 (1 = nominal). */
+  startStems(bpm: number): { setLevel(i: number, v: number): void; stop(): void } | null {
+    if (!this.ctx) return null;
+    const ctx = this.ctx;
+    this.stopMusic();
+    const gains = [0, 1, 2, 3].map(() => { const g = ctx.createGain(); g.gain.value = 0; g.connect(this.musicGain); return g; });
+    const note = (freq: number, t: number, dur: number, type: OscillatorType, peak: number, dest: GainNode, cutoff = 0): void => {
+      const osc = ctx.createOscillator();
+      const env = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t);
+      env.gain.setValueAtTime(0.0001, t);
+      env.gain.linearRampToValueAtTime(peak, t + 0.015);
+      env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      if (cutoff) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cutoff; osc.connect(f).connect(env); } else osc.connect(env);
+      env.connect(dest);
+      osc.start(t); osc.stop(t + dur + 0.02);
+    };
+    const hit = (t: number, dur: number, hz: number, peak: number, dest: GainNode): void => {
+      const n = Math.floor(ctx.sampleRate * dur);
+      const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const f = ctx.createBiquadFilter(); f.type = hz < 300 ? 'lowpass' : 'highpass'; f.frequency.value = hz;
+      const env = ctx.createGain(); env.gain.setValueAtTime(peak, t); env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f).connect(env).connect(dest);
+      src.start(t); src.stop(t + dur + 0.02);
+    };
+    const A3 = 220;
+    const semis = (s: number) => A3 * Math.pow(2, s / 12);
+    const roots = [-12, -7, -9, -5];                 // Am - Dm - C - Em, one per bar, in A3-relative semitones
+    const melody = [0, 3, 7, 5, 3, 0, -2, 0];
+    const eighth = 30 / bpm;
+    let next = ctx.currentTime + 0.1;
+    let step = 0;
+    const schedule = (): void => {
+      if (ctx.state !== 'running') return;
+      while (next < ctx.currentTime + 0.3) {
+        const t = next, bar = Math.floor(step / 8) % 4, beatStep = step % 8;
+        if (beatStep % 2 === 0) note(semis(melody[(step / 2) % melody.length | 0] + 12), t, eighth * 1.8, 'triangle', 0.35, gains[0]);
+        if (beatStep === 2 || beatStep === 6) for (const s of [0, 4, 7]) note(semis(roots[bar] + 12 + s), t, eighth * 1.2, 'sawtooth', 0.12, gains[1], 2200);
+        if (beatStep % 2 === 0) note(semis(roots[bar] - 12), t, eighth * 1.7, 'sine', 0.6, gains[2]);
+        if (beatStep === 0 || beatStep === 4) hit(t, 0.18, 120, 0.9, gains[3]);
+        hit(t, 0.04, 6000, 0.18, gains[3]);
+        next += eighth; step++;
+      }
+    };
+    const timer = window.setInterval(schedule, 50);
+    schedule();
+    return {
+      setLevel: (i: number, v: number) => gains[i]?.gain.setTargetAtTime(Math.max(0, v) * 0.6, ctx.currentTime, 0.04),
+      stop: () => {
+        window.clearInterval(timer);
+        for (const g of gains) g.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
+        window.setTimeout(() => gains.forEach((g) => g.disconnect()), 500);
+      },
+    };
+  }
+
   crowdSwell(durationSec = 0.8): void {
     this.noiseBurst(durationSec, 0.2, 1400, this.sfxGain);
   }
