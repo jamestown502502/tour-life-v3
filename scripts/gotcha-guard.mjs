@@ -117,9 +117,24 @@ for (const f of files.filter((x) => /new Phaser\.Game\s*\(/.test(x.src))) {
   }
 }
 
+// 10. Every spec must use the shared fixture, or it silently skips the JavaScript-error check.
+for (const p of walk(join(ROOT, 'e2e')).filter((x) => x.endsWith('.spec.ts'))) {
+  const raw = readFileSync(p, 'utf8');
+  const f = { path: relative(ROOT, p).replace(/\\/g, '/'), lines: raw.split('\n'), src: code(raw) };
+  eachLine(f, /from\s+['"]@playwright\/test['"]/, (i) => report(f, i, 'use-error-fixture',
+    "import { test, expect } from './fixtures' so the test fails on JavaScript errors"));
+}
+
+// 11. Retries turn a flaky test into a silent pass (2026-10-08 review).
+for (const name of ['playwright.config.ts', 'playwright.gate.config.ts']) {
+  const raw = readFileSync(join(ROOT, name), 'utf8');
+  const f = { path: name, lines: raw.split('\n'), src: code(raw) };
+  eachLine(f, /retries\s*:\s*[^0\s]/, (i) => report(f, i, 'no-retries', 'retries must be 0; fix or test.fixme a flaky test'));
+}
+
 if (problems.length) {
   console.error(`gotcha-guard: ${problems.length} known bug pattern(s) found\n\n${problems.join('\n')}\n`);
   console.error('Fix the pattern, or mark a deliberate exception on that line with:  // gotcha-ok: <why>');
   process.exit(1);
 }
-console.log(`gotcha-guard: ${files.length} files clean (9 rules)`);
+console.log(`gotcha-guard: ${files.length} files clean (11 rules)`);

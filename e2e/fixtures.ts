@@ -15,6 +15,11 @@ export type { Page } from '@playwright/test';
  *  Never allowlist a `pageerror` (an uncaught exception) — fix it instead. */
 type Options = { allowConsoleErrors: RegExp[] };
 
+/** Messages the TEST MACHINE produces, not the game: a headless runner has no audio device, and
+ *  Chromium reports that as a console error. Allowlisting it here keeps the check about the
+ *  software, not the room it runs in. Keep this list tiny and explained. */
+const ENVIRONMENT_NOISE = [/The AudioContext encountered an error from the audio device/];
+
 export const test = base.extend<Options & { jsErrorGuard: void }>({
   allowConsoleErrors: [[], { option: true }],
   jsErrorGuard: [async ({ page, allowConsoleErrors }, use, testInfo) => {
@@ -23,7 +28,7 @@ export const test = base.extend<Options & { jsErrorGuard: void }>({
     page.on('console', (msg) => {
       if (msg.type() !== 'error') return;
       const text = msg.text();
-      if (allowConsoleErrors.some((re) => re.test(text))) return;
+      if ([...ENVIRONMENT_NOISE, ...allowConsoleErrors].some((re) => re.test(text))) return;
       errors.push(`console.error: ${text}`);
     });
     await use();

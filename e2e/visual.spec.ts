@@ -63,7 +63,8 @@ test('twelve screens match their approved baselines', async ({ page }) => {
   for (const s of SCREENS) {
     await page.evaluate(({ key, data }) => {
       const g: any = (window as any).__game;
-      for (const sc of g.scene.getScenes(true)) if (sc.scene.key !== 'Transition') g.scene.stop(sc.scene.key);
+      // every scene, not just running ones: a PAUSED scene (under Settings) is still drawn
+      for (const sc of g.scene.getScenes(false)) if (sc.scene.key !== 'Transition' && (sc.sys.isActive() || sc.sys.isPaused() || sc.sys.isSleeping())) g.scene.stop(sc.scene.key);
       g.scene.start(key, data);
     }, { key: s.key, data: s.data });
     await play(page, 1500);                            // past every fade-in and transition
