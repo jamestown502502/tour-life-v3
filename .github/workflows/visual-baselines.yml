@@ -6,14 +6,19 @@ name: Update visual baselines
 #
 # Note: a commit pushed by this workflow does not trigger CI by itself (GitHub's rule for
 # workflow-token pushes); push any commit afterwards, or run CI with "Run workflow".
+# Trigger: "Run workflow" (once this file is on master), or push a commit to a branch whose
+# message contains [baselines].
 on:
   workflow_dispatch:
+  push:
+    branches-ignore: [master]
 
 permissions:
   contents: write
 
 jobs:
   update:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[baselines]')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
