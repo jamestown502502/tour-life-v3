@@ -1,0 +1,39 @@
+name: Update visual baselines
+
+# Run this on a branch after an INTENDED visual change. It re-captures the reference screens in the
+# same Linux environment the gate compares in, and commits them to the branch so the new pictures
+# show up in the PR diff for review. Never generate baselines on a laptop (fonts and GPU differ).
+#
+# Note: a commit pushed by this workflow does not trigger CI by itself (GitHub's rule for
+# workflow-token pushes); push any commit afterwards, or run CI with "Run workflow".
+# Trigger: "Run workflow" (once this file is on master), or push a commit to a branch whose
+# message contains [baselines].
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[baselines]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npx playwright test --config=playwright.gate.config.ts e2e/visual.spec.ts --update-snapshots
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add e2e/visual.spec.ts-snapshots
+          git diff --cached --quiet && echo "baselines unchanged" && exit 0
+          git commit -m "Update visual baselines (CI, Linux)"
+          git push

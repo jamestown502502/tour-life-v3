@@ -9,7 +9,7 @@
 // flat fill. A new player's first impression of the game is a bare navy rectangle — the exact
 // "no barren screens" failure the close-out pass was meant to end, on the one screen that matters
 // most for a shared link.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { PNG } from 'pngjs';
 import { bootGame, waitForActiveScene } from './helpers';
 

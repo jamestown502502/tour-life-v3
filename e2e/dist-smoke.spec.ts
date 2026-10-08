@@ -2,7 +2,7 @@
 // from smoke.spec.ts. Boots the actual built dist/ (via vite preview), and checks the pieces
 // that only exist in a production build: the PWA manifest link, service worker registration, and
 // a cached offline reload.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test('the production build boots with no console errors and renders a canvas', async ({ page }) => {
   const errors: string[] = [];

@@ -1,0 +1,55 @@
+name: Nightly full suite
+
+# Everything the 15-minute gate leaves out: all 4 device profiles, the full real playthrough, every
+# minigame played to its result, the long rhythm and text sweeps. Runs nightly against master, one
+# job per device. A failure opens (or updates) a GitHub issue instead of blocking merges.
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 07:00 UTC, about 3 am US Eastern
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  e2e:
+    name: nightly (${{ matrix.device }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        device: ['iPhone 12', 'iPhone 14', 'Pixel 7', 'Android 360x740']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps ${{ startsWith(matrix.device, 'iPhone') && 'webkit' || 'chromium' }}
+      - run: npx playwright test --project="${{ matrix.device }}"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: nightly-report-${{ strategy.job-index }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  report:
+    needs: e2e
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Nightly full suite failing"
+          num=$(gh issue list -R "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
+          body="Nightly run failed on $(date -u +%F): $RUN_URL"
+          if [ -n "$num" ]; then gh issue comment "$num" -R "$GITHUB_REPOSITORY" --body "$body";
+          else gh issue create -R "$GITHUB_REPOSITORY" --title "$title" --body "$body"; fi

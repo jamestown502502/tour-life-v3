@@ -76,6 +76,7 @@ export class HowToPlayScene extends Phaser.Scene {
     this.returnTo = data.returnTo ?? 'Title';
     this.page = 0;
     this.welcome = !!data.welcome;
+    this.dots = [];  // the instance is reused: last visit's dots are destroyed, not gone
   }
 
   create(): void {

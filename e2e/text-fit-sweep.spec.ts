@@ -4,7 +4,7 @@
 // audits use), screenshots each as a CI artifact, and asserts every button label actually has
 // non-zero rendered bounds — a real assertion that Button.ts's wordWrap/shrink fix produced a
 // laid-out, visible label, not just "the scene didn't crash."
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding } from './helpers';
 
 test.use({ viewport: { width: 390, height: 844 } });

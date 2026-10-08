@@ -11,7 +11,7 @@
 // Measured at the SceneManager, not by eyeballing text: scene.start is wrapped in-page (test-only
 // instrumentation, no production hook) and its calls counted per scene key. A double-tap must
 // start the target exactly once.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding, canvasClick, waitForActiveScene, LOGICAL_W, LOGICAL_H } from './helpers';
 
 /** Counts SceneManager.start() calls per key from this point on. */
@@ -118,7 +118,16 @@ test.describe('A double-tap must never start a scene twice', () => {
       const s: any = (window as any).__game.scene.getScene('MiniGame');
       s.finish(true);
     });
-    await page.waitForTimeout(800);
+    // Continue is deliberately inert for 600ms of scene time (MiniGameScene, 2026-10-05), and the
+    // outro card itself animates in, so a fixed sleep measured the runner's speed. Wait for the
+    // condition instead: a Continue button that is actually interactive.
+    await page.waitForFunction(() => {
+      const s: any = (window as any).__game.scene.getScene('MiniGame');
+      const walk = (list: any[]): boolean => list.some((o: any) => Array.isArray(o.list)
+        && ((o.list.some((c: any) => c.type === 'Text' && String(c.text ?? '').includes('Continue'))
+          && o.list.some((c: any) => c.input?.enabled)) || walk(o.list)));
+      return walk(s.children.list);
+    }, null, { timeout: 15000 });
     const fired2 = await doubleFireButton(page, 'MiniGame', 'Continue');
     expect(fired2, 'could not find the minigame Continue button to double-fire').toBe(true);
     await page.waitForTimeout(2500);

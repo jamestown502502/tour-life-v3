@@ -8,19 +8,21 @@
 // This asserts the property rather than the pixels: every full-screen scene must render a real
 // painted background image, and no scene may fall back to a bare fill. It also captures a
 // screenshot of each for the before/after record.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding, waitForActiveScene, collectConsoleErrors } from './helpers';
+import { VAN_BACKDROPS } from '../src/game/vanArt';
 
 /** Scenes that own the whole screen and therefore need their own painted backdrop. Overlay scenes
  *  (Settings, HowToPlay) are deliberately excluded — they dim the scene behind instead, which is
- *  the standard overlay treatment and is asserted separately below. */
-const FULL_SCREEN_SCENES: { key: string; data?: object; expectKey: string }[] = [
+ *  the standard overlay treatment and is asserted separately below. `alsoAccept` covers scenes
+ *  that pick one of several paintings (the van rotates through VAN_BACKDROPS). */
+const FULL_SCREEN_SCENES: { key: string; data?: object; expectKey: string; alsoAccept?: readonly string[] }[] = [
   { key: 'Title', expectKey: 'bg_title', data: undefined },
   { key: 'Opening', expectKey: 'bg_scene_opening' },
   { key: 'BandCreator', expectKey: 'bg_scene_bandcreator' },
   { key: 'RoutePlan', expectKey: 'bg_scene_routeplan' },
   { key: 'Hub', expectKey: 'bg_hub' },
-  { key: 'Van', expectKey: 'bg_scene_van', data: { cityId: 'berlin' } },
+  { key: 'Van', expectKey: 'bg_scene_van', alsoAccept: VAN_BACKDROPS, data: { cityId: 'berlin' } },
   { key: 'City', expectKey: 'bg_city_berlin', data: { cityId: 'berlin', phase: 'arrival' } },
   { key: 'MiniGame', expectKey: 'bg_mini_tok_pack_van', data: { cityId: 'tokyo', minigameId: 'tok_pack_van', returnPhase: 'locations' } },
   { key: 'MiniGame', expectKey: 'bg_mini_lis_tune_by_ear', data: { cityId: 'lisbon', minigameId: 'lis_tune_by_ear', returnPhase: 'locations' } },
@@ -70,11 +72,11 @@ test.describe('No barren screens', () => {
       // flat gradient fallbacks on five screens. A painted asset's source is a loaded <img>; a
       // code-drawn fallback's source is a generated <canvas>. (This used to compare widths, 1440 vs
       // 720, until the art was resized to the 720x1280 canvas on 2026-09-27 to cut GPU memory.)
-      const found = await page.evaluate(({ key, expectKey }) => {
+      const found = await page.evaluate(({ key, accepted }) => {
         const s: any = (window as any).__game.scene.getScene(key);
         const covers = (s?.children?.list ?? []).filter((o: any) =>
           o.type === 'Image' && o.displayWidth >= 700 && o.displayHeight >= 1200);
-        const match = covers.find((o: any) => o.texture?.key === expectKey);
+        const match = covers.find((o: any) => accepted.includes(o.texture?.key));
         const sourceW = match?.texture?.source?.[0]?.width ?? 0;
         const sourceTag = match?.texture?.source?.[0]?.image?.tagName ?? '';
         return {
@@ -84,7 +86,7 @@ test.describe('No barren screens', () => {
           isPainted: sourceTag === 'IMG',
           count: covers.length,
         };
-      }, { key: scene.key, expectKey: scene.expectKey });
+      }, { key: scene.key, accepted: [scene.expectKey, ...(scene.alsoAccept ?? [])] });
 
       console.log(`[barren] ${scene.key}: ${JSON.stringify(found)}`);
       if (!found.hasExpected) bare.push(`${scene.key}: expected ${scene.expectKey}, saw ${found.keys.join(',') || 'nothing'}`);

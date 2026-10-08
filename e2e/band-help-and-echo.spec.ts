@@ -1,6 +1,6 @@
 // Bandmates change the game (rapport help) and money decisions echo later (2026-09-29), driven
 // through the real scenes.
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding, waitForActiveScene, collectConsoleErrors, canvasClick } from './helpers';
 
 async function seedRun(page: Page, rel: number, ledger: unknown[] = []) {

@@ -1,13 +1,24 @@
 name: CI
 
+# The per-PR GATE. Target: under 15 minutes.
+# - Required to merge (GitHub ruleset on master requires the `gate` job).
+# - Required to go live (Vercel Deployment Check on `gate`: production builds, but is not
+#   promoted to the public domain until this passes for the merged commit).
+# The full 4-device suite and the long playthroughs run nightly (nightly.yml).
 on:
   push:
     branches: [master]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build-and-test:
+  checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,15 +29,17 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: node scripts/text-fit-audit.mjs
+      - name: Gotcha guard (bugs we have shipped before)
+        run: npm run guard
       - run: npm run build
 
-  # Workstream 3 of the UX/QA fix pass (docs/CROSS_PLATFORM_TESTING.md): device-emulation smoke
-  # suite against the dev server (iPhone 12/14, Pixel 7, generic 360x740 Android — see
-  # playwright.config.ts), plus a lighter check against the actual built dist/ (manifest, service
-  # worker, offline reload — playwright.dist.config.ts). Separate job from build-and-test so a
-  # flaky browser-automation failure doesn't block on/gate the fast unit-test feedback above.
-  e2e-smoke:
+  e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        device: ['iPhone 12', 'Pixel 7']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,12 +47,40 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
-      - run: npx playwright test
-      - run: npx playwright test --config=playwright.dist.config.ts
+      - run: npx playwright install --with-deps ${{ matrix.device == 'iPhone 12' && 'webkit' || 'chromium' }}
+      - run: npx playwright test --config=playwright.gate.config.ts --project="${{ matrix.device }}"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: gate-report-${{ strategy.job-index }}
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 7
+
+  # The real production build (no test hooks): it boots, the PWA manifest and service worker are
+  # wired up, and a cached reload works offline.
+  dist-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --config=playwright.dist.config.ts
+
+  # One stable check name for the ruleset and Vercel to require.
+  gate:
+    if: always()
+    needs: [checks, e2e, dist-smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "checks=${{ needs.checks.result }} e2e=${{ needs.e2e.result }} dist-smoke=${{ needs.dist-smoke.result }}"
+          test "${{ needs.checks.result }}" = success
+          test "${{ needs.e2e.result }}" = success
+          test "${{ needs.dist-smoke.result }}" = success

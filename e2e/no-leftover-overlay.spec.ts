@@ -6,7 +6,7 @@
 // routes every subsequent tap to the leftover object and the screen underneath becomes
 // permanently unresponsive — the "interface disappears / can't progress" class of report. Nothing
 // in the suite asserted this before.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import {
   bootGame, skipFirstTimeOnboarding, startScene, canvasClick, collectConsoleErrors,
   waitForCondition, waitForActiveScene, clickPreShowChoice } from './helpers';

@@ -5,7 +5,7 @@
 // This one enters through the REAL path a player takes — CityScene's pre-show choice ->
 // goTo('Rhythm', {transition:'lights'}) — as a RETURNING player (rhythm tutorial already seen),
 // which is the exact combination the live report describes and the one no test covered.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import {
   bootGame, skipFirstTimeOnboarding, startScene, canvasClick, collectConsoleErrors,
   waitForCondition, waitForActiveScene, getActiveSceneKeys, clickPreShowChoice } from './helpers';

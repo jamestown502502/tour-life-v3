@@ -4,7 +4,7 @@
 // root cause actually found and fixed — not a generic smoke check — so a future regression in
 // any of these three mechanisms fails a specific, named test instead of only being caught by a
 // live bug report again.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, canvasClick, collectConsoleErrors, skipFirstTimeOnboarding, startScene, waitForActiveScene, waitForCondition, clickPreShowChoice } from './helpers';
 
 test.describe('Critical-issues follow-up: regression guards', () => {
@@ -58,8 +58,7 @@ test.describe('Critical-issues follow-up: regression guards', () => {
     await page.reload();
     await waitForActiveScene(page, 'Title');
     const resumed = await page.evaluate(async () => {
-      const { loadRun } = await import('/src/core/save.ts');
-      const { resumeTarget } = await import('/src/game/resume.ts');
+      const { loadRun, resumeTarget } = (window as any).__test;
       const data = await loadRun();
       const target = resumeTarget(data!.progress);
       (window as any).__state.data = data;

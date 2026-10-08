@@ -5,7 +5,7 @@
 // shape at the state/logic layer only, bypassing the UI entirely — exactly why it never caught
 // the tap-to-skip-typewriter bug: it never taps anything). This is the "did I miss anything else"
 // check for Workstream 2's navigation-fix pass.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, canvasClick, collectConsoleErrors, playAnyPendingMinigame, skipFirstTimeOnboarding, waitForActiveScene, waitForCondition, walkDialogueToSceneChange, clickPreShowChoice, clickButtonByLabel } from './helpers';
 
 test('a full real playthrough of one city loop never gets stuck', async ({ page }) => {

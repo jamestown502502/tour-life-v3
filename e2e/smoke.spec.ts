@@ -2,7 +2,7 @@
 // pass, and the primary automated evidence for Workstream 2's "every resume path lands playable"
 // claim. Runs against the DEV server (see playwright.config.ts's header for why) at 4 device
 // profiles: iPhone 12, iPhone 14, Pixel 7, and a generic 360x740 Android viewport.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, canvasClick, collectConsoleErrors, getActiveSceneKeys, startScene, waitForActiveScene, waitForCondition, seedSave, skipFirstTimeOnboarding } from './helpers';
 
 test.describe('boot', () => {

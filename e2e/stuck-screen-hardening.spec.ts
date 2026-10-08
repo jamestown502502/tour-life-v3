@@ -7,7 +7,7 @@
 // closed with a real double-tap through the actual Phaser input pipeline (not a direct method
 // call), and separately audits that every CityPhase a save can resume into lands somewhere
 // playable, not a dead screen.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, canvasClick, collectConsoleErrors, getActiveSceneKeys, skipFirstTimeOnboarding, startScene, waitForActiveScene, waitForCondition, clickPreShowChoice, preShowChoiceCenter } from './helpers';
 
 test.describe('Stuck-screen hardening (follow-up, Item B)', () => {

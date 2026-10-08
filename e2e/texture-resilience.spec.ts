@@ -11,10 +11,14 @@
 // Nothing in the suite ever simulated an asset failing to load, because a dev server always
 // serves every file successfully — the same class of blind spot as "CI green while drag was
 // broken". These tests block a real asset request and require the scene to degrade, not die.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import {
   bootGame, skipFirstTimeOnboarding, startScene, waitForActiveScene, waitForCondition,
 } from './helpers';
+
+// This spec aborts texture downloads on purpose, and the browser logs each aborted request as
+// net::ERR_FAILED. That is the condition under test, not a bug. Uncaught exceptions still fail.
+test.use({ allowConsoleErrors: [/net::ERR_FAILED/] });
 
 /** Marks the profile as a returning player so rhythm goes straight into the real song. */
 async function seedReturningRhythmPlayer(page: import('@playwright/test').Page): Promise<void> {

@@ -7,7 +7,7 @@
 // every button, every other text, the screen bounds, and a minimum size. It runs the audit over
 // EVERY minigame in every city at its playing state (the exchange bug existed in exactly two of
 // thirty — a sweep is the only way this class stays fixed) plus the main scenes.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding, waitForActiveScene } from './helpers';
 
 // Same audit used interactively to find the exchange bug. Buttons are createButton containers
@@ -43,7 +43,7 @@ test('no text sits under a button, overlaps other text, or runs off-screen — e
     const S: any = (window as any).__state;
     S.newRun('text-under-ui');
     S.data.band.name = 'The Sweep';
-    const { CITIES } = await import('/src/game/content.ts');
+    const { CITIES } = (window as any).__test;
     const out: string[] = [];
     const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
     g.scene.getScenes(true).forEach((s: any) => { if (s.scene.key !== 'Transition') g.scene.stop(s.scene.key); });

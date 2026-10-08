@@ -15,7 +15,7 @@
 // Method: read every label's bounds and colour, hide the labels, screenshot the canvas, and
 // measure the luminance of what was behind each one. WCAG contrast ratio, 3.0 minimum — the AA
 // threshold for large text, and a floor no readable label on a painted backdrop should approach.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { PNG } from 'pngjs';
 import { bootGame, skipFirstTimeOnboarding, waitForActiveScene } from './helpers';
 
