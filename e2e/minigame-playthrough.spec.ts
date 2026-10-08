@@ -8,7 +8,7 @@
 // buttons are on screen, real drags for the load-ins, a real held finger on the faders, in real
 // time with the game's own clock. Each must reach its result card, its clock must be back at full
 // speed there, and Continue must take the player back to the city.
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { readFileSync } from 'node:fs';
 import { bootGame, skipFirstTimeOnboarding, waitForActiveScene, collectConsoleErrors, canvasClick, LOGICAL_W, LOGICAL_H } from './helpers';
 

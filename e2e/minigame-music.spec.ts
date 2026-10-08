@@ -2,7 +2,7 @@
 // Minigames used to inherit whatever bed CityScene was already playing, so all three in a city
 // sounded identical to the city itself. Each MiniGameDef can now carry its own progression
 // (content/schema.ts), and leaving one must hand the city's bed back.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding, waitForActiveScene } from './helpers';
 
 /** Records every playAmbience call (chord count, bpm, waveform) from this point on. */

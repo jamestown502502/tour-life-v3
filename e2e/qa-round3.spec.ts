@@ -1,5 +1,5 @@
 // QA round 3 (2026-10-06): one regression check per tester row that changed behaviour or layout.
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding, collectConsoleErrors, canvasClick, waitForActiveScene, waitForCondition, clickButtonByLabel, startScene } from './helpers';
 
 async function newRun(page: Page): Promise<void> {

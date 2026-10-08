@@ -3,7 +3,7 @@
 // (3) survive a double-tap on a themed edge with a single scene start, and (4) collapse to the
 // plain fade under reduced motion. This is the transition-leak assertion pattern from
 // docs/TESTING_PROCEDURES.md applied to the new layer.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding, waitForActiveScene, waitForCondition, collectConsoleErrors, buildSeedState, canvasClick } from './helpers';
 
 const THEMES = ['drive', 'ticket', 'card', 'lights', 'vinyl', 'pages'];

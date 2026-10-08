@@ -1,5 +1,5 @@
 // Depth pass (2026-10-07): each new behaviour, driven for real.
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding, collectConsoleErrors, canvasClick, waitForActiveScene, waitForCondition, clickButtonByLabel, startScene } from './helpers';
 
 async function newRun(page: Page, rel = 20): Promise<void> {
@@ -131,6 +131,6 @@ test.describe('after onboarding', () => {
     await waitForActiveScene(page, 'Settings', 5000);
     await page.goBack();
     expect(await waitForCondition(page, () => !(window as any).__game.scene.isActive('Settings'), 4000)).toBe(true);
-    expect(page.url()).toMatch(/localhost:5183/);   // still in the game
+    expect(page.url()).toMatch(/localhost:5193/);   // still in the game
   });
 });

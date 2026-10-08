@@ -4,7 +4,7 @@
 // root cause actually found and fixed — not a generic smoke check — so a future regression in
 // any of these three mechanisms fails a specific, named test instead of only being caught by a
 // live bug report again.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, canvasClick, collectConsoleErrors, skipFirstTimeOnboarding, startScene, waitForActiveScene, waitForCondition, clickPreShowChoice } from './helpers';
 
 test.describe('Critical-issues follow-up: regression guards', () => {

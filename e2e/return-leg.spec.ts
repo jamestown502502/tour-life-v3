@@ -4,7 +4,7 @@
 // Driven through the real CityScene arrival path (not by calling showSocialFeed directly), because
 // the thing worth guarding is the WIRING: memory is read, the feed appears once, dismissing it
 // hands off to the arrival dialogue, and a first visit is completely unaffected.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding, waitForActiveScene, collectConsoleErrors } from './helpers';
 
 /** Seeds a run that has already played Tokyo, and is now arriving there for the second time. */

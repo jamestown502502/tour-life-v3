@@ -6,7 +6,7 @@
 // 2. iPhone safe-area insets: Phaser's FIT measured a padded box (padding included), so the canvas
 //    filled the whole screen and spilled under the notch. Playwright cannot produce real
 //    env(safe-area-inset-*) values, so the insets are simulated by setting the same offsets.
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding, waitForActiveScene, collectConsoleErrors } from './helpers';
 
 async function waitForTexture(page: Page, key: string, timeoutMs = 30000) {

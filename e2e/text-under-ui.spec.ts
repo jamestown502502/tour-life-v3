@@ -7,7 +7,7 @@
 // every button, every other text, the screen bounds, and a minimum size. It runs the audit over
 // EVERY minigame in every city at its playing state (the exchange bug existed in exactly two of
 // thirty — a sweep is the only way this class stays fixed) plus the main scenes.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { bootGame, skipFirstTimeOnboarding, waitForActiveScene } from './helpers';
 
 // Same audit used interactively to find the exchange bug. Buttons are createButton containers

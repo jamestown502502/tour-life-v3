@@ -6,7 +6,7 @@
 // CI was green while drag was broken live precisely because nothing in the suite had ever
 // performed an actual drag gesture — every minigame test either clicked a button or bypassed to
 // the outcome. A logic-bypass test here would have stayed green through this exact bug.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import {
   bootGame, skipFirstTimeOnboarding, startScene, canvasClick, collectConsoleErrors,
   waitForCondition, waitForActiveScene, getActiveSceneKeys, walkDialogueToSceneChange, LOGICAL_W, LOGICAL_H,
