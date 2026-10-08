@@ -22,6 +22,11 @@ class AudioSystem {
     // rather than throwing on the first tap. Every play* method already no-ops on a null ctx.
     const Ctor = window.AudioContext || (window as any).webkitAudioContext;
     if (!Ctor) return;
+    // iPhone (2026-10-08): iOS gives web audio an 'ambient' session by default, which the Ring/Silent
+    // switch mutes outright: every sound in the game, volume buttons or not. A rhythm game needs
+    // its music, so ask for 'playback' (Safari 17+; elsewhere the API does not exist). Trade-off:
+    // like any music app, the game pauses the player's own music app while it is open.
+    try { const session = (navigator as any).audioSession; if (session) session.type = 'playback'; } catch { /* not iOS */ }
     this.ctx = new Ctor();
 
     // Master chain: gentle low/high shelf for warmth + a compressor so layered ambience +
@@ -85,9 +90,26 @@ class AudioSystem {
     else if (!wantSuspended && this.ctx.state !== 'running' && (this.ctx.state as string) !== 'closed') this.ctx.resume().catch(() => {});
   }
 
-  /** Called on every tap (main.ts): a resume refused outside a user gesture is retried inside one. */
-  wake(): void {
+  /** Called on every touchend / pointerup / click / keydown (main.ts) — the events iOS accepts as a
+   *  gesture. Every button fires on pointerdown, which is touchstart on iPhone and does NOT count,
+   *  so a context made or resumed there stays silent. Here, inside a real gesture: create the
+   *  context if no scene has yet, resume it, and start a one-sample silent buffer, which is what
+   *  makes WebKit actually open the output. */
+  gesture(): void {
+    this.unlock();
+    if (!this.ctx) return;
+    const wasRunning = this.ctx.state === 'running';
     this.syncSuspend();
+    if (wasRunning || this.held || this.backgrounded) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
+    src.connect(this.ctx.destination);
+    src.start(0);
+  }
+
+  /** The saved Settings volumes (State.data.accessibility.volumes), applied when a save loads. */
+  applyVolumes(v: typeof this.volumes): void {
+    for (const bus of Object.keys(this.volumes) as (keyof typeof this.volumes)[]) this.setVolume(bus, v[bus]);
   }
 
   /** The app went behind another app (or the screen locked). A web page's audio keeps playing
@@ -303,7 +325,10 @@ class AudioSystem {
     const padGain = ctx.createGain();
     padGain.gain.value = 0;
     padGain.connect(this.musicGain);
-    padGain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.8);
+    // 3.5, not 1 (2026-10-08): measured at the output, this bed (Hub, Van, Route, Scrapbook, City,
+    // minigames) ran at -38 dBFS RMS against the title theme's -16, about inaudible on a phone
+    // speaker. 3.5x (+11 dB) sits it ~10 dB under the theme; ear-training tones stay ~19 dB clear.
+    padGain.gain.linearRampToValueAtTime(3.5, ctx.currentTime + 0.8);
 
     // Sustained pad: re-voice the oscillators to the next chord at each bar. Assumes every
     // chord in the progression has the same tone count (true for both songs today — Lisbon's

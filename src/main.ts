@@ -84,9 +84,9 @@ async function boot(): Promise<void> {
   document.addEventListener('visibilitychange', () => audio.setBackgrounded(document.hidden));
   window.addEventListener('pagehide', () => audio.setBackgrounded(true));
   window.addEventListener('pageshow', () => audio.setBackgrounded(document.hidden));
-  // A browser may refuse to resume audio outside a tap; the next tap always tries again.
-  window.addEventListener('pointerup', () => audio.wake(), { passive: true });
-  window.addEventListener('touchend', () => audio.wake(), { passive: true });
+  // Audio may only start inside a gesture, and iOS only counts these (not touchstart/pointerdown,
+  // which is when every button here fires). Each one unlocks, resumes and primes (audio.gesture).
+  for (const type of ['touchend', 'pointerup', 'click', 'keydown']) window.addEventListener(type, () => audio.gesture(), { passive: true });
 
   // Android Back / browser back: a guard history entry keeps Back inside the game (ui/backButton.ts).
   // At a root screen the first Back shows a hint and the second, within 2 s, leaves.
