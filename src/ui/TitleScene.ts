@@ -31,7 +31,12 @@ export class TitleScene extends Phaser.Scene {
   private pendingSeed = '';
 
   create(): void {
-    this.input.once('pointerdown', () => {
+    // Starts on the first tap on this screen, or when the first-launch welcome card closes: that
+    // tap lands on the card, not here, so the title used to stay silent until a second tap.
+    let musicStarted = false;
+    const startMusic = (): void => {
+      if (musicStarted) return;
+      musicStarted = true;
       audio.unlock();
       // The real title theme (DESIGN.md §15.17's one allowed real-audio asset) replaces the
       // procedural bed here only — Rhythm/City/Hub's own playAmbience calls are untouched. Falls
@@ -53,7 +58,8 @@ export class TitleScene extends Phaser.Scene {
           if (late instanceof AudioBuffer && this.sys.isActive()) audio.playMusicTrack(late, 0, true, 2.6);
         });
       }
-    });
+    };
+    this.input.once('pointerdown', startMusic);
     fadeIn(this);
 
     const bgKey = ensureTitleBackground(this);
@@ -126,6 +132,7 @@ export class TitleScene extends Phaser.Scene {
       if (resumable && saved) {
         createButton(this, W / 2 - 160, continueY, 320, BTN_ROW, `Continue: ${continueLabel(saved)}`, () => {
           State.data = saved;
+          audio.applyVolumes(saved.accessibility.volumes);
           const { key, data } = resumeTarget(saved.progress);
           goTo(this, key, data);
         }, { fillColor: 0xd9a441, fontSize: '17px' });
@@ -165,6 +172,7 @@ export class TitleScene extends Phaser.Scene {
     }
 
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
+      startMusic();
       fadeIn(this);
       if (this.seedInput) this.seedInput.el.style.visibility = 'visible';
     });
@@ -265,6 +273,7 @@ export class TitleScene extends Phaser.Scene {
       const loadBtn = createButton(this, x + w - 240, rowY + 62, 210, 56, saved ? 'Load' : 'Empty', async () => {
         if (!saved) return;
         State.data = saved;
+        audio.applyVolumes(saved.accessibility.volumes);
         const { key, data } = resumeTarget(saved.progress);
         panel.destroy();
         goTo(this, key, data);
