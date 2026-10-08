@@ -58,8 +58,7 @@ test.describe('Critical-issues follow-up: regression guards', () => {
     await page.reload();
     await waitForActiveScene(page, 'Title');
     const resumed = await page.evaluate(async () => {
-      const { loadRun } = await import('/src/core/save.ts');
-      const { resumeTarget } = await import('/src/game/resume.ts');
+      const { loadRun, resumeTarget } = (window as any).__test;
       const data = await loadRun();
       const target = resumeTarget(data!.progress);
       (window as any).__state.data = data;

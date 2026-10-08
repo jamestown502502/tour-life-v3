@@ -162,7 +162,7 @@ test('Continue applies the volumes saved in Settings', async ({ page }) => {
     S.data.route = ['lisbon', 'tokyo', 'mexico_city', 'berlin'].map((cityId) => ({ cityId, visited: false, weather: 'clear' }));
     S.data.progress = { screen: 'hub' };
     S.data.accessibility.volumes = { master: 0.8, music: 0, sfx: 0.3, metronome: 0.6 };
-    const { saveRun } = await import('/src/core/save.ts');
+    const { saveRun } = (window as any).__test;
     await saveRun(S.data);
   });
   await page.reload();

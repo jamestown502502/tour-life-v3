@@ -16,6 +16,10 @@ import {
   bootGame, skipFirstTimeOnboarding, startScene, waitForActiveScene, waitForCondition,
 } from './helpers';
 
+// This spec aborts texture downloads on purpose, and the browser logs each aborted request as
+// net::ERR_FAILED. That is the condition under test, not a bug. Uncaught exceptions still fail.
+test.use({ allowConsoleErrors: [/net::ERR_FAILED/] });
+
 /** Marks the profile as a returning player so rhythm goes straight into the real song. */
 async function seedReturningRhythmPlayer(page: import('@playwright/test').Page): Promise<void> {
   await page.addInitScript(() => {

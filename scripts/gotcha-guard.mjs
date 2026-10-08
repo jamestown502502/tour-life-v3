@@ -69,8 +69,9 @@ for (const f of files) {
   });
 
   // 4. A test hook leaking into production: window.__* must be gated on DEV / the e2e build mode.
-  eachLine(f, /\(window as any\)\.__\w+\s*=(?!=)|window\.__\w+\s*=(?!=)/, (i, l) => {
-    if (/import\.meta\.env\.(DEV|MODE)/.test(l)) return;
+  eachLine(f, /\(window as any\)\.__\w+\s*=(?!=)|window\.__\w+\s*=(?!=)/, (i) => {
+    // gated on this line or by an enclosing `if (...) {` up to 6 lines above
+    if (f.src.split('\n').slice(Math.max(0, i - 6), i + 1).some((l) => /import\.meta\.env\.(DEV|MODE)/.test(l))) return;
     report(f, i, 'test-hook-gated', 'window.__* test hooks must sit behind import.meta.env.DEV || MODE === "e2e"');
   });
 

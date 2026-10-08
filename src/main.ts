@@ -18,6 +18,9 @@ import { audio } from './core/audio';
 import { BootScene } from './ui/BootScene';
 import { State } from './core/state';
 import { handleBack } from './ui/backButton';
+import { saveRun, loadRun } from './core/save';
+import { resumeTarget } from './game/resume';
+import { CITIES } from './game/content';
 
 // Wait for the self-hosted webfonts before booting: Phaser Text drawn before a font finishes
 // loading silently falls back to the browser default and never re-renders once the font
@@ -103,7 +106,12 @@ async function boot(): Promise<void> {
     });
   } catch { /* no history API: Back simply leaves */ }
 
-  if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') { (window as any).__game = game; (window as any).__audio = audio; (window as any).__state = State; }
+  if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') {
+    (window as any).__game = game; (window as any).__audio = audio; (window as any).__state = State;
+    // Modules the e2e specs call directly. They used to import('/src/...'), which only exists on a
+    // dev server; the e2e suite now runs on a real build (2026-10-08).
+    (window as any).__test = { saveRun, loadRun, resumeTarget, CITIES };
+  }
 }
 
 /** A small hint above the game, for a moment (the Back-to-leave prompt). */
