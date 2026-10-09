@@ -80,7 +80,9 @@ test('twelve screens match their approved baselines', async ({ page }) => {
       }, { key: s.key, overlay: s.overlay });
       await play(page, 1000);
     }
+    // maxDiffPixels 50: 11 of 12 screens are pixel-identical run to run (the 12th differs by ~15 px).
+    // The first setting, 1% of the image, let a banner covering the Settings gear pass (2026-10-08).
     await expect.soft(page.locator('canvas').first(), `${s.name} looks different from its baseline`)
-      .toHaveScreenshot(`${s.name}.png`, { maxDiffPixelRatio: 0.01 });
+      .toHaveScreenshot(`${s.name}.png`, { maxDiffPixels: 50 });
   }
 });
