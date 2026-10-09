@@ -68,6 +68,18 @@ test('twelve screens match their approved baselines', async ({ page }) => {
       g.scene.start(key, data);
     }, { key: s.key, data: s.data });
     await play(page, 1500);                            // past every fade-in and transition
+    if (s.key === 'Rhythm') {
+      // Notes ride the song's own clock, which page.clock does not control, so one falling note
+      // landed 807 px apart between two CI runs. Pause the scene (a paused scene still draws) and
+      // hide the in-flight notes: this capture checks the stable layout, not a note's position.
+      await page.evaluate(() => (window as any).__game.scene.pause('Rhythm'));
+      await play(page, 100);
+      await page.evaluate(() => {
+        const r: any = (window as any).__game.scene.getScene('Rhythm');
+        for (const n of r.notes ?? []) n.sprite?.setVisible(false);
+      });
+      await play(page, 100);
+    }
     if (s.name === 'minigame-result') {
       await page.evaluate(() => (window as any).__game.scene.getScene('MiniGame').finish(true));
       await play(page, 2000);
@@ -80,7 +92,9 @@ test('twelve screens match their approved baselines', async ({ page }) => {
       }, { key: s.key, overlay: s.overlay });
       await play(page, 1000);
     }
+    // maxDiffPixels 50: 11 of 12 screens are pixel-identical run to run (the 12th differs by ~15 px).
+    // The first setting, 1% of the image, let a banner covering the Settings gear pass (2026-10-08).
     await expect.soft(page.locator('canvas').first(), `${s.name} looks different from its baseline`)
-      .toHaveScreenshot(`${s.name}.png`, { maxDiffPixelRatio: 0.01 });
+      .toHaveScreenshot(`${s.name}.png`, { maxDiffPixels: 50 });
   }
 });

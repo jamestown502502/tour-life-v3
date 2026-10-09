@@ -860,9 +860,11 @@ export class RhythmScene extends Phaser.Scene {
     if (this.night.line) lines.push(this.night.line);
     if (this.perks.lines.length === 0) lines.push('Grow close to a bandmate and they change how the show plays.');
     const text = this.add.text(W / 2, 128, lines.join('\n'), textStyle('small', {
-      fontSize: '17px', color: PALETTE_HEX.cream, align: 'center', lineSpacing: 6, wordWrap: { width: W - 120 },
+      fontSize: '17px', color: PALETTE_HEX.cream, align: 'center', lineSpacing: 6, wordWrap: { width: W - 240 },
     })).setOrigin(0.5, 0).setDepth(85);
-    const bg = this.add.rectangle(W / 2, 116, W - 80, text.height + 24, 0x1a2436, 0.86).setOrigin(0.5, 0).setDepth(84);
+    // W - 200 wide: clears the Settings gear (x 20-86) and Help (x 634-700) at either side; at
+    // W - 80 it covered the gear for the first 4.7 s of every show (2026-10-08 visual baselines).
+    const bg = this.add.rectangle(W / 2, 116, W - 200, text.height + 24, 0x1a2436, 0.86).setOrigin(0.5, 0).setDepth(84);
     this.time.delayedCall(4200, () => {
       this.tweens.add({ targets: [text, bg], alpha: 0, duration: 500, onComplete: () => { text.destroy(); bg.destroy(); } });
     });

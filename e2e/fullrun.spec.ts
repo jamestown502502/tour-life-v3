@@ -14,7 +14,10 @@ test('a full real playthrough of one city loop never gets stuck', async ({ page 
   // correctly, just past the point where the overall test budget ran out before the song (its
   // own bounded 100s wait below) finished on its own terms. Not a stuck-game bug; a too-tight
   // overall budget for arrival + minigame + 2 locations + relationships + a full song combined.
-  test.setTimeout(300000);
+  // 2026-10-08: 300 s timed out on the nightly Pixel 7 job with the game healthy (failure
+  // screenshot: the show finished, S grade, Continue on screen); the 360x740 Android passed in
+  // 4.9 min. Real time, a full song, four device profiles: 8 minutes of budget, nightly only.
+  test.setTimeout(480000);
   const errors = collectConsoleErrors(page);
   await skipFirstTimeOnboarding(page);
   await bootGame(page);

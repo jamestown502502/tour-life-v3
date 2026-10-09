@@ -26,6 +26,7 @@ export default defineConfig({
     'clock-timing.spec.ts',
     'visual.spec.ts',
     'reentry.spec.ts',
+    'hud-clearance.spec.ts',
   ],
   retries: 0,
   // One WebKit phone and one Chromium phone: the two engines testers actually play on.
