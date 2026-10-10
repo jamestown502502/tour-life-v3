@@ -77,6 +77,10 @@ test('twelve screens match their approved baselines', async ({ page }) => {
       await page.evaluate(() => {
         const r: any = (window as any).__game.scene.getScene('Rhythm');
         for (const n of r.notes ?? []) n.sprite?.setVisible(false);
+        // The Tonight card (QA round 4) is in the shot; its auto-start countdown bar shrinks with
+        // frame timing, so it is hidden like the notes.
+        const card = r.children.list.find((o: any) => o.type === 'Container' && o.depth === 300);
+        for (const o of card?.list ?? []) if (o.type === 'Rectangle' && Math.round(o.displayHeight) === 8) o.setVisible(false);
       });
       await play(page, 100);
     }
