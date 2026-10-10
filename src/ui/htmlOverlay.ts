@@ -58,7 +58,15 @@ export function createFloatingInput(
     }
     if (el.style.visibility === 'hidden') el.style.visibility = '';
     const vv = window.visualViewport;
-    if (focused && coarse && vv) {
+    // Dock above the keyboard only when the keyboard would actually cover the field (QA round 4
+    // #8, #10): the band name sits at the top of the screen, and docking it anyway made it jump
+    // to the bottom on every tap, so the caret landed mid-word and the name seemed to reappear
+    // each time another option was tapped and the keyboard closed.
+    const canvasEl = document.querySelector('canvas');
+    const r0 = canvasEl?.getBoundingClientRect();
+    const naturalBottom = r0 ? r0.top + gameY * (r0.height / H) + (heightUnits * (r0.height / H)) / 2 : 0;
+    const covered2 = !!vv && naturalBottom > vv.offsetTop + vv.height - 8;
+    if (focused && coarse && vv && covered2) {
       const hPx = 48;
       el.style.left = `${vv.offsetLeft + 16}px`;
       el.style.width = `${vv.width - 32}px`;
@@ -89,7 +97,11 @@ export function createFloatingInput(
     // scales with the canvas like every other line of text instead of towering over it.
     el.style.fontSize = `${fontPx}px`;
   };
-  el.addEventListener('focus', () => { focused = true; reposition(); });
+  el.addEventListener('focus', () => {
+    focused = true; reposition();
+    // The caret goes to the end of what is already typed, never into the middle of it (QA round 4 #8).
+    window.setTimeout(() => { try { const n = el.value.length; el.setSelectionRange(n, n); } catch { /* not a text field */ } }, 0);
+  });
   el.addEventListener('blur', () => { focused = false; reposition(); });
   window.visualViewport?.addEventListener('resize', reposition);
   window.visualViewport?.addEventListener('scroll', reposition);

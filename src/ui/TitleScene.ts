@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { announce } from './a11yLive';
 import { H, PALETTE, PALETTE_HEX, W } from '../const';
 import { ensureTitleBackground, ensureRoundedRect } from '../art/sprites';
 import { applyVignette, spawnFireflies, type WeatherHandle } from '../art/effects';
@@ -126,7 +127,11 @@ export class TitleScene extends Phaser.Scene {
     // screen saves State.data while its progress is still 'title', and Continue then "resumed" to
     // the Title screen itself: the app appeared to refresh and nothing started. The label says
     // where Continue goes, so returning players know before they tap.
+    // QA round 4 #1 ("Continue the game button is missing"): the slot used to stay an empty gap
+    // until a save loaded, and for good when there was none. It now always holds a Continue: the
+    // real one when a tour is saved, otherwise a quiet one that says how saving works.
     loadRun().then((saved) => {
+      if (!this.sys.isActive()) return;
       const resumable = !!saved && isResumable(saved);
       this.saveExists = resumable;
       if (resumable && saved) {
@@ -136,6 +141,10 @@ export class TitleScene extends Phaser.Scene {
           const { key, data } = resumeTarget(saved.progress);
           goTo(this, key, data);
         }, { fillColor: 0xd9a441, fontSize: '17px' });
+      } else {
+        createButton(this, W / 2 - 160, continueY, 320, BTN_ROW, 'Continue (no tour yet)', () => {
+          this.showNoSaveHint();
+        }, { fillColor: 0x6b6b6b, fontSize: '17px' });
       }
     });
 
@@ -222,6 +231,16 @@ export class TitleScene extends Phaser.Scene {
       this.startNewRun(this.pendingSeed);
     }, { fillColor: 0xc4704f });
     container.add([cancelBtn, confirmBtn]);
+  }
+
+  /** A tap on Continue with nothing saved yet: say how saving works, for a moment. */
+  private showNoSaveHint(): void {
+    const t = this.add.text(W / 2, 0, 'No tour in progress yet. Start a New Run: your tour saves itself as you play, and Continue will bring you back.',
+      textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream, align: 'center', wordWrap: { width: W - 140 } })).setOrigin(0.5, 0).setDepth(210);
+    const bg = this.add.rectangle(W / 2, 0, W - 100, t.height + 28, 0x2b3a55, 0.95).setOrigin(0.5, 0).setDepth(209).setStrokeStyle(2, PALETTE.gold);
+    bg.setY(150); t.setY(164);
+    announce(t.text);
+    this.time.delayedCall(4200, () => { t.destroy(); bg.destroy(); });
   }
 
   /** 3 manual save slots (separate from the auto-save Continue uses) — close-out item 3b.

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { announce } from './a11yLive';
 import { PALETTE_HEX, W } from '../const';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
@@ -134,24 +135,39 @@ export class ResultsScene extends Phaser.Scene {
 
     this.renderTonight();
 
-    createButton(this, W / 2 - 150, 700, 300, 64, 'Continue', () => {
+    // Below tonight's goal now, so the goal is read before moving on (QA round 4).
+    createButton(this, W / 2 - 150, 1060, 300, 70, 'Continue', () => {
       goTo(this, 'City', { cityId: this.cityId, phase: 'afterShow' });
     }, { fillColor: 0x3e7c7b });
   }
 
-  /** Tonight's goal, whether it was met, and who changed how the show played (showcraft.ts). */
+  /** Tonight's goal, met or not, as a stamp of its own, and who changed how the show played
+   *  (showcraft.ts). QA round 4: testers never found the MET line, a 16 px row under the Continue
+   *  button; it is now a panel above it with a stamp. */
   private renderTonight(): void {
     const t = this.tonight;
     if (!t) return;
-    const lines: string[] = [`Tonight's goal: ${t.goal}  ·  ${t.met ? 'MET' : 'not this time'}`];
-    lines.push(t.perks.length ? `On your side: ${t.perks.map((p) => p.split(':')[0]).join(' · ')}` : 'No bandmate close enough yet to change the show.');
+    const top = 640;
+    const lines: string[] = [];
+    lines.push(t.perks.length ? `Helping on stage: ${t.perks.map((p) => p.split(':')[0]).join(' and ').replace(/ locks the tempo| covers your slips| carries the long notes| works the room/g, '')}` : 'No bandmate was close enough to help yet. Time with them changes the next show.');
     if (t.scouted) lines.push(t.scoutImpressed ? 'The label scout was impressed.' : 'The label scout left before the encore.');
-    addTextScrim(this, W / 2, 830 + lines.length * 14, W - 60, lines.length * 30 + 30, 0.88);
+    if (t.met) lines.push('Goal reward: more local love and inspiration.');
+    addTextScrim(this, W / 2, top + 175, W - 60, 350, 0.9);
+    this.add.text(W / 2, top + 30, "TONIGHT'S GOAL", textStyle('small', { fontSize: '17px', fontStyle: '700', color: PALETTE_HEX.gold })).setOrigin(0.5);
+    this.add.text(W / 2, top + 70, t.goal, textStyle('h2', { fontSize: '24px', color: PALETTE_HEX.cream, align: 'center', wordWrap: { width: W - 120 } })).setOrigin(0.5);
+    const word = t.met ? 'MET' : 'NOT THIS TIME';
+    const st = this.add.text(W / 2, top + 140, word, textStyle('title', { fontSize: t.met ? '64px' : '40px', color: t.met ? PALETTE_HEX.gold : PALETTE_HEX.cream }))
+      .setOrigin(0.5).setAngle(-6);
+    if (!State.data.accessibility.reducedMotion) {
+      st.setScale(1.8).setAlpha(0);
+      this.tweens.add({ targets: st, scale: 1, alpha: 1, duration: 360, ease: 'Back.easeOut', delay: 700 });
+    }
     lines.forEach((line, i) => {
-      this.add.text(W / 2, 830 + i * 30 + 12, line, textStyle('small', {
-        fontSize: '16px', color: i === 0 ? (t.met ? PALETTE_HEX.gold : PALETTE_HEX.cream) : PALETTE_HEX.cream, wordWrap: { width: W - 100 }, align: 'center',
+      this.add.text(W / 2, top + 210 + i * 34, line, textStyle('small', {
+        fontSize: '17px', color: PALETTE_HEX.cream, wordWrap: { width: W - 120 }, align: 'center',
       })).setOrigin(0.5);
     });
+    announce(`Tonight's goal, ${t.goal}: ${t.met ? 'met' : 'not this time'}.`);
   }
 
   /** "The crowd" strip at the run's final mood — same 5 members Rhythm just showed, same

@@ -62,7 +62,11 @@ export class SettingsScene extends Phaser.Scene {
     // hiding is the standard overlay treatment, and it keeps the game visible behind its own
     // menu. Still dark enough for the cream-on-navy contrast the audit measured.
     this.add.rectangle(0, 0, W, this.cameras.main.height, 0x2b3a55, 0.82).setOrigin(0, 0);
-    this.add.text(W / 2, 50, 'Settings', textStyle('h1')).setOrigin(0.5);
+    // In a run this screen IS the pause menu: it says so, and Resume sits at the top as well as the
+    // bottom (QA round 4 #1, "Continue the game button is missing at the in-game menu").
+    const paused = this.returnTo !== 'Title';
+    this.add.text(paused ? 220 : W / 2, 50, paused ? 'Paused' : 'Settings', textStyle('h1')).setOrigin(0.5);
+    if (paused) createButton(this, W - 330, 18, 310, 66, 'Resume game', () => this.resumeGame(), { fillColor: 0x3e7c7b, fontSize: '20px' });
     this.add.text(W / 2, 90, 'Rhythm score never gates the story. No-fail mode is always on.',
       textStyle('small', { fontSize: '13px', wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);
 

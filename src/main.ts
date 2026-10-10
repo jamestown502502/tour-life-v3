@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { startA11yButtons } from './ui/a11yButtons';
 import { H, PALETTE_HEX, W } from './const';
 import { TitleScene } from './ui/TitleScene';
 import { BandCreatorScene } from './ui/BandCreatorScene';
@@ -17,10 +18,13 @@ import { TransitionScene } from './ui/TransitionScene';
 import { audio } from './core/audio';
 import { BootScene } from './ui/BootScene';
 import { State } from './core/state';
-import { handleBack } from './ui/backButton';
+import { handleBack, autoPause } from './ui/backButton';
 import { saveRun, loadRun } from './core/save';
 import { resumeTarget } from './game/resume';
 import { CITIES } from './game/content';
+
+/** Must match the #rotate-prompt media query in index.html. */
+const ROTATE_QUERY = '(orientation: landscape) and (pointer: coarse) and (max-height: 900px)';
 
 // Wait for the self-hosted webfonts before booting: Phaser Text drawn before a font finishes
 // loading silently falls back to the browser default and never re-renders once the font
@@ -84,12 +88,20 @@ async function boot(): Promise<void> {
   // Background = silence (QA round 2 #5): switching apps, locking the screen, or minimising the
   // browser suspends every sound; coming back resumes it. pagehide covers iOS app-switching,
   // which does not always fire visibilitychange first.
-  document.addEventListener('visibilitychange', () => audio.setBackgrounded(document.hidden));
+  document.addEventListener('visibilitychange', () => {
+    audio.setBackgrounded(document.hidden);
+    if (document.hidden) autoPause(game);   // back to a paused show or minigame, not a lost one (QA round 4 #3)
+  });
+  // Turned sideways: the rotate prompt covers the game (index.html), so a running show pauses too.
+  const sideways = window.matchMedia(ROTATE_QUERY);
+  sideways.addEventListener?.('change', () => { if (sideways.matches) autoPause(game); });
   window.addEventListener('pagehide', () => audio.setBackgrounded(true));
   window.addEventListener('pageshow', () => audio.setBackgrounded(document.hidden));
   // Audio may only start inside a gesture, and iOS only counts these (not touchstart/pointerdown,
   // which is when every button here fires). Each one unlocks, resumes and primes (audio.gesture).
   for (const type of ['touchend', 'pointerup', 'click', 'keydown']) window.addEventListener(type, () => audio.gesture(), { passive: true });
+
+  startA11yButtons(game);   // TalkBack can reach every button (ui/a11yButtons.ts, QA round 4 #4)
 
   // Android Back / browser back: a guard history entry keeps Back inside the game (ui/backButton.ts).
   // At a root screen the first Back shows a hint and the second, within 2 s, leaves.

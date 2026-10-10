@@ -42,16 +42,21 @@ export class BandCreatorScene extends Phaser.Scene {
     // forward. "Quit to Title" from here is the actual "back out of setup" path.
     addMenuButton(this, 'BandCreator');
 
-    this.nameInput = createFloatingInput(this, W / 2, 130, 320, 'Band name');
-    // Pre-filled from the run seed (QA #1, decision D1): the button is never blocked, and a
-    // player who taps straight through still gets a real name rather than "The Unnamed".
-    this.nameInput.el.value = suggestBandName(State.data.seed);
+    // Empty, with the suggestion as its placeholder (QA round 4 #7: a pre-filled name read as
+    // already chosen and selected). Leaving it blank still gets the suggested name on Hit the road
+    // (QA #1, decision D1), so the button is never blocked.
+    const suggested = suggestBandName(State.data.seed);
+    this.nameInput = createFloatingInput(this, W / 2, 130, 320, `e.g. ${suggested}`);
+    this.nameInput.el.value = '';
+    this.nameInput.el.setAttribute('aria-label', 'Band name');
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.nameInput.destroy());
     addTextScrim(this, W / 2, 170, 380, 30, 0.6);
-    this.add.text(W / 2, 170, 'We picked one — tap the name to change it.', textStyle('small', { fontSize: '13px', color: PALETTE_HEX.cream })).setOrigin(0.5);
+    this.add.text(W / 2, 170, `Type a name, or leave it blank for ${suggested}.`, textStyle('small', { fontSize: '13px', color: PALETTE_HEX.cream })).setOrigin(0.5);
     // QA #12: an explicit way back to the welcome screen from setup. Top-right: the menu gear
     // already owns the top-left corner (MenuButton.ts).
-    createButton(this, W - 150, 20, 130, 54, '← Back', () => goTo(this, 'Title'), { fillColor: PALETTE.plum, fontSize: '17px' });
+    // Same size and row as the gear opposite it (QA round 4 #11: it was 12 units shorter, so the two
+    // never lined up), with a drawn arrow (Button.ts).
+    createButton(this, W - 170, 20, 150, 66, '← Back', () => goTo(this, 'Title'), { fillColor: PALETTE.plum, fontSize: '18px' });
 
     // GRID_ROW_H/GRID_INCREMENT (not the original 50/60/46/56): at the 390px mobile viewport
     // the canvas renders at ~0.542x, so a button needs its raw canvas-unit height to clear

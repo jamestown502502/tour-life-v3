@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { registerA11yButton } from './a11yButtons';
 import { PALETTE, PALETTE_HEX, UI_RADIUS } from '../const';
 import { audio, type SfxName } from '../core/audio';
 import { textStyle } from './textStyles';
@@ -89,6 +90,11 @@ export function createButton(
 ): Phaser.GameObjects.Container {
   const container = scene.add.container(x, y);
   const fill = legibleFill(opts.disabled ? 0x8a8a8a : (opts.fillColor ?? PALETTE.teal));
+  // "← Back" labels (QA round 4 #6, #11, "the back arrow needs proper alignment"): the '←' glyph is
+  // missing from Baloo 2, so it came from a fallback font, thin and sitting low beside the bold
+  // word. The arrow is drawn instead, as a chevron centred on the label's own middle.
+  const backArrow = label.startsWith('← ');
+  if (backArrow) label = label.slice(2);
   const radius = opts.radius ?? UI_RADIUS.button;
 
   // Every call site used to hand this a single-line label with no wordWrap — fine for short
@@ -137,6 +143,15 @@ export function createButton(
   // let the label clip — no label can ever render outside its own background this way.
   const finalH = Math.max(h, Math.ceil(text.height + measureBuffer + padY * 2));
   text.setPosition(w / 2, finalH / 2);
+  let chevron: Phaser.GameObjects.Graphics | null = null;
+  if (backArrow) {
+    const cs = Math.max(7, Math.round(fontSize * 0.42));   // chevron half-height
+    const gap = Math.round(fontSize * 0.45);
+    text.setX(w / 2 + (cs + gap) / 2);
+    const cx = text.x - text.width / 2 - gap - cs * 0.3, cy = finalH / 2;
+    chevron = scene.add.graphics().lineStyle(Math.max(3, Math.round(fontSize / 6)), Phaser.Display.Color.HexStringToColor(String(text.style.color)).color, 1);
+    chevron.beginPath(); chevron.moveTo(cx + cs * 0.6, cy - cs); chevron.lineTo(cx - cs * 0.4, cy); chevron.lineTo(cx + cs * 0.6, cy + cs); chevron.strokePath();
+  }
 
   const shapeKey = ensureRoundedRect(scene, w, finalH, radius);
   const btnKey = ensureButtonTexture(scene, w, finalH, fill, !!opts.disabled, radius);
@@ -152,6 +167,7 @@ export function createButton(
     .strokeRoundedRect(-4, -4, w + 8, finalH + 8, radius + 4).setVisible(false);
 
   container.add([shadow, hoverGlow, bg, selectedRing, text]);
+  if (chevron) container.add(chevron);
   container.setData('selectedRing', selectedRing);
   container.setData('labelText', text);
 
@@ -181,6 +197,8 @@ export function createButton(
       onClick();
     });
     bg.on('pointerup', () => container.setScale(1));
+    // Mirrored for TalkBack and the keyboard (ui/a11yButtons.ts, QA round 4 #4).
+    registerA11yButton(container, label, () => { audio.playSfx(opts.tapSfx ?? 'tap'); onClick(); });
   }
 
   // Entrance pop — a light random stagger so a screen's buttons don't all snap in at once.

@@ -131,3 +131,53 @@ export function goalReward(night: WildcardNight): { localLove: number; deltas: P
   if (night.goalFunds) deltas.funds = night.goalFunds;
   return { localLove: Math.round(5 * night.goalRewardScale), deltas };
 }
+
+// ---------------------------------------------------------------- the Tonight card (QA round 4)
+// Testers never saw tonight's goal or the bandmates' help: both lived in a 4-second banner that
+// faded while the first notes fell, and the help line only appeared once someone was already close.
+// The show now opens on a card that names the goal and lists ALL four bandmates, each one either
+// helping (and how) or what being close to them would unlock, and a chip tracks the goal live.
+
+export interface HelpRow { id: BandmateId; name: string; active: boolean; line: string }
+
+const PERK_SHORT: Record<BandmateId, string> = {
+  theo: 'wider timing on every note',
+  jun: '3 misses keep your combo',
+  mira: 'long notes forgive an early release',
+  rowan: 'the crowd starts warmer',
+};
+const ORDER: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
+const NAMES: Record<BandmateId, string> = { mira: 'Mira', theo: 'Theo', jun: 'Jun', rowan: 'Rowan' };
+
+/** One row per bandmate: active help in their own words, or what growing close would unlock. */
+export function bandmateHelpRows(relationships: Partial<Record<BandmateId, number>>): HelpRow[] {
+  return ORDER.map((id) => {
+    const active = rapportFor(relationships[id]) === 'close';
+    return { id, name: NAMES[id], active, line: active ? PERK_LINES[id] : `Grow close to ${NAMES[id]}: ${PERK_SHORT[id]}` };
+  });
+}
+
+/** The goal chip's live text while the song plays. */
+export function goalProgressText(goal: ShowGoal, p: GoalProgress, crowdNow: number): string {
+  switch (goal.id) {
+    case 'streak': return `Best streak ${Math.min(p.bestStreak, 25)}/25`;
+    case 'holds': return p.holdsDropped === 0 ? `Long notes: none dropped (${p.holdsTotal} in the song)` : `Long notes: ${p.holdsDropped} dropped`;
+    case 'cues': return `Choice cues ${p.cuesTaken}/${p.cuesTotal}`;
+    case 'crowd': return `Fans won ${Math.round((Math.max(p.crowdPeak, crowdNow) / 100) * 5)}/5`;
+    case 'clean': return `Misses ${p.misses} (3 or fewer)`;
+    default: return '';
+  }
+}
+
+/** True once a goal can no longer be met this song (holds dropped, too many misses). */
+export function goalLost(goal: ShowGoal, p: GoalProgress): boolean {
+  return (goal.id === 'holds' && p.holdsDropped > 0) || (goal.id === 'clean' && p.misses > 3);
+}
+
+/** What meeting tonight's goal is worth, as one line for the card. */
+export function goalRewardLine(night: WildcardNight): string {
+  const r = goalReward(night);
+  const parts = [`+${r.localLove} local love`, `+${r.deltas.inspiration ?? 0} inspiration`];
+  if (r.deltas.funds) parts.push(`+$${r.deltas.funds}`);
+  return `Meet it: ${parts.join(', ')}`;
+}
