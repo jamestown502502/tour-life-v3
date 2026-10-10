@@ -134,6 +134,7 @@ export class RhythmScene extends Phaser.Scene {
   private goalChip: Phaser.GameObjects.Text | null = null;
   private goalChipBg: Phaser.GameObjects.Rectangle | null = null;
   private perkSaidAt: Record<string, number> = {};
+  private chartPrepared = false;
   private progress: GoalProgress = { bestStreak: 0, holdsDropped: 0, cuesTaken: 0, cuesTotal: 0, misses: 0, crowdPeak: 0, holdsTotal: 0 };
 
   init(data: { cityId: string }): void {
@@ -173,6 +174,7 @@ export class RhythmScene extends Phaser.Scene {
     this.goalChip = null;
     this.goalChipBg = null;
     this.perkSaidAt = {};
+    this.chartPrepared = false;
     this.progress = { bestStreak: 0, holdsDropped: 0, cuesTaken: 0, cuesTotal: 0, misses: 0, crowdPeak: 0, holdsTotal: 0 };
   }
 
@@ -341,31 +343,29 @@ export class RhythmScene extends Phaser.Scene {
         if (this.practiceHandedOff) return;
         this.practiceHandedOff = true;
         this.practiceWatchdogUntil = 0;
+        this.prepareChart(city, song);
         this.showTonightCard(city, () => this.beginRealSong(city, song));
       };
       this.practiceHandOff = handOff;
       this.runPracticePass(song, handOff);
     } else {
+      this.prepareChart(city, song);
       this.showTonightCard(city, () => this.beginRealSong(city, song));
     }
   }
 
   /** Builds and starts the actual playable song — split out from create() so the one-time
    *  practice pass can run first without duplicating any of the scoring/finish machinery. */
-  private beginRealSong(city: CityDef, song: SongDef): void {
+  /** The chart for tonight, ready before the Tonight card so the notes exist the moment Play is
+   *  pressed (and for anything that inspects the scene meanwhile). Idempotent. */
+  private prepareChart(city: CityDef, song: SongDef): void {
+    if (this.chartPrepared) return;
+    this.chartPrepared = true;
     const arrangement = pickArrangement(song, State.data.flags);
     // Real backing track when this song has one AND it actually loaded; the procedural bed
     // otherwise. Scheduled 1.2s out so the audio lands exactly on the chart's own start (see
     // startTime below) — and scheduled on the AUDIO clock inside playMusicTrack, never a scene
     // timer, because scene timers advance on clamped frame delta and would drift on a slow device.
-    const trackKey = song.audioFile ? `song_${song.id}` : null;
-    const hasTrack = !!trackKey && this.cache.audio.has(trackKey);
-    if (hasTrack) {
-      const buffer = this.cache.audio.get(trackKey!) as AudioBuffer;
-      audio.playMusicTrack(buffer, 1.2);
-    } else {
-      audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm, song.waveform);
-    }
     this.ctx = {
       cityId: city.id, songId: song.id, arrangement,
       bandHarmony: State.data.stats.harmony, energy: State.data.stats.energy,
@@ -378,11 +378,23 @@ export class RhythmScene extends Phaser.Scene {
     this.cues = arrangement.cues.map((cue) => ({ cue, handled: false }));
     this.progress.cuesTotal = this.cues.length;
     this.progress.holdsTotal = arrangement.notes.filter((n) => (n.dur ?? 0) > 0).length;
+    this.cityLabel.setText(`${city.name} — ${song.name} · ${arrangement.label} · ${PATTERN_LABEL[pattern]}`);
+  }
+
+  private beginRealSong(city: CityDef, song: SongDef): void {
+    this.prepareChart(city, song);
+    const trackKey = song.audioFile ? `song_${song.id}` : null;
+    const hasTrack = !!trackKey && this.cache.audio.has(trackKey);
+    if (hasTrack) {
+      const buffer = this.cache.audio.get(trackKey!) as AudioBuffer;
+      audio.playMusicTrack(buffer, 1.2);
+    } else {
+      audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm, song.waveform);
+    }
     this.createGoalChip();
     // Names the SONG as well as the arrangement. A city's two songs deliberately share
     // arrangement ids (so pre-show choices keep working), which meant this label read identically
     // on the first night and the return leg — the player could not tell the setlist had moved on.
-    this.cityLabel.setText(`${city.name} — ${song.name} · ${arrangement.label} · ${PATTERN_LABEL[pattern]}`);
 
     if (this.tutorialActive) {
       this.add.text(W / 2, 140, 'TAP = touch the note   HOLD = press & hold   CUE = tap the banner',
@@ -604,6 +616,7 @@ export class RhythmScene extends Phaser.Scene {
   }
 
   private attemptHit(lane: number): void {
+    if (!this.songStarted) return;   // the chart is ready under the Tonight card, but not playing yet
     const now = this.time.now;
     const windows = this.windows();
     let best: NoteState | null = null;
