@@ -522,6 +522,12 @@ export class RhythmScene extends Phaser.Scene {
       this.practiceHandOff?.();
     }
     if (this.finished) return;
+    // The Tonight card prepares the chart before the song starts, while startTime is still 0. Run
+    // past that point and every hit time is "in the past" by the whole session length: a player
+    // who had been in the game longer than a song had the entire chart judged as misses behind
+    // the card, then faced frozen notes and a score stuck at 0. Nothing moves or is judged until
+    // the song has started (2026-10-10).
+    if (!this.songStarted) return;
     const now = this.time.now;
     const t = (now - this.startTime) / 1000;
     const windows = this.windows();
