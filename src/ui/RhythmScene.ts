@@ -31,7 +31,11 @@ import {
 } from '../core/onboarding';
 import type { RhythmMode } from '../core/state';
 import type { CityDef, SongDef } from '../../content/schema';
-import { bandPerks, showGoalFor, goalMet, chartPatternFor, remapLane, wildcardNight, goalReward, PATTERN_LABEL, type BandPerks, type ShowGoal, type GoalProgress, type WildcardNight } from '../game/showcraft';
+import { bandPerks, showGoalFor, goalMet, chartPatternFor, remapLane, wildcardNight, goalReward, PATTERN_LABEL, bandmateHelpRows, goalProgressText, goalLost, goalRewardLine, type BandPerks, type ShowGoal, type GoalProgress, type WildcardNight } from '../game/showcraft';
+import { announce } from './a11yLive';
+import { ensurePortrait } from '../art/sprites';
+/** How long the Tonight card waits before starting the song on its own. */
+const TONIGHT_CARD_MS = 9000;
 import { wildcardFor } from '../game/wildcard';
 import { routeArcRole } from '../game/route';
 import { stamp } from '../art/juice';
@@ -127,6 +131,10 @@ export class RhythmScene extends Phaser.Scene {
   private night!: WildcardNight;
   private shieldLeft = 0;
   private goalShown = false;
+  private goalChip: Phaser.GameObjects.Text | null = null;
+  private goalChipBg: Phaser.GameObjects.Rectangle | null = null;
+  private perkSaidAt: Record<string, number> = {};
+  private chartPrepared = false;
   private progress: GoalProgress = { bestStreak: 0, holdsDropped: 0, cuesTaken: 0, cuesTotal: 0, misses: 0, crowdPeak: 0, holdsTotal: 0 };
 
   init(data: { cityId: string }): void {
@@ -163,6 +171,10 @@ export class RhythmScene extends Phaser.Scene {
     this.crowdFigures = [];
     this.laneFlashes = [];
     this.goalShown = false;
+    this.goalChip = null;
+    this.goalChipBg = null;
+    this.perkSaidAt = {};
+    this.chartPrepared = false;
     this.progress = { bestStreak: 0, holdsDropped: 0, cuesTaken: 0, cuesTotal: 0, misses: 0, crowdPeak: 0, holdsTotal: 0 };
   }
 
@@ -331,31 +343,29 @@ export class RhythmScene extends Phaser.Scene {
         if (this.practiceHandedOff) return;
         this.practiceHandedOff = true;
         this.practiceWatchdogUntil = 0;
-        this.beginRealSong(city, song);
+        this.prepareChart(city, song);
+        this.showTonightCard(city, () => this.beginRealSong(city, song));
       };
       this.practiceHandOff = handOff;
       this.runPracticePass(song, handOff);
     } else {
-      this.beginRealSong(city, song);
+      this.prepareChart(city, song);
+      this.showTonightCard(city, () => this.beginRealSong(city, song));
     }
   }
 
   /** Builds and starts the actual playable song — split out from create() so the one-time
    *  practice pass can run first without duplicating any of the scoring/finish machinery. */
-  private beginRealSong(city: CityDef, song: SongDef): void {
+  /** The chart for tonight, ready before the Tonight card so the notes exist the moment Play is
+   *  pressed (and for anything that inspects the scene meanwhile). Idempotent. */
+  private prepareChart(city: CityDef, song: SongDef): void {
+    if (this.chartPrepared) return;
+    this.chartPrepared = true;
     const arrangement = pickArrangement(song, State.data.flags);
     // Real backing track when this song has one AND it actually loaded; the procedural bed
     // otherwise. Scheduled 1.2s out so the audio lands exactly on the chart's own start (see
     // startTime below) — and scheduled on the AUDIO clock inside playMusicTrack, never a scene
     // timer, because scene timers advance on clamped frame delta and would drift on a slow device.
-    const trackKey = song.audioFile ? `song_${song.id}` : null;
-    const hasTrack = !!trackKey && this.cache.audio.has(trackKey);
-    if (hasTrack) {
-      const buffer = this.cache.audio.get(trackKey!) as AudioBuffer;
-      audio.playMusicTrack(buffer, 1.2);
-    } else {
-      audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm, song.waveform);
-    }
     this.ctx = {
       cityId: city.id, songId: song.id, arrangement,
       bandHarmony: State.data.stats.harmony, energy: State.data.stats.energy,
@@ -368,11 +378,23 @@ export class RhythmScene extends Phaser.Scene {
     this.cues = arrangement.cues.map((cue) => ({ cue, handled: false }));
     this.progress.cuesTotal = this.cues.length;
     this.progress.holdsTotal = arrangement.notes.filter((n) => (n.dur ?? 0) > 0).length;
-    this.showTonightBanner();
+    this.cityLabel.setText(`${city.name} — ${song.name} · ${arrangement.label} · ${PATTERN_LABEL[pattern]}`);
+  }
+
+  private beginRealSong(city: CityDef, song: SongDef): void {
+    this.prepareChart(city, song);
+    const trackKey = song.audioFile ? `song_${song.id}` : null;
+    const hasTrack = !!trackKey && this.cache.audio.has(trackKey);
+    if (hasTrack) {
+      const buffer = this.cache.audio.get(trackKey!) as AudioBuffer;
+      audio.playMusicTrack(buffer, 1.2);
+    } else {
+      audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm, song.waveform);
+    }
+    this.createGoalChip();
     // Names the SONG as well as the arrangement. A city's two songs deliberately share
     // arrangement ids (so pre-show choices keep working), which meant this label read identically
     // on the first night and the return leg — the player could not tell the setlist had moved on.
-    this.cityLabel.setText(`${city.name} — ${song.name} · ${arrangement.label} · ${PATTERN_LABEL[pattern]}`);
 
     if (this.tutorialActive) {
       this.add.text(W / 2, 140, 'TAP = touch the note   HOLD = press & hold   CUE = tap the banner',
@@ -594,6 +616,7 @@ export class RhythmScene extends Phaser.Scene {
   }
 
   private attemptHit(lane: number): void {
+    if (!this.songStarted) return;   // the chart is ready under the Tonight card, but not playing yet
     const now = this.time.now;
     const windows = this.windows();
     let best: NoteState | null = null;
@@ -606,6 +629,8 @@ export class RhythmScene extends Phaser.Scene {
     }
     if (!best) return;
     const delta = now - this.hitMsFor(best.note.t);
+    // Theo close: this note only counts because his tempo widened the window. Say so, now and then.
+    if ((this.perks?.windowScale ?? 1) > 1 && Math.abs(delta) > windows.ok / this.perks.windowScale) this.perkCallout('theo', lane, 'Theo keeps you on time');
     if (best.note.type === 'hold') this.beginHold(best, delta, now);
     else this.judgeNote(best, delta);
   }
@@ -645,6 +670,7 @@ export class RhythmScene extends Phaser.Scene {
     const startJudgement = judgeHit(ns.holdStartDelta ?? 0, windows);
     // Mira close: a hold released at 70% keeps its grade (normally 85%).
     const kept = completion >= (this.perks?.holdKeep ?? 0.85) ? Math.max(completion, 0.85) : completion;
+    if (completion < 0.85 && kept >= 0.85) this.perkCallout('mira', ns.note.l, 'Mira carries the note');
     const finalJudgement = combineHoldJudgement(startJudgement, kept);
     if (finalJudgement !== startJudgement || finalJudgement === 'miss') this.progress.holdsDropped += 1;
     ns.judged = true;
@@ -853,29 +879,86 @@ export class RhythmScene extends Phaser.Scene {
       { theme: 'vinyl', label: 'That was the show' });
   }
 
-  /** Before the first note: tonight's goal, who is helping, and the wildcard's twist. Fades on its
-   *  own; it is information, never a gate. */
-  private showTonightBanner(): void {
-    const lines = [`Tonight's goal: ${this.goal.text}`, ...this.perks.lines];
-    if (this.night.line) lines.push(this.night.line);
-    if (this.perks.lines.length === 0) lines.push('Grow close to a bandmate and they change how the show plays.');
-    const text = this.add.text(W / 2, 128, lines.join('\n'), textStyle('small', {
-      fontSize: '17px', color: PALETTE_HEX.cream, align: 'center', lineSpacing: 6, wordWrap: { width: W - 240 },
-    })).setOrigin(0.5, 0).setDepth(85);
-    // W - 200 wide: clears the Settings gear (x 20-86) and Help (x 634-700) at either side; at
-    // W - 80 it covered the gear for the first 4.7 s of every show (2026-10-08 visual baselines).
-    const bg = this.add.rectangle(W / 2, 116, W - 200, text.height + 24, 0x1a2436, 0.86).setOrigin(0.5, 0).setDepth(84);
-    this.time.delayedCall(4200, () => {
-      this.tweens.add({ targets: [text, bg], alpha: 0, duration: 500, onComplete: () => { text.destroy(); bg.destroy(); } });
-    });
-  }
-
   /** A goal met mid-song gets its moment straight away. */
   private checkGoalLive(): void {
+    this.updateGoalChip();
     if (this.goalShown || !this.goal || !goalMet(this.goal, this.progress, false)) return;
     this.goalShown = true;
     stamp(this, W / 2, 330, 'GOAL!', PALETTE.teal, 34);
     audio.crowdSwell(0.5);
+  }
+
+  /** Before the first note (QA round 4: testers never saw the goal or the band's help in the old
+   *  4-second banner). A card: tonight's goal and what it is worth, the wildcard, and all four
+   *  bandmates, each helping or showing what growing close would unlock. Play starts the song;
+   *  so does a short countdown, so the card never blocks anyone. */
+  private showTonightCard(city: CityDef, start: () => void): void {
+    const rows = bandmateHelpRows(State.data.relationships);
+    const c = this.add.container(0, 0).setDepth(300);
+    const top = 150, h = 820;
+    c.add(this.add.rectangle(0, 0, W, H, 0x101826, 0.72).setOrigin(0, 0).setInteractive());
+    c.add(this.add.rectangle(40, top, W - 80, h, 0x1a2436, 0.97).setOrigin(0, 0).setStrokeStyle(3, PALETTE.gold));
+    c.add(this.add.text(W / 2, top + 44, `TONIGHT IN ${city.name.toUpperCase()}`, textStyle('h1', { fontSize: '30px', color: PALETTE_HEX.gold })).setOrigin(0.5));
+    c.add(this.add.text(W / 2, top + 100, `Goal: ${this.goal.text}`, textStyle('h2', { fontSize: '25px', color: PALETTE_HEX.cream, align: 'center', wordWrap: { width: W - 140 } })).setOrigin(0.5));
+    c.add(this.add.text(W / 2, top + 140, `${goalRewardLine(this.night)}. A GOAL! stamp shows the moment you do.`, textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream, align: 'center', wordWrap: { width: W - 140 } })).setOrigin(0.5, 0));
+    let y = top + 210;
+    if (this.night.line) {
+      const t = this.add.text(W / 2, y, this.night.line, textStyle('small', { fontSize: '17px', color: PALETTE_HEX.gold, align: 'center', wordWrap: { width: W - 140 } })).setOrigin(0.5, 0);
+      c.add(t); y += t.height + 22;
+    }
+    c.add(this.add.text(W / 2, y, 'ON STAGE WITH YOU', textStyle('small', { fontSize: '16px', fontStyle: '700', color: PALETTE_HEX.gold })).setOrigin(0.5, 0));
+    y += 40;
+    for (const r of rows) {
+      const portrait = this.add.image(110, y + 38, ensurePortrait(this, r.id, 'happy')).setScale(0.26).setAlpha(r.active ? 1 : 0.5);
+      if (!r.active) portrait.setTint(0x9a9a9a);
+      const line = this.add.text(170, y + 38, `${r.active ? '✓ ' : ''}${r.line}`, textStyle('body', {
+        fontSize: '19px', color: r.active ? PALETTE_HEX.gold : PALETTE_HEX.cream, wordWrap: { width: W - 260 },
+      })).setOrigin(0, 0.5).setAlpha(r.active ? 1 : 0.85);
+      c.add([portrait, line]);
+      y += 92;
+    }
+    const n = rows.filter((r) => r.active).length;
+    c.add(this.add.text(W / 2, y + 6, n ? `${n} bandmate${n === 1 ? ' is' : 's are'} helping tonight.` : 'Nobody is close enough to help yet. Time with them in each city changes that.',
+      textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream, align: 'center', wordWrap: { width: W - 140 } })).setOrigin(0.5, 0));
+    const bar = this.add.rectangle(W / 2 - 150, top + h - 30, 300, 8, PALETTE.gold, 0.9).setOrigin(0, 0.5);
+    c.add(bar);
+    let done = false;
+    const go = () => { if (done) return; done = true; timer.remove(); c.destroy(); start(); };
+    c.add(createButton(this, W / 2 - 150, top + h - 130, 300, 76, 'Play', go, { fillColor: 0x3e7c7b, fontSize: '24px' }));
+    announce(`Tonight's goal: ${this.goal.text}. ${rows.filter((r) => r.active).map((r) => r.line).join('. ')}`);
+    const total = TONIGHT_CARD_MS;
+    let waited = 0;
+    const timer = this.time.addEvent({ delay: 100, loop: true, callback: () => {
+      waited += 100;
+      const left = Math.max(0, total - waited);
+      bar.setDisplaySize(300 * (left / total), 8);
+      if (left <= 0) go();
+    } });
+  }
+
+  /** The goal, live, for the whole song: what it is and how far along (QA round 4). */
+  private createGoalChip(): void {
+    this.goalChipBg = this.add.rectangle(W / 2, 112, 420, 40, 0x1a2436, 0.88).setOrigin(0.5, 0).setDepth(55).setStrokeStyle(2, PALETTE.gold, 0.8);
+    this.goalChip = this.add.text(W / 2, 132, '', textStyle('small', { fontSize: '16px', fontStyle: '700', color: PALETTE_HEX.cream })).setOrigin(0.5).setDepth(56);
+    this.updateGoalChip();
+  }
+
+  private updateGoalChip(): void {
+    if (!this.goalChip || !this.goal) return;
+    const met = this.goalShown || goalMet(this.goal, this.progress, false);
+    const lost = !met && goalLost(this.goal, this.progress);
+    const body = met ? `${this.goal.text}: done!` : goalProgressText(this.goal, this.progress, this.crowd);
+    this.goalChip.setText(`GOAL  ${body}${lost ? '  (not tonight)' : ''}`).setColor(met ? PALETTE_HEX.gold : PALETTE_HEX.cream);
+    this.goalChipBg?.setDisplaySize(Math.min(W - 200, Math.max(300, this.goalChip.width + 40)), 40);
+  }
+
+  /** A bandmate's help, named in the lane the moment it lands; at most once every few seconds each. */
+  private perkCallout(id: string, lane: number, text: string): void {
+    const now = this.time.now;
+    if ((this.perkSaidAt[id] ?? -1e9) > now - 4000) return;
+    this.perkSaidAt[id] = now;
+    const t = this.add.text(this.laneCenterX(lane), HIT_LINE_Y - 100, text, textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold })).setOrigin(0.5).setDepth(90);
+    this.tweens.add({ targets: t, alpha: 0, y: t.y - 30, duration: 900, onComplete: () => t.destroy() });
   }
 
   private showShieldText(lane: number): void {

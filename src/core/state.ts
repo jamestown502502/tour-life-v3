@@ -61,6 +61,9 @@ export interface MetaProgress {
    *  reshuffle of the same two beats. Optional: a save written before this existed simply has no
    *  history, which reads as "nothing seen yet" and behaves exactly like the old draw. */
   seenSceneIds?: string[];
+  /** The takeaway the player chose at the end of their last tour ("What we learned"); read back
+   *  on the next tour's first drive (QA round 4 depth pass). */
+  pinnedLesson?: string;
 }
 
 export type ScreenName =

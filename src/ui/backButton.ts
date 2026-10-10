@@ -10,6 +10,21 @@ import { goTo } from './transition';
 
 const PAUSABLE = ['City', 'Rhythm', 'MiniGame', 'Hub', 'Van', 'Results', 'RoutePlan', 'Opening'];
 
+/** The app was hidden or the phone turned sideways mid-show or mid-minigame: open the pause menu over
+ *  it, so the player comes back to a paused game and resumes when ready (QA round 4 #3). SceneManager
+ *  calls, not ScenePlugin ones: those queue for the next frame, and a hidden page has none. */
+export function autoPause(game: Phaser.Game): boolean {
+  const mgr = game.scene;
+  if (mgr.isActive('Settings') || mgr.isActive('HowToPlay')) return false;
+  const top = mgr.getScenes(true).filter((s) => s.scene.key !== 'Transition').pop();
+  if (!top || !TIMED.includes(top.scene.key) || top.sys.isPaused()) return false;
+  const key = top.scene.key;
+  mgr.pause(key);
+  mgr.run('Settings', { returnTo: key });
+  return true;
+}
+const TIMED = ['Rhythm', 'MiniGame'];
+
 export function handleBack(game: Phaser.Game): boolean {
   const mgr = game.scene;
   if (mgr.isActive('HowToPlay')) { (mgr.getScene('HowToPlay') as unknown as { close(): void }).close(); return true; }

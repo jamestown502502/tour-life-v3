@@ -13,8 +13,7 @@
 // broken". These tests block a real asset request and require the scene to degrade, not die.
 import { test, expect } from './fixtures';
 import {
-  bootGame, skipFirstTimeOnboarding, startScene, waitForActiveScene, waitForCondition,
-} from './helpers';
+  bootGame, skipFirstTimeOnboarding, startScene, waitForActiveScene, waitForCondition, pressPlay } from './helpers';
 
 // This spec aborts texture downloads on purpose, and the browser logs each aborted request as
 // net::ERR_FAILED. That is the condition under test, not a bug. Uncaught exceptions still fail.
@@ -62,6 +61,7 @@ test.describe('A texture that fails to load must degrade, never crash the scene'
         15000,
       );
       expect(reached, 'Rhythm never became active with a texture missing').toBe(true);
+      await pressPlay(page);
 
       // Give it well past the ~1s window in which the live bug kills the scene.
       await page.waitForTimeout(4000);

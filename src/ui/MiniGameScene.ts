@@ -36,7 +36,7 @@ import { VERB, resultStamp, ledgerStamp, LEVEL_STAMP, cameoMood, beatMs, shouldE
 import { drawHand, bestSet, segue, arc, scoreSet, setTier, CIRCLE_MAJORS, CIRCLE_MINORS, type SetCard, type SegueVerdict } from '../game/setbuilder';
 import { haulOffers, bestHaul, playDay, doorPay, breakEven, turnoutFor, haulTier, HAUL_DAYS, HAUL_FLOAT, MOTEL, TIRED_MAX, TIRED_TURNOUT, HAUL_LESSON, type Deal, type Bed } from '../game/longhaul';
 import { problemSequence, channelLevel, inPocket, masterLevel, mixOutcome, MIX_CHANNELS, POCKET, CLIP_AT, FADER_MAX, FIX_WINDOW, PROBLEM_GAP, DRIVE, PROBLEM_LINE, type MixProblem } from '../game/mixdesk';
-import { gainVerdict, GAIN_FEEDBACK, GAIN_CHANNELS, isHeavy, packIssue, SIGNAL_CHAIN, CRAFT_LESSON, hostReaction, priorHosted, type Tier } from '../game/craft';
+import { gainVerdict, GAIN_FEEDBACK, GAIN_CHANNELS, isHeavy, packIssue, SIGNAL_CHAIN, takeawayFor, MINIGAME_SKILL, hostReaction, priorHosted, type Tier } from '../game/craft';
 
 const HELP_TEXT: Record<MiniGameDef['type'], string> = {
   timing: 'Set the level: tap when the needle is in the gold sweet spot. Left of it is too quiet (hiss), right of it clips (distortion). No penalty for missing.',
@@ -253,16 +253,23 @@ export class MiniGameScene extends Phaser.Scene {
 
   private showIntro(): void {
     this.clearContent();
-    this.card(300, 300);
-    this.contentLayer.add(this.add.text(W / 2, 330, this.mg.introText, textStyle('dialogue', {
+    const cardImg = this.card(300, 300);
+    const intro = this.add.text(W / 2, 330, this.mg.introText, textStyle('dialogue', {
       fontSize: '24px', wordWrap: { width: W - 140 }, align: 'center', lineSpacing: 6,
-    })).setOrigin(0.5, 0));
+    })).setOrigin(0.5, 0);
+    this.contentLayer.add(intro);
+    // Name the skill before the practice (QA round 4 depth pass): what this minigame teaches.
+    const skillY = Math.max(452, intro.y + intro.height + 16);
+    this.contentLayer.add(this.add.text(W / 2, skillY, `You'll practise: ${MINIGAME_SKILL[this.mg.type]}`,
+      textStyle('small', { fontSize: '17px', fontStyle: '700', color: PALETTE_HEX.teal, align: 'center', wordWrap: { width: W - 160 } })).setOrigin(0.5));
     const est = this.estimate();
     const secs = Math.max(10, Math.round(est.seconds / 10) * 10);
     const roundsLabel = est.rounds > 1 ? `${est.rounds} rounds` : 'one round';
-    this.contentLayer.add(this.add.text(W / 2, 486, `About ${secs} seconds · ${roundsLabel}${this.practice ? ' · practice, nothing at stake' : ' · no way to fail'}`,
+    this.contentLayer.add(this.add.text(W / 2, skillY + 34, `About ${secs} seconds · ${roundsLabel}${this.practice ? ' · practice, nothing at stake' : ' · no way to fail'}`,
       textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum, align: 'center', wordWrap: { width: W - 160 } })).setOrigin(0.5));
-    this.contentLayer.add(createButton(this, W / 2 - 130, 520, 260, 66, 'Start', () => this.beginGame(), { fillColor: 0x3e7c7b }));
+    const startY = skillY + 68;
+    if (startY + 66 + 14 > 600) { cardImg.destroy(); this.contentLayer.sendToBack(this.card(300, startY + 80 - 300)); }
+    this.contentLayer.add(createButton(this, W / 2 - 130, startY, 260, 66, 'Start', () => this.beginGame(), { fillColor: 0x3e7c7b }));
   }
 
   private beginGame(): void {
@@ -1113,8 +1120,10 @@ export class MiniGameScene extends Phaser.Scene {
         y = t.y + t.height + 12;
       }
     }
-    // The craft games end on the skill they practised: one line to take off the tour with you.
-    const lesson = CRAFT_LESSON[this.mg.type];
+    // Every minigame ends on the skill it practised: one line to take off the tour with you. The
+    // craft games had one; the money and theory games now use the same line their van recall
+    // explains (QA round 4 depth pass).
+    const lesson = takeawayFor(this.mg.type);
     if (lesson) {
       const t = this.add.text(W / 2, y + 4, `On the road: ${lesson}`, textStyle('small', { fontSize: '17px', color: PALETTE_HEX.teal, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5, 0);
       this.contentLayer.add(t);

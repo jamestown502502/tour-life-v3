@@ -8,7 +8,7 @@
 import { test, expect } from './fixtures';
 import {
   bootGame, skipFirstTimeOnboarding, startScene, canvasClick, collectConsoleErrors,
-  waitForCondition, waitForActiveScene, getActiveSceneKeys, clickPreShowChoice } from './helpers';
+  waitForCondition, waitForActiveScene, getActiveSceneKeys, clickPreShowChoice, pressPlay } from './helpers';
 
 /** Marks this profile as a returning player for BOTH onboarding gates the rhythm scene reads:
  *  the how-to-play overlay and the one-time rhythm practice pass. A returning player skips the
@@ -80,6 +80,7 @@ test.describe('Rhythm entry via the real pre-show path (live-regression repro)',
       12000,
     );
     expect(reached, `never reached Rhythm from the pre-show choice; active = ${(await getActiveSceneKeys(page)).join(',')}`).toBe(true);
+    await pressPlay(page);
 
     await page.waitForTimeout(1500);
     const early = await readRhythmState(page);
@@ -168,6 +169,7 @@ test.describe('Rhythm entry via the real pre-show path (live-regression repro)',
     await page.evaluate(() => (window as any).__game.scene.stop("Title"));
       await startScene(page, 'Rhythm', { cityId });
       await waitForActiveScene(page, 'Rhythm', 10000);
+      await pressPlay(page);
 
       // The practice pass is ~14 beats (roughly 7-9s depending on the song's bpm). Poll in-page
       // so this is measured against the scene's own frames rather than CDP round-trips.
@@ -227,6 +229,7 @@ test.describe('Rhythm entry via the real pre-show path (live-regression repro)',
     await page.evaluate(() => (window as any).__game.scene.stop('Title'));
     await startScene(page, 'Rhythm', { cityId: 'berlin' });
     await waitForActiveScene(page, 'Rhythm', 10000);
+    await pressPlay(page);
     await page.waitForTimeout(1500);
 
     const shot = await page.evaluate(async () => {
@@ -323,6 +326,7 @@ test.describe('Rhythm entry via the real pre-show path (live-regression repro)',
     await page.evaluate(() => (window as any).__game.scene.stop('Title'));
     await startScene(page, 'Rhythm', { cityId: 'berlin' });
     await waitForActiveScene(page, 'Rhythm', 10000);
+    await pressPlay(page);
     await page.waitForTimeout(1200);
 
     const outcome = await page.evaluate(async () => {
@@ -380,6 +384,7 @@ test.describe('Rhythm entry via the real pre-show path (live-regression repro)',
 
     await startScene(page, 'Rhythm', { cityId: 'berlin' });
     await waitForActiveScene(page, 'Rhythm', 15000);
+    await pressPlay(page);
     await page.waitForTimeout(2500);
 
     const state = await page.evaluate(() => {

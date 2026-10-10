@@ -1,4 +1,9 @@
 import Phaser from 'phaser';
+import { spineFor, spineFlag } from '../../content/spines';
+import { MINIGAME_SKILL, takeawayFor, PINNED_LESSON_KEY, pinnedLesson } from '../game/craft';
+import { minigamePlayedFlag } from '../game/minigame';
+import { CITIES } from '../game/content';
+import { saveRun } from '../core/save';
 import { LEDGER_LESSONS, LEDGER_TYPES, type LedgerType } from '../game/ledger';
 import { addCoverBackground } from '../art/background';
 import { PALETTE, PALETTE_HEX, W } from '../const';
@@ -82,24 +87,99 @@ export class ScrapbookScene extends Phaser.Scene {
     this.add.text(W / 2, Math.min(650, relText.y + relText.height + 14), `${wc.name}  ·  Tour goal ${met ? 'met' : 'missed'}: ${goal.text}`,
       textStyle('dialogue', { fontSize: '15px', shadow: undefined, color: met ? PALETTE_HEX.teal : PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0);
 
-    // QA #13: all three buttons share the default label size now (one used to override to 18px).
-    createButton(this, W / 2 - 150, 720, 300, 66, 'Read the epilogue', () => this.toggleEpilogue(), { fillColor: 0xd9a441 });
-
-    createButton(this, W / 2 - 150, 810, 300, 66, 'Save tour as image', () => this.exportAsImage(), { fillColor: 0x8a6fa3 });
-
+    // Two columns since QA round 4 (the story and the lessons joined the epilogue, the ledger and
+    // the ending), so every button still sits above the safe line on a phone.
+    const L = W / 2 - 320, R = W / 2 + 10, BW = 310, BH = 66;
+    createButton(this, L, 720, BW, BH, 'Read the epilogue', () => this.toggleEpilogue(), { fillColor: 0xd9a441, fontSize: '19px' });
+    createButton(this, R, 720, BW, BH, 'Our story', () => this.toggleStory(), { fillColor: 0xc4704f, fontSize: '19px' });
+    createButton(this, L, 806, BW, BH, 'What we learned', () => this.toggleLearned(), { fillColor: 0x3e7c7b, fontSize: '19px' });
+    createButton(this, R, 806, BW, BH, 'Why this ending', () => this.toggleWhy(), { fillColor: 0xc4704f, fontSize: '19px' });
+    createButton(this, L, 892, BW, BH, 'Save tour as image', () => this.exportAsImage(), { fillColor: 0x8a6fa3, fontSize: '19px' });
     // The money decisions this tour made, each with the rule of thumb behind it. Only when there
     // were some: a run that never met a ledger game has nothing to reflect on.
     if (this.ledgerLessons()) {
-      createButton(this, W / 2 - 150, 990, 300, 66, 'What the ledger taught us', () => this.toggleLedger(), { fillColor: 0x3e7c7b, fontSize: '19px' });
+      createButton(this, R, 892, BW, BH, 'What the ledger taught us', () => this.toggleLedger(), { fillColor: 0x3e7c7b, fontSize: '17px' });
     }
-
-    createButton(this, W / 2 - 150, 1080, 300, 66, 'Why this ending', () => this.toggleWhy(), { fillColor: 0xc4704f });
-
-    createButton(this, W / 2 - 150, 900, 300, 66, 'Start a new tour', async () => {
+    createButton(this, W / 2 - 150, 990, 300, BH, 'Start a new tour', async () => {
       await clearSave();
       State.data.progress = { screen: 'title' };
       goTo(this, 'Title');
     }, { fillColor: 0x3e7c7b });
+  }
+
+  /** A panel over the scrapbook: title, body, Close. Shared by the story and the lessons. */
+  private openPanel(name: string, titleText: string, build: (x: number, y: number, w: number, panel: Phaser.GameObjects.Container) => number): void {
+    const panelKey = ensureDialoguePanel(this);
+    const x = 40, y = 120, w = W - 80;
+    const panel = this.add.container(0, 0).setName(name).setDepth(160);
+    const overlay = this.add.rectangle(0, 0, W, this.cameras.main.height, 0x000000, 0.55).setOrigin(0, 0).setInteractive();
+    overlay.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, event: { stopPropagation: () => void }) => event.stopPropagation());
+    const bg = this.add.image(x, y, panelKey).setOrigin(0, 0);
+    const title = this.add.text(x + w / 2, y + 44, titleText, textStyle('h2', { color: PALETTE_HEX.plum })).setOrigin(0.5);
+    panel.add([overlay, bg, title]);
+    const bodyBottom = build(x, y, w, panel);
+    const h = bodyBottom - y + 100;
+    bg.setDisplaySize(w, h);
+    panel.add(createButton(this, x + w / 2 - 110, y + h - 80, 220, 60, 'Close', () => panel.destroy(), { fillColor: 0x8fb7c9 }));
+  }
+
+  /** OUR STORY (QA round 4 depth pass): the reason this tour set out with, the three drives where
+   *  the band argued about it, and whether the tour kept its reason (content/spines.ts). */
+  private toggleStory(): void {
+    const existing = this.children.getByName('storyPanel');
+    if (existing) { existing.destroy(); return; }
+    const spine = spineFor(State.data.band.whyTour);
+    const kept = spine.check(State.data);
+    const picks = spine.beats.map((b, i) => {
+      const c = [0, 1].find((k) => State.hasFlag(spineFlag(spine.id, i, k)));
+      return c === undefined ? null : `• ${b.choices[c].label.replace(/^"|"$/g, '')}`;
+    }).filter(Boolean) as string[];
+    this.openPanel('storyPanel', `Why we toured: ${spine.why.replace(/\.$/, '')}`, (x, y, w, panel) => {
+      const body = this.add.text(x + 36, y + 90, [
+        `The stake: ${spine.checkText}  ${kept ? 'Kept.' : 'Not this time.'}`,
+        '',
+        picks.length ? `On the road we chose:\n${picks.join('\n')}` : 'The drives between cities are where the band talks this through.',
+        '',
+        kept ? spine.kept : spine.broken,
+      ].join('\n'), textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: w - 72 }, lineSpacing: 6 }));
+      panel.add(body);
+      return body.y + body.height;
+    });
+  }
+
+  /** WHAT WE LEARNED (QA round 4 depth pass): every skill this tour practised, with its takeaway,
+   *  and the player picks the one to carry home. It opens their next tour's first drive. A written
+   *  self-debrief after play is what carries a game's lessons out of it (Crookall 2010). */
+  private toggleLearned(): void {
+    const existing = this.children.getByName('learnedPanel');
+    if (existing) { existing.destroy(); return; }
+    const types = [...new Set(CITIES.flatMap((c) => (c.minigames ?? []).filter((m) => State.hasFlag(minigamePlayedFlag(m.id))).map((m) => m.type)))];
+    const items = types.map((t) => ({ skill: MINIGAME_SKILL[t], lesson: takeawayFor(t) ?? '' })).filter((i) => i.lesson).slice(0, 6);
+    this.openPanel('learnedPanel', 'What we learned', (x, y, w, panel) => {
+      if (!items.length) {
+        const t = this.add.text(x + 36, y + 90, 'No minigames played this tour, so no lessons yet. Every minigame ends on one, and they gather here.', textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: w - 72 } }));
+        panel.add(t);
+        return t.y + t.height;
+      }
+      const hint = this.add.text(x + w / 2, y + 84, 'Tap the one you will take home. Your next tour opens with it.', textStyle('small', { fontSize: '16px', color: PALETTE_HEX.plum, align: 'center', wordWrap: { width: w - 60 } })).setOrigin(0.5, 0);
+      panel.add(hint);
+      let yy = hint.y + hint.height + 14;
+      for (const it of items) {
+        const pinned = pinnedLesson(State.data.meta) === it.lesson;
+        const label = `${pinned ? '✓ ' : ''}${it.skill}: ${it.lesson}`;
+        const btn = createButton(this, x + 24, yy, w - 48, 112, label, () => {
+          State.data.meta.pinnedLesson = pinned ? undefined : it.lesson;
+          saveRun(State.data);
+          // Also kept outside the run save: "Start a new tour" clears that save.
+          try { if (pinned) localStorage.removeItem(PINNED_LESSON_KEY); else localStorage.setItem(PINNED_LESSON_KEY, it.lesson); } catch { /* storage blocked */ }
+          panel.destroy();
+          this.toggleLearned();
+        }, { fillColor: pinned ? 0x3e7c7b : 0x8fb7c9, fontSize: '15px', entrance: false });
+        panel.add(btn);
+        yy += btn.getBounds().height + 10;
+      }
+      return yy;
+    });
   }
 
   /** Why this ending, and which other ending came closest (src/game/endings.ts explainEnding). */

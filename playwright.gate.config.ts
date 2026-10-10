@@ -20,6 +20,7 @@ export default defineConfig({
     'themed-transitions.spec.ts',
     'texture-resilience.spec.ts',
     'qa-round3.spec.ts',
+    'qa-round4.spec.ts',
     'return-leg.spec.ts',
     'minigame-music.spec.ts',
     'audio-output.spec.ts',

@@ -64,6 +64,42 @@ export const CRAFT_LESSON: Partial<Record<MiniGameType, string>> = {
   sustain: 'Fix the channel that is wrong, not the whole desk: find it by ear, then ride its fader back into the pocket.',
 };
 
+// ---- the skill each minigame practises, named before it starts (QA round 4 depth pass) ---------
+
+export const MINIGAME_SKILL: Record<MiniGameType, string> = {
+  timing: 'gain staging (setting levels)',
+  drag: 'packing a van load-in',
+  choice: 'giving a good interview',
+  pressure: 'answering on live radio',
+  sequence: 'synth signal flow',
+  sustain: 'fixing a live mix by ear',
+  interval: 'hearing intervals',
+  clave: 'reading rhythm notation',
+  split: 'judging a guarantee vs a door deal',
+  pricing: 'pricing merch for margin',
+  perdiem: 'budgeting a day on tour',
+  gearcall: 'buy, rent or skip gear',
+  exchange: 'changing money without losing it',
+  chordquality: 'hearing chord types',
+  transpose: 'transposing a chord',
+  meter: 'hearing time signatures',
+  tempo: 'finding the tempo',
+  setlist: 'building a setlist',
+  longhaul: 'cash flow on the road',
+};
+
+/** The takeaway a player chose to carry home from their last tour, kept outside the run save. */
+export const PINNED_LESSON_KEY = 'tourlife.pinnedLesson';
+export function pinnedLesson(meta?: { pinnedLesson?: string }): string | undefined {
+  if (meta?.pinnedLesson) return meta.pinnedLesson;
+  try { return localStorage.getItem(PINNED_LESSON_KEY) ?? undefined; } catch { return undefined; }
+}
+
+/** The one line each minigame ends on: the craft lesson, or the same reason its van recall gives. */
+export function takeawayFor(type: MiniGameType): string | undefined {
+  return CRAFT_LESSON[type] ?? RECALL.find((r) => r.type === type)?.why;
+}
+
 // ---- hosts who react and remember ------------------------------------------------------------
 //
 // A hosted minigame ended on the minigame's own outro, the same whoever hosted it and whatever had

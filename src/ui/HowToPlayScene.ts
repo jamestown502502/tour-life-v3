@@ -57,6 +57,9 @@ const CARD_W = W - 80;
 const CARD_H = 620;
 const CARD_X = 40;
 const CARD_Y = 260;
+/** The scrolling text area inside the card: under the heading, above the page dots. */
+const BODY_TOP = CARD_Y + 120;
+const BODY_H = CARD_H - 120 - 92;
 
 export class HowToPlayScene extends Phaser.Scene {
   constructor() { super('HowToPlay'); }
@@ -71,6 +74,10 @@ export class HowToPlayScene extends Phaser.Scene {
 
   private welcome = false;
   private guideBtn: Phaser.GameObjects.Container | null = null;
+  /** How far the page text is scrolled up, and the most it can be (QA round 4 #5). */
+  private scrollY = 0;
+  private maxScroll = 0;
+  private scrollHint!: Phaser.GameObjects.Text;
 
   init(data: { returnTo?: string; welcome?: boolean }): void {
     this.returnTo = data.returnTo ?? 'Title';
@@ -98,9 +105,29 @@ export class HowToPlayScene extends Phaser.Scene {
     // this heading sits on the sand card below, so it needs the same plum the card's dialogue
     // body already uses.
     this.heading = this.add.text(W / 2, CARD_Y + 60, '', textStyle('h1', { fontSize: '28px', color: PALETTE_HEX.plum })).setOrigin(0.5);
-    this.body = this.add.text(CARD_X + 44, CARD_Y + 120, '', textStyle('dialogue', {
+    this.body = this.add.text(CARD_X + 44, BODY_TOP, '', textStyle('dialogue', {
       fontSize: '22px', wordWrap: { width: CARD_W - 88 }, lineSpacing: 8,
     }));
+    // The page text scrolls inside the card (QA round 4 #5, "allow the users to scroll the
+    // tutorial page"): drag it, or use a mouse wheel. A swipe left or right turns the page.
+    const maskShape = this.make.graphics({}, false).fillRect(CARD_X + 20, BODY_TOP - 6, CARD_W - 40, BODY_H + 6);
+    this.body.setMask(maskShape.createGeometryMask());
+    this.scrollHint = this.add.text(W / 2, BODY_TOP + BODY_H + 6, 'Drag to read more', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.plum })).setOrigin(0.5, 0);
+    const area = this.add.zone(CARD_X, BODY_TOP - 10, CARD_W, BODY_H + 20).setOrigin(0, 0).setInteractive();
+    let start: { x: number; y: number; scroll: number } | null = null;
+    area.on('pointerdown', (p: Phaser.Input.Pointer) => { start = { x: p.x, y: p.y, scroll: this.scrollY }; });
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!start || !p.isDown) return;
+      const dy = p.y - start.y, dx = p.x - start.x;
+      if (Math.abs(dy) > Math.abs(dx)) this.setScroll(start.scroll - dy);
+    });
+    this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
+      if (!start) return;
+      const dx = p.x - start.x, dy = p.y - start.y;
+      start = null;
+      if (!this.welcome && Math.abs(dx) > 90 && Math.abs(dx) > Math.abs(dy) * 1.5) this.go(dx < 0 ? 1 : -1);
+    });
+    this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => this.setScroll(this.scrollY + dy * 0.6));
 
     for (let i = 0; i < PAGES.length; i++) {
       const dot = this.add.circle(W / 2 - (PAGES.length - 1) * 14 + i * 28, CARD_Y + CARD_H - 40, 7, PALETTE.gold, 0.3);
@@ -125,10 +152,19 @@ export class HowToPlayScene extends Phaser.Scene {
     this.renderPage();
   }
 
+  private setScroll(y: number): void {
+    this.scrollY = Phaser.Math.Clamp(y, 0, this.maxScroll);
+    this.body.setY(BODY_TOP - this.scrollY);
+    this.scrollHint.setText(this.scrollY >= this.maxScroll - 2 ? 'Drag up to read from the top' : 'Drag to read more');
+  }
+
   private renderPage(): void {
     const p = this.welcome ? WELCOME : PAGES[this.page];
     this.heading.setText(p.title);
     this.body.setText(p.body);
+    this.maxScroll = Math.max(0, this.body.height - BODY_H);
+    this.scrollHint.setVisible(this.maxScroll > 0);
+    this.setScroll(0);
     this.dots.forEach((d, i) => d.setFillStyle(PALETTE.gold, i === this.page ? 1 : 0.3).setVisible(!this.welcome));
     this.backBtn.setVisible(!this.welcome && this.page > 0);
     this.guideBtn?.setVisible(this.welcome);

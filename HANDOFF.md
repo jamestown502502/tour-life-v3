@@ -1836,3 +1836,41 @@ Before/after: `C:\Users\Jbthi\Claude Cowork\BAIS_Critique_Depth_Pass_BeforeAfter
   HowToPlay `close()`.
 - **A11y:** `src/ui/a11yLive.ts` announces each dialogue line (DialogueBox.show).
 - New e2e: `e2e/depth-pass.spec.ts` (DEPTH_SHOTS env writes screenshots elsewhere).
+
+## 27. QA round 4 + depth pass (2026-10-10)
+
+Tester report: 11 rows plus two "not observed" client features (`Tour Life - Issue Report Round 4.xlsx`).
+Before/after: `C:\Users\Jbthi\Claude Cowork\BAIS_QA_Round4_BeforeAfter_2026-10-10.md`.
+
+- **Tonight's goal + bandmates on stage (the two missing features):** they existed only as a 4.2 s
+  banner over the first notes (and on a first show it sat under the tutorial line). Now
+  `RhythmScene.showTonightCard` opens every show: goal, its reward (`goalRewardLine`), the wildcard
+  line, and all four bandmates (`bandmateHelpRows`: active help, or "Grow close to X: <perk>"). Play
+  starts it; it also starts itself after `TONIGHT_CARD_MS` (9 s). A goal chip (`createGoalChip`,
+  `goalProgressText`, `goalLost`) stays on screen for the song; Theo/Mira perks call out the moment
+  they save a note (`perkCallout`); Results stamp MET / NOT THIS TIME in a panel above Continue
+  (Continue moved to y 1060).
+- **#1 Continue:** the Title slot always holds a Continue (a grey "Continue (no tour yet)" explains
+  saving); in a run Settings is titled Paused with Resume at the top.
+- **#2/#3 pause:** `backButton.ts autoPause` (SceneManager calls, not ScenePlugin: a hidden page has no
+  frames) opens Settings over Rhythm/MiniGame on `visibilitychange` hidden and when the rotate prompt
+  appears. Rotate prompt query widened to any touch screen in landscape up to 900 px tall
+  (`ROTATE_QUERY` in main.ts mirrors index.html).
+- **#4 TalkBack:** `ui/a11yButtons.ts` mirrors every enabled createButton as a positioned, labelled
+  DOM button (paused scenes excluded), 4 Hz, with a focus ring.
+- **#5 How to Play:** page text masked and drag/wheel scrollable; horizontal swipe turns pages.
+- **#6/#11 "back arrow alignment":** the '←' glyph is not in Baloo 2, so it came from a fallback font
+  sitting low; Button.ts now draws a chevron for any "← " label. Band setup Back is 150x66 on the
+  gear's row.
+- **#7/#8/#10 band name:** field empty with `e.g. <suggestion>` placeholder (blank still uses the
+  suggestion); `htmlOverlay` only docks above the keyboard when the keyboard would cover the field
+  (docking a top field made it jump, the caret land mid-word, and the name "reappear"), caret to end
+  on focus.
+- **#9 pull to refresh:** not added on purpose (accidental reloads mid-show); the game saves
+  continuously and Continue resumes. Documented in the before/after.
+- **Depth:** `content/spines.ts` turns "Why this tour?" into a spine (stake on the first drive, a choice
+  on the drives to stops 2-4, `spine_<id>_<beat>_<choice>` flags, Scrapbook "Our story"); every
+  minigame names its skill (`MINIGAME_SKILL`) on its intro and ends on a takeaway (`takeawayFor`:
+  craft lesson or its recall reason); Scrapbook "What we learned" lets the player pin one
+  (`meta.pinnedLesson` + localStorage `tourlife.pinnedLesson`), read back on the next tour's first drive.
+- Tests: `src/tests/qaRound4.test.ts` (14), `e2e/qa-round4.spec.ts` (in the gate and nightly).

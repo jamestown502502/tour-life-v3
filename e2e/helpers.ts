@@ -315,3 +315,21 @@ export async function clickPreShowChoice(page: Page, index = 0): Promise<void> {
   const center = await preShowChoiceCenter(page, index);
   await canvasClick(page, center.x, center.y);
 }
+
+/** Start the show: the Tonight card (QA round 4) holds the song until Play (or its own countdown).
+ *  Waits for the card, taps Play, and returns once the song has started. A no-op if it already has. */
+export async function pressPlay(page: Page, timeoutMs = 15000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const state = await page.evaluate(() => {
+      const s: any = (window as any).__game.scene.getScene('Rhythm');
+      if (!s || !s.sys.isActive()) return 'none';
+      if (s.songStarted) return 'started';
+      const card = s.children.list.find((o: any) => o.type === 'Container' && o.depth === 300);
+      return card ? 'card' : 'wait';
+    });
+    if (state === 'started' || state === 'none') return;
+    if (state === 'card') { try { await clickButtonByLabel(page, 'Rhythm', 'Play'); } catch { /* the card closed itself */ } }
+    await page.waitForTimeout(300);
+  }
+}
