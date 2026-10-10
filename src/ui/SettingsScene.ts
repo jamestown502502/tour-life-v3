@@ -66,7 +66,7 @@ export class SettingsScene extends Phaser.Scene {
     // bottom (QA round 4 #1, "Continue the game button is missing at the in-game menu").
     const paused = this.returnTo !== 'Title';
     this.add.text(paused ? 220 : W / 2, 50, paused ? 'Paused' : 'Settings', textStyle('h1')).setOrigin(0.5);
-    if (paused) createButton(this, W - 330, 18, 310, 66, 'Resume game', () => this.resumeGame(), { fillColor: 0x3e7c7b, fontSize: '20px' });
+    if (paused) createButton(this, W - 330, 12, 310, 62, 'Resume game', () => this.resumeGame(), { fillColor: 0x3e7c7b, fontSize: '20px' });
     this.add.text(W / 2, 90, 'Rhythm score never gates the story. No-fail mode is always on.',
       textStyle('small', { fontSize: '13px', wordWrap: { width: W - 120 }, align: 'center' })).setOrigin(0.5);
 
