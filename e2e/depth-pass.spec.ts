@@ -68,16 +68,23 @@ test.describe('after onboarding', () => {
     await startScene(page, 'Rhythm', { cityId: 'lisbon' });
     await waitForActiveScene(page, 'Rhythm');
     await page.waitForTimeout(1500);
-    const banner = await page.evaluate(() => (window as any).__game.scene.getScene('Rhythm').children.list.filter((o: any) => o.type === 'Text').map((o: any) => o.text).join('\n'));
-    expect(banner).toMatch(/Tonight's goal: /);
+    // The Tonight card (QA round 4): a container, so its texts are read recursively.
+    const banner = await page.evaluate(() => {
+      const out: string[] = [];
+      const walk = (l: any[]) => { for (const o of l) { if (o.type === 'Text') out.push(String(o.text)); if (o.list) walk(o.list); } };
+      walk((window as any).__game.scene.getScene('Rhythm').children.list);
+      return out.join('\n');
+    });
+    expect(banner).toMatch(/Goal: /);
     expect(banner).toMatch(/Theo locks the tempo/);
     await shot(page, 'show-banner');
     await page.evaluate(() => (window as any).__game.scene.getScene('Rhythm').finish());
     await waitForActiveScene(page, 'Results', 15000);
     await page.waitForTimeout(800);
     const results = await page.evaluate(() => (window as any).__game.scene.getScene('Results').children.list.filter((o: any) => o.type === 'Text').map((o: any) => o.text).join('\n'));
-    expect(results).toMatch(/Tonight's goal: .*(MET|not this time)/);
-    expect(results).toMatch(/On your side: /);
+    expect(results).toMatch(/TONIGHT'S GOAL/);
+    expect(results).toMatch(/\n(MET|NOT THIS TIME)\n/);
+    expect(results).toMatch(/Helping on stage: |No bandmate was close enough/);
     const progress = await page.evaluate(() => (window as any).__state.data.progress);
     expect(progress).toMatchObject({ screen: 'city', nodeId: 'afterShow' });   // a kill here resumes after the show
     await shot(page, 'results-tonight');
