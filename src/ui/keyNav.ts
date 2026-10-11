@@ -114,7 +114,12 @@ export function startKeyNav(game: Phaser.Game): void {
     const targets = liveTargets(game);
     const sceneKey = targets[0] ? (targets[0].obj as unknown as { scene: Phaser.Scene }).scene.scene.key : '';
     if (sceneKey !== screenSig) { screenSig = sceneKey; point = null; chosen = false; }
-    let cur: Target | null = (point && nearest(point, targets)) || firstTarget(targets, HUD_BOTTOM) || (targets.length === 1 ? targets[0] : null);
+    // The HUD strip (Settings, Help, History) holds focus only when the player put it there. When the
+    // focused button vanishes mid-game (a pattern playing back, a coach note), the ring must not slide
+    // up to Help or Settings, or the next Enter opens a menu over the game.
+    const body = targets.filter((t) => t.y >= HUD_BOTTOM || t.full);
+    const pool = point && point.y < HUD_BOTTOM ? targets : body;
+    let cur: Target | null = (point && nearest(point, pool)) || firstTarget(targets, HUD_BOTTOM) || targets.find((t) => t.full) || null;
     for (const ev of events) {
       if (ev.type === 'move') {
         if (down) {   // Enter held: drag
