@@ -1874,3 +1874,28 @@ Before/after: `C:\Users\Jbthi\Claude Cowork\BAIS_QA_Round4_BeforeAfter_2026-10-1
   craft lesson or its recall reason); Scrapbook "What we learned" lets the player pin one
   (`meta.pinnedLesson` + localStorage `tourlife.pinnedLesson`), read back on the next tour's first drive.
 - Tests: `src/tests/qaRound4.test.ts` (14), `e2e/qa-round4.spec.ts` (in the gate and nightly).
+
+## 28. Web pivot (2026-10-11)
+
+Google Play is shelved; the game is web-first and pitched to publishers. Live at
+**https://tour-life-rhythm-band-sim.vercel.app** (the old `tour-life-v3.vercel.app` 308-redirects, set as a Vercel
+domain redirect). Canonical/OG URLs in `index.html` point at the new domain.
+
+- **Keyboard + gamepad** (`src/core/keys.ts` pure, `src/ui/keyNav.ts` Phaser side, started in main.ts): arrows/WASD
+  (no D: D F J K are the rhythm lanes)/D-pad/stick move a DOM focus ring over the live interactive objects of the
+  topmost running, unpaused scene (`InputPlugin._list`, bounds from `getBounds()`); objects drawn under a full-screen
+  interactive backdrop are dropped (draw-order path compare). Enter / gamepad A send real `mousemove`/`mousedown`/
+  `mouseup` to the canvas, so every button, pad, slot and lane reacts exactly as to a click; holding Enter and
+  pressing arrows drags in 40-unit steps (load-ins, Fix the Mix faders). **Space is NOT a press key**: it already
+  advances dialogue (DialogueBox). Esc/Backspace/B = `handleBack()`; at the title it does nothing (never leaves the
+  site). Focus persists only after the player moved it, so buttons that pop in late can take default focus; the HUD
+  strip (y < 110) never takes default focus. Invisible hit areas (alpha 0.001) count as targets; only a faded
+  parent hides one. `window.__keyFocus()` (dev/e2e) reports the ring and a held press.
+- **Desktop presentation** (`src/ui/ambient.ts`, `#ambient` in index.html): an 18x32 copy of the canvas, drawn on
+  `POST_RENDER` 5x/s, blurred behind the portrait column; hidden when the column fills the window (phones).
+  The canvas gets a soft frame at aspect ratios wider than 3:4.
+- **`/presskit/`** (static, `public/presskit/`): landing + press page, 12 stills pulled from the 2026-10-10 60 fps
+  capture (`game-capture/out/TourLife/raw`), 2.4 MB zip. Self-hosted fonts, no scripts or trackers.
+- **Tests:** `src/tests/keys.test.ts` (6); `e2e/keyboard.spec.ts` (nightly config, Pixel 7) walks the ring onto
+  each target with arrow keys only (no clicks) and plays every minigame in every city to its result, plus Esc
+  pause/resume. Keyboard play is slower than taps: 300 s per minigame.
