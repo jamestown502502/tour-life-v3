@@ -49,14 +49,17 @@ export class TitleScene extends Phaser.Scene {
       // tap, and that tap is often the one that also presses a button — reported live as the music
       // "coming out of nowhere". 0.8s (the default, tuned for crossfading between rhythm tracks)
       // is abrupt when it is the first sound the game has made. 2.6s reads as the room arriving.
-      if (themeBuffer instanceof AudioBuffer) audio.playMusicTrack(themeBuffer, 0, true, 2.6);
+      // `instanceof AudioBuffer` throws a ReferenceError where Web Audio does not exist at all,
+      // breaking the title on first tap; audio.ts promises those browsers simply play silent.
+      const isBuffer = (b: unknown): b is AudioBuffer => typeof AudioBuffer !== 'undefined' && b instanceof AudioBuffer;
+      if (isBuffer(themeBuffer)) audio.playMusicTrack(themeBuffer, 0, true, 2.6);
       else {
         audio.playAmbience(DEFAULT_AMBIENCE_CHORDS, DEFAULT_AMBIENCE_BPM);
         // The theme loads in the background now (QA round 3 #1): if it lands while the title is
         // still up, it takes over from the procedural bed with the same slow fade.
         onTitleThemeLoaded(() => {
           const late = this.cache.audio.get('title_theme') as AudioBuffer | undefined;
-          if (late instanceof AudioBuffer && this.sys.isActive()) audio.playMusicTrack(late, 0, true, 2.6);
+          if (isBuffer(late) && this.sys.isActive()) audio.playMusicTrack(late, 0, true, 2.6);
         });
       }
     };
