@@ -75,7 +75,7 @@ export class TitleScene extends Phaser.Scene {
     this.add.text(W / 2, 260, 'Tour Life', textStyle('title')).setOrigin(0.5);
     // gold measures 2.77:1 on this scrim (just under the 3:1 large-text floor) — cream is the
     // one preset color that reliably clears it here (5.28:1), see docs/contrast-audit.md.
-    this.add.text(W / 2, 320, 'International Dates', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
+    this.add.text(W / 2, 320, 'Rhythm Band Sim', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
 
     const seedLabel = this.add.text(W / 2, 420, `Custom seed: ${this.currentSeed}`, textStyle('small', { color: PALETTE_HEX.cream })).setOrigin(0.5);
 

@@ -153,7 +153,7 @@ export class BootScene extends Phaser.Scene {
     const h = this.cameras.main.height;
     this.add.rectangle(0, 0, W, h, PALETTE.night, 1).setOrigin(0, 0);
     this.add.text(W / 2, h / 2 - 120, 'Tour Life', textStyle('h1', { fontSize: '46px' })).setOrigin(0.5);
-    this.add.text(W / 2, h / 2 - 66, 'International Dates', textStyle('small', {
+    this.add.text(W / 2, h / 2 - 66, 'Rhythm Band Sim', textStyle('small', {
       color: PALETTE_HEX.gold,
     })).setOrigin(0.5);
 
