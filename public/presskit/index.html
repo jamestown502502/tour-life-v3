@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tour Life: Rhythm Band Sim · Press kit</title>
+  <meta name="description" content="Tour Life is a free, cozy rhythm game about an indie band on tour. Press kit, screenshots and fact sheet." />
+  <link rel="canonical" href="https://tour-life-rhythm-band-sim.vercel.app/presskit/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Tour Life: Rhythm Band Sim" />
+  <meta property="og:description" content="A cozy rhythm game about an indie band on tour. Free in your browser, no ads, no sign-up." />
+  <meta property="og:image" content="https://tour-life-rhythm-band-sim.vercel.app/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <style>
+    /* Self-hosted fonts, no scripts, no trackers: the page keeps the game's "no data collected" promise. */
+    @font-face { font-family: 'Baloo 2'; font-weight: 600 800; font-display: swap; src: url('/fonts/Baloo2-Variable.woff2') format('woff2'); }
+    @font-face { font-family: 'Nunito'; font-weight: 400 700; font-display: swap; src: url('/fonts/Nunito-Variable.woff2') format('woff2'); }
+    :root { --bg: #2B3A55; --deep: #1A2436; --panel: #34466a; --line: #4d6290; --ink: #F5EBDD; --muted: #cfc3b3; --gold: #F2C14E; --teal: #3f8f8a; --terra: #c8643c; }
+    * { box-sizing: border-box; }
+    html { background: var(--deep); }
+    body { margin: 0; color: var(--ink); font: 17px/1.6 Nunito, system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--deep); }
+    a { color: var(--gold); }
+    h1, h2, .sub { font-family: 'Baloo 2', Nunito, system-ui, sans-serif; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+    header.hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+    .hero-bg { position: absolute; inset: 0; background: url(shots/tokyo-arrival.jpg) center/cover; filter: blur(10px) brightness(0.4); transform: scale(1.08); }
+    .hero-in { position: relative; display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: center; padding: 56px 20px; max-width: 1080px; margin: 0 auto; }
+    .eyebrow { color: var(--gold); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; margin: 0 0 6px; }
+    h1 { font-size: clamp(44px, 7vw, 72px); line-height: 1; margin: 0; color: var(--ink); }
+    .sub { font-size: 26px; font-weight: 700; margin: 6px 0 18px; color: var(--gold); }
+    .lede { font-size: 19px; margin: 0 0 24px; max-width: 36ch; }
+    .cta { display: inline-block; background: var(--teal); color: #fff; text-decoration: none; font-weight: 800; font-size: 20px; padding: 14px 30px; border-radius: 999px; border: 2px solid #9fd8d2; }
+    .cta:hover, .cta:focus-visible { background: #4aa39d; }
+    .cta:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+    .facts-inline { margin: 14px 0 0; color: var(--muted); font-size: 15px; }
+    .hero-shot { width: 100%; max-width: 340px; height: auto; justify-self: center; border-radius: 18px; border: 1px solid var(--line); box-shadow: 0 24px 70px rgba(0,0,0,.55); display: block; }
+    section { padding: 52px 0; border-bottom: 1px solid var(--line); }
+    h2 { color: var(--gold); font-size: 30px; margin: 0 0 16px; }
+    .cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; }
+    ul.feat { padding-left: 20px; margin: 0; }
+    ul.feat li { margin: 0 0 8px; }
+    .gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .gallery figure { margin: 0; }
+    .gallery a { display: block; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+    .gallery img { width: 100%; height: auto; display: block; aspect-ratio: 9 / 16; object-fit: cover; }
+    .gallery figcaption { font-size: 14px; color: var(--muted); padding: 6px 2px 0; }
+    dl.sheet { display: grid; grid-template-columns: max-content 1fr; gap: 8px 22px; margin: 0; }
+    dl.sheet dt { color: var(--muted); }
+    dl.sheet dd { margin: 0; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; }
+    .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    kbd { background: var(--deep); border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 6px; padding: 1px 7px; font: 700 14px Nunito, system-ui, sans-serif; }
+    .btn2 { display: inline-block; border: 2px solid var(--gold); color: var(--gold); text-decoration: none; font-weight: 700; padding: 10px 20px; border-radius: 999px; margin: 6px 10px 0 0; }
+    footer { padding: 32px 0 48px; color: var(--muted); font-size: 15px; }
+    @media (max-width: 820px) {
+      .hero-in, .cols { grid-template-columns: 1fr; gap: 28px; }
+      .gallery { grid-template-columns: repeat(3, 1fr); }
+      .keys { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) { .gallery { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-in">
+      <div>
+        <p class="eyebrow">Bennett AI Solutions Inc. presents</p>
+        <h1>Tour Life</h1>
+        <p class="sub">Rhythm Band Sim</p>
+        <p class="lede">A cozy rhythm game about an indie band on the road. Four friends, four cities, eight original songs. Play the shows, live the story between them, and keep the tour's money alive. A missed note never ends your run.</p>
+        <a class="cta" href="/">Play free now</a>
+        <p class="facts-inline">Plays in any modern browser on desktop or phone · No ads · No sign-up · No data collected</p>
+      </div>
+      <img class="hero-shot" src="shots/tokyo-show.jpg" alt="A Tokyo show in progress: four lanes, a goal banner and the crowd at the bottom of the stage." width="720" height="1280" />
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section aria-labelledby="about">
+      <div class="cols">
+        <div>
+          <h2 id="about">About the game</h2>
+          <p>Tour Life takes Mira, Theo, Jun and Rowan through Lisbon, Tokyo, Mexico City and Berlin. Each city is a day of exploring, talking and small jobs that keep a band going, ending in a show you play on four lanes.</p>
+          <p>Between shows, the jobs teach real skills. Set levels at soundcheck without clipping, ride a fader until a channel sits in the pocket, load the heavy cases first, price the merch table, take the guaranteed fee or bet on the door, and order a setlist around the circle of fifths. Every answer, right or wrong, tells you why.</p>
+          <p>Your choices decide who you grow close to, and closeness changes how your bandmates play with you. The tour ends in a Scrapbook that remembers what happened and what you learned, and you can save it as an image.</p>
+        </div>
+        <div class="panel">
+          <h2 style="font-size:24px">What's inside</h2>
+          <ul class="feat">
+            <li>A story-driven rhythm game with no fail state</li>
+            <li>8 original songs on four lanes, with hold notes</li>
+            <li>34 minigames across 19 kinds of play</li>
+            <li>4 bandmates who help, react and remember</li>
+            <li>Music skills: intervals, chords, transposing, tempo, mixing, the circle of fifths</li>
+            <li>Money skills: door deals, pricing, budgets, gear, exchange rates</li>
+            <li>6 endings, seeded routes and a shared daily tour</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="shots">
+      <h2 id="shots">Screenshots</h2>
+      <div class="gallery">
+        <figure><a href="shots/tokyo-show.jpg"><img src="shots/tokyo-show.jpg" alt="The Tokyo show: notes falling to the gold line, a goal banner and the crowd." loading="lazy" width="720" height="1280" /></a><figcaption>Every city ends in a show.</figcaption></figure>
+        <figure><a href="shots/tokyo-arrival.jpg"><img src="shots/tokyo-arrival.jpg" alt="Arriving in Tokyo: a neon street at night, a story line and three choices." loading="lazy" width="720" height="1280" /></a><figcaption>Tokyo hits like static.</figcaption></figure>
+        <figure><a href="shots/fix-the-mix.jpg"><img src="shots/fix-the-mix.jpg" alt="Fix the Mix: four channel faders and meters with a green pocket and red clip zone." loading="lazy" width="720" height="1280" /></a><figcaption>Fix the Mix: ride the fader into the pocket.</figcaption></figure>
+        <figure><a href="shots/night-before.jpg"><img src="shots/night-before.jpg" alt="The night before the tour: Mira speaks in a warm, lamp-lit rehearsal room." loading="lazy" width="720" height="1280" /></a><figcaption>The night before the tour.</figcaption></figure>
+        <figure><a href="shots/merch-table.jpg"><img src="shots/merch-table.jpg" alt="The merch table: set a shirt price and see the profit math." loading="lazy" width="720" height="1280" /></a><figcaption>Price the merch, see the math.</figcaption></figure>
+        <figure><a href="shots/pack-the-van.jpg"><img src="shots/pack-the-van.jpg" alt="Pack the van: drag cases into slots in a rainy alley." loading="lazy" width="720" height="1280" /></a><figcaption>Heavy cases first.</figcaption></figure>
+        <figure><a href="shots/van-drive.jpg"><img src="shots/van-drive.jpg" alt="On the motorway between cities, inside the van." loading="lazy" width="720" height="1280" /></a><figcaption>The drive between cities.</figcaption></figure>
+        <figure><a href="shots/scrapbook.jpg"><img src="shots/scrapbook.jpg" alt="The Tour Scrapbook ending: why this ending, and what the band learned." loading="lazy" width="720" height="1280" /></a><figcaption>The Tour Scrapbook.</figcaption></figure>
+      </div>
+      <p style="margin-top:22px"><a class="btn2" href="tour-life-press-kit.zip" download>Download press kit (zip, 2.4 MB)</a><span style="color:var(--muted);font-size:15px">12 screenshots at 720×1280, logo, social image.</span></p>
+    </section>
+
+    <section aria-labelledby="play">
+      <h2 id="play">Play it your way</h2>
+      <div class="keys">
+        <div class="panel"><strong>Touch</strong><br />Tap the lanes and buttons on any phone, held upright.</div>
+        <div class="panel"><strong>Keyboard</strong><br /><kbd>D</kbd> <kbd>F</kbd> <kbd>J</kbd> <kbd>K</kbd> play the show. Arrows move, <kbd>Enter</kbd> taps (hold it with arrows to drag), <kbd>Space</kbd> advances dialogue, <kbd>Esc</kbd> pauses.</div>
+        <div class="panel"><strong>Gamepad</strong><br />D-pad or left stick moves, <strong>A</strong> taps, <strong>B</strong> goes back.</div>
+      </div>
+      <p style="margin-top:18px">Also built in: relaxed timing, autoplay for the shows, audio latency calibration, reduced motion, screen reader support for every button, and offline play once loaded.</p>
+    </section>
+
+    <section aria-labelledby="facts">
+      <div class="cols">
+        <div>
+          <h2 id="facts">Fact sheet</h2>
+          <dl class="sheet">
+            <dt>Developer</dt><dd>Bennett AI Solutions Inc. (Kentucky, USA)</dd>
+            <dt>Publisher</dt><dd>Self-published</dd>
+            <dt>Platform</dt><dd>Web: desktop and mobile browsers</dd>
+            <dt>Release</dt><dd>Live now, free</dd>
+            <dt>Price</dt><dd>Free. No ads, no in-app purchases, no accounts.</dd>
+            <dt>Genre</dt><dd>Rhythm, narrative, management</dd>
+            <dt>Language</dt><dd>English</dd>
+            <dt>Tech</dt><dd>TypeScript, Phaser 3, no third-party SDKs</dd>
+            <dt>Play</dt><dd><a href="/">this site</a></dd>
+            <dt>Contact</dt><dd><a href="mailto:jb@bennettaisolutions.tech">jb@bennettaisolutions.tech</a></dd>
+          </dl>
+        </div>
+        <div class="panel">
+          <h2 style="font-size:24px">How it's made</h2>
+          <p>Tour Life is made by a solo founder-director using an AI-assisted pipeline. Code, writing, art and music were produced with AI tools under the founder's direction, and every build goes through human playtesting, including four rounds of paid external QA.</p>
+          <p style="margin-bottom:0">With publishing support, final art and audio would be remade by hired artists and composers.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">© 2026 Bennett AI Solutions Inc. · <a href="/">Play Tour Life</a></footer>
+</body>
+</html>

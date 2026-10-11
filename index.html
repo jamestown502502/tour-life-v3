@@ -14,17 +14,19 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Tour Life: Rhythm Band Sim</title>
 <meta name="description" content="A cozy rhythm-adventure about an indie band's world tour — pick a route, live the story between shows, play every gig, end with a one-of-a-kind Tour Scrapbook. No hard fails." />
+<link rel="canonical" href="https://tour-life-rhythm-band-sim.vercel.app/" />
+<meta property="og:url" content="https://tour-life-rhythm-band-sim.vercel.app/" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="Tour Life: Rhythm Band Sim" />
 <meta property="og:description" content="A cozy rhythm-adventure about an indie band's world tour — pick a route, live the story between shows, play every gig, end with a one-of-a-kind Tour Scrapbook." />
 <!-- Absolute, unlike the rest of this file's relative './' links (vite.config's base, for
      Capacitor file:// portability) — the OG/Twitter spec requires an absolute image URL, and most
      real-world scrapers (Slack, Discord, iMessage) don't reliably resolve a relative one. -->
-<meta property="og:image" content="https://tour-life-v3.vercel.app/og-image.png" />
+<meta property="og:image" content="https://tour-life-rhythm-band-sim.vercel.app/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Tour Life: Rhythm Band Sim" />
 <meta name="twitter:description" content="A cozy rhythm-adventure about an indie band's world tour. No hard fails — every choice just makes a different story." />
-<meta name="twitter:image" content="https://tour-life-v3.vercel.app/og-image.png" />
+<meta name="twitter:image" content="https://tour-life-rhythm-band-sim.vercel.app/og-image.png" />
 <!-- Real painted title background (public/assets/manifest.json) — BootScene loads it after this,
      so preloading here means it's already in the HTTP cache by the time Title's own load.image
      call for "bg_title" runs, instead of that being the first request for it. -->
@@ -71,9 +73,20 @@
      ROTATE_QUERY in src/main.ts, which pauses a running show while this is up. */
   @media (orientation: landscape) and (pointer: coarse) and (max-height: 900px) { #rotate-prompt { display: flex; } }
   canvas { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  /* Desktop presentation (web pivot 2026-10-11): the bands beside the portrait game glow with a blurred
+     copy of the current scene (src/ui/ambient.ts), and the game column sits on a soft shadow. A div,
+     not a second canvas: tests and probes look up THE canvas. */
+  #ambient {
+    display: none; position: fixed; inset: -8%; width: 116%; height: 116%; z-index: 0; pointer-events: none;
+    background-size: 100% 100%; background-repeat: no-repeat;
+    filter: blur(48px) brightness(0.42) saturate(1.15);
+  }
+  #app { z-index: 1; }
+  @media (min-aspect-ratio: 3/4) { #app canvas { box-shadow: 0 0 0 1px rgba(242,193,78,.18), 0 24px 80px rgba(0,0,0,.55); border-radius: 6px; } }
 </style>
 </head>
 <body>
+<div id="ambient" aria-hidden="true"></div>
 <div id="app"></div>
 <div id="rotate-prompt" role="alert"><div class="icon">&#x1F4F1;</div><div>Tour Life plays upright.</div><div style="font-weight:400;font-size:15px;opacity:.85">Turn your phone to portrait to keep playing. Your tour is right where you left it.</div></div>
 <script type="module" src="/src/main.ts"></script>
