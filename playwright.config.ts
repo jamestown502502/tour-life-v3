@@ -13,7 +13,7 @@ import { defineConfig, devices } from '@playwright/test';
 // test.fixme with an issue link and a date.
 export default defineConfig({
   testDir: './e2e',
-  testMatch: ['smoke.spec.ts', 'fullrun.spec.ts', 'verification.spec.ts', 'text-fit-sweep.spec.ts', 'stuck-screen-hardening.spec.ts', 'critical-issues-followup.spec.ts', 'drag.spec.ts', 'rhythm-entry.spec.ts', 'no-leftover-overlay.spec.ts', 'texture-resilience.spec.ts', 'double-start.spec.ts', 'minigame-music.spec.ts', 'return-leg.spec.ts', 'no-barren-screens.spec.ts', 'text-legibility.spec.ts', 'first-run-title.spec.ts', 'themed-transitions.spec.ts', 'return-art-and-viewport.spec.ts', 'band-help-and-echo.spec.ts', 'text-under-ui.spec.ts', 'minigame-playthrough.spec.ts', 'qa-round3.spec.ts', 'qa-round4.spec.ts', 'depth-pass.spec.ts', 'audio-output.spec.ts', 'clock-timing.spec.ts', 'reentry.spec.ts', 'hud-clearance.spec.ts'],
+  testMatch: ['smoke.spec.ts', 'fullrun.spec.ts', 'verification.spec.ts', 'text-fit-sweep.spec.ts', 'stuck-screen-hardening.spec.ts', 'critical-issues-followup.spec.ts', 'drag.spec.ts', 'rhythm-entry.spec.ts', 'no-leftover-overlay.spec.ts', 'texture-resilience.spec.ts', 'double-start.spec.ts', 'minigame-music.spec.ts', 'return-leg.spec.ts', 'no-barren-screens.spec.ts', 'text-legibility.spec.ts', 'first-run-title.spec.ts', 'themed-transitions.spec.ts', 'return-art-and-viewport.spec.ts', 'band-help-and-echo.spec.ts', 'text-under-ui.spec.ts', 'minigame-playthrough.spec.ts', 'qa-round3.spec.ts', 'qa-round4.spec.ts', 'depth-pass.spec.ts', 'audio-output.spec.ts', 'clock-timing.spec.ts', 'reentry.spec.ts', 'hud-clearance.spec.ts', 'tonight-card-prejudge.spec.ts'],
   timeout: 60000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

@@ -3,7 +3,7 @@
 // claim. Runs against the DEV server (see playwright.config.ts's header for why) at 4 device
 // profiles: iPhone 12, iPhone 14, Pixel 7, and a generic 360x740 Android viewport.
 import { test, expect } from './fixtures';
-import { bootGame, canvasClick, collectConsoleErrors, getActiveSceneKeys, startScene, waitForActiveScene, waitForCondition, seedSave, skipFirstTimeOnboarding } from './helpers';
+import { bootGame, canvasClick, collectConsoleErrors, getActiveSceneKeys, startScene, waitForActiveScene, waitForCondition, seedSave, skipFirstTimeOnboarding, pressContinue } from './helpers';
 
 test.describe('boot', () => {
   test('a first-time player (fresh profile, no save) sees the HowToPlay overlay auto-open over Title — intentional onboarding, not a bug', async ({ page }) => {
@@ -65,10 +65,7 @@ test.describe('Continue resumes every progress.screen value to a playable scene'
       await seedSave(page, progress);
       await bootGame(page);
       await waitForActiveScene(page, 'Title');
-      await page.waitForTimeout(300); // let the async hasSave() check + button entrance tween settle
-      // TitleScene.ts: Continue button at (W/2-160, 632, 320, 66) — center (360, 665). Fixed
-      // position regardless of whether it renders (see TitleScene.ts's own comment on continueY).
-      await canvasClick(page, 360, 665);
+      await pressContinue(page);
       const active = await waitForActiveScene(page, expectScene);
       expect(active, `expected ${expectScene} to be active after Continue from progress.screen="${progress.screen}"; active scenes: ${active.join(',')}`)
         .toContain(expectScene);
@@ -91,8 +88,7 @@ test.describe('Settings is reachable from every resumable screen and Back return
     await seedSave(page, { screen: 'hub' });
     await bootGame(page);
     await waitForActiveScene(page, 'Title');
-    await page.waitForTimeout(300);
-    await canvasClick(page, 360, 665); // Continue
+    await pressContinue(page);
     expect(await waitForActiveScene(page, 'Hub')).toContain('Hub');
 
     // HubScene.ts: Settings button at (W/2-220, 1140, 200, 66) — center (240, 1173); Home sits to its right.
@@ -112,8 +108,7 @@ test.describe('Settings is reachable from every resumable screen and Back return
     await seedSave(page, { screen: 'city', cityId: 'lisbon', nodeId: 'locations' });
     await bootGame(page);
     await waitForActiveScene(page, 'Title');
-    await page.waitForTimeout(300);
-    await canvasClick(page, 360, 665); // Continue
+    await pressContinue(page);
     expect(await waitForActiveScene(page, 'City')).toContain('City');
 
     // MenuButton.ts: BTN_X=20, BTN_Y=20+76 (CityScene stacks it below DialogueBox's own

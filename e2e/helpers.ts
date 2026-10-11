@@ -333,3 +333,18 @@ export async function pressPlay(page: Page, timeoutMs = 15000): Promise<void> {
     await page.waitForTimeout(300);
   }
 }
+
+/** Taps Title's Continue once it exists. TitleScene creates it only after loadRun() resolves, so
+ *  the old "wait 300 ms, tap (360, 665)" raced that async save check: on a slow WebKit runner the
+ *  tap landed before the button did and the player stayed on Title (nightly 2026-10-10, iPhone 12,
+ *  resume: bandCreator). Waits for the button itself and taps where it actually is. */
+export async function pressContinue(page: Page, timeoutMs = 10000): Promise<void> {
+  const ready = await waitForCondition(page, () => {
+    const scene: any = (window as any).__game.scene.getScene('Title');
+    const has = (list: any[]): boolean => list.some((o: any) => o.type === 'Container'
+      && ((o.list ?? []).some((c: any) => c.type === 'Text' && String(c.text ?? '').startsWith('Continue')) || has(o.list ?? [])));
+    return !!scene && scene.sys.isActive() && has(scene.children.list);
+  }, timeoutMs);
+  if (!ready) throw new Error('pressContinue: Title never showed a Continue button');
+  await clickButtonByLabel(page, 'Title', 'Continue');
+}
