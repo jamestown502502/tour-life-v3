@@ -126,6 +126,10 @@ test.describe('Text legibility over painted backdrops', () => {
       test.setTimeout(120000);
       await skipFirstTimeOnboarding(page);
       await bootGame(page);
+      // Wait for Title: Boot is still loading paintings until then, and a scene started by hand meanwhile
+      // draws its code-drawn stand-in under a key Boot is about to add ("Texture key already in use",
+      // nightly 2026-10-10, Van). Same harness race rhythm-entry.spec.ts documents.
+      await waitForActiveScene(page, 'Title', 30000);
       await seedRun(page);
       // Stop every running scene FIRST. `game.scene.start` is SceneManager.start, which — unlike
       // the ScenePlugin.start a scene calls on itself — does NOT stop the caller. Title therefore
