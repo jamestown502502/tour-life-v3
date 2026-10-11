@@ -85,7 +85,7 @@ export class ScrapbookScene extends Phaser.Scene {
     const wc = wildcardFor(State.data.seed), goal = goalFor(State.data.seed);
     const met = goal.check(State.data);
     this.add.text(W / 2, Math.min(650, relText.y + relText.height + 14), `${wc.name}  ·  Tour goal ${met ? 'met' : 'missed'}: ${goal.text}`,
-      textStyle('dialogue', { fontSize: '15px', shadow: undefined, color: met ? PALETTE_HEX.teal : PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0);
+      textStyle('dialogue', { fontSize: '15px', shadow: undefined, color: met ? PALETTE_HEX.tealInk : PALETTE_HEX.plum, wordWrap: { width: W - 160 }, align: 'center' })).setOrigin(0.5, 0);
 
     // Two columns since QA round 4 (the story and the lessons joined the epilogue, the ledger and
     // the ending), so every button still sits above the safe line on a phone.
@@ -254,7 +254,7 @@ export class ScrapbookScene extends Phaser.Scene {
     // Item D: the why-tour pick's third and last grounding echo (after OpeningScene's closing
     // line and RoutePlan's banner) — the reason the run started, next to how it ended.
     const whyTourCaption = this.add.text(x + w / 2, y + 66, `Started because: "${State.data.band.whyTour}"`,
-      textStyle('small', { fontSize: '14px', color: PALETTE_HEX.terracotta, wordWrap: { width: w - 72 }, align: 'center' })).setOrigin(0.5);
+      textStyle('small', { fontSize: '14px', color: PALETTE_HEX.terracottaInk, wordWrap: { width: w - 72 }, align: 'center' })).setOrigin(0.5);
     const body = this.add.text(x + 36, y + 100, text, textStyle('dialogue', {
       fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: w - 72 }, lineSpacing: 8,
     }));

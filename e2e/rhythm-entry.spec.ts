@@ -444,6 +444,8 @@ test.describe('Rhythm entry via the real pre-show path (live-regression repro)',
       () => (window as any).__game.scene.getScenes(true).some((s: any) => s.scene.key === 'Rhythm'),
       12000,
     );
+    // The Tonight card (QA round 4) holds the song until Play; nothing falls, so nothing can be judged, before it.
+    await pressPlay(page);
     await page.waitForTimeout(2500);
 
     // A real tap in lane 0's zone must reach the handler. If an invisible full-screen blocker

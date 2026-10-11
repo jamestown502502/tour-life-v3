@@ -1,7 +1,7 @@
 // Bandmates change the game (rapport help) and money decisions echo later (2026-09-29), driven
 // through the real scenes.
 import { test, expect, type Page } from './fixtures';
-import { bootGame, skipFirstTimeOnboarding, waitForActiveScene, collectConsoleErrors, canvasClick } from './helpers';
+import { bootGame, skipFirstTimeOnboarding, waitForActiveScene, collectConsoleErrors, canvasClick, clickButtonByLabel } from './helpers';
 
 async function seedRun(page: Page, rel: number, ledger: unknown[] = []) {
   await page.evaluate(({ rel, ledger }) => {
@@ -115,7 +115,8 @@ test.describe('money decisions echo later', () => {
     await page.evaluate(() => { const g: any = (window as any).__game; g.scene.stop('Title'); g.scene.start('Scrapbook'); });
     await waitForActiveScene(page, 'Scrapbook', 15000);
     await page.waitForTimeout(400);
-    await canvasClick(page, 360, 1023); // What the ledger taught us
+    // by its label: QA round 4's two-column layout moved it from (360, 1023)
+    await clickButtonByLabel(page, 'Scrapbook', 'What the ledger taught us');
     await page.waitForTimeout(400);
     const panel = await page.evaluate(() => {
       const s: any = (window as any).__game.scene.getScene('Scrapbook');

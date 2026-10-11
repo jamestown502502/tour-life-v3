@@ -115,7 +115,9 @@ test('a full real playthrough of one city loop never gets stuck', async ({ page 
   // this point since that content was added — nothing had exercised this exact click until the
   // stuck-screen-hardening pass's own fixes upstream (the Item 8a second-minigame handling, the
   // transition-overlay crash fix) finally let the test reach this far.
-  await canvasClick(page, 360, 732);
+  // By its label since QA round 4 moved Continue below tonight's goal (1060), the same coordinate
+  // rot this comment describes.
+  await clickButtonByLabel(page, 'Results', 'Continue');
   expect(await waitForActiveScene(page, 'City', 15000)).toContain('City');
   taps = await walkDialogueToSceneChange(page, 'City'); // afterShow
   expect(taps, 'afterShow dialogue should not exhaust the tap budget').toBeLessThan(40);

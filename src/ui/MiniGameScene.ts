@@ -261,7 +261,7 @@ export class MiniGameScene extends Phaser.Scene {
     // Name the skill before the practice (QA round 4 depth pass): what this minigame teaches.
     const skillY = Math.max(452, intro.y + intro.height + 16);
     this.contentLayer.add(this.add.text(W / 2, skillY, `You'll practise: ${MINIGAME_SKILL[this.mg.type]}`,
-      textStyle('small', { fontSize: '17px', fontStyle: '700', color: PALETTE_HEX.teal, align: 'center', wordWrap: { width: W - 160 } })).setOrigin(0.5));
+      textStyle('small', { fontSize: '17px', fontStyle: '700', color: PALETTE_HEX.tealInk, align: 'center', wordWrap: { width: W - 160 } })).setOrigin(0.5));
     const est = this.estimate();
     const secs = Math.max(10, Math.round(est.seconds / 10) * 10);
     const roundsLabel = est.rounds > 1 ? `${est.rounds} rounds` : 'one round';
@@ -840,7 +840,7 @@ export class MiniGameScene extends Phaser.Scene {
     const picked: SetCard[] = [];
     let played = false;
     let hostSaid: string | null = null;
-    const VERDICT_COLOR: Record<SegueVerdict, string> = { smooth: PALETTE_HEX.teal, okay: PALETTE_HEX.plum, clash: PALETTE_HEX.terracotta };
+    const VERDICT_COLOR: Record<SegueVerdict, string> = { smooth: PALETTE_HEX.tealInk, okay: PALETTE_HEX.plum, clash: PALETTE_HEX.terracottaInk };
     const dots = (e: number) => '●'.repeat(e) + '○'.repeat(5 - e);
 
     const draw = (): void => {
@@ -854,7 +854,7 @@ export class MiniGameScene extends Phaser.Scene {
       this.contentLayer.add(this.add.text(W / 2, 322, 'The circle of fifths: side by side = smooth', textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum })).setOrigin(0.5));
       [CIRCLE_MAJORS, CIRCLE_MINORS].forEach((row, r) => row.forEach((k, i) => {
         const on = inSet.has(k);
-        this.contentLayer.add(this.add.text(x0 + i * colW + colW / 2, 352 + r * 26, k, textStyle('small', { fontSize: on ? '19px' : '16px', fontStyle: on ? 'bold' : 'normal', color: on ? PALETTE_HEX.teal : PALETTE_HEX.plum })).setOrigin(0.5));
+        this.contentLayer.add(this.add.text(x0 + i * colW + colW / 2, 352 + r * 26, k, textStyle('small', { fontSize: on ? '19px' : '16px', fontStyle: on ? 'bold' : 'normal', color: on ? PALETTE_HEX.tealInk : PALETTE_HEX.plum })).setOrigin(0.5));
       }));
       // the four slots
       const sw = 148, gap = 10, sx = (W - (sw * 4 + gap * 3)) / 2, sy = 432;
@@ -868,7 +868,7 @@ export class MiniGameScene extends Phaser.Scene {
         slot.setInteractive({ useHandCursor: true }).on('pointerdown', () => { if (!played) { picked.splice(i, 1); audio.playSfx('tap'); draw(); } });
         this.contentLayer.add(this.add.text(x + sw / 2, sy + 10, c.name, textStyle('small', { fontSize: '15px', fontStyle: 'bold', color: PALETTE_HEX.plum, wordWrap: { width: sw - 14 }, align: 'center' })).setOrigin(0.5, 0));
         this.contentLayer.add(this.add.text(x + sw / 2, sy + 66, `${c.key} · ${c.bpm} bpm`, textStyle('small', { fontSize: '14px', color: PALETTE_HEX.plum })).setOrigin(0.5));
-        this.contentLayer.add(this.add.text(x + sw / 2, sy + 90, dots(c.energy), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.terracotta })).setOrigin(0.5));
+        this.contentLayer.add(this.add.text(x + sw / 2, sy + 90, dots(c.energy), textStyle('small', { fontSize: '14px', color: PALETTE_HEX.terracottaInk })).setOrigin(0.5));
       });
       // live segue verdicts, under the gap between each pair of slots
       for (let i = 0; i + 1 < picked.length; i++) {
@@ -920,7 +920,7 @@ export class MiniGameScene extends Phaser.Scene {
       });
       this.time.delayedCall(4 * 850 + 200, () => {
         const checks = arc(set);
-        checks.forEach((c, i) => this.contentLayer.add(this.add.text(W / 2, 784 + i * 26, `${c.ok ? '✓' : '✗'} ${c.label}`, textStyle('small', { fontSize: '16px', color: c.ok ? PALETTE_HEX.teal : PALETTE_HEX.terracotta })).setOrigin(0.5, 0)));
+        checks.forEach((c, i) => this.contentLayer.add(this.add.text(W / 2, 784 + i * 26, `${c.ok ? '✓' : '✗'} ${c.label}`, textStyle('small', { fontSize: '16px', color: c.ok ? PALETTE_HEX.tealInk : PALETTE_HEX.terracottaInk })).setOrigin(0.5, 0)));
         const score = scoreSet(set);
         const tier = setTier(score, best.score);
         const scoreText = this.add.text(W / 2, 900, '', textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.plum })).setOrigin(0.5);
@@ -1125,7 +1125,7 @@ export class MiniGameScene extends Phaser.Scene {
     // explains (QA round 4 depth pass).
     const lesson = takeawayFor(this.mg.type);
     if (lesson) {
-      const t = this.add.text(W / 2, y + 4, `On the road: ${lesson}`, textStyle('small', { fontSize: '17px', color: PALETTE_HEX.teal, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5, 0);
+      const t = this.add.text(W / 2, y + 4, `On the road: ${lesson}`, textStyle('small', { fontSize: '17px', color: PALETTE_HEX.tealInk, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5, 0);
       this.contentLayer.add(t);
       y = t.y + t.height + 12;
     }

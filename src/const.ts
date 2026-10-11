@@ -8,6 +8,8 @@ export const PALETTE = {
   sand: 0xe8d5b7,
   terracotta: 0xc4704f,
   teal: 0x3e7c7b,
+  tealInk: 0x245150,
+  terracottaInk: 0x8a3f25,
   plum: 0x4a2c40,
   gold: 0xd9a441,
   night: 0x2b3a55,
@@ -20,6 +22,10 @@ export const PALETTE_HEX = {
   sand: '#E8D5B7',
   terracotta: '#C4704F',
   teal: '#3E7C7B',
+  // teal as TEXT on the cream cards: #3E7C7B measures 3.16:1 there, under AA for 17 px; this is 5.8:1
+  tealInk: '#245150',
+  // likewise terracotta text on cream measures about 3:1; this is 4.9:1 on the cards
+  terracottaInk: '#8A3F25',
   plum: '#4A2C40',
   gold: '#D9A441',
   night: '#2B3A55',

@@ -6,7 +6,7 @@
 import { test, expect } from './fixtures';
 import * as fs from 'fs';
 import {
-  bootGame, collectConsoleErrors, getActiveSceneKeys, skipFirstTimeOnboarding, waitForActiveScene, waitForCondition,
+  bootGame, collectConsoleErrors, getActiveSceneKeys, skipFirstTimeOnboarding, waitForActiveScene, waitForCondition, pressPlay,
 } from './helpers';
 
 const LANE_KEYS = ['D', 'F', 'J', 'K'];
@@ -37,6 +37,8 @@ async function startLiveRhythm(page: import('@playwright/test').Page, cityId = '
     const s = (window as any).__game.scene.getScene('Rhythm');
     return !!s && Array.isArray(s.notes) && s.notes.length > 0;
   }, 8000);
+  // The Tonight card (QA round 4) holds the song until Play.
+  await pressPlay(page);
 }
 
 test.describe('Item 4a — keyboard lanes physically dispatched, not just assumed from D', () => {
@@ -233,7 +235,17 @@ test.describe('Item 4c — cold boot straight into Rhythm, skipping Title\'s aud
 
     // Gameplay itself (judging) doesn't touch audio.ctx at all — autoplay judging every note as
     // it crosses the line should still work with audio fully locked.
-    const judged = await waitForCondition(page, () => (window as any).__game.scene.getScene('Rhythm').judgements.length > 0, 8000);
+    // Start the song the way the Tonight card's Play button does, but without a browser gesture: a
+    // real tap would unlock audio and void this test. (The card's own 9 s countdown runs on the frame
+    // clock, too slow on a loaded runner to wait out.)
+    expect(await waitForCondition(page, () => (window as any).__game.scene.getScene('Rhythm').children.list
+      .some((o: any) => o.type === 'Container' && o.depth === 300), 10000), 'the Tonight card should be up').toBe(true);
+    await page.evaluate(() => {
+      const card = (window as any).__game.scene.getScene('Rhythm').children.list.find((o: any) => o.type === 'Container' && o.depth === 300);
+      const play = card.list.find((o: any) => o.type === 'Container' && (o.list ?? []).some((c: any) => c.type === 'Text' && c.text === 'Play'));
+      play.list.find((o: any) => o.input).emit('pointerdown');
+    });
+    const judged = await waitForCondition(page, () => (window as any).__game.scene.getScene('Rhythm').judgements.length > 0, 15000);
     expect(judged, 'autoplay should still judge notes with audio never unlocked').toBe(true);
 
     // Now trigger a real unlock the only way the app allows: return to Title and tap it.
