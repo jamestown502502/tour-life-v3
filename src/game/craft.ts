@@ -88,6 +88,34 @@ export const MINIGAME_SKILL: Record<MiniGameType, string> = {
   longhaul: 'cash flow on the road',
 };
 
+// ---- where each skill shows up off the tour (publisher polish 2026-10-12) ----------------------
+//
+// The learning rubric every minigame now meets: a named skill (MINIGAME_SKILL), a usable rule
+// (takeawayFor), and one line on where that rule applies outside the game. The third part is the
+// transfer step in "learn, apply, recall": a player who can name a second place a rule works has
+// understood the rule rather than the minigame. Enforced by src/tests/learning.test.ts.
+export const MINIGAME_TRANSFER: Record<MiniGameType, string> = {
+  timing: 'Recording a podcast or a voice memo: set the level on your loudest moment, not your average one.',
+  drag: 'Packing any car, suitcase or moving truck: heavy and square at the bottom, fragile on top.',
+  choice: 'Job interviews and first meetings: one specific story is remembered long after a list of qualities.',
+  pressure: 'Any question you are not ready for: a short true answer now beats a perfect one too late.',
+  sequence: 'Any chain of steps, from a sound system to a spreadsheet: trace it in order to find where it breaks.',
+  sustain: 'Fixing anything with many parts: change the one thing that is wrong before you touch everything.',
+  interval: 'Learning songs by ear: name the jump between two notes and you can find the melody on any instrument.',
+  clave: 'Dancing, drumming or clapping along to Latin music: find the three-two pattern and everything else lines up.',
+  split: 'Any deal with a flat fee or a percentage: work out the break-even point before you sign.',
+  pricing: 'Selling anything, from a bake sale to a side business: price from the cost up, then check what each sale keeps.',
+  perdiem: 'Any daily budget: the cheapest choice today can cost more tomorrow, so count rest as a real expense.',
+  gearcall: 'Renting or buying anything you will use more than once: divide the price by the rent to find the break-even use.',
+  exchange: 'Traveling abroad or sending money home: compare what you receive after every fee, not the headline rate.',
+  chordquality: 'Listening to any song: major sounds bright and minor sounds sad because of one note, the third.',
+  transpose: 'Singing a song too high or low: move every chord the same distance and it still sounds like the song.',
+  meter: 'Dancing or playing along: count to the heavy beat and you know whether to step in threes or fours.',
+  tempo: 'Playing with other people: if you keep arriving early you are rushing, so listen more than you play.',
+  setlist: 'Any playlist or presentation: order it for energy and smooth changes, not just your favorite parts.',
+  longhaul: 'Any income that arrives later than the bills: plan for when the money lands, not how much it is.',
+};
+
 /** The takeaway a player chose to carry home from their last tour, kept outside the run save. */
 export const PINNED_LESSON_KEY = 'tourlife.pinnedLesson';
 export function pinnedLesson(meta?: { pinnedLesson?: string }): string | undefined {
@@ -196,7 +224,7 @@ export const RECALL: readonly RecallQuestion[] = [
   { type: 'sustain', asker: 'jun', q: 'Mix quiz. The guitar suddenly clips. What do you move?', options: ['The guitar fader, down', 'The master, down', 'Every fader, a little'], why: CRAFT_LESSON.sustain! },
   { type: 'interval', asker: 'jun', q: 'Ear quiz. Which interval makes a chord sound sad?', options: ['A minor third', 'A major third', 'A fifth'], why: 'The minor third is three half steps: the reason a minor chord aches.' },
   { type: 'chordquality', asker: 'jun', q: 'Chord quiz. Which kind of chord sounds sad?', options: ['Minor', 'Major', 'Major seventh'], why: 'Minor chords carry the minor third; major chords sound bright.' },
-  { type: 'clave', asker: 'rowan', q: 'Clave quiz. How does the 3-2 son clave start?', options: ['Three strokes, then two', 'Two strokes, then three', 'Four even strokes'], why: 'Three strokes then two: the backbone of most of what Mexico City dances to.' },
+  { type: 'clave', asker: 'rowan', q: 'Clave quiz. How does the 3-2 son clave start?', options: ['Three strokes, then two', 'Two strokes, then three', 'Four even strokes'], why: 'Count the clave as three strokes, then two, and lock to it: in son, every other part lines up against that pattern.' },
   { type: 'transpose', asker: 'mira', q: 'Transpose quiz. Move a C chord up a whole step. What is it now?', options: ['D', 'C sharp', 'E'], why: 'A whole step is two half steps, two frets: C to D, same shape.' },
   { type: 'meter', asker: 'theo', q: 'Count-in quiz. ONE two three, ONE two three. What time signature?', options: ['3/4', '4/4', '6/8'], why: 'Three beats, the heavy one first: a waltz, a lullaby, 3/4.' },
   { type: 'tempo', asker: 'theo', q: 'Tempo quiz. You keep landing ahead of the click. Rushing or dragging?', options: ['Rushing', 'Dragging', 'Neither'], why: 'Ahead of the beat is rushing. Relax the shoulders and listen for the heavy beat.' },

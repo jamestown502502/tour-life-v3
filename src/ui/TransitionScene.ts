@@ -13,7 +13,7 @@
 //
 // Art-direction rule holds: everything here is code-drawn chrome over the painted world.
 import Phaser from 'phaser';
-import { H, PALETTE, PALETTE_HEX, W } from '../const';
+import { BRAND_NUM, H, PALETTE, PALETTE_HEX, W } from '../const';
 import { textStyle } from './textStyles';
 
 export type TransitionTheme = 'drive' | 'ticket' | 'card' | 'lights' | 'vinyl' | 'pages';
@@ -77,7 +77,7 @@ export class TransitionScene extends Phaser.Scene {
     const cab = this.add.rectangle(70, -18, 70, 54, PALETTE.sand, 1).setOrigin(0.5);
     const win = this.add.rectangle(84, -22, 34, 26, PALETTE.night, 1).setOrigin(0.5);
     const w1 = this.add.circle(-60, 46, 20, 0x1a1a1a, 1), w2 = this.add.circle(60, 46, 20, 0x1a1a1a, 1);
-    const lamp = this.add.circle(108, 8, 8, PALETTE.gold, 1);
+    const lamp = this.add.circle(108, 8, 8, BRAND_NUM.orange, 1);
     van.add([body, cab, win, w1, w2, lamp]);
     this.layer.add(van);
     const text = this.labelText(label, H * 0.76, PALETTE_HEX.gold).setAlpha(0);
@@ -106,7 +106,7 @@ export class TransitionScene extends Phaser.Scene {
       const g = this.add.graphics();
       g.fillStyle(PALETTE.cream, 1);
       g.fillRoundedRect(side < 0 ? -stubW / 2 : 0, -stubH / 2, stubW / 2, stubH, { tl: side < 0 ? 18 : 0, bl: side < 0 ? 18 : 0, tr: side > 0 ? 18 : 0, br: side > 0 ? 18 : 0 });
-      g.lineStyle(3, PALETTE.terracotta, 1);
+      g.lineStyle(3, BRAND_NUM.plum, 1);
       g.strokeRoundedRect(side < 0 ? -stubW / 2 + 10 : 10, -stubH / 2 + 10, stubW / 2 - 10, stubH - 20, 8);
       return [g];
     };
@@ -134,7 +134,7 @@ export class TransitionScene extends Phaser.Scene {
     const cover = this.add.rectangle(0, 0, W, H, PALETTE.night, 0).setOrigin(0, 0);
     const cardC = this.add.container(W / 2, H / 2).setScale(0.6).setAlpha(0).setAngle(-6);
     const paper = this.add.rectangle(0, 0, 440, 520, PALETTE.cream, 1).setOrigin(0.5);
-    const photo = this.add.rectangle(0, -40, 380, 360, PALETTE.plum, 1).setOrigin(0.5);
+    const photo = this.add.rectangle(0, -40, 380, 360, BRAND_NUM.plum, 1).setOrigin(0.5);
     const glow = this.add.rectangle(0, -40, 380, 360, PALETTE.gold, 0.18).setOrigin(0.5);
     const caption = this.add.text(0, 200, label, textStyle('h1', { fontSize: '28px', color: PALETTE_HEX.plum, align: 'center', wordWrap: { width: 400 } })).setOrigin(0.5);
     cardC.add([paper, photo, glow, caption]);
@@ -183,7 +183,7 @@ export class TransitionScene extends Phaser.Scene {
     g.fillStyle(0x111111, 1); g.fillCircle(0, 0, 640);
     g.lineStyle(2, 0x2a2a2a, 1);
     for (let r = 120; r < 620; r += 34) g.strokeCircle(0, 0, r);
-    g.fillStyle(PALETTE.gold, 1); g.fillCircle(0, 0, 110);
+    g.fillStyle(BRAND_NUM.orange, 1); g.fillCircle(0, 0, 110);
     g.fillStyle(0x111111, 1); g.fillCircle(0, 0, 8);
     disc.add(g);
     const text = this.add.text(0, 0, label, textStyle('h1', { fontSize: '22px', color: PALETTE_HEX.plum, align: 'center', wordWrap: { width: 180 } })).setOrigin(0.5);

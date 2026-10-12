@@ -33,6 +33,24 @@ export const PALETTE_HEX = {
   softRed: '#C94F4F',
 } as const;
 
+// Brand colors, sampled from the Tour Life key art and wordmark (2026-10-12). Used as accents, edges
+// and the margin tint; text on them must still pass the contrast tests (orange fails as a fill
+// behind cream text, so it is an edge/accent color only).
+export const BRAND = {
+  orange: '#F9A421',
+  plum: '#862F5A',
+  ink: '#13152F',
+  light: '#F2F0E3',
+  slate: '#5D7287',
+} as const;
+export const BRAND_NUM = {
+  orange: 0xf9a421,
+  plum: 0x862f5a,
+  ink: 0x13152f,
+  light: 0xf2f0e3,
+  slate: 0x5d7287,
+} as const;
+
 // Rhythm timing windows in ms, at "standard" difficulty.
 export const RHYTHM_WINDOWS = {
   perfect: 50,

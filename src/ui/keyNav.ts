@@ -77,7 +77,7 @@ export function startKeyNav(game: Phaser.Game): void {
 
   const ring = document.createElement('div');
   ring.id = 'key-focus';
-  Object.assign(ring.style, { position: 'fixed', display: 'none', pointerEvents: 'none', zIndex: '6', border: '4px solid #F2C14E',
+  Object.assign(ring.style, { position: 'fixed', display: 'none', pointerEvents: 'none', zIndex: '6', border: '4px solid #F9A421',
     borderRadius: '14px', boxShadow: '0 0 0 4px rgba(43,58,85,.9), 0 0 18px rgba(242,193,78,.55)', transition: 'left .08s, top .08s, width .08s, height .08s' });
   document.body.appendChild(ring);
 
@@ -159,7 +159,7 @@ function showHint(): void {
   el.setAttribute('role', 'status');
   el.textContent = 'Keyboard: arrows move · Enter taps (hold Enter + arrows to drag) · Space advances dialogue · D F J K play the show · Esc goes back';
   Object.assign(el.style, { position: 'fixed', left: '50%', top: '12px', transform: 'translateX(-50%)', maxWidth: '92vw', textAlign: 'center',
-    background: 'rgba(26,36,54,0.94)', color: '#F5EBDD', padding: '10px 16px', borderRadius: '14px', border: '1px solid #F2C14E',
+    background: 'rgba(26,36,54,0.94)', color: '#F5EBDD', padding: '10px 16px', borderRadius: '14px', border: '1px solid #F9A421',
     font: '600 14px Nunito, system-ui, sans-serif', zIndex: '2000', pointerEvents: 'none', transition: 'opacity .6s' });
   // A desktop with room beside the portrait game: the hint sits in the left band, off the game.
   const r = document.querySelector('#app canvas')?.getBoundingClientRect();

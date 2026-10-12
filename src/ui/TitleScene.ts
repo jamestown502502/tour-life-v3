@@ -72,13 +72,21 @@ export class TitleScene extends Phaser.Scene {
     this.fireflies = spawnFireflies(this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.fireflies?.stop());
 
-    // applyVignette above only darkens the frame's far corners, not this central title band —
-    // see addTextScrim's own doc comment for why a scrim is needed here at all.
-    addTextScrim(this, W / 2, 335, 640, 220);
-    this.add.text(W / 2, 260, 'Tour Life', textStyle('title')).setOrigin(0.5);
-    // gold measures 2.77:1 on this scrim (just under the 3:1 large-text floor) — cream is the
-    // one preset color that reliably clears it here (5.28:1), see docs/contrast-audit.md.
-    this.add.text(W / 2, 320, 'Rhythm Band Sim', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
+    // The key-art wordmark (publisher polish 2026-10-12, public/brand/wordmark.webp). It carries
+    // its own black brush plate, so it needs no scrim. If that one file failed to load, the
+    // code-drawn title it replaced comes back.
+    if (this.textures.exists('brand_wordmark')) {
+      const mark = this.add.image(W / 2, 236, 'brand_wordmark').setOrigin(0.5);
+      mark.setScale(430 / mark.width);
+    } else {
+      // applyVignette above only darkens the frame's far corners, not this central title band —
+      // see addTextScrim's own doc comment for why a scrim is needed here at all.
+      addTextScrim(this, W / 2, 335, 640, 220);
+      this.add.text(W / 2, 260, 'Tour Life', textStyle('title')).setOrigin(0.5);
+      // gold measures 2.77:1 on this scrim (just under the 3:1 large-text floor) — cream is the
+      // one preset color that reliably clears it here (5.28:1), see docs/contrast-audit.md.
+      this.add.text(W / 2, 320, 'Rhythm Band Sim', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
+    }
 
     const seedLabel = this.add.text(W / 2, 420, `Custom seed: ${this.currentSeed}`, textStyle('small', { color: PALETTE_HEX.cream })).setOrigin(0.5);
 

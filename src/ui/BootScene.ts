@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import { SONGS } from '../game/content';
-import { BOOT_PROCESS_GRACE_MS, BOOT_STALL_MS, PALETTE, PALETTE_HEX, W } from '../const';
+import { BOOT_PROCESS_GRACE_MS, BOOT_STALL_MS, BRAND_NUM, PALETTE, PALETTE_HEX, W } from '../const';
 import { LATER_MANIFEST_PATH, assetBaseUrl, fetchManifest, markPending, markRealAsset, markTitleThemeLoaded, settlePending } from '../core/assets';
 import { textStyle } from './textStyles';
+import { hideSplash, setSplashProgress } from './splash';
 
 /** Loads real painted assets (if any) into the texture manager, then hands off to Title.
  *
@@ -65,6 +66,7 @@ export class BootScene extends Phaser.Scene {
       // The themed-transition overlay scene lives for the whole session, above everything.
       this.scene.launch('Transition');
       this.scene.start('Title');
+      hideSplash();
     };
     const watchdog = window.setInterval(() => {
       const quiet = performance.now() - lastProgressAt;
@@ -92,6 +94,9 @@ export class BootScene extends Phaser.Scene {
     for (const entry of entries) {
       this.load.image(entry.key, `${assetBaseUrl()}assets/${entry.file}`);
     }
+    // The cut-out logo for the title screen (public/brand, docs/publisher-upgrade/ASSET_PROVENANCE.md).
+    // Title falls back to its code-drawn text if this one file fails.
+    this.load.image('brand_wordmark', `${assetBaseUrl()}brand/wordmark.webp`);
     this.load.start();
   }
 
@@ -151,7 +156,7 @@ export class BootScene extends Phaser.Scene {
    *  use them. */
   private buildLoadingScreen(): void {
     const h = this.cameras.main.height;
-    this.add.rectangle(0, 0, W, h, PALETTE.night, 1).setOrigin(0, 0);
+    this.add.rectangle(0, 0, W, h, BRAND_NUM.ink, 1).setOrigin(0, 0);
     this.add.text(W / 2, h / 2 - 120, 'Tour Life', textStyle('h1', { fontSize: '46px' })).setOrigin(0.5);
     this.add.text(W / 2, h / 2 - 66, 'Rhythm Band Sim', textStyle('small', {
       color: PALETTE_HEX.gold,
@@ -159,7 +164,7 @@ export class BootScene extends Phaser.Scene {
 
     const barW = 380, barH = 12, barX = (W - barW) / 2, barY = h / 2 + 10;
     this.add.rectangle(barX, barY, barW, barH, PALETTE.cream, 0.18).setOrigin(0, 0);
-    this.barFill = this.add.rectangle(barX, barY, 1, barH, PALETTE.gold, 1).setOrigin(0, 0);
+    this.barFill = this.add.rectangle(barX, barY, 1, barH, BRAND_NUM.orange, 1).setOrigin(0, 0);
     this.percentText = this.add.text(W / 2, barY + 40, 'Loading the tour…', textStyle('small', {
       color: PALETTE_HEX.cream,
     })).setOrigin(0.5);
@@ -169,6 +174,7 @@ export class BootScene extends Phaser.Scene {
     if (!this.barFill) return;
     const barW = 380;
     this.barFill.width = Math.max(1, Math.round(barW * value));
+    setSplashProgress(value);
     this.percentText.setText(value >= 1 ? 'Ready' : `Loading the tour… ${Math.round(value * 100)}%`);
   }
 }
