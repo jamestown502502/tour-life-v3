@@ -88,6 +88,9 @@ export class TitleScene extends Phaser.Scene {
       this.add.text(W / 2, 320, 'Rhythm Band Sim', textStyle('h2', { color: PALETTE_HEX.cream })).setOrigin(0.5);
     }
 
+    // Its own backing strip: the title scrim it used to sit on went with the code-drawn title
+    // (2026-10-12), and over the bare painting this line measured 2.70:1 (nightly legibility check).
+    addTextScrim(this, W / 2, 420, 400, 30);
     const seedLabel = this.add.text(W / 2, 420, `Custom seed: ${this.currentSeed}`, textStyle('small', { color: PALETTE_HEX.cream })).setOrigin(0.5);
 
     // 66, not the original 56 — (56+16)*0.5417=39 CSS px, under the 44px floor the Workstream E

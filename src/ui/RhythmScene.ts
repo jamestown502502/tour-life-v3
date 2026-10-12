@@ -666,7 +666,7 @@ export class RhythmScene extends Phaser.Scene {
       const delta = Math.abs(now - hitMs);
       if (delta < bestDelta && delta <= windows.ok) { best = ns; bestDelta = delta; }
     }
-    if (!best) return;
+    if (!best) { this.pressLane(lane); return; }
     const delta = now - this.hitMsFor(best.note.t);
     // Theo close: this note only counts because his tempo widened the window. Say so, now and then.
     if ((this.perks?.windowScale ?? 1) > 1 && Math.abs(delta) > windows.ok / this.perks.windowScale) this.perkCallout('theo', lane, 'Theo keeps you on time');
@@ -784,6 +784,18 @@ export class RhythmScene extends Phaser.Scene {
     flash.setAlpha(judgement === 'miss' ? 0.12 : 0.22);
     this.tweens.killTweensOf(flash);
     this.tweens.add({ targets: flash, alpha: 0, duration: judgement === 'miss' ? 220 : 160, ease: 'Quad.easeOut' });
+  }
+
+  /** A tap with no note in its window (player feedback 2026-10-12: "my taps didn't score"): the
+   *  lane still shows a faint press, so an early or late tap reads as "too early/late", never as
+   *  "the game ignored me". Fainter than any judgement flash; skipped under noFlash like them. */
+  private pressLane(lane: number): void {
+    if (State.data.accessibility.noFlash) return;
+    const flash = this.laneFlashes[lane];
+    if (!flash || flash.alpha > 0.05) return;   // a judgement flash is already showing here
+    flash.setFillStyle(PALETTE.cream, 1);
+    flash.setAlpha(0.08);
+    this.tweens.add({ targets: flash, alpha: 0, duration: 140, ease: 'Quad.easeOut' });
   }
 
   /** Floating "Perfect! +100" at the hit line, rising and fading. Under reducedMotion it fades

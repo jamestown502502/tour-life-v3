@@ -88,7 +88,10 @@ test.describe('Critical-issues follow-up: regression guards', () => {
   // (content/songs/kreuzberg_static.json) runs ~58-61s; any transition-freeze or skip bug would
   // reach Results in well under a second instead.
   test('a rhythm song plays a real amount of gameplay before Results — never an instant skip', async ({ page }) => {
-    test.setTimeout(120000);
+    // 180 s, was 120 (the Results wait inside it 130 s, was 100): the pre-show now asks the Spotlight Bridge question first (2026-10-12), and on
+    // the CI phone that step plus the Tonight card's own countdown and a ~60 s song ran past 120 s
+    // (nightly 2026-10-12: Results reached with a full combo, after the deadline).
+    test.setTimeout(180000);
     const errors = collectConsoleErrors(page);
     await skipFirstTimeOnboarding(page);
     await bootGame(page);
@@ -116,7 +119,7 @@ test.describe('Critical-issues follow-up: regression guards', () => {
     const reachedRhythm = await waitForCondition(page, () => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('Rhythm'), 10000);
     expect(reachedRhythm, 'preshow choice should hand off to Rhythm').toBe(true);
 
-    const reachedResults = await waitForCondition(page, () => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('Results'), 100000);
+    const reachedResults = await waitForCondition(page, () => (window as any).__game.scene.getScenes(true).map((s: any) => s.scene.key).includes('Results'), 130000);
     const elapsedMs = Date.now() - clickStart;
     expect(reachedResults, 'the song should reach Results on its own (no-fail, autoplay on)').toBe(true);
     expect(elapsedMs, `reached Results in only ${elapsedMs}ms — Berlin's song runs ~58-61s; this fast means gameplay was skipped, not played`)

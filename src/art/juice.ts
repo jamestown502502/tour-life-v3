@@ -52,12 +52,15 @@ export function countUp(scene: Phaser.Scene, text: Phaser.GameObjects.Text, to: 
   scene.tweens.addCounter({
     from, to, duration: ms, ease: 'Cubic.easeOut',
     onUpdate: (tw) => {
+      // The screen can be cleared mid-count (Continue pressed during it): a destroyed Text has no
+      // canvas, and setText on it threw every frame and froze the scene (nightly 2026-10-12).
+      if (!text.active) { tw.stop(); return; }
       const v = Math.round(tw.getValue() ?? to);
       text.setText(fmt(v));
       const now = scene.time.now;
       if (now - lastTick > 55) { lastTick = now; audio.playPitch(tickPitch(tw.progress), 0.035, 0, 'sine'); }
     },
-    onComplete: () => { text.setText(fmt(to)); scene.tweens.add({ targets: text, scale: 1.12, duration: 90, yoyo: true }); },
+    onComplete: () => { if (!text.active) return; text.setText(fmt(to)); scene.tweens.add({ targets: text, scale: 1.12, duration: 90, yoyo: true }); },
   });
 }
 

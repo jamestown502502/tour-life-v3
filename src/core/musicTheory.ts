@@ -3,6 +3,9 @@
 
 const NOTE_SEMITONES: Record<string, number> = {
   C: 0, 'C#': 1, D: 2, 'D#': 3, E: 4, F: 5, 'F#': 6, G: 7, 'G#': 8, A: 9, 'A#': 10, B: 11,
+  // Flats (2026-10-12): three songs are written in flat keys (Ab, Eb, Bb). Without these every flat
+  // chord fell back to C: it sounded like C and the transpose quiz built its options from C.
+  Db: 1, Eb: 3, Gb: 6, Ab: 8, Bb: 10,
 };
 
 const QUALITY_INTERVALS: Record<string, number[]> = {
@@ -23,7 +26,7 @@ function freqFromSemitonesFromA4(semitones: number): number {
  *  base octave. Falls back to a C major triad for anything unparseable — content-authoring
  *  typo, not a runtime condition worth throwing over. */
 export function parseChord(symbol: string, octave = 3): number[] {
-  const match = symbol.trim().match(/^([A-G]#?)(maj7|m7|m6|m|7|6)?$/);
+  const match = symbol.trim().match(/^([A-G][#b]?)(maj7|m7|m6|m|7|6)?$/);
   const rootName = match?.[1] ?? 'C';
   const quality = match?.[2] ?? '';
   const intervals = QUALITY_INTERVALS[quality] ?? QUALITY_INTERVALS[''];
@@ -37,17 +40,27 @@ export function parseChordProgression(progression: string, octave = 3): number[]
 }
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NOTE_NAMES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
 export interface ParsedChord { root: string; quality: string }
 export function splitChord(symbol: string): ParsedChord {
-  const match = symbol.trim().match(/^([A-G]#?)(maj7|m7|m6|m|7|6)?$/);
+  const match = symbol.trim().match(/^([A-G][#b]?)(maj7|m7|m6|m|7|6)?$/);
   return { root: match?.[1] ?? 'C', quality: match?.[2] ?? '' };
 }
-/** "Am7" moved by `semitones` → "Cm7". Quality is preserved; the root wraps around the octave. */
-export function transposeChord(symbol: string, semitones: number): string {
+/** "Am7" moved by `semitones` → "Cm7". Quality is preserved; the root wraps around the octave.
+ *  `flats` spells the result in flats (Bb, not A#), for songs written in flat keys. */
+export function transposeChord(symbol: string, semitones: number, flats = false): string {
   const { root, quality } = splitChord(symbol);
   const idx = ((NOTE_SEMITONES[root] ?? 0) + semitones + 120) % 12;
-  return `${NOTE_NAMES[idx]}${quality}`;
+  return `${(flats ? NOTE_NAMES_FLAT : NOTE_NAMES)[idx]}${quality}`;
+}
+
+/** One transpose-quiz question: the right chord and two near misses (a half step either side or a
+ *  step past), all spelled the way the song is written. Pure, so the quiz can be tested. */
+export function transposeQuestion(from: string, semitones: number, flats: boolean): { answer: string; options: string[] } {
+  const answer = transposeChord(from, semitones, flats);
+  const wrongs = [semitones + 1, semitones - 1, semitones + 2].map((s) => transposeChord(from, s, flats)).filter((c) => c !== answer);
+  return { answer, options: [answer, wrongs[0], wrongs[1]] };
 }
 export const QUALITY_LABELS: Record<string, string> = {
   '': 'Major', m: 'Minor', 7: 'Dominant seventh', maj7: 'Major seventh', 6: 'Sixth', m7: 'Minor seventh', m6: 'Minor sixth',

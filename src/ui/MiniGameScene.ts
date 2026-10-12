@@ -4,7 +4,7 @@
 // and a reward. Nothing here can leave the player stuck or produce a worse outcome than "rough
 // but fine, still counts."
 import Phaser from 'phaser';
-import { H, PALETTE, PALETTE_HEX, SAFE_BOTTOM_Y, W } from '../const';
+import { H, PALETTE, PALETTE_HEX, SAFE_BOTTOM_Y, W, PRESSURE_MIN_SECONDS, CHOICE_IDLE_MS } from '../const';
 import { ensureMiniGameBackdrop, ensureRoundedRect } from '../art/sprites';
 import { addCoverBackground } from '../art/background';
 import { applyVignette } from '../art/effects';
@@ -27,7 +27,7 @@ import { addMenuButton } from './MenuButton';
 import type { MiniGameDef, MiniGameQuestion, MiniGameReward } from '../../content/schema';
 import { minigamePlayedFlag, timingRoundsForHarmony } from '../game/minigame';
 import { fillTemplate, DEFAULT_LEDGER, resolveSplit, resolvePricing, resolvePerDiem, resolveGearCall, resolveExchange, exchangeWorking, exchangeCalcQuestion, doorTake, breakEvenTurnout, demandAt, perDiemForecast, type LedgerOutcome } from '../game/ledger';
-import { chordFrequencies, splitChord, transposeChord, QUALITY_LABELS, QUALITY_HINTS } from '../core/musicTheory';
+import { chordFrequencies, splitChord, transposeQuestion, QUALITY_LABELS, QUALITY_HINTS } from '../core/musicTheory';
 import { rapportFor, RAPPORT_LABEL, HOST_NAMES, quietLine, wrongToRemove, chordHint, transposeHint, meterHint, tempoHint, splitHint, pricingHint, perDiemHint, gearHint, setlistHint, type Rapport } from '../game/bandHelp';
 import { getSong } from '../game/content';
 import { makeRng } from '../core/rng';
@@ -238,7 +238,7 @@ export class MiniGameScene extends Phaser.Scene {
       case 'timing': { const r = this.timingRoundsSec; return { seconds: r.reduce((a, b) => a + b, 0) * 1.6 + r.length * 1.5, rounds: r.length }; }
       case 'drag': return { seconds: mg.dragTimeSec ?? 30, rounds: (mg.dragItems ?? []).length || 6 };
       case 'choice': return { seconds: (mg.questions ?? []).length * 7, rounds: (mg.questions ?? []).length };
-      case 'pressure': return { seconds: (mg.questions ?? []).length * ((mg.pressureSeconds ?? 4) + 2.5), rounds: (mg.questions ?? []).length };
+      case 'pressure': return { seconds: (mg.questions ?? []).length * (Math.max(mg.pressureSeconds ?? PRESSURE_MIN_SECONDS, PRESSURE_MIN_SECONDS) + 2.5), rounds: (mg.questions ?? []).length };
       case 'sequence': { const r = mg.sequenceRounds ?? [3, 4, 5]; return { seconds: r.reduce((a, b) => a + b * 0.34 * 2 + 2.2, 0), rounds: r.length }; }
       case 'sustain': return { seconds: (mg.sustainSeconds ?? 12) * 1.4, rounds: 1 };
       case 'interval': case 'clave': case 'chordquality': case 'transpose': case 'meter': return { seconds: (mg.theoryRounds ?? 4) * 8, rounds: mg.theoryRounds ?? 4 };
@@ -522,9 +522,16 @@ export class MiniGameScene extends Phaser.Scene {
     })).setOrigin(0.5, 0));
 
     let answered = false;
+    const buttons: Phaser.GameObjects.Container[] = [];
     const advance = (picked: 'A' | 'B' | null) => {
       if (answered) return;
       answered = true;
+      // Once the question is settled (an answer or the clock), both answers dim and stop taking taps,
+      // so a late tap never looks like it should have counted (player feedback 2026-10-12).
+      for (const b of buttons) {
+        b.setAlpha(0.45);
+        (b.list.find((o) => (o as Phaser.GameObjects.Image).input) as Phaser.GameObjects.Image | undefined)?.disableInteractive();
+      }
       const warm = picked === q.warmerOption;
       if (warm) this.warmerCount++;
       audio.playSfx('choiceConfirm');
@@ -545,7 +552,7 @@ export class MiniGameScene extends Phaser.Scene {
     // 'choice' stays forgiving (6.5s, no visible clock). 'pressure' is the same interview with
     // the clock turned up AND shown, because knowing it is running is most of the difficulty.
     // Both still advance on silence — a no-fail game does not get to punish hesitation.
-    const limitMs = this.mg.type === 'pressure' ? (this.mg.pressureSeconds ?? 4) * 1000 : 6500;
+    const limitMs = this.mg.type === 'pressure' ? Math.max(this.mg.pressureSeconds ?? PRESSURE_MIN_SECONDS, PRESSURE_MIN_SECONDS) * 1000 : CHOICE_IDLE_MS;
     if (this.mg.type === 'pressure') {
       const clock = this.add.text(W / 2, 508, '', textStyle('h2', { color: PALETTE_HEX.gold })).setOrigin(0.5);
       this.contentLayer.add(clock);
@@ -555,15 +562,21 @@ export class MiniGameScene extends Phaser.Scene {
         loop: true,
         callback: () => {
           const left = Math.max(0, limitMs - (this.time.now - startedAt));
-          clock.setText(left > 0 ? (left / 1000).toFixed(1) : '');
+          clock.setText(left > 0 ? (left / 1000).toFixed(1) : "Time's up");
+          // The clock the player sees is the one that ends the question. A separate delayed call
+          // runs on Phaser's timer, which falls behind on a slow device: "Time's up" showed while
+          // both answers were still live (player feedback 2026-10-12).
+          if (left <= 0 && !answered) advance(null);
           if (left <= 0 || answered) tick.remove();
         },
       });
+    } else {
+      this.time.delayedCall(limitMs, () => advance(null)); // silence still advances, never blocks
     }
-    this.time.delayedCall(limitMs, () => advance(null)); // silence still advances, never blocks
 
-    this.contentLayer.add(createButton(this, W / 2 - 300, 540, 600, 66, q.optionA, () => advance('A'), { fillColor: PALETTE.terracotta, fontSize: '19px' }));
-    this.contentLayer.add(createButton(this, W / 2 - 300, 622, 600, 66, q.optionB, () => advance('B'), { fillColor: PALETTE.teal, fontSize: '19px' }));
+    buttons.push(createButton(this, W / 2 - 300, 540, 600, 66, q.optionA, () => advance('A'), { fillColor: PALETTE.terracotta, fontSize: '19px' }));
+    buttons.push(createButton(this, W / 2 - 300, 622, 600, 66, q.optionB, () => advance('B'), { fillColor: PALETTE.teal, fontSize: '19px' }));
+    this.contentLayer.add(buttons);
   }
 
   // ---- sequence: pads light in a pattern; play it back. Each round is one step longer. ----
@@ -1584,9 +1597,9 @@ export class MiniGameScene extends Phaser.Scene {
     const from = chords[this.theoryRng.int(0, chords.length)];
     const MOVES = [{ semis: -2, name: 'down a whole step' }, { semis: 2, name: 'up a whole step' }, { semis: -1, name: 'down a half step' }, { semis: 5, name: 'up a fourth' }, { semis: 7, name: 'up a fifth' }];
     const move = MOVES[Math.min(this.theoryRound, MOVES.length - 1)];
-    const answer = transposeChord(from, move.semis);
-    const wrongs = [transposeChord(from, move.semis + 1), transposeChord(from, move.semis - 1), transposeChord(from, move.semis + 2)].filter((c) => c !== answer);
-    const options = this.theoryRng.shuffle([answer, wrongs[0], wrongs[1]]);
+    // Spelled the way the song is written: a flat-key song asks and answers in flats (2026-10-12).
+    const { answer, options: unshuffled } = transposeQuestion(from, move.semis, chords.some((c) => /^[A-G]b/.test(c)));
+    const options = this.theoryRng.shuffle(unshuffled);
     const hint = this.theoryFrame(`Move ${from} ${move.name}`, rounds);
     hint.setText(this.copyText('setup', `Question ${this.theoryRound + 1} of ${rounds} - Mira's voice is shot tonight; the set moves ${move.name}. Which chord does ${from} become?`, { round: this.theoryRound + 1, rounds, from, move: move.name }));
     this.playChordSymbol(from);

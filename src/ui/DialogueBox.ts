@@ -391,6 +391,9 @@ export class DialogueBox {
   }
 
   destroy(): void {
+    // A typewriter still running would write into destroyed text on its next tick (2026-10-12).
+    this.typing = false;
+    this.typeTween?.stop();
     this.cancelAuto();
     this.stopPortraitBob();
     this.chevronPulse?.stop();
