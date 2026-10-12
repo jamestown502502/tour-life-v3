@@ -51,6 +51,13 @@ export const BRAND_NUM = {
   slate: 0x5d7287,
 } as const;
 
+// The live-radio interview's visible clock, per question (player feedback 2026-10-12): 3 s was less
+// than it takes to read a quoted question and two full-sentence answers (about 25 words), so the
+// clock ran out while players were still reading. Content may set more, never less.
+export const PRESSURE_MIN_SECONDS = 6;
+// The calm interview has no visible clock; it only moves on after a long silence.
+export const CHOICE_IDLE_MS = 12000;
+
 // Rhythm timing windows in ms, at "standard" difficulty.
 export const RHYTHM_WINDOWS = {
   perfect: 50,

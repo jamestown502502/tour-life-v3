@@ -31,6 +31,7 @@ export default defineConfig({
     'tonight-card-prejudge.spec.ts',
     'margins.spec.ts',
     'spotlight.spec.ts',
+    'feedback-fixes.spec.ts',
   ],
   retries: 0,
   // One WebKit phone and one Chromium phone: the two engines testers actually play on.
