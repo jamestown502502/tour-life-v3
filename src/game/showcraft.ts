@@ -181,3 +181,18 @@ export function goalRewardLine(night: WildcardNight): string {
   if (r.deltas.funds) parts.push(`+$${r.deltas.funds}`);
   return `Meet it: ${parts.join(', ')}`;
 }
+
+// ---- section lighting (publisher polish 2026-10-12) --------------------------------------------
+//
+// Each part of a song gets a light, so a show has a shape you can see: a dim intro, clear verses, a
+// coloured bridge (unless a bandmate has it: then the Spotlight Bridge lights it, src/game/spotlight.ts)
+// and a warm outro. `f` is how far through the chart's notes the show is, 0 to 1. Brand colours.
+export interface StageSection { id: 'intro' | 'verse' | 'bridge' | 'lift' | 'outro'; color: number; alpha: number }
+
+export function stageSection(f: number, spotlightTonight: boolean): StageSection {
+  if (f < 0.12) return { id: 'intro', color: 0x13152f, alpha: 0.22 };
+  if (f < 0.55) return { id: 'verse', color: 0x13152f, alpha: 0 };
+  if (f < 0.7) return spotlightTonight ? { id: 'bridge', color: 0x13152f, alpha: 0 } : { id: 'bridge', color: 0x862f5a, alpha: 0.12 };
+  if (f < 0.86) return { id: 'lift', color: 0x13152f, alpha: 0 };
+  return { id: 'outro', color: 0xf9a421, alpha: 0.1 };
+}

@@ -296,6 +296,7 @@ export async function clickButtonByLabel(page: Page, sceneKey: string, label: st
  *  second lookup would correctly find nothing and throw, turning an intentional double-tap into a
  *  test error. */
 export async function preShowChoiceCenter(page: Page, index = 0): Promise<{ x: number; y: number }> {
+  await answerSpotlightOffer(page, false);
   const center = await page.evaluate((i) => {
     const scene: any = (window as any).__game.scene.getScene('City');
     const box: any = scene?.children?.getByName?.('preshowChoices');
@@ -308,6 +309,23 @@ export async function preShowChoiceCenter(page: Page, index = 0): Promise<{ x: n
   }, index);
   if (!center) throw new Error(`preShowChoiceCenter: no pre-show choice at index ${index}`);
   return center;
+}
+
+/** The Spotlight Bridge offer (2026-10-12) comes before the pre-show choices once per show. Answers
+ *  it if it is up (default: keep the bridge as rehearsed, which leaves the show exactly as every
+ *  older spec expects) and waits for the pre-show choices to appear. A no-op when there is none. */
+export async function answerSpotlightOffer(page: Page, accept: boolean): Promise<boolean> {
+  const up = await page.evaluate(() => !!(window as any).__game.scene.getScene('City')?.children?.getByName?.('spotlightOffer'));
+  if (!up) return false;
+  const center = await page.evaluate((name) => {
+    const panel: any = (window as any).__game.scene.getScene('City').children.getByName('spotlightOffer');
+    const b = panel?.list?.find((o: any) => o.name === name)?.getBounds();
+    return b ? { x: b.centerX, y: b.centerY } : null;
+  }, accept ? 'spotlightAccept' : 'spotlightKeep');
+  if (!center) throw new Error('answerSpotlightOffer: offer is up but its button was not found');
+  await canvasClick(page, center.x, center.y);
+  await waitForCondition(page, () => !!(window as any).__game.scene.getScene('City')?.children?.getByName?.('preshowChoices'), 5000);
+  return true;
 }
 
 /** Clicks the Nth pre-show choice, wherever CityScene currently lays them out. */

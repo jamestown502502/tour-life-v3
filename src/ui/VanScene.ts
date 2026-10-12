@@ -21,6 +21,7 @@ import { getCity } from '../game/content';
 import { bedForCity } from '../game/ambience';
 import { VAN_BEATS, VAN_CARRY, VAN_OPENERS } from '../../content/van';
 import { ledgerEcho, LEDGER_TYPES, type LedgerTier, type LedgerType } from '../game/ledger';
+import { pendingEcho, echoLine } from '../game/spotlight';
 import { saveRun } from '../core/save';
 import { CITIES } from '../game/content';
 import { minigamePlayedFlag } from '../game/minigame';
@@ -89,14 +90,19 @@ export class VanScene extends Phaser.Scene {
     // a disaster produced the identical drive, and the tour read as a list of separate cities
     // rather than one trip. Only shown when there IS a previous stop with a real show behind it.
     const carry = this.carryBeat(rng);
-    // Then a money decision from an earlier city comes back (see ledgerEchoBeat).
+    // Then a money decision from an earlier city comes back (see ledgerEchoBeat), and a bridge a
+    // bandmate took in an earlier city (src/game/spotlight.ts).
     const echo = this.ledgerEchoBeat(rng);
+    const bridge = this.spotlightEchoBeat();
     // Then one skill from an earlier city, quizzed (spaced recall; see recallBeat).
     const recall = this.recallQuestion(rng);
     const afterEcho = recall ? (): void => this.recallBeat(recall, rng, spineStep) : spineStep;
-    const afterCarry = echo
-      ? (): void => this.dialogueBox.show({ id: 'van_ledger_echo', speaker: 'narrator', text: echo }, afterEcho, () => {})
+    const afterLedger = bridge
+      ? (): void => this.dialogueBox.show({ id: 'van_bridge_echo', speaker: 'narrator', text: bridge }, afterEcho, () => {})
       : afterEcho;
+    const afterCarry = echo
+      ? (): void => this.dialogueBox.show({ id: 'van_ledger_echo', speaker: 'narrator', text: echo }, afterLedger, () => {})
+      : afterLedger;
     const afterOpener = carry
       ? (): void => this.dialogueBox.show({ id: 'van_carry', speaker: 'narrator', text: carry }, afterCarry, () => {})
       : afterCarry;
@@ -121,6 +127,16 @@ export class VanScene extends Phaser.Scene {
     saveRun(State.data);
     const fx = Object.entries(echo.effects).map(([k, v]) => `${k} ${v >= 0 ? '+' : ''}${v}`).join(', ');
     return `${echo.text}\n\nThe ledger remembers: ${fx}.`;
+  }
+
+  /** The oldest bridge a bandmate took that the drive has not brought back yet. Marked and saved at
+   *  once, like the ledger echo, so a resumed drive never plays it twice. */
+  private spotlightEchoBeat(): string | null {
+    const rec = pendingEcho(State.data, this.cityId);
+    if (!rec) return null;
+    rec.echoed = true;
+    saveRun(State.data);
+    return echoLine(rec, getCity(rec.cityId).name);
   }
 
   /** Which route stop this drive is heading to (0 = the first city). */

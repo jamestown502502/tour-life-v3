@@ -104,7 +104,8 @@ export function getEpilogue(
   endingId: string,
   tags: string[],
   flags: string[] = [],
-  promise?: { flag: string; kept: boolean } | null,
+  /** `cite` (2026-10-12): the promise moments that decided it, already worded (promiseCitation). */
+  promise?: { flag: string; kept: boolean; cite?: string } | null,
   /** Final standing per bandmate. When given, the epilogue closes on what happened to each of the
    *  four of them rather than only to the band — see content/codas.ts for why that was the single
    *  biggest hole in the ending. Optional so every existing caller and test keeps working. */
@@ -112,7 +113,7 @@ export function getEpilogue(
 ): string {
   const base = EPILOGUES[key(endingId, tags)] ?? GENERIC_EPILOGUES[endingId] ?? UNIVERSAL_FALLBACK;
   const promiseLine = promise && PROMISE_EPILOGUE[promise.flag]
-    ? PROMISE_EPILOGUE[promise.flag][promise.kept ? 'kept' : 'missed']
+    ? PROMISE_EPILOGUE[promise.flag][promise.kept ? 'kept' : 'missed'] + (promise.cite ?? '')
     : '';
   const returnLeg = RETURN_LEG_CALLBACKS.find(([flag]) => flags.includes(flag));
   const minigame = MINIGAME_EPILOGUE_CALLBACKS.find(([flag]) => flags.includes(flag));

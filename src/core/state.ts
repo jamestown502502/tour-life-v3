@@ -115,6 +115,23 @@ export interface AccessibilitySettings {
   volumes: { master: number; music: number; sfx: number; metronome: number };
 }
 
+export interface SpotlightRecord {
+  cityId: string;
+  /** 0 = first visit, 1 = the return leg (a city can host two shows). */
+  visit: number;
+  mate: BandmateId;
+  accepted: boolean;
+  /** Set once the next drive has brought it back. */
+  echoed?: boolean;
+}
+
+export interface PromiseMomentRecord {
+  id: string;
+  cityId: string;
+  /** Which of the two options was taken. */
+  option: 0 | 1;
+}
+
 export interface RunState {
   schemaVersion: 1;
   seed: string;
@@ -138,6 +155,11 @@ export interface RunState {
   /** Bandmate-hosted minigames played this run, oldest first, so a host can remember the last one
    *  they ran with you (src/game/craft.ts hostReaction). Optional: older saves simply have none. */
   hostedGames?: { host: BandmateId; title: string; tier: 1 | 2 | 3 }[];
+  /** Spotlight Bridge offers this run (src/game/spotlight.ts), oldest first. Optional and additive:
+   *  a save from before 2026-10-12 simply has none, which is exactly a run with no offers yet. */
+  spotlights?: SpotlightRecord[];
+  /** Promise moments answered this run (content/promiseMoments.ts), oldest first. Additive. */
+  promiseMoments?: PromiseMomentRecord[];
   log: string[];
   currentCityIndex: number;
   midTourComplication: string;

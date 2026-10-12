@@ -12,6 +12,9 @@ class AudioSystem {
   private metronomeGain!: GainNode;
   private unlocked = false;
   private musicNodes: { stop(fadeSec?: number): void } | null = null;
+  private spotFilter!: BiquadFilterNode;
+  private spotGain!: GainNode;
+  private spotNodes: AudioScheduledSourceNode[] = [];
 
   volumes = { master: 1, music: 0.7, sfx: 0.9, metronome: 0.6 };
 
@@ -56,7 +59,16 @@ class AudioSystem {
 
     this.musicGain = this.ctx.createGain();
     this.musicGain.gain.value = this.volumes.music;
-    this.musicGain.connect(this.masterGain);
+    // The Spotlight Bridge bus (publisher polish 2026-10-12): a filter and a gain between the music
+    // and the master, transparent (20 kHz low-pass, unity gain) except while a bandmate has the
+    // bridge. See spotlight() below.
+    this.spotFilter = this.ctx.createBiquadFilter();
+    this.spotFilter.type = 'lowpass';
+    this.spotFilter.frequency.value = 20000;
+    this.spotFilter.Q.value = 0.7;
+    this.spotGain = this.ctx.createGain();
+    this.spotGain.gain.value = 1;
+    this.musicGain.connect(this.spotFilter).connect(this.spotGain).connect(this.masterGain);
 
     this.sfxGain = this.ctx.createGain();
     this.sfxGain.gain.value = this.volumes.sfx;
@@ -468,6 +480,90 @@ class AudioSystem {
         window.setTimeout(() => { try { src.stop(); } catch { /* already stopped */ } }, fadeSec * 1000 + 50);
       },
     };
+  }
+
+  /** The audio clock, for scheduling against a track started with playMusicTrack(delay). */
+  now(): number {
+    return this.ctx?.currentTime ?? 0;
+  }
+
+  /** The Spotlight Bridge: between `startAt` and `endAt` (AudioContext seconds) the song is
+   *  reshaped for one bandmate and a code-synthesized motif of theirs plays over it, following the
+   *  song's chords at its tempo. Everything is scheduled on the audio clock up front, the same
+   *  clock the backing track was started on, so it cannot drift from the music; and a paused show
+   *  (holdAll) pauses it with the song. PROTOTYPE sound until recorded stems exist
+   *  (docs/publisher-upgrade/ASSET_PROVENANCE.md). Vertical layering: the track keeps playing and
+   *  layers come and go over it, so the chart's timing is untouched.
+   *    intimate (Mira) - the band drops back (low-pass + duck) under a soft vocal-like pad
+   *    drive (Theo)    - a kick on every beat and a snare on two and four
+   *    walk (Jun)      - a walking bass line through each chord
+   *    shimmer (Rowan) - a bright arpeggio two octaves up */
+  spotlight(kind: 'intimate' | 'drive' | 'walk' | 'shimmer', startAt: number, endAt: number, chords: number[][], bpm: number): void {
+    if (!this.ctx || endAt <= startAt) return;
+    this.cancelSpotlight();
+    const ctx = this.ctx;
+    const fade = 0.8;
+    const f = this.spotFilter.frequency, g = this.spotGain.gain;
+    if (kind === 'intimate') {
+      f.setValueAtTime(20000, startAt); f.exponentialRampToValueAtTime(1300, startAt + fade);
+      f.setValueAtTime(1300, endAt); f.exponentialRampToValueAtTime(20000, endAt + fade);
+      g.setValueAtTime(1, startAt); g.linearRampToValueAtTime(0.72, startAt + fade);
+      g.setValueAtTime(0.72, endAt); g.linearRampToValueAtTime(1, endAt + fade);
+    }
+    const beat = 60 / Math.max(40, bpm);
+    const bar = beat * 4;
+    const chordAt = (t: number): number[] => chords[Math.floor((t - startAt) / bar) % chords.length] ?? chords[0];
+    const voice = (type: OscillatorType, freq: number, at: number, dur: number, peak: number, attack = 0.01): OscillatorNode => {
+      const osc = ctx.createOscillator();
+      const env = ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      env.gain.setValueAtTime(0, at);
+      env.gain.linearRampToValueAtTime(peak, at + attack);
+      env.gain.setTargetAtTime(0, at + Math.max(attack, dur * 0.6), dur * 0.25);
+      osc.connect(env).connect(this.spotGain);
+      osc.start(at);
+      osc.stop(at + dur + 0.6);
+      this.spotNodes.push(osc);
+      return osc;
+    };
+    for (let t = startAt; t < endAt - 0.05; t += kind === 'shimmer' ? beat / 2 : kind === 'intimate' ? bar : beat) {
+      const chord = chordAt(t);
+      const step = Math.round((t - startAt) / (kind === 'shimmer' ? beat / 2 : beat));
+      if (kind === 'intimate') {
+        // two sustained voices a sixth apart with a slow vibrato: the nearest a code oscillator gets to "ooh"
+        for (const n of [chord[0] * 2, (chord[2] ?? chord[0] * 1.5) * 2]) {
+          const osc = voice('sine', n, t, bar * 0.95, 0.07, 0.35);
+          const lfo = ctx.createOscillator(), depth = ctx.createGain();
+          lfo.frequency.value = 5; depth.gain.value = n * 0.006;
+          lfo.connect(depth).connect(osc.frequency);
+          lfo.start(t); lfo.stop(t + bar + 0.6);
+          this.spotNodes.push(lfo);
+        }
+      } else if (kind === 'drive') {
+        const kick = voice('sine', 110, t, 0.22, 0.32);
+        kick.frequency.setValueAtTime(110, t);
+        kick.frequency.exponentialRampToValueAtTime(48, t + 0.18);
+        if (step % 2 === 1) voice('square', 190, t, 0.08, 0.05);   // snare body on two and four
+      } else if (kind === 'walk') {
+        const tones = [chord[0], chord[1] ?? chord[0], chord[2] ?? chord[0], chord[1] ?? chord[0]];
+        voice('triangle', tones[step % 4] / 2, t, beat * 0.9, 0.2);
+      } else {
+        const tones = [chord[0], chord[1] ?? chord[0], chord[2] ?? chord[0], chord[1] ?? chord[0]];
+        voice('triangle', tones[step % 4] * 4, t, beat * 0.45, 0.045);
+      }
+    }
+  }
+
+  /** Stops anything the Spotlight Bridge scheduled and puts the music bus back to transparent. */
+  cancelSpotlight(): void {
+    for (const n of this.spotNodes) { try { n.stop(); } catch { /* not started yet or already stopped */ } }
+    this.spotNodes = [];
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    for (const p of [this.spotFilter.frequency, this.spotGain.gain]) p.cancelScheduledValues(t);
+    this.spotFilter.frequency.setValueAtTime(20000, t);
+    this.spotGain.gain.setValueAtTime(1, t);
   }
 }
 
