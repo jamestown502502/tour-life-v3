@@ -31,7 +31,7 @@ import {
 } from '../core/onboarding';
 import type { RhythmMode } from '../core/state';
 import type { CityDef, SongDef } from '../../content/schema';
-import { bandPerks, showGoalFor, goalMet, chartPatternFor, remapLane, wildcardNight, goalReward, PATTERN_LABEL, bandmateHelpRows, goalProgressText, goalLost, goalRewardLine, type BandPerks, type ShowGoal, type GoalProgress, type WildcardNight } from '../game/showcraft';
+import { stageSection, bandPerks, showGoalFor, goalMet, chartPatternFor, remapLane, wildcardNight, goalReward, PATTERN_LABEL, bandmateHelpRows, goalProgressText, goalLost, goalRewardLine, type BandPerks, type ShowGoal, type GoalProgress, type WildcardNight } from '../game/showcraft';
 import { announce } from './a11yLive';
 import { ensurePortrait } from '../art/sprites';
 /** How long the Tonight card waits before starting the song on its own. */
@@ -39,6 +39,7 @@ const TONIGHT_CARD_MS = 9000;
 import { wildcardFor } from '../game/wildcard';
 import { routeArcRole } from '../game/route';
 import { stamp } from '../art/juice';
+import { spotlightPlan, spotlightAfterLine, BANDMATE_NAME } from '../game/spotlight';
 
 const HIT_LINE_Y = RHYTHM_HIT_LINE_Y;
 const SPAWN_Y = RHYTHM_SPAWN_Y;
@@ -134,6 +135,14 @@ export class RhythmScene extends Phaser.Scene {
   private goalChip: Phaser.GameObjects.Text | null = null;
   private goalChipBg: Phaser.GameObjects.Rectangle | null = null;
   private perkSaidAt: Record<string, number> = {};
+  /** Tonight's Spotlight Bridge, if a bandmate was given it (src/game/spotlight.ts). */
+  private spotPlan: ReturnType<typeof spotlightPlan> = null;
+  private spotLayer: Phaser.GameObjects.Container | null = null;
+  private spotDone = false;
+  /** Section lighting (stageSection): a wash over the lanes that follows the song's shape. */
+  private sectionWash: Phaser.GameObjects.Rectangle | null = null;
+  private section = '';
+  private noteSpan = { first: 0, last: 0 };
   private chartPrepared = false;
   private progress: GoalProgress = { bestStreak: 0, holdsDropped: 0, cuesTaken: 0, cuesTotal: 0, misses: 0, crowdPeak: 0, holdsTotal: 0 };
 
@@ -174,6 +183,11 @@ export class RhythmScene extends Phaser.Scene {
     this.goalChip = null;
     this.goalChipBg = null;
     this.perkSaidAt = {};
+    this.spotPlan = null;
+    this.spotLayer = null;
+    this.spotDone = false;
+    this.sectionWash = null;
+    this.section = '';
     this.chartPrepared = false;
     this.progress = { bestStreak: 0, holdsDropped: 0, cuesTaken: 0, cuesTotal: 0, misses: 0, crowdPeak: 0, holdsTotal: 0 };
   }
@@ -281,7 +295,7 @@ export class RhythmScene extends Phaser.Scene {
     this.updateCrowdFigures();
 
     if (State.data.accessibility.visualAssist) {
-      this.add.text(W / 2, HIT_LINE_Y + 30, 'Tap a lane as its note crosses the line', textStyle('small', { fontSize: '14px' }))
+      this.add.text(W / 2, HIT_LINE_Y + 56, 'Tap a lane as its note crosses the line', textStyle('small', { fontSize: '14px' }))
         .setOrigin(0.5).setDepth(50);
     }
 
@@ -379,17 +393,30 @@ export class RhythmScene extends Phaser.Scene {
     this.progress.cuesTotal = this.cues.length;
     this.progress.holdsTotal = arrangement.notes.filter((n) => (n.dur ?? 0) > 0).length;
     this.cityLabel.setText(`${city.name} — ${song.name} · ${arrangement.label} · ${PATTERN_LABEL[pattern]}`);
+    // The Spotlight Bridge reads the chart's note times only to place the bridge; the notes
+    // themselves are untouched (src/tests/spotlight.test.ts holds that).
+    // The first-ever show (the rhythm tutorial) included: the offer was made in that city too.
+    this.spotPlan = spotlightPlan(State.data, city.id, this.visit, arrangement.notes.map((n) => n.t));
+    const times = arrangement.notes.map((n) => n.t);
+    this.noteSpan = { first: Math.min(...times), last: Math.max(...times) };
+    this.sectionWash = this.add.rectangle(LANE_X_START, 0, LANE_W * song.lanes, H, 0x000000, 0).setOrigin(0, 0).setDepth(3).setName('sectionWash');
   }
 
   private beginRealSong(city: CityDef, song: SongDef): void {
     this.prepareChart(city, song);
     const trackKey = song.audioFile ? `song_${song.id}` : null;
     const hasTrack = !!trackKey && this.cache.audio.has(trackKey);
+    // Chart time 0 on the audio clock: the track is scheduled 1.2 s out and the chart starts then.
+    const audioStart = audio.now() + 1.2;
     if (hasTrack) {
       const buffer = this.cache.audio.get(trackKey!) as AudioBuffer;
       audio.playMusicTrack(buffer, 1.2);
     } else {
       audio.playAmbience(parseChordProgression(song.chordProgression), song.bpm, song.waveform);
+    }
+    if (this.spotPlan) {
+      audio.spotlight(this.spotPlan.treatment, audioStart + this.spotPlan.start, audioStart + this.spotPlan.end, parseChordProgression(song.chordProgression), song.bpm);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => audio.cancelSpotlight());
     }
     this.createGoalChip();
     // Names the SONG as well as the arrangement. A city's two songs deliberately share
@@ -571,6 +598,12 @@ export class RhythmScene extends Phaser.Scene {
         this.finalizeHold(ns, expectedEndMs);
         this.activeHolds.delete(lane);
       }
+    }
+
+    this.updateSection(t);
+    if (this.spotPlan && !this.spotDone) {
+      if (!this.spotLayer && t >= this.spotPlan.start && t < this.spotPlan.end) this.showSpotlight();
+      if (this.spotLayer && t >= this.spotPlan.end) this.hideSpotlight();
     }
 
     for (const cs of this.cues) {
@@ -757,7 +790,9 @@ export class RhythmScene extends Phaser.Scene {
    *  in place — the information still shows, only the travel is dropped. */
   private showJudgementText(x: number, judgement: HitJudgement, points: number): void {
     const label = judgement === 'miss' ? JUDGEMENT_LABEL.miss : `${JUDGEMENT_LABEL[judgement]} +${points}`;
-    const text = this.add.text(x, HIT_LINE_Y - 56, label, textStyle('button', {
+    // HIT_LINE_Y - 90, was - 56 (publisher polish 2026-10-12): the text's lower edge sat inside the
+    // band where the next note meets the line. Kept 40 px clear of it (e2e/stage-readability.spec.ts).
+    const text = this.add.text(x, HIT_LINE_Y - 90, label, textStyle('button', {
       fontSize: judgement === 'perfect' ? '24px' : '20px', color: JUDGEMENT_HEX[judgement],
     })).setOrigin(0.5).setDepth(90);
     const rise = State.data.accessibility.reducedMotion ? 0 : 44;
@@ -881,7 +916,8 @@ export class RhythmScene extends Phaser.Scene {
     // recordShow() above has already marked this city's first show, so Results cannot re-derive
     // which visit this was — a first visit would read as a return. Hand it over explicitly.
     goTo(this, 'Results', { cityId: this.cityId, result, visit: this.visit,
-      tonight: { goal: this.goal.text, met, perks: this.perks.lines, night: this.night.line, scouted: this.night.scouted, scoutImpressed, letter } },
+      tonight: { goal: this.goal.text, met, perks: this.perks.lines, night: this.night.line, scouted: this.night.scouted, scoutImpressed, letter,
+        spotlight: spotlightAfterLine(State.data, this.cityId, this.visit) } },
       { theme: 'vinyl', label: 'That was the show' });
   }
 
@@ -958,17 +994,69 @@ export class RhythmScene extends Phaser.Scene {
     this.goalChipBg?.setDisplaySize(Math.min(W - 200, Math.max(300, this.goalChip.width + 40)), 40);
   }
 
+  /** The Spotlight Bridge on stage: the lanes take the bandmate's light, their portrait and a
+   *  caption sit between the hit line and the crowd (clear of every falling note), and the screen
+   *  reader hears who has the bridge. Reduced motion: no fades, the same static picture. */
+  private showSpotlight(): void {
+    const plan = this.spotPlan!;
+    const reduced = State.data.accessibility.reducedMotion;
+    const lanesW = LANE_W * getSong(songForVisit(getCity(this.cityId), State.data.seed, this.visit)).lanes;
+    const layer = this.add.container(0, 0).setDepth(4).setName('spotlight');
+    const wash = this.add.rectangle(LANE_X_START, 0, lanesW, H, plan.light, 0.14).setOrigin(0, 0);
+    const cone = this.add.graphics();
+    cone.fillStyle(plan.light, 0.16);
+    cone.fillTriangle(LANE_X_START + lanesW / 2 - 40, 0, LANE_X_START - 20, HIT_LINE_Y, LANE_X_START + lanesW + 20, HIT_LINE_Y);
+    layer.add([wash, cone]);
+    const name = BANDMATE_NAME[plan.mate];
+    // Below the hit line and above the crowd: nothing falls there, so the caption never hides a note.
+    const chip = this.add.container(W / 2, H - 150).setDepth(57).setName('spotlightChip');
+    const bg = this.add.rectangle(0, 0, 420, 52, 0x1a2436, 0.9).setStrokeStyle(3, plan.light, 1);
+    const face = this.add.image(-180, 0, ensurePortrait(this, plan.mate, 'happy')).setScale(0.17);
+    const label = this.add.text(-140, 0, `${name} takes the bridge`, textStyle('small', { fontSize: '18px', fontStyle: '700', color: PALETTE_HEX.cream })).setOrigin(0, 0.5);
+    chip.add([bg, face, label]);
+    this.spotLayer = this.add.container(0, 0, [layer, chip]).setName('spotlightRoot');
+    if (!reduced) {
+      layer.setAlpha(0); chip.setAlpha(0);
+      this.tweens.add({ targets: [layer, chip], alpha: 1, duration: 600 });
+    }
+    announce(`${name} takes the bridge.`);
+  }
+
+  /** The lanes take the light of the song's section (src/game/showcraft.ts stageSection): dim for
+   *  the intro, clear for the verses, warm for the outro. Lights only: no camera moves, nothing over
+   *  the hit line, and under reduced motion the colour simply switches. */
+  private updateSection(t: number): void {
+    if (!this.sectionWash) return;
+    const span = this.noteSpan.last - this.noteSpan.first;
+    const f = span > 0 ? (t - this.noteSpan.first) / span : 0;
+    const sec = stageSection(f, !!this.spotPlan);
+    if (sec.id === this.section) return;
+    this.section = sec.id;
+    this.sectionWash.setFillStyle(sec.color, this.sectionWash.fillAlpha);
+    if (State.data.accessibility.reducedMotion) this.sectionWash.setFillStyle(sec.color, sec.alpha);
+    else this.tweens.add({ targets: this.sectionWash, fillAlpha: sec.alpha, duration: 700 });
+  }
+
+  private hideSpotlight(): void {
+    const root = this.spotLayer;
+    this.spotDone = true;
+    this.spotLayer = null;
+    if (!root) return;
+    if (State.data.accessibility.reducedMotion) { root.destroy(); return; }
+    this.tweens.add({ targets: root.list, alpha: 0, duration: 600, onComplete: () => root.destroy() });
+  }
+
   /** A bandmate's help, named in the lane the moment it lands; at most once every few seconds each. */
   private perkCallout(id: string, lane: number, text: string): void {
     const now = this.time.now;
     if ((this.perkSaidAt[id] ?? -1e9) > now - 4000) return;
     this.perkSaidAt[id] = now;
-    const t = this.add.text(this.laneCenterX(lane), HIT_LINE_Y - 100, text, textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold })).setOrigin(0.5).setDepth(90);
+    const t = this.add.text(this.laneCenterX(lane), HIT_LINE_Y - 140, text, textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold })).setOrigin(0.5).setDepth(90);
     this.tweens.add({ targets: t, alpha: 0, y: t.y - 30, duration: 900, onComplete: () => t.destroy() });
   }
 
   private showShieldText(lane: number): void {
-    const t = this.add.text(this.laneCenterX(lane), HIT_LINE_Y - 100, 'Jun covers it', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold })).setOrigin(0.5).setDepth(90);
+    const t = this.add.text(this.laneCenterX(lane), HIT_LINE_Y - 140, 'Jun covers it', textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold })).setOrigin(0.5).setDepth(90);
     this.tweens.add({ targets: t, alpha: 0, y: t.y - 30, duration: 700, onComplete: () => t.destroy() });
   }
 }

@@ -18,7 +18,7 @@ import { evaluateCondition } from '../game/condition';
 import { availabilityFlag } from '../game/scenePool';
 import { arcStageFor, stageAllows, type ArcStage } from '../game/arc';
 import { arrangementFlag } from '../game/rhythm';
-import type { CityDef, DialogueNode, LocationDef } from '../../content/schema';
+import type { CityDef, DialogueChoice, DialogueNode, LocationDef } from '../../content/schema';
 import { addTextScrim, textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
 import { addMenuButton } from './MenuButton';
@@ -29,6 +29,11 @@ import { showSocialFeed } from './SocialFeed';
 import { makeRng } from '../core/rng';
 import { WEATHER_EFFECTS, weatherAppliedFlag } from '../game/weather';
 import { currentStopFor } from '../game/route';
+import { bridgeWindow, offerLine, proposerFor, recordFor, stageOf, BANDMATE_NAME } from '../game/spotlight';
+import { SPOTLIGHT } from '../../content/spotlight';
+import { promiseMomentFor } from '../game/promise';
+import { describeDeltas } from '../game/wildcard';
+import { ensurePortrait } from '../art/sprites';
 
 // 'preshow-choices' (Addendum v2, Item 8a): the second minigame insertion point's resume/return
 // phase — the preshow dialogue has already played, only the choice buttons remain. Mirrors
@@ -209,7 +214,7 @@ export class CityScene extends Phaser.Scene {
   private startArrival(): void {
     const memory = memoryFor(this.city.id);
     const isReturn = !!memory && !State.data.flags.includes(returnFeedFlag(this.city.id));
-    const toArrival = () => this.walk(this.consumeResumeNode(this.city.arrivalSceneId), () => this.startMinigameOrLocations());
+    const toArrival = () => this.walk(this.consumeResumeNode(this.city.arrivalSceneId), () => this.promiseMoment(() => this.startMinigameOrLocations()));
     if (!isReturn) { toArrival(); return; }
 
     // Seeded off the run seed AND the city, so a replayed seed produces this town's exact feed,
@@ -218,6 +223,26 @@ export class CityScene extends Phaser.Scene {
     State.addFlag(returnFeedFlag(this.city.id));
     saveRun(State.data);
     showSocialFeed(this, this.city.name, buildFeed(memory!, this.city.name, rng), toArrival);
+  }
+
+  /** A promise moment (publisher polish 2026-10-12, content/promiseMoments.ts): on arrival in the
+   *  2nd, 3rd and 4th city, the tour's promise costs something and you choose. Recorded and saved
+   *  the moment it is answered, so a resume never asks twice. */
+  private promiseMoment(then: () => void): void {
+    const moment = promiseMomentFor(State.data, State.data.currentCityIndex);
+    if (!moment) { then(); return; }
+    const choices: DialogueChoice[] = moment.options.map((o, i) => ({ id: `promise_${i}`, label: o.label, next: String(i) }));
+    this.dialogueBox.show({ id: `promise_${moment.id}`, speaker: moment.speaker, text: moment.text, choices }, () => {}, (choice) => {
+      const i = Number(choice.next) as 0 | 1;
+      const o = moment.options[i];
+      State.applyStatDeltas(o.stats);
+      State.applyRelationshipDeltas(o.relationships);
+      if (o.localLove) State.addLocalLove(this.city.id, o.localLove);
+      State.data.promiseMoments = [...(State.data.promiseMoments ?? []), { id: moment.id, cityId: this.city.id, option: i }];
+      saveRun(State.data);
+      const fx = describeDeltas({ ...(o.stats ?? {}) });
+      this.dialogueBox.show({ id: `promise_${moment.id}_after`, speaker: 'narrator', text: `${o.after}${fx ? `\n\n${fx}.` : ''}` }, then, () => {});
+    });
   }
 
   private walk(nodeId: string, onDone: () => void, isBack = false): void {
@@ -450,6 +475,34 @@ export class CityScene extends Phaser.Scene {
     this.walk(this.consumeResumeNode(this.city.preShowSceneId), () => this.startMinigameOrPreshowChoices());
   }
 
+  /** The Spotlight Bridge offer (publisher polish 2026-10-12, src/game/spotlight.ts): before the
+   *  pre-show choices, the bandmate you spent this city with asks for tonight's bridge. Asked once
+   *  per show; the answer is saved before the buttons below appear, so a resume goes straight to
+   *  them. Returns true while the offer is up. */
+  private maybeOfferSpotlight(visit: number, noteTimes: number[]): boolean {
+    if (recordFor(State.data, this.city.id, visit) || !bridgeWindow(noteTimes)) return false;
+    const pool = this.city.relationshipScenePool;
+    const lastScene = [...this.relationshipsPlayed].map((id) => pool.find((e) => e.id === id)).filter(Boolean).pop();
+    const mate = proposerFor(State.data, this.city.id, lastScene?.bandmate);
+    const voice = SPOTLIGHT[mate];
+    const panel = this.add.container(0, 0).setDepth(80).setName('spotlightOffer');
+    panel.add(addTextScrim(this, W / 2, 800, W - 60, 250, 0.9));
+    panel.add(this.add.image(110, 770, ensurePortrait(this, mate, 'happy')).setScale(0.24));
+    panel.add(this.add.text(W / 2, 700, "TONIGHT'S BRIDGE", textStyle('small', { fontSize: '17px', fontStyle: '700', color: PALETTE_HEX.gold })).setOrigin(0.5));
+    panel.add(this.add.text(180, 730, offerLine(mate, stageOf(State.data, mate)), textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.cream, wordWrap: { width: W - 250 } })));
+    panel.add(this.add.text(W / 2, 880, `${BANDMATE_NAME[mate]} wants ${voice.take}. Notes and timing stay the same either way.`,
+      textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream, align: 'center', wordWrap: { width: W - 120 } })).setOrigin(0.5));
+    const decide = (accepted: boolean): void => {
+      State.data.spotlights = [...(State.data.spotlights ?? []), { cityId: this.city.id, visit, mate, accepted }];
+      saveRun(State.data);
+      panel.destroy();
+      this.renderPreShowChoices();
+    };
+    panel.add(createButton(this, W / 2 - 300, 950, 600, 66, `Give ${BANDMATE_NAME[mate]} the bridge`, () => decide(true), { fontSize: '18px', fillColor: 0x3e7c7b }).setName('spotlightAccept'));
+    panel.add(createButton(this, W / 2 - 300, 1036, 600, 66, 'Keep it as rehearsed', () => decide(false), { fontSize: '18px', fillColor: 0x5d7287 }).setName('spotlightKeep'));
+    return true;
+  }
+
   private renderPreShowChoices(): void {
     this.dialogueBox.setVisible(false);
     // Leaving the dialogue walk entirely for the choice buttons — nothing left to "go back" into.
@@ -457,11 +510,6 @@ export class CityScene extends Phaser.Scene {
     this.updateBackButton();
     const ctx = { stats: State.data.stats, relationships: State.data.relationships, localLove: State.data.localLove, flags: State.data.flags };
     const options = this.city.preShowChoices.filter((c) => evaluateCondition(c.condition, ctx));
-    // Named so real-input e2e can find these choices by identity rather than by a copied y
-    // coordinate. Three specs hardcoded y=960 with a comment naming this literal, and all three
-    // broke the moment the row moved — clicking empty background and reading as a gameplay
-    // regression that did not exist.
-    const container = this.add.container(0, 0).setDepth(80).setName('preshowChoices');
     // Pitch was 82 with the description scrim centred 76 below its own button — so each
     // description's scrim ran 11px INTO the next button, which is the cramped, hard-to-read stack
     // reported live. 104 gives every label its description with clear air on both sides, and the
@@ -471,6 +519,12 @@ export class CityScene extends Phaser.Scene {
     // Tonight's song, so each choice can say what it actually does to the chart.
     const visit = visitIndexFor(this.city.id, (State.data.cityMemories ?? []).filter((m) => m.firstShowRecorded).map((m) => m.cityId));
     const tonight = getSong(songForVisit(this.city, State.data.seed, visit));
+    if (this.maybeOfferSpotlight(visit, tonight.arrangements[0]?.notes.map((n) => n.t) ?? [])) return;
+    // Named so real-input e2e can find these choices by identity rather than by a copied y
+    // coordinate. Three specs hardcoded y=960 with a comment naming this literal, and all three
+    // broke the moment the row moved — clicking empty background and reading as a gameplay
+    // regression that did not exist.
+    const container = this.add.container(0, 0).setDepth(80).setName('preshowChoices');
 
     /** "Play it tight and precise" sounds like a stylistic preference. It is the difficulty
      *  selector: on Tokyo it means 137 notes at 2.4/sec instead of 77 at 1.4. A player reported

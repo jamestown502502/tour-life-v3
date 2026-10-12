@@ -32,7 +32,7 @@ export class ResultsScene extends Phaser.Scene {
   /** 0 first visit, 1 return. Passed by RhythmScene, because the show is already recorded by now. */
   private visit = 0;
 
-  private tonight: { goal: string; met: boolean; perks: string[]; night: string | null; scouted: boolean; scoutImpressed: boolean } | null = null;
+  private tonight: { goal: string; met: boolean; perks: string[]; night: string | null; scouted: boolean; scoutImpressed: boolean; spotlight?: string | null } | null = null;
 
   init(data: { cityId: string; result: PerformanceResult; visit?: number; tonight?: ResultsScene['tonight'] }): void {
     this.cityId = data.cityId;
@@ -152,6 +152,8 @@ export class ResultsScene extends Phaser.Scene {
     lines.push(t.perks.length ? `Helping on stage: ${t.perks.map((p) => p.split(':')[0]).join(' and ').replace(/ locks the tempo| covers your slips| carries the long notes| works the room/g, '')}` : 'No bandmate was close enough to help yet. Time with them changes the next show.');
     if (t.scouted) lines.push(t.scoutImpressed ? 'The label scout was impressed.' : 'The label scout left before the encore.');
     if (t.met) lines.push('Goal reward: more local love and inspiration.');
+    // The Spotlight Bridge, said back (src/game/spotlight.ts): who had it, and what it did.
+    if (t.spotlight) lines.push(t.spotlight);
     addTextScrim(this, W / 2, top + 175, W - 60, 350, 0.9);
     this.add.text(W / 2, top + 30, "TONIGHT'S GOAL", textStyle('small', { fontSize: '17px', fontStyle: '700', color: PALETTE_HEX.gold })).setOrigin(0.5);
     this.add.text(W / 2, top + 70, t.goal, textStyle('h2', { fontSize: '24px', color: PALETTE_HEX.cream, align: 'center', wordWrap: { width: W - 120 } })).setOrigin(0.5);
