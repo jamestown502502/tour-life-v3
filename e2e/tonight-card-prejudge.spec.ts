@@ -5,7 +5,7 @@
 // the score stayed 0 and nothing could be hit. Every other spec enters a show seconds after boot,
 // when only the first few notes are affected, which is why the suite stayed green.
 import { test, expect, type Page } from './fixtures';
-import { skipFirstTimeOnboarding, waitForActiveScene, clickPreShowChoice, clickButtonByLabel } from './helpers';
+import { skipFirstTimeOnboarding, waitForActiveScene, clickPreShowChoice, clickButtonByLabel, answerSpotlightOffer } from './helpers';
 
 async function play(page: Page, ms: number): Promise<void> {
   for (let t = 0; t < ms; t += 100) await page.clock.runFor(Math.min(100, ms - t));
@@ -48,6 +48,10 @@ test('a show entered late in a session starts with a whole, unjudged chart', asy
     (window as any).__game.scene.stop('Title');
     (window as any).__game.scene.start('City', { cityId: 'lisbon', phase: 'preshow-choices' });
   });
+  await play(page, 1500);
+  // The Spotlight Bridge offer comes first (2026-10-12). On this paused clock its answer is only
+  // processed when time moves, so answer it, then give the pre-show buttons the same settle time.
+  await answerSpotlightOffer(page, false);
   await play(page, 1500);
   await clickPreShowChoice(page, 0);
   for (let i = 0; i < 40 && !(await rhythm(page)); i++) await play(page, 100);
