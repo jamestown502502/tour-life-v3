@@ -105,7 +105,7 @@ async function boot(): Promise<void> {
 
   startA11yButtons(game);   // TalkBack can reach every button (ui/a11yButtons.ts, QA round 4 #4)
   startKeyNav(game);        // arrows / Enter / gamepad play (ui/keyNav.ts, web pivot 2026-10-11)
-  startAmbient(game);       // desktop: the bands beside the portrait game glow with the scene (ui/ambient.ts)
+  startAmbient(game);       // the bands around the game column: still key-art backdrop + a per-scene tint (ui/ambient.ts)
 
   // Android Back / browser back: a guard history entry keeps Back inside the game (ui/backButton.ts).
   // At a root screen the first Back shows a hint and the second, within 2 s, leaves.

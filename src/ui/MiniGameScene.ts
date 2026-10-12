@@ -36,7 +36,7 @@ import { VERB, resultStamp, ledgerStamp, LEVEL_STAMP, cameoMood, beatMs, shouldE
 import { drawHand, bestSet, segue, arc, scoreSet, setTier, CIRCLE_MAJORS, CIRCLE_MINORS, type SetCard, type SegueVerdict } from '../game/setbuilder';
 import { haulOffers, bestHaul, playDay, doorPay, breakEven, turnoutFor, haulTier, HAUL_DAYS, HAUL_FLOAT, MOTEL, TIRED_MAX, TIRED_TURNOUT, HAUL_LESSON, type Deal, type Bed } from '../game/longhaul';
 import { problemSequence, channelLevel, inPocket, masterLevel, mixOutcome, MIX_CHANNELS, POCKET, CLIP_AT, FADER_MAX, FIX_WINDOW, PROBLEM_GAP, DRIVE, PROBLEM_LINE, type MixProblem } from '../game/mixdesk';
-import { gainVerdict, GAIN_FEEDBACK, GAIN_CHANNELS, isHeavy, packIssue, SIGNAL_CHAIN, takeawayFor, MINIGAME_SKILL, hostReaction, priorHosted, type Tier } from '../game/craft';
+import { gainVerdict, GAIN_FEEDBACK, GAIN_CHANNELS, isHeavy, packIssue, SIGNAL_CHAIN, takeawayFor, MINIGAME_SKILL, MINIGAME_TRANSFER, hostReaction, priorHosted, type Tier } from '../game/craft';
 
 const HELP_TEXT: Record<MiniGameDef['type'], string> = {
   timing: 'Set the level: tap when the needle is in the gold sweet spot. Left of it is too quiet (hiss), right of it clips (distortion). No penalty for missing.',
@@ -1127,7 +1127,11 @@ export class MiniGameScene extends Phaser.Scene {
     if (lesson) {
       const t = this.add.text(W / 2, y + 4, `On the road: ${lesson}`, textStyle('small', { fontSize: '17px', color: PALETTE_HEX.tealInk, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5, 0);
       this.contentLayer.add(t);
-      y = t.y + t.height + 12;
+      y = t.y + t.height + 8;
+      // Where the same rule works off the tour (the transfer line, MINIGAME_TRANSFER).
+      const off = this.add.text(W / 2, y, `Off the road: ${MINIGAME_TRANSFER[this.mg.type]}`, textStyle('small', { fontSize: '16px', color: PALETTE_HEX.terracottaInk, wordWrap: { width: W - 140 }, align: 'center' })).setOrigin(0.5, 0);
+      this.contentLayer.add(off);
+      y = off.y + off.height + 12;
     }
     const cardImg = this.card(top, Math.max(300, y - top + 12));
     this.contentLayer.sendToBack(cardImg);

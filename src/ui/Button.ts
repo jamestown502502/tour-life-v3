@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { registerA11yButton } from './a11yButtons';
-import { PALETTE, PALETTE_HEX, UI_RADIUS } from '../const';
+import { BRAND_NUM, PALETTE, PALETTE_HEX, UI_RADIUS } from '../const';
 import { audio, type SfxName } from '../core/audio';
 import { textStyle } from './textStyles';
 import { ensureButtonTexture, ensureRoundedRect } from '../art/sprites';
@@ -158,12 +158,12 @@ export function createButton(
 
   const shadow = scene.add.image(4, 8, shapeKey).setOrigin(0, 0).setTint(PALETTE.plum).setAlpha(0.18);
   const hoverGlow = scene.add.image(w / 2, finalH / 2, shapeKey).setOrigin(0.5)
-    .setDisplaySize(w + 10, finalH + 10).setTint(PALETTE.gold).setAlpha(0);
+    .setDisplaySize(w + 10, finalH + 10).setTint(BRAND_NUM.orange).setAlpha(0);
   const bg = scene.add.image(0, 0, btnKey).setOrigin(0, 0);
   // An OUTLINE, not a filled shape: the ring used to be the button's own shape tinted gold, drawn
   // over the fill, so a selected button's label sat on gold at ~2:1 (found by the legibility suite
   // in QA round 3, once the band creator started showing its default picks as selected).
-  const selectedRing = scene.add.graphics().lineStyle(4, PALETTE.gold, 1)
+  const selectedRing = scene.add.graphics().lineStyle(4, BRAND_NUM.orange, 1)
     .strokeRoundedRect(-4, -4, w + 8, finalH + 8, radius + 4).setVisible(false);
 
   container.add([shadow, hoverGlow, bg, selectedRing, text]);

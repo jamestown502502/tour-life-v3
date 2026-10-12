@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { announce } from './a11yLive';
-import { PALETTE_HEX, W } from '../const';
+import { BRAND, PALETTE_HEX, W } from '../const';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { getCity } from '../game/content';
@@ -66,7 +66,7 @@ export class ResultsScene extends Phaser.Scene {
     addTextScrim(this, W / 2, 232, 420, 32, 0.8);
     this.add.text(W / 2, 232, `${letter} on a scale of S, A, B, C, D, E  ·  from notes landed`,
       textStyle('small', { fontSize: '15px', color: PALETTE_HEX.cream })).setOrigin(0.5);
-    const plate = this.add.text(W / 2, 150, letter, textStyle('title', { fontSize: '120px', color: PALETTE_HEX.gold }))
+    const plate = this.add.text(W / 2, 150, letter, textStyle('title', { fontSize: '120px', color: BRAND.orange }))
       .setOrigin(0.5).setAlpha(0).setScale(2.2);
     if (State.data.accessibility.reducedMotion) {
       plate.setAlpha(1).setScale(1);
@@ -156,7 +156,7 @@ export class ResultsScene extends Phaser.Scene {
     this.add.text(W / 2, top + 30, "TONIGHT'S GOAL", textStyle('small', { fontSize: '17px', fontStyle: '700', color: PALETTE_HEX.gold })).setOrigin(0.5);
     this.add.text(W / 2, top + 70, t.goal, textStyle('h2', { fontSize: '24px', color: PALETTE_HEX.cream, align: 'center', wordWrap: { width: W - 120 } })).setOrigin(0.5);
     const word = t.met ? 'MET' : 'NOT THIS TIME';
-    const st = this.add.text(W / 2, top + 140, word, textStyle('title', { fontSize: t.met ? '64px' : '40px', color: t.met ? PALETTE_HEX.gold : PALETTE_HEX.cream }))
+    const st = this.add.text(W / 2, top + 140, word, textStyle('title', { fontSize: t.met ? '64px' : '40px', color: t.met ? BRAND.orange : PALETTE_HEX.cream }))
       .setOrigin(0.5).setAngle(-6);
     if (!State.data.accessibility.reducedMotion) {
       st.setScale(1.8).setAlpha(0);
