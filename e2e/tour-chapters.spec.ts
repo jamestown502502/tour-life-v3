@@ -28,6 +28,28 @@ async function walkAnswering(page: Page, sceneKey: string, wanted: string[], max
   return page.evaluate((key) => ((window as any).__game.scene.getScene(key)?.dialogueBox?.backlog ?? []).map((b: any) => b.text), sceneKey);
 }
 
+/** Clicks a Scrapbook button once it has stopped moving: buttons pop in with an entrance tween,
+ *  and on a slow WebKit runner a click aimed mid-tween landed on the button above it (CI, PR #27:
+ *  "Two Tours" opened "What we learned"). */
+async function clickSettled(page: Page, sceneKey: string, label: string) {
+  let last = '';
+  for (let i = 0; i < 40; i++) {
+    const now = await page.evaluate(([key, want]) => {
+      const scene: any = (window as any).__game.scene.getScene(key as string);
+      let found = '';
+      const walk = (list: any[]) => { for (const o of list) { if (o.type === 'Container') {
+        if ((o.list ?? []).some((c: any) => c.type === 'Text' && String(c.text).includes(want as string))) { const b = o.getBounds(); found ||= `${Math.round(b.x)},${Math.round(b.y)},${Math.round(b.width)},${Math.round(b.height)},${o.alpha}`; }
+        walk(o.list ?? []); } } };
+      walk(scene?.children.list ?? []);
+      return found;
+    }, [sceneKey, label] as const);
+    if (now && now === last) break;
+    last = now;
+    await page.waitForTimeout(300);
+  }
+  await clickButtonByLabel(page, sceneKey, label);
+}
+
 /** A run that has played every stop, parked on the Hub, ready to wrap. */
 async function finishedRunAtHub(page: Page, seed: string, flags: string[], relationships: Record<string, number>) {
   await page.evaluate(({ seed, flags, relationships }) => {
@@ -70,8 +92,8 @@ test.describe('tour chapters', () => {
     await waitForActiveScene(page, 'RoutePlan', 20000);
   });
 
-  test('two finished tours: each earns its chapter, and a reload remembers the first', async ({ page }) => {
-    test.setTimeout(420000);
+  test('the first finished tour earns The Credits Roll, and a reload after Start a new tour remembers it', async ({ page }) => {
+    test.setTimeout(300000);
     await skipFirstTimeOnboarding(page);
     await bootGame(page);
     await waitForActiveScene(page, 'Title', 20000);
@@ -93,8 +115,7 @@ test.describe('tour chapters', () => {
     expect(meta1.tourOne.license).toBe('never');
 
     // ---- "Start a new tour" clears the run save; then the player closes the tab.
-    await page.waitForTimeout(1500);
-    await clickButtonByLabel(page, 'Scrapbook', 'Start a new tour');
+    await clickSettled(page, 'Scrapbook', 'Start a new tour');
     await waitForActiveScene(page, 'Title', 20000);
     await page.reload();
     await page.waitForFunction(() => !!(window as any).__game, null, { timeout: 30000 });
@@ -104,6 +125,23 @@ test.describe('tour chapters', () => {
       return { runs: d.meta.completedRuns, license: d.meta.tourOne?.license, reducedMotion: d.accessibility.reducedMotion };
     });
     expect(back, 'a reload after Start a new tour must keep finished tours and settings').toEqual({ runs: 1, license: 'never', reducedMotion: true });
+  });
+
+  // Nightly only (the gate's per-device time budget): Tour 1 is seeded as finished rather than
+  // replayed, so this covers what the second tour does with it.
+  test('the second tour remembers the first and earns Own the Room @nightly', async ({ page }) => {
+    test.setTimeout(300000);
+    await skipFirstTimeOnboarding(page);
+    await bootGame(page);
+    await waitForActiveScene(page, 'Title', 20000);
+    await page.evaluate(() => {
+      const S: any = (window as any).__state;
+      Object.assign(S.data.meta, {
+        completedRuns: 1, chaptersSeen: [1],
+        runHistory: [{ seed: 'chapter-one-e2e', bandName: 'The Testbeds', endingId: 'live_album', tags: [], completedAt: 1, route: ['lisbon', 'tokyo'] }],
+        tourOne: { split: 'writers', license: 'never', tiers: { mira: 'denied', theo: 'fulfilled', jun: 'unresolved', rowan: 'unresolved' }, endingId: 'live_album' },
+      });
+    });
 
     // ---- Tour 2 remembers: the intro opens on the last ending, the first drive has the envelope.
     await page.evaluate(() => {
@@ -135,8 +173,7 @@ test.describe('tour chapters', () => {
     expect(meta2.dealChoice).toBe('indie');
     expect(meta2.runHistory[1].route).toEqual(['lisbon', 'berlin']);
 
-    await page.waitForTimeout(1500);
-    await clickButtonByLabel(page, 'Scrapbook', 'Two Tours');
+    await clickSettled(page, 'Scrapbook', 'Two Tours');
     const panel = await waitForCondition(page, () => !!(window as any).__game.scene.getScene('Scrapbook').children.getByName('twoToursPanel'), 10000);
     expect(panel).toBe(true);
     const summary = await page.evaluate(() => {

@@ -35,7 +35,8 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 30, was 20: the Pixel 7 run reached 20 minutes on PR #27 and was cancelled mid-suite.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
