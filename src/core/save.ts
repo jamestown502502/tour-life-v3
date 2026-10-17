@@ -1,7 +1,7 @@
 // IndexedDB save with localStorage fallback. Schema-versioned + validated on load, with a
 // migration hook for future schemaVersion bumps (e.g. when the reality-layer phase adds fields).
 
-import { freshAccessibility, type RunState } from './state';
+import { freshAccessibility, type AccessibilitySettings, type MetaProgress, type RunState } from './state';
 import { SAVE_KEY, SAVE_SCHEMA_VERSION } from '../const';
 
 const DB_NAME = 'tourlife';
@@ -127,7 +127,46 @@ async function clearKey(key: string): Promise<void> {
 }
 
 export async function saveRun(data: RunState): Promise<void> {
+  saveProfile(data);
   return saveToKey(SAVE_KEY, data);
+}
+
+// The player's profile (2026-10-16): finished tours, unlocks, scenes seen, chapters, and their
+// settings. These used to live only inside the run save, so "Start a new tour" (clearSave) plus a
+// reload wiped them: the next visit counted zero tours, re-showed seen scenes and reset every
+// accessibility setting. Written beside every run save, never cleared with it, and read back on
+// the title screen (TitleScene hydrate). Small and synchronous, so it is there before New Run.
+export const PROFILE_KEY = 'tourlife.profile';
+
+export function saveProfile(data: Pick<RunState, 'meta' | 'accessibility'>): void {
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ meta: data.meta, accessibility: data.accessibility }));
+  } catch {
+    // storage unavailable (private browsing) — progress lasts as long as the tab, as before
+  }
+}
+
+function isValidMeta(m: any): m is MetaProgress {
+  return !!m && typeof m.completedRuns === 'number' && Array.isArray(m.unlockedGenres)
+    && Array.isArray(m.unlockedDecor) && Array.isArray(m.runHistory);
+}
+
+export function loadProfile(): { meta: MetaProgress | null; accessibility: AccessibilitySettings | null } {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) return { meta: null, accessibility: null };
+    const parsed = JSON.parse(raw);
+    const defaults = freshAccessibility();
+    const saved = parsed?.accessibility;
+    return {
+      meta: isValidMeta(parsed?.meta) ? parsed.meta : null,
+      accessibility: saved && typeof saved === 'object'
+        ? { ...defaults, ...saved, volumes: { ...defaults.volumes, ...(saved.volumes ?? {}) } }
+        : null,
+    };
+  } catch {
+    return { meta: null, accessibility: null };
+  }
 }
 
 export async function loadRun(): Promise<RunState | null> {

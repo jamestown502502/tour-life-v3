@@ -30,10 +30,14 @@ export default defineConfig({
     'hud-clearance.spec.ts',
     'tonight-card-prejudge.spec.ts',
     'margins.spec.ts',
+    'tour-chapters.spec.ts',
     'spotlight.spec.ts',
     'feedback-fixes.spec.ts',
   ],
   retries: 0,
+  // Tests tagged @nightly run in the full suite only (they would push a device past the job's
+  // time budget); the gate keeps a faster test of the same feature.
+  grepInvert: /@nightly/,
   // One WebKit phone and one Chromium phone: the two engines testers actually play on.
   projects: [
     { name: 'iPhone 12', use: { ...devices['iPhone 12'] } },

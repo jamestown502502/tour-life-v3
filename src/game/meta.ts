@@ -10,9 +10,12 @@ export const UNLOCKABLE_DECOR = [
   'pressed_flowers', 'city_postcards', 'hand-me-down_rug', 'tour_patches', 'mismatched_mugs', 'window_charms',
 ] as const;
 
-/** Pure function: completing a run never weakens a fresh run, only ever adds. */
+/** Pure function: completing a run never weakens a fresh run, only ever adds. Spreads `meta` so
+ *  every field it does not change survives: it used to list four fields by name, which silently
+ *  dropped seenSceneIds on every finished tour (a replay then re-drew scenes already seen). */
 export function completeRun(meta: MetaProgress, entry: RunHistoryEntry): MetaProgress {
   const next: MetaProgress = {
+    ...meta,
     completedRuns: meta.completedRuns + 1,
     unlockedGenres: [...meta.unlockedGenres],
     unlockedDecor: [...meta.unlockedDecor],
@@ -23,4 +26,15 @@ export function completeRun(meta: MetaProgress, entry: RunHistoryEntry): MetaPro
   const nextDecor = UNLOCKABLE_DECOR.find((d) => !next.unlockedDecor.includes(d));
   if (nextDecor) next.unlockedDecor.push(nextDecor);
   return next;
+}
+
+/** Two copies of the player's progress (the one in memory and one read back from storage): keep
+ *  the side that has finished more tours, ties going to `current`, and never forget a scene either
+ *  side has seen. Meta used to live only inside the run save, which "Start a new tour" clears, so
+ *  a reload after finishing a tour started the player from zero again. */
+export function mergeMeta(current: MetaProgress, other: MetaProgress | undefined | null): MetaProgress {
+  if (!other) return current;
+  const base = (other.completedRuns ?? 0) > current.completedRuns ? other : current;
+  const seen = [...new Set([...(current.seenSceneIds ?? []), ...(other.seenSceneIds ?? [])])];
+  return { ...base, seenSceneIds: seen };
 }

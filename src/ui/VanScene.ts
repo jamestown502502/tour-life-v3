@@ -26,6 +26,7 @@ import { saveRun } from '../core/save';
 import { CITIES } from '../game/content';
 import { minigamePlayedFlag } from '../game/minigame';
 import { recallCandidates, recallFlag, pinnedLesson, type RecallQuestion } from '../game/craft';
+import { SHOTGUN_LINES, shotgunFromFlags } from '../../content/chapters';
 import type { BandmateId, DialogueChoice } from '../../content/schema';
 
 const BANDMATES: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
@@ -154,6 +155,13 @@ export class VanScene extends Phaser.Scene {
     const stop = this.stopIndex();
     if (stop === 0) {
       const lines = [`Why this tour: ${spine.stake}`];
+      // Narrative upgrades (2026-10-16): whoever got the good seat on the night before, and on the
+      // second tour, the label's envelope from the end of the first (content/chapters.ts).
+      const shotgun = shotgunFromFlags(State.data.flags);
+      if (shotgun) lines.push(SHOTGUN_LINES[shotgun]);
+      if (State.data.meta.completedRuns === 1 && State.data.meta.tourOne) {
+        lines.push("The label's envelope rides in the glovebox. Mira says it can wait until the last show.");
+      }
       const note = pinnedLesson(State.data.meta);
       if (note) lines.push(`Inside the cover of the tour notebook, from last time: "${note}"`);
       return () => this.dialogueBox.show({ id: 'van_spine_stake', speaker: 'narrator', text: lines.join('\n\n') }, then, () => {});

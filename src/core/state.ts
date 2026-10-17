@@ -49,6 +49,21 @@ export interface RunHistoryEntry {
   endingId: string;
   tags: string[];
   completedAt: number;
+  /** City ids in route order (2026-10-16, for the "Two Tours" page). Absent on older entries. */
+  route?: string[];
+}
+
+/** How a bandmate's want landed at the end of a tour (content/codas.ts codaVariantFor). */
+export type CodaTier = 'fulfilled' | 'unresolved' | 'denied';
+
+/** What the end of the first tour remembers for the second (content/chapters.ts). */
+export interface TourOneRecord {
+  /** The split sheet from the night before, or how the liner-notes argument settled it. */
+  split: 'equal' | 'writers' | 'skipped' | null;
+  /** Mira's answer to the ad that wanted the song. */
+  license?: 'fits' | 'yes' | 'never';
+  tiers: Record<BandmateId, CodaTier>;
+  endingId: string;
 }
 
 export interface MetaProgress {
@@ -64,6 +79,13 @@ export interface MetaProgress {
   /** The takeaway the player chose at the end of their last tour ("What we learned"); read back
    *  on the next tour's first drive (QA round 4 depth pass). */
   pinnedLesson?: string;
+  /** Tour chapters already played (content/chapters.ts): 1 = The Credits Roll, 2 = Own the Room.
+   *  Optional and additive, like every meta field after the first four. */
+  chaptersSeen?: number[];
+  /** Written when the first tour is finished; read by the second tour and its ending. */
+  tourOne?: TourOneRecord;
+  /** The label's envelope, answered at the end of the second tour. */
+  dealChoice?: 'sign' | 'license' | 'indie';
 }
 
 export type ScreenName =
