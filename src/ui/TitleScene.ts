@@ -11,7 +11,8 @@ import { hasTitleTheme, onTitleThemeLoaded } from '../core/assets';
 import { DEFAULT_AMBIENCE_BPM, DEFAULT_AMBIENCE_CHORDS } from '../core/musicTheory';
 import { dailySeed, generateSeed } from '../core/rng';
 import { State } from '../core/state';
-import { loadRun, loadFromSlot, saveToSlot, SAVE_SLOTS, type SaveSlot } from '../core/save';
+import { loadRun, loadFromSlot, saveToSlot, loadProfile, SAVE_SLOTS, type SaveSlot } from '../core/save';
+import { mergeMeta } from '../game/meta';
 import type { RunState } from '../core/state';
 import { hasSeenHowToPlay } from '../core/onboarding';
 import { createFloatingInput, type FloatingInput } from './htmlOverlay';
@@ -32,6 +33,7 @@ export class TitleScene extends Phaser.Scene {
   private pendingSeed = '';
 
   create(): void {
+    this.hydrateProfile();
     // Starts on the first tap on this screen, or when the first-launch welcome card closes: that
     // tap lands on the card, not here, so the title used to stay silent until a second tap.
     let musicStarted = false;
@@ -145,11 +147,13 @@ export class TitleScene extends Phaser.Scene {
     // until a save loaded, and for good when there was none. It now always holds a Continue: the
     // real one when a tour is saved, otherwise a quiet one that says how saving works.
     loadRun().then((saved) => {
+      if (saved) State.data.meta = mergeMeta(State.data.meta, saved.meta);
       if (!this.sys.isActive()) return;
       const resumable = !!saved && isResumable(saved);
       this.saveExists = resumable;
       if (resumable && saved) {
         createButton(this, W / 2 - 160, continueY, 320, BTN_ROW, `Continue: ${continueLabel(saved)}`, () => {
+          saved.meta = mergeMeta(saved.meta, State.data.meta);
           State.data = saved;
           audio.applyVolumes(saved.accessibility.volumes);
           const { key, data } = resumeTarget(saved.progress);
@@ -200,6 +204,18 @@ export class TitleScene extends Phaser.Scene {
       if (this.seedInput) this.seedInput.el.style.visibility = 'visible';
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.seedInput?.destroy());
+  }
+
+  /** Brings back the player's progress and settings from their profile (src/core/save.ts), so a
+   *  reload never starts them from zero tours with default settings. Settings are only taken on a
+   *  fresh page load: mid-session, the ones in memory are the newest. */
+  private hydrateProfile(): void {
+    const profile = loadProfile();
+    State.data.meta = mergeMeta(State.data.meta, profile.meta);
+    if (State.data.seed === 'unseeded' && profile.accessibility) {
+      State.data.accessibility = profile.accessibility;
+      audio.applyVolumes(profile.accessibility.volumes);
+    }
   }
 
   private openHowToPlay(welcome = false): void {
@@ -305,6 +321,7 @@ export class TitleScene extends Phaser.Scene {
       }, { fillColor: 0x3e7c7b, fontSize: '15px' });
       const loadBtn = createButton(this, x + w - 240, rowY + 62, 210, 56, saved ? 'Load' : 'Empty', async () => {
         if (!saved) return;
+        saved.meta = mergeMeta(saved.meta, State.data.meta);
         State.data = saved;
         audio.applyVolumes(saved.accessibility.volumes);
         const { key, data } = resumeTarget(saved.progress);

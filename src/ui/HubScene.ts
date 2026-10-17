@@ -14,6 +14,7 @@ import { audio } from '../core/audio';
 import { DEFAULT_AMBIENCE_BPM, DEFAULT_AMBIENCE_CHORDS } from '../core/musicTheory';
 import { generateEnding } from '../game/endings';
 import { completeRun } from '../game/meta';
+import { CHAPTER_TITLES, pendingChapter, tourOneSnapshot } from '../../content/chapters';
 import type { StatKey } from '../../content/schema';
 import { addTextScrim, textStyle } from './textStyles';
 import { DialogueBox } from './DialogueBox';
@@ -377,9 +378,17 @@ export class HubScene extends Phaser.Scene {
     const ending = generateEnding(State.data);
     State.data.meta = completeRun(State.data.meta, {
       seed: State.data.seed, bandName: State.data.band.name, endingId: ending.id, tags: ending.tags, completedAt: Date.now(),
+      route: State.data.route.map((s) => s.cityId),
     });
+    // The first finished tour is remembered for the second (content/chapters.ts).
+    if (State.data.meta.completedRuns === 1) State.data.meta.tourOne = tourOneSnapshot(State.data, ending.id);
     State.setProgress({ screen: 'scrapbook' });
     saveRun(State.data);
+    const chapter = pendingChapter(State.data.meta);
+    if (chapter) {
+      goTo(this, 'Chapter', { chapter, endingId: ending.id, tags: ending.tags }, { theme: 'pages', label: CHAPTER_TITLES[chapter] });
+      return;
+    }
     goTo(this, 'Scrapbook', { endingId: ending.id, tags: ending.tags }, { theme: 'pages', label: 'The tour, in pictures' });
   }
 }

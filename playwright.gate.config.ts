@@ -30,6 +30,7 @@ export default defineConfig({
     'hud-clearance.spec.ts',
     'tonight-card-prejudge.spec.ts',
     'margins.spec.ts',
+    'tour-chapters.spec.ts',
     'spotlight.spec.ts',
     'feedback-fixes.spec.ts',
   ],

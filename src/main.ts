@@ -13,6 +13,7 @@ import { CityScene } from './ui/CityScene';
 import { RhythmScene } from './ui/RhythmScene';
 import { ResultsScene } from './ui/ResultsScene';
 import { ScrapbookScene } from './ui/ScrapbookScene';
+import { ChapterScene } from './ui/ChapterScene';
 import { SettingsScene } from './ui/SettingsScene';
 import { HowToPlayScene } from './ui/HowToPlayScene';
 import { MiniGameScene } from './ui/MiniGameScene';
@@ -84,7 +85,7 @@ async function boot(): Promise<void> {
       height: H,
     },
     // BootScene loads real painted assets (if present) then starts Title.
-    scene: [BootScene, TitleScene, BandCreatorScene, OpeningScene, RoutePlanScene, HubScene, VanScene, CityScene, RhythmScene, ResultsScene, ScrapbookScene, SettingsScene, HowToPlayScene, MiniGameScene, TransitionScene],
+    scene: [BootScene, TitleScene, BandCreatorScene, OpeningScene, RoutePlanScene, HubScene, VanScene, CityScene, RhythmScene, ResultsScene, ChapterScene, ScrapbookScene, SettingsScene, HowToPlayScene, MiniGameScene, TransitionScene],
   });
 
   // Background = silence (QA round 2 #5): switching apps, locking the screen, or minimising the

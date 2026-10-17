@@ -21,6 +21,7 @@ import { textStyle } from './textStyles';
 import { addHelpButton } from './HelpButton';
 import { getEpilogue } from '../../content/epilogues';
 import { keptPromise, promiseCitation } from '../game/promise';
+import { pendingChapter, twoToursSummary } from '../../content/chapters';
 
 export class ScrapbookScene extends Phaser.Scene {
   constructor() { super('Scrapbook'); }
@@ -40,6 +41,13 @@ export class ScrapbookScene extends Phaser.Scene {
   }
 
   create(): void {
+    // A tour chapter not yet played (a reload mid-chapter, or a tour finished before chapters
+    // existed) plays first: progress stays on 'scrapbook' while it runs (src/ui/ChapterScene.ts).
+    const chapter = pendingChapter(State.data.meta);
+    if (chapter) {
+      this.scene.start('Chapter', { chapter, endingId: this.endingId, tags: this.tags });
+      return;
+    }
     fadeIn(this);
     // Painted backdrop (pre-public "no barren screens" pass) — the scrapbook and its "Two Months
     // Later" epilogue are the screens a player sits with longest, and they were bare navy. Falls
@@ -100,7 +108,10 @@ export class ScrapbookScene extends Phaser.Scene {
     if (this.ledgerLessons()) {
       createButton(this, R, 892, BW, BH, 'What the ledger taught us', () => this.toggleLedger(), { fillColor: 0x3e7c7b, fontSize: '17px' });
     }
-    createButton(this, W / 2 - 150, 990, 300, BH, 'Start a new tour', async () => {
+    // After a second finished tour, both tours side by side (content/chapters.ts twoToursSummary).
+    const twoTours = State.data.meta.completedRuns >= 2;
+    if (twoTours) createButton(this, L, 990, BW, BH, 'Two Tours', () => this.toggleTwoTours(), { fillColor: 0xd9a441, fontSize: '19px' });
+    createButton(this, twoTours ? R : W / 2 - 150, 990, twoTours ? BW : 300, BH, 'Start a new tour', async () => {
       await clearSave();
       State.data.progress = { screen: 'title' };
       goTo(this, 'Title');
@@ -142,6 +153,17 @@ export class ScrapbookScene extends Phaser.Scene {
         '',
         kept ? spine.kept : spine.broken,
       ].join('\n'), textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: w - 72 }, lineSpacing: 6 }));
+      panel.add(body);
+      return body.y + body.height;
+    });
+  }
+
+  private toggleTwoTours(): void {
+    const existing = this.children.getByName('twoToursPanel');
+    if (existing) { existing.destroy(); return; }
+    this.openPanel('twoToursPanel', 'Two Tours', (x, y, w, panel) => {
+      const body = this.add.text(x + 36, y + 90, twoToursSummary(State.data.meta, (id) => getCity(id).name),
+        textStyle('dialogue', { fontSize: '19px', color: PALETTE_HEX.plum, wordWrap: { width: w - 72 }, lineSpacing: 6 }));
       panel.add(body);
       return body.y + body.height;
     });
