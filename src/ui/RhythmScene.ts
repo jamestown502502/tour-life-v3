@@ -982,8 +982,13 @@ export class RhythmScene extends Phaser.Scene {
     announce(`Tonight's goal: ${this.goal.text}. ${rows.filter((r) => r.active).map((r) => r.line).join('. ')}`);
     const total = TONIGHT_CARD_MS;
     let waited = 0;
+    let last = this.time.now;
     const timer = this.time.addEvent({ delay: 100, loop: true, callback: () => {
-      waited += 100;
+      // Real time, not ticks: a looped timer fires at most once per frame, so counting 100 ms a tick
+      // took 90 frames and stretched the card below 10 fps. The cap stops a pause using it all up.
+      const now = this.time.now;
+      waited += Math.min(now - last, 1000);
+      last = now;
       const left = Math.max(0, total - waited);
       bar.setDisplaySize(300 * (left / total), 8);
       if (left <= 0) go();
