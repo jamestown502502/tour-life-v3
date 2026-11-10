@@ -3,9 +3,10 @@ import {
   H, PALETTE, PALETTE_HEX, W, RHYTHM_LEAD_MS, RHYTHM_HIT_LINE_Y, RHYTHM_SPAWN_Y, RHYTHM_LANE_W, RHYTHM_LANE_X_START,
   PRACTICE_PASS_WATCHDOG_MS,
 } from '../const';
-import { ensureCueIcon, ensureCrowdFigure, ensureHitLineGlow, ensureHoldRail, ensureLaneTextures, ensureRhythmStageBackdrop } from '../art/sprites';
+import { ensureCueIcon, ensureCrowdFigure, ensureHitLineGlow, ensureHoldRail, ensureLaneTextures, ensureRhythmStageBackdrop, BANDMATE_BASE } from '../art/sprites';
 import { addCoverBackground } from '../art/background';
-import { spawnPerfectSpark, comboPop, hitstop, shake, spawnRingPulse } from '../art/effects';
+import { spawnPerfectSpark, comboPop, hitstop, shake, spawnRingPulse, spawnConfetti } from '../art/effects';
+import { laneMate, noteTint, mateMoodFor, glowAlpha, backRowFilled, lightRigFor, stageLite, LANE_KEYS, MATE_REST_MOOD, timingHint } from '../game/stage';
 import { goTo, fadeIn } from './transition';
 import { createButton } from './Button';
 import { State } from '../core/state';
@@ -126,6 +127,17 @@ export class RhythmScene extends Phaser.Scene {
   private practiceHandOff: (() => void) | null = null;
   private holdHintShown = false;
   private cueHintShown = false;
+  // The stage (src/game/stage.ts, 2026-11-10): the band under their lanes, the back row of the
+  // crowd, the glow on the hit line, the city's lights, and the key letters for keyboard players.
+  private mateFaces: Phaser.GameObjects.Image[] = [];
+  private backRow: Phaser.GameObjects.Image[] = [];
+  private comboGlow: Phaser.GameObjects.Rectangle[] = [];
+  private stageLights: Phaser.GameObjects.Container | null = null;
+  private keyBadges: Phaser.GameObjects.Container | null = null;
+  private stageIsLite = false;
+  private finaleDone = false;
+  /** Tap time minus note time for every tap note landed tonight (stage.ts timingHint). */
+  private hitDeltas: number[] = [];
   // 2026-10-07: the show as the climax (src/game/showcraft.ts)
   private perks!: BandPerks;
   private goal!: ShowGoal;
@@ -179,6 +191,14 @@ export class RhythmScene extends Phaser.Scene {
     // reference here would crash the next updateCrowdFigures()/lane-flash call.
     this.crowdFigures = [];
     this.laneFlashes = [];
+    this.mateFaces = [];
+    this.backRow = [];
+    this.comboGlow = [];
+    this.stageLights = null;
+    this.keyBadges = null;
+    this.stageIsLite = false;
+    this.finaleDone = false;
+    this.hitDeltas = [];
     this.goalShown = false;
     this.goalChip = null;
     this.goalChipBg = null;
@@ -240,6 +260,7 @@ export class RhythmScene extends Phaser.Scene {
     }
     const hitLineKey = ensureHitLineGlow(this, LANE_W * song.lanes);
     this.add.image(LANE_X_START, HIT_LINE_Y - 14, hitLineKey).setOrigin(0, 0).setDepth(6);
+    this.buildStage(city.id, song.lanes);
 
     this.scoreText = this.add.text(24, 24, 'Score: 0', textStyle('h2', { fontSize: '22px', color: PALETTE_HEX.cream })).setDepth(50);
     this.comboText = this.add.text(24, 56, '', textStyle('h2', { fontSize: '20px' })).setDepth(50);
@@ -295,7 +316,9 @@ export class RhythmScene extends Phaser.Scene {
     this.updateCrowdFigures();
 
     if (State.data.accessibility.visualAssist) {
-      this.add.text(W / 2, HIT_LINE_Y + 56, 'Tap a lane as its note crosses the line', textStyle('small', { fontSize: '14px' }))
+      // 48 px under the line: outside the 40 px band nothing may enter (e2e/spotlight.spec.ts), and
+      // above the band's faces, which start at HIT_LINE_Y + 56.
+      this.add.text(W / 2, HIT_LINE_Y + 48, 'Tap a lane as its note crosses the line', textStyle('small', { fontSize: '13px' }))
         .setOrigin(0.5).setDepth(50);
     }
 
@@ -316,7 +339,7 @@ export class RhythmScene extends Phaser.Scene {
       zone.on('pointerout', () => this.laneDown.delete(l));
       const keyMap = ['D', 'F', 'J', 'K'];
       if (keyMap[l]) {
-        this.input.keyboard?.on(`keydown-${keyMap[l]}`, () => { this.laneDown.add(l); this.attemptHit(l); });
+        this.input.keyboard?.on(`keydown-${keyMap[l]}`, () => { this.keyBadges?.setVisible(true); this.laneDown.add(l); this.attemptHit(l); });
         this.input.keyboard?.on(`keyup-${keyMap[l]}`, () => { this.laneDown.delete(l); this.releaseAllHolds(); });
       }
     }
@@ -558,6 +581,7 @@ export class RhythmScene extends Phaser.Scene {
     const now = this.time.now;
     const t = (now - this.startTime) / 1000;
     const windows = this.windows();
+    this.settleMates(now);
 
     for (const ns of this.notes) {
       const hitMs = this.hitMsFor(ns.note.t);
@@ -577,7 +601,10 @@ export class RhythmScene extends Phaser.Scene {
         } else ns.sprite.setPosition(lane, y);
       } else {
         const texKey = ensureLaneTextures(this, LANE_W)[ns.note.type === 'tap' ? 'noteTap' : 'noteChoice'];
-        if (!ns.sprite) ns.sprite = this.add.image(lane, y, texKey).setDepth(10);
+        if (!ns.sprite) {
+          ns.sprite = this.add.image(lane, y, texKey).setDepth(10);
+          if (ns.note.type === 'tap') ns.sprite.setTint(noteTint(BANDMATE_BASE[laneMate(ns.note.l)]));
+        }
         else ns.sprite.setPosition(lane, y);
       }
       // Armed hold: the lane is held down as the note arrives. Judged at the moment of arrival
@@ -601,6 +628,17 @@ export class RhythmScene extends Phaser.Scene {
     }
 
     this.updateSection(t);
+    // A device that cannot keep up loses the moving lights, never the notes or the band.
+    if (!this.stageIsLite && stageLite(this.game.loop.actualFps, t)) {
+      this.stageIsLite = true;
+      if (this.stageLights) { this.tweens.killTweensOf(this.stageLights.list); this.stageLights.setVisible(false); }
+    }
+    // The room goes up: a warm crowd reaching the outro gets its moment, once.
+    if (!this.finaleDone && this.section === 'outro' && this.crowd >= 70) {
+      this.finaleDone = true;
+      if (!this.stageIsLite) spawnConfetti(this);
+      announce('The whole room is with you.');
+    }
     if (this.spotPlan && !this.spotDone) {
       if (!this.spotLayer && t >= this.spotPlan.start && t < this.spotPlan.end) this.showSpotlight();
       if (this.spotLayer && t >= this.spotPlan.end) this.hideSpotlight();
@@ -645,6 +683,92 @@ export class RhythmScene extends Phaser.Scene {
    *  under the notes and judgement text on any city, without dulling the art it sits on. */
   private veilStageBackdrop(): void {
     this.add.rectangle(0, 0, W, H, PALETTE.night, 0.28).setOrigin(0, 0);
+  }
+
+  /** The stage itself (src/game/stage.ts): the city's lights behind the lanes, a glow that rides
+   *  the combo at the hit line, each bandmate under the lane they play, a back row of the crowd
+   *  that fills as the room warms, and key letters for anyone playing on a keyboard. Everything
+   *  here is non-interactive and sits outside the band where notes fall and are judged. */
+  private buildStage(cityId: string, lanes: number): void {
+    const a11y = State.data.accessibility;
+    const lanesW = LANE_W * lanes;
+    // Lights: two beams from the top corners in the city's colours, sweeping slowly. Still under
+    // reduced motion or no-flash; hidden entirely once stageLite() trips.
+    const rig = lightRigFor(cityId);
+    const lights = this.add.container(0, 0).setDepth(2).setName('stageLights');
+    rig.colors.forEach((color, i) => {
+      const beam = this.add.graphics();
+      beam.fillStyle(color, 0.14);
+      beam.fillTriangle(0, 0, -110, HIT_LINE_Y + 40, 110, HIT_LINE_Y + 40);
+      beam.setPosition(i === 0 ? LANE_X_START + 60 : LANE_X_START + lanesW - 60, -30);
+      beam.setRotation(i === 0 ? -0.16 : 0.16);
+      lights.add(beam);
+      if (!a11y.reducedMotion && !a11y.noFlash) {
+        this.tweens.add({ targets: beam, rotation: i === 0 ? 0.2 : -0.2, duration: rig.sweepMs, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      }
+    });
+    this.stageLights = lights;
+    // Combo glow: two soft bands above the hit line; alpha set from glowAlpha() on every judgement.
+    for (const [h, k] of [[70, 0.5], [26, 1]] as const) {
+      const band = this.add.rectangle(LANE_X_START, HIT_LINE_Y - h, lanesW, h, PALETTE.gold, 1).setOrigin(0, 0).setAlpha(0).setDepth(5).setName('comboGlow');
+      band.setData('k', k);
+      this.comboGlow.push(band);
+    }
+    // The band: one bandmate under each lane, ringed in their colour.
+    const keys = this.add.container(0, 0).setDepth(54).setName('laneKeys').setVisible(false);
+    for (let l = 0; l < lanes; l++) {
+      const mate = laneMate(l);
+      const x = this.laneCenterX(l), y = HIT_LINE_Y + 96;
+      this.add.circle(x, y, 40, 0x1a2436, 0.9).setStrokeStyle(4, BANDMATE_BASE[mate], 1).setDepth(52);
+      const face = this.add.image(x, y, ensurePortrait(this, mate, MATE_REST_MOOD)).setDisplaySize(72, 72).setDepth(53).setName(`mate_${mate}`);
+      face.setData('mate', mate);
+      this.mateFaces.push(face);
+      const letter = LANE_KEYS[l];
+      if (letter) {
+        const badge = this.add.circle(x + 34, y + 28, 15, PALETTE.cream, 1).setStrokeStyle(2, 0x1a2436, 1);
+        const text = this.add.text(x + 34, y + 28, letter, textStyle('small', { fontSize: '17px', fontStyle: '700', color: '#1a2436' })).setOrigin(0.5);
+        keys.add([badge, text]);
+      }
+    }
+    this.keyBadges = keys;
+    // A device with no touch screen is being played on keys or a mouse: show the letters at once.
+    if (!this.sys.game.device.input.touch) keys.setVisible(true);
+    // The back row: silhouettes behind the five named fans, invisible until the room warms up.
+    const upKey = ensureCrowdFigure(this, true);
+    const seats = 8;
+    for (let i = 0; i < seats; i++) {
+      const x = LANE_X_START + 60 + ((lanesW - 120) / (seats - 1)) * i;
+      // Smaller and cooler than the front five, and a row behind them: depth, not competition.
+      const fig = this.add.image(x, H - 134 - (i % 2) * 8, upKey).setOrigin(0.5, 1).setDisplaySize(30, 40).setTintFill(PALETTE.sky).setAlpha(0).setDepth(49).setName('backRow');
+      this.backRow.push(fig);
+    }
+  }
+
+  /** The bandmate whose lane was just played reacts: a face for how it went, and a small pop. */
+  private mateReact(lane: number, judgement: HitJudgement): void {
+    const face = this.mateFaces[lane];
+    if (!face) return;
+    const mate = face.getData('mate') as ReturnType<typeof laneMate>;
+    face.setTexture(ensurePortrait(this, mate, mateMoodFor(judgement)));
+    face.setData('until', this.time.now + 500);
+    face.setData('reactions', ((face.getData('reactions') as number) ?? 0) + 1);
+    if (!State.data.accessibility.reducedMotion && judgement !== 'miss') {
+      this.tweens.killTweensOf(face);
+      face.setDisplaySize(72, 72);
+      const sx = face.scaleX;
+      this.tweens.add({ targets: face, scaleX: sx * 1.18, scaleY: sx * 1.18, duration: 70, yoyo: true, ease: 'Quad.easeOut', onComplete: () => face.setDisplaySize(72, 72) });
+    }
+  }
+
+  /** Faces settle back to their resting look half a second after their last note. Called from update(). */
+  private settleMates(now: number): void {
+    for (const face of this.mateFaces) {
+      const until = face.getData('until') as number | undefined;
+      if (until && now > until) {
+        face.setData('until', 0);
+        face.setTexture(ensurePortrait(this, face.getData('mate') as ReturnType<typeof laneMate>, MATE_REST_MOOD));
+      }
+    }
   }
 
   private longestNoteEndSeconds(): number {
@@ -721,6 +845,7 @@ export class RhythmScene extends Phaser.Scene {
     ns.judged = true;
     const windows = this.windows();
     const judgement = judgeHit(deltaMs, windows);
+    if (judgement !== 'miss' && !State.data.accessibility.autoplay) this.hitDeltas.push(deltaMs);
     this.applyJudgement(judgement, ns.note.l);
     ns.sprite?.destroy();
   }
@@ -750,6 +875,8 @@ export class RhythmScene extends Phaser.Scene {
     this.progress.crowdPeak = Math.max(this.progress.crowdPeak, this.crowd);
     this.updateCrowdFigures();
     this.checkGoalLive();
+    this.mateReact(lane, judgement);
+    for (const g of this.comboGlow) g.setAlpha(glowAlpha(this.combo) * (g.getData('k') as number));
 
     // Feedback lands in the lane that was actually hit — previously every spark fired at a
     // fixed lane-0 x, which read as "the game didn't see my tap" on lanes 1-3.
@@ -835,6 +962,15 @@ export class RhythmScene extends Phaser.Scene {
    *  (Item 7) swaps in on the same threshold the code-drawn silhouette fallback already used. */
   private updateCrowdFigures(): void {
     const raisedCount = Math.round((this.crowd / 100) * this.crowdFigures.length);
+    const filled = backRowFilled(this.crowd, this.backRow.length);
+    this.backRow.forEach((fig, i) => {
+      const want = i < filled ? 0.5 : 0;
+      if (fig.getData('want') === want) return;
+      fig.setData('want', want);
+      this.tweens.killTweensOf(fig);
+      if (State.data.accessibility.reducedMotion) fig.setAlpha(want);
+      else this.tweens.add({ targets: fig, alpha: want, duration: 350 });
+    });
     const downKey = ensureCrowdFigure(this, false);
     const upKey = ensureCrowdFigure(this, true);
     this.crowdFigures.forEach((fig, i) => {
@@ -928,6 +1064,7 @@ export class RhythmScene extends Phaser.Scene {
     // recordShow() above has already marked this city's first show, so Results cannot re-derive
     // which visit this was — a first visit would read as a return. Hand it over explicitly.
     goTo(this, 'Results', { cityId: this.cityId, result, visit: this.visit,
+      timingHintMs: timingHint(this.hitDeltas),
       tonight: { goal: this.goal.text, met, perks: this.perks.lines, night: this.night.line, scouted: this.night.scouted, scoutImpressed, letter,
         spotlight: spotlightAfterLine(State.data, this.cityId, this.visit) } },
       { theme: 'vinyl', label: 'That was the show' });
@@ -1026,7 +1163,7 @@ export class RhythmScene extends Phaser.Scene {
     layer.add([wash, cone]);
     const name = BANDMATE_NAME[plan.mate];
     // Below the hit line and above the crowd: nothing falls there, so the caption never hides a note.
-    const chip = this.add.container(W / 2, H - 150).setDepth(57).setName('spotlightChip');
+    const chip = this.add.container(W / 2, H - 134).setDepth(57).setName('spotlightChip');
     const bg = this.add.rectangle(0, 0, 420, 52, 0x1a2436, 0.9).setStrokeStyle(3, plan.light, 1);
     const face = this.add.image(-180, 0, ensurePortrait(this, plan.mate, 'happy')).setScale(0.17);
     const label = this.add.text(-140, 0, `${name} takes the bridge`, textStyle('small', { fontSize: '18px', fontStyle: '700', color: PALETTE_HEX.cream })).setOrigin(0, 0.5);

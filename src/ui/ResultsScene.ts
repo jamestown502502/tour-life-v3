@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { announce } from './a11yLive';
-import { BRAND, PALETTE_HEX, W } from '../const';
+import { BRAND, PALETTE, PALETTE_HEX, W } from '../const';
+import { saveRun } from '../core/save';
+import { offsetAfterHint } from '../game/stage';
 import { createButton } from './Button';
 import { goTo, fadeIn } from './transition';
 import { getCity } from '../game/content';
@@ -34,11 +36,15 @@ export class ResultsScene extends Phaser.Scene {
 
   private tonight: { goal: string; met: boolean; perks: string[]; night: string | null; scouted: boolean; scoutImpressed: boolean; spotlight?: string | null } | null = null;
 
-  init(data: { cityId: string; result: PerformanceResult; visit?: number; tonight?: ResultsScene['tonight'] }): void {
+  /** How far tonight's taps ran late (+) or early (-), when it was steady enough to act on. */
+  private timingHintMs = 0;
+
+  init(data: { cityId: string; result: PerformanceResult; visit?: number; tonight?: ResultsScene['tonight']; timingHintMs?: number }): void {
     this.cityId = data.cityId;
     this.result = data.result;
     this.visit = data.visit ?? 0;
     this.tonight = data.tonight ?? null;
+    this.timingHintMs = data.timingHintMs ?? 0;
   }
 
   create(): void {
@@ -139,6 +145,21 @@ export class ResultsScene extends Phaser.Scene {
     createButton(this, W / 2 - 150, 1060, 300, 70, 'Continue', () => {
       goTo(this, 'City', { cityId: this.cityId, phase: 'afterShow' });
     }, { fillColor: 0x3e7c7b });
+
+    // Road comforts (2026-11-10): a timing check from the show just played. When the taps ran
+    // steadily early or late, one tap lines the notes up with this player on this device.
+    if (this.timingHintMs !== 0) {
+      const ms = Math.abs(this.timingHintMs), way = this.timingHintMs > 0 ? 'late' : 'early';
+      const btn = createButton(this, 60, 1150, W - 120, 66, `Taps ran ${ms} ms ${way}: fix my timing`, () => {
+        if (!this.timingHintMs) return;
+        State.data.accessibility.audioOffsetMs = offsetAfterHint(State.data.accessibility.audioOffsetMs, this.timingHintMs);
+        this.timingHintMs = 0;
+        saveRun(State.data);
+        btn.setAlpha(0.6);
+        announce('Timing adjusted. You can change it in Settings.');
+        this.add.text(W / 2, 1236, 'Timing adjusted. You can change it in Settings.', textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream })).setOrigin(0.5);
+      }, { fillColor: PALETTE.plum, fontSize: '17px' });
+    }
   }
 
   /** Tonight's goal, met or not, as a stamp of its own, and who changed how the show played

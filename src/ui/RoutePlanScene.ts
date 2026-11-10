@@ -8,7 +8,7 @@ import { goTo, fadeIn } from './transition';
 import { State } from '../core/state';
 import { makeRng } from '../core/rng';
 import { CITIES, getCity } from '../game/content';
-import { generateRoute, MID_TOUR_COMPLICATIONS, routeArcRole } from '../game/route';
+import { generateRoute, MID_TOUR_COMPLICATIONS, routeArcRole, shortTour, SHORT_TOUR_STOPS } from '../game/route';
 import { drawScenePoolFlags } from '../game/scenePool';
 import { saveRun } from '../core/save';
 import { addTextScrim, textStyle } from './textStyles';
@@ -147,13 +147,16 @@ export class RoutePlanScene extends Phaser.Scene {
       promiseButtons.push(btn);
     });
 
-    createButton(this, W / 2 - 150, promiseBottom + 18, 300, 66, 'Confirm route', () => {
+    // Road comforts (2026-11-10): the same tour, or its first two stops for a ten-minute sitting.
+    // A short tour is a whole run: it ends in the Scrapbook with an ending of its own.
+    const start = (stops: typeof generated.stops) => {
       if (promiseChosen) State.addFlag(promiseChosen);
       // The tour's wildcard sets its starting numbers once (src/game/wildcard.ts).
       if (!State.hasFlag('wildcard_start')) { State.applyStatDeltas(wildcardFor(State.data.seed).start); State.addFlag('wildcard_start'); }
-      State.data.route = generated.stops;
+      State.data.route = stops;
       State.data.midTourComplication = generated.midTourComplication;
-      for (const stop of generated.stops) {
+      if (stops.length < generated.stops.length) State.addFlag('short_tour');
+      for (const stop of stops) {
         State.data.localLove[stop.cityId] = 0;
         const city = getCity(stop.cityId);
         for (const flag of drawScenePoolFlags(makeRng(`${State.data.seed}:${city.id}:pool`), city,
@@ -165,6 +168,10 @@ export class RoutePlanScene extends Phaser.Scene {
       State.setProgress({ screen: 'hub' });
       saveRun(State.data);
       goTo(this, 'Hub');
-    }, { fillColor: 0x3e7c7b });
+    };
+    createButton(this, 40, promiseBottom + 18, 360, 66, 'Confirm route', () => start(generated.stops), { fillColor: 0x3e7c7b });
+    if (generated.stops.length > SHORT_TOUR_STOPS) {
+      createButton(this, 420, promiseBottom + 18, W - 460, 66, `Short tour: ${SHORT_TOUR_STOPS} stops`, () => start(shortTour(generated.stops)), { fillColor: PALETTE.plum, fontSize: '17px' });
+    }
   }
 }

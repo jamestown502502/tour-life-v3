@@ -33,6 +33,7 @@ export default defineConfig({
     'tour-chapters.spec.ts',
     'spotlight.spec.ts',
     'feedback-fixes.spec.ts',
+    'stage.spec.ts',
   ],
   retries: 0,
   // Tests tagged @nightly run in the full suite only (they would push a device past the job's
