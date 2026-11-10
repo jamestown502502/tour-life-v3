@@ -84,6 +84,18 @@ test('twelve screens match their approved baselines', async ({ page }) => {
       });
       await play(page, 100);
     }
+    if (s.key === 'Scrapbook') {
+      // The Scrapbook opens with confetti. Where each piece is at capture time depends on how many
+      // frames the runner drew, which page.clock does not control: the screen differed by about
+      // 15 px run to run, and on 2026-11-10 a few pieces landed in view and failed the gate twice
+      // on Pixel 7 with nothing on the screen changed. Like the falling notes above, the confetti
+      // is hidden: this capture checks the stable layout, not where a particle happened to be.
+      await page.evaluate(() => {
+        const sc: any = (window as any).__game.scene.getScene('Scrapbook');
+        for (const o of sc.children.list) if (o.type === 'ParticleEmitter') o.setVisible(false);
+      });
+      await play(page, 100);
+    }
     if (s.name === 'minigame-result') {
       await page.evaluate(() => (window as any).__game.scene.getScene('MiniGame').finish(true));
       await play(page, 2000);
