@@ -74,3 +74,34 @@ test('a show entered late in a session starts with a whole, unjudged chart', asy
   expect(playing!.hits, 'autoplay should be hitting notes').toBeGreaterThan(0);
   expect(playing!.misses).toBe(0);
 });
+
+// Nightly 2026-10-21 to 2026-10-30: on a test machine at about 2 fps the 9-second card took most of
+// a minute. A looped Phaser timer fires at most once per frame, so counting 100 ms per tick took 90
+// frames. Same clock problem as the radio countdown: a visible timer has to follow real time.
+test('the Tonight card counts down in real time on a slow device', async ({ page }) => {
+  test.setTimeout(90000);
+  await skipFirstTimeOnboarding(page);
+  await page.addInitScript(() => {
+    for (const k of ['seenRhythmTutorial', 'seenHoldHint', 'seenCueHint']) window.localStorage.setItem(`tourlife.${k}`, '1');
+  });
+  await page.goto('/');
+  await waitForActiveScene(page, 'Title', 30000);
+  await page.evaluate(() => {
+    window.requestAnimationFrame = (cb) => window.setTimeout(() => cb(performance.now()), 250);
+    const S = (window as any).__state;
+    S.newRun('tonight-slow');
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'regression', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.route = [{ cityId: 'lisbon', visited: false, weather: 'clear' }];
+    (window as any).__game.scene.stop('Title');
+    (window as any).__game.scene.start('Rhythm', { cityId: 'lisbon' });
+  });
+  await waitForActiveScene(page, 'Rhythm', 30000);
+  const hasCard = () => page.evaluate(() => {
+    const s: any = (window as any).__game.scene.getScene('Rhythm');
+    return s.children.list.some((o: any) => o.type === 'Container' && o.depth === 300);
+  });
+  await expect.poll(hasCard, { timeout: 15000 }).toBe(true);
+  const start = Date.now();
+  await expect.poll(hasCard, { timeout: 40000, intervals: [250] }).toBe(false);
+  expect(Date.now() - start, 'the 9-second card should not stretch at 4 fps (it used to need 90 frames, 22 s or more)').toBeLessThan(20000);
+});

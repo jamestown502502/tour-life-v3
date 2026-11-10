@@ -2,7 +2,7 @@
 // end-of-Tour-1 chapter, a reload after "Start a new tour" (which used to forget every finished
 // tour and every setting), the second tour remembering the first, and the end-of-Tour-2 chapter.
 import { test, expect, type Page } from './fixtures';
-import { bootGame, skipFirstTimeOnboarding, waitForActiveScene, startScene, canvasClick, clickButtonByLabel, waitForCondition } from './helpers';
+import { bootGame, skipFirstTimeOnboarding, waitForActiveScene, startScene, canvasClick, clickButtonByLabel, waitForCondition, waitFrames } from './helpers';
 
 /** Taps through `sceneKey`'s dialogue, answering each choice with the first wanted label it
  *  offers (by substring), until the scene is gone. Returns every line shown, for assertions. */
@@ -46,6 +46,7 @@ async function clickSettled(page: Page, sceneKey: string, label: string) {
     if (now && now === last) break;
     last = now;
     await page.waitForTimeout(300);
+    await waitFrames(page);
   }
   await clickButtonByLabel(page, sceneKey, label);
 }

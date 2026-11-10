@@ -74,3 +74,12 @@ export function currentStopFor(
   if (byIndex && byIndex.cityId === cityId) return byIndex;
   return route.find((s) => s.cityId === cityId && !s.visited) ?? route.find((s) => s.cityId === cityId);
 }
+
+/** A short tour (2026-11-10): the first stops of the same seeded route, for a sitting of about ten
+ *  minutes. Never includes the return leg, and every stop is a fresh copy so the full route the
+ *  screen is still showing is left alone. */
+export const SHORT_TOUR_STOPS = 2;
+
+export function shortTour(stops: CityStop[]): CityStop[] {
+  return stops.filter((s) => !s.revisit).slice(0, SHORT_TOUR_STOPS).map((s) => ({ ...s }));
+}

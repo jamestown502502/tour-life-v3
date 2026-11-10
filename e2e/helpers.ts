@@ -124,6 +124,13 @@ export async function startScene(page: Page, key: string, data?: object): Promis
   await page.evaluate(({ key, data }) => (window as any).__game.scene.start(key, data), { key, data });
 }
 
+/** Waits for the game to render `count` more frames. On a slow runner two reads 300 ms apart can
+ *  fall inside one frame, so "nothing moved" proves nothing until a frame has actually passed. */
+export async function waitFrames(page: Page, count = 2, timeoutMs = 15000): Promise<void> {
+  const from = await page.evaluate(() => (window as any).__game.loop.frame);
+  await page.waitForFunction(([start, n]) => (window as any).__game.loop.frame >= start + n, [from, count], { timeout: timeoutMs });
+}
+
 /** Clicks at a point in the game's own 720x1280 logical coordinate space — Phaser's Scale.FIT
  *  resizes the canvas element itself to the scaled/letterboxed content, so a position relative
  *  to the canvas element's own bounding box (not the page) lands correctly regardless of the
@@ -315,6 +322,12 @@ export async function preShowChoiceCenter(page: Page, index = 0): Promise<{ x: n
  *  it if it is up (default: keep the bridge as rehearsed, which leaves the show exactly as every
  *  older spec expects) and waits for the pre-show choices to appear. A no-op when there is none. */
 export async function answerSpotlightOffer(page: Page, accept: boolean): Promise<boolean> {
+  // The offer builds a moment after the scene does: checking once could see neither it nor the
+  // choices yet (nightly 2026-10-30, iPhone 14), so wait for whichever comes first.
+  await waitForCondition(page, () => {
+    const kids = (window as any).__game.scene.getScene('City')?.children;
+    return !!(kids?.getByName?.('spotlightOffer') || kids?.getByName?.('preshowChoices'));
+  }, 15000);
   const up = await page.evaluate(() => !!(window as any).__game.scene.getScene('City')?.children?.getByName?.('spotlightOffer'));
   if (!up) return false;
   const center = await page.evaluate((name) => {
@@ -336,7 +349,9 @@ export async function clickPreShowChoice(page: Page, index = 0): Promise<void> {
 
 /** Start the show: the Tonight card (QA round 4) holds the song until Play (or its own countdown).
  *  Waits for the card, taps Play, and returns once the song has started. A no-op if it already has. */
-export async function pressPlay(page: Page, timeoutMs = 15000): Promise<void> {
+export async function pressPlay(page: Page, timeoutMs = 45000): Promise<void> {
+  // 45 s, not 15: a first-timer's practice pass may run to its 20 s watchdog before the card even
+  // appears. At the old 15 s this gave up silently and the test then blamed the game.
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const state = await page.evaluate(() => {
@@ -350,6 +365,7 @@ export async function pressPlay(page: Page, timeoutMs = 15000): Promise<void> {
     if (state === 'card') { try { await clickButtonByLabel(page, 'Rhythm', 'Play'); } catch { /* the card closed itself */ } }
     await page.waitForTimeout(300);
   }
+  throw new Error(`pressPlay: the song had not started after ${timeoutMs} ms`);
 }
 
 /** Taps Title's Continue once it exists. TitleScene creates it only after loadRun() resolves, so

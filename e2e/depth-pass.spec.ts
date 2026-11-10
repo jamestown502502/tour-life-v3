@@ -33,7 +33,9 @@ test.describe('after onboarding', () => {
   });
 
   test('Fix the Mix plays to its result by fixing each problem on its own fader', async ({ page }) => {
-    test.setTimeout(120000);
+    // 240 s, was 120 (the play loop 200 s, was 80): the mix ticks once per frame at most, so a
+    // 2 fps runner plays it far slower than real time (nightly 2026-10-28: Clean Mix, after the deadline).
+    test.setTimeout(240000);
     const errors = collectConsoleErrors(page);
     await newRun(page);
     await page.evaluate(() => {
@@ -45,7 +47,7 @@ test.describe('after onboarding', () => {
     await page.waitForTimeout(900);
     await clickButtonByLabel(page, 'MiniGame', 'Start');
     let shotTaken = false;
-    const deadline = Date.now() + 80000;
+    const deadline = Date.now() + 200000;
     while (Date.now() < deadline) {
       const s = await page.evaluate(() => { const m: any = (window as any).__game.scene.getScene('MiniGame'); return { hint: m.mixHint, done: m.contentLayer.list.some((o: any) => o.type === 'Text' && o.text === '★') }; });
       if (s.done) break;

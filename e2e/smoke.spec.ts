@@ -3,7 +3,7 @@
 // claim. Runs against the DEV server (see playwright.config.ts's header for why) at 4 device
 // profiles: iPhone 12, iPhone 14, Pixel 7, and a generic 360x740 Android viewport.
 import { test, expect } from './fixtures';
-import { bootGame, canvasClick, collectConsoleErrors, getActiveSceneKeys, startScene, waitForActiveScene, waitForCondition, seedSave, skipFirstTimeOnboarding, pressContinue } from './helpers';
+import { bootGame, canvasClick, collectConsoleErrors, getActiveSceneKeys, startScene, waitForActiveScene, waitForCondition, seedSave, skipFirstTimeOnboarding, pressContinue, waitFrames } from './helpers';
 
 test.describe('boot', () => {
   test('a first-time player (fresh profile, no save) sees the HowToPlay overlay auto-open over Title — intentional onboarding, not a bug', async ({ page }) => {
@@ -116,6 +116,7 @@ test.describe('Settings is reachable from every resumable screen and Back return
     await canvasClick(page, 53, 129);
     expect(await waitForActiveScene(page, 'Settings')).toContain('Settings');
 
+    await waitFrames(page); // an active scene is not yet a drawn one: let its buttons take input
     await canvasClick(page, 720 / 2 + 5 + 72, SETTINGS_ROW_Y); // Quit to Title (right half)
     const active = await waitForActiveScene(page, 'Title');
     expect(active).toContain('Title');
