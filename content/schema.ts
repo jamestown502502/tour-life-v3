@@ -2,8 +2,8 @@
 // (dev assert + console warning) before it touches state. No external JSON-schema library —
 // content is small and hand-authored, so a structural check here is sufficient.
 
-export type BandmateId = 'mira' | 'theo' | 'jun' | 'rowan';
-export const BANDMATE_IDS: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
+export type BandmateId = 'mira' | 'phillip' | 'jun' | 'rowan';
+export const BANDMATE_IDS: BandmateId[] = ['mira', 'phillip', 'jun', 'rowan'];
 
 export type StatKey = 'energy' | 'harmony' | 'inspiration' | 'funds';
 

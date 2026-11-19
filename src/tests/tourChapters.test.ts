@@ -61,7 +61,7 @@ describe('the intro', () => {
   it('the split sheet offers three choices that each set a flag, with a lesson after each', () => {
     for (const returning of [false, true]) {
       const node = splitSheetNode(returning);
-      expect(node.speaker).toBe('theo');
+      expect(node.speaker).toBe('phillip');
       expect(node.choices).toHaveLength(3);
       for (const c of node.choices!) {
         expect(c.flags?.[0]).toMatch(/^split_(equal|writers|skipped)$/);
@@ -112,10 +112,10 @@ describe('end of Tour 1: The Credits Roll', () => {
     expect(beats[beats.length - 1].text).toMatch(/envelope/i);
   });
   it('snapshots what Tour 2 needs to remember', () => {
-    const r = run(); r.flags = ['split_writers']; r.relationships = { mira: 60, theo: 10, jun: 40, rowan: 40 };
+    const r = run(); r.flags = ['split_writers']; r.relationships = { mira: 60, phillip: 10, jun: 40, rowan: 40 };
     const snap = tourOneSnapshot(r, 'live_album');
     expect(snap.split).toBe('writers');
-    expect(snap.tiers).toEqual({ mira: 'fulfilled', theo: 'denied', jun: 'unresolved', rowan: 'unresolved' });
+    expect(snap.tiers).toEqual({ mira: 'fulfilled', phillip: 'denied', jun: 'unresolved', rowan: 'unresolved' });
     expect(snap.endingId).toBe('live_album');
   });
 });
@@ -146,12 +146,12 @@ describe('end of Tour 2: Own the Room', () => {
     for (const c of deal.choices!) expect(DEAL_AFTER[c.id]).toBeTruthy();
   });
   it('closes on every bandmate looking back over both tours', () => {
-    const meta: MetaProgress = { ...freshMeta(), completedRuns: 2, tourOne: { split: 'equal', tiers: { mira: 'denied', theo: 'fulfilled', jun: 'unresolved', rowan: 'unresolved' }, endingId: 'quiet_ending' } };
-    const r = run(); r.relationships = { mira: 70, theo: 10, jun: 40, rowan: 80 };
+    const meta: MetaProgress = { ...freshMeta(), completedRuns: 2, tourOne: { split: 'equal', tiers: { mira: 'denied', phillip: 'fulfilled', jun: 'unresolved', rowan: 'unresolved' }, endingId: 'quiet_ending' } };
+    const r = run(); r.relationships = { mira: 70, phillip: 10, jun: 40, rowan: 80 };
     const beats = chapterTwoBeats(r, meta);
     const coda = (id: string) => beats.find((b) => b.id === `coda_${id}`)!.text;
     expect(coda('mira')).toBe(TWO_TOUR_CODAS.mira.rose);
-    expect(coda('theo')).toBe(TWO_TOUR_CODAS.theo.fell);
+    expect(coda('phillip')).toBe(TWO_TOUR_CODAS.phillip.fell);
     expect(coda('jun')).toBe(TWO_TOUR_CODAS.jun.heldLow);
     expect(coda('rowan')).toBe(TWO_TOUR_CODAS.rowan.rose);
   });

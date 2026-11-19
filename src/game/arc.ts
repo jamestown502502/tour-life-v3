@@ -7,7 +7,7 @@
 //
 // Three stages, in the shape most character writing actually uses:
 //
-//   SETUP    — you meet the want. Mira wants to be heard, Theo is running on empty.
+//   SETUP    — you meet the want. Mira wants to be heard, Phillip is running on empty.
 //   STRAIN   — the tour presses on it. This is where it costs something.
 //   RESOLUTION — late, and only late: the want is answered one way or the other.
 //

@@ -1442,16 +1442,19 @@ export class MiniGameScene extends Phaser.Scene {
     const vars = { budget: d.budget };
     const lbl = this.mg.copy?.labels ?? ['Food', 'A bed', 'Rest stop'];
     const over = this.mg.copy?.overBudgetLine;
-    const live = this.ledgerFrame(this.copyText('heading', 'Tomorrow\'s per diem', vars), this.copyText('setup', `$${d.budget} for the day. Theo would like one real meal and one real bed. Whatever is left goes back in the float.`, vars));
+    const live = this.ledgerFrame(this.copyText('heading', 'Tomorrow\'s per diem', vars), this.copyText('setup', `$${d.budget} for the day. Phillip would like one real meal and one real bed. Whatever is left goes back in the float.`, vars));
     const a = { food: 20, lodging: 20, rest: 0 };
     const update = () => {
       const spent = a.food + a.lodging + a.rest;
       const f = perDiemForecast(a);
       live.setText(`$${spent} of $${d.budget}${spent > d.budget ? ' — over budget' : `, $${d.budget - spent} back in the float`}.\nTomorrow: energy ${f.energy >= 0 ? '+' : ''}${f.energy}, harmony ${f.harmony >= 0 ? '+' : ''}${f.harmony}.`);
     };
-    this.stepper(380, lbl[0], () => a.food, (v) => { a.food = v; }, (v) => `$${v}`, 10, 0, 60, update);
-    this.stepper(446, lbl[1], () => a.lodging, (v) => { a.lodging = v; }, (v) => `$${v}`, 10, 0, 60, update);
-    this.stepper(512, lbl[2], () => a.rest, (v) => { a.rest = v; }, (v) => `$${v}`, 10, 0, 40, update);
+    // QA round 4 #4: the third row's buttons ran to y=568 and sat on top of the running total
+    // (y=560). Rows start a little higher and the total drops below them, clear of the + and −.
+    this.stepper(372, lbl[0], () => a.food, (v) => { a.food = v; }, (v) => `$${v}`, 10, 0, 60, update);
+    this.stepper(438, lbl[1], () => a.lodging, (v) => { a.lodging = v; }, (v) => `$${v}`, 10, 0, 60, update);
+    this.stepper(504, lbl[2], () => a.rest, (v) => { a.rest = v; }, (v) => `$${v}`, 10, 0, 40, update);
+    live.setY(592);
     update();
     this.contentLayer.add(createButton(this, W / 2 - 150, 700, 300, 66, 'Set the budget', () => this.settleLedger(resolvePerDiem(d, { ...a }, over)), { fillColor: PALETTE.teal }));
     this.time.delayedCall(LEDGER_IDLE_MS, () => this.settleLedger(resolvePerDiem(d, { ...a }, over), true));
@@ -1650,7 +1653,7 @@ export class MiniGameScene extends Phaser.Scene {
       }
     };
     const hint = this.theoryFrame('What time signature was that?', rounds);
-    hint.setText(this.copyText('setup', `Question ${this.theoryRound + 1} of ${rounds} - Theo counts it in. Feel where the heavy beat lands.`, { round: this.theoryRound + 1, rounds }));
+    hint.setText(this.copyText('setup', `Question ${this.theoryRound + 1} of ${rounds} - Phillip counts it in. Feel where the heavy beat lands.`, { round: this.theoryRound + 1, rounds }));
     play();
     this.contentLayer.add(createButton(this, W / 2 - 110, 320, 220, 58, 'Hear it again', play, { fillColor: PALETTE.plum, fontSize: '17px' }));
     let answered = false;

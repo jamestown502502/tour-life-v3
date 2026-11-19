@@ -41,12 +41,12 @@ const BACKLOG_BTN_SIZE = 66; // matches HelpButton's BTN_SIZE — the same measu
 // 4.5:1 on sand — high enough to cover both the bold 20px speaker nameplate (3:1 floor) and
 // the normal-weight 16px backlog panel (4.5:1 floor) with one shared set.
 export const BANDMATE_HEX: Record<BandmateId, string> = {
-  mira: '#7D4028', theo: '#275452', jun: '#6B4C18', rowan: '#2E5266',
+  mira: '#7D4028', phillip: '#275452', jun: '#6B4C18', rowan: '#2E5266',
 };
 const BANDMATE_COLOR: Record<BandmateId, number> = {
-  mira: PALETTE.terracotta, theo: PALETTE.teal, jun: PALETTE.gold, rowan: PALETTE.sky,
+  mira: PALETTE.terracotta, phillip: PALETTE.teal, jun: PALETTE.gold, rowan: PALETTE.sky,
 };
-const BANDMATE_IDS: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
+const BANDMATE_IDS: BandmateId[] = ['mira', 'phillip', 'jun', 'rowan'];
 
 export class DialogueBox {
   private scene: Phaser.Scene;
@@ -226,7 +226,7 @@ export class DialogueBox {
     // is true again the moment the next line starts typing. The stale tween then ran the OLD
     // line's complete(), re-installing the OLD line's advance callback, and the next tap replayed
     // that line. Every skipped line left another live tween, so the repeats compounded: measured
-    // in CI, the intro showed theo twice, jun three times and rowan four times. It never
+    // in CI, the intro showed phillip twice, jun three times and rowan four times. It never
     // reproduced locally because this harness renders at ~4fps, where a line finishes typing
     // before the next tap arrives and no tween is ever left in flight.
     this.typeTween?.stop();

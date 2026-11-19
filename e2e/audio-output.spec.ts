@@ -125,7 +125,7 @@ test('a returning player hears every kind of screen: menus, city, minigames, the
   await page.evaluate(() => {
     const S = (window as any).__state;
     S.newRun('audio-seed');
-    S.data.band = { name: 'Copper Atlas', genre: 'indie_rock', whyTour: 'A label finally said yes.', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'Copper Atlas', genre: 'indie_rock', whyTour: 'A label finally said yes.', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = ['lisbon', 'tokyo', 'mexico_city', 'berlin'].map((cityId) => ({ cityId, visited: false, weather: 'clear' }));
   });
   await visit('RoutePlan', 'RoutePlan', {});
@@ -158,7 +158,7 @@ test('Continue applies the volumes saved in Settings', async ({ page }) => {
   await page.evaluate(async () => {
     const S = (window as any).__state;
     S.newRun('volume-seed');
-    S.data.band = { name: 'Copper Atlas', genre: 'indie_rock', whyTour: 'A label finally said yes.', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'Copper Atlas', genre: 'indie_rock', whyTour: 'A label finally said yes.', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = ['lisbon', 'tokyo', 'mexico_city', 'berlin'].map((cityId) => ({ cityId, visited: false, weather: 'clear' }));
     S.data.progress = { screen: 'hub' };
     S.data.accessibility.volumes = { master: 0.8, music: 0, sfx: 0.3, metronome: 0.6 };

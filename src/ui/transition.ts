@@ -43,6 +43,10 @@ const transitioning = new WeakSet<Phaser.Scene>();
 
 export function goTo(scene: Phaser.Scene, key: string, data?: object, opts: GoToOptions = {}): void {
   if (transitioning.has(scene)) return;
+  // Phaser keeps a scene's previous start data when start() is called without any (Systems.start
+  // only assigns truthy data). So one practice round's { practiceCity } rode along on every later
+  // trip to the bus and reopened the picker after each city (QA round 4 #5). Always pass an object.
+  data = data ?? {};
   transitioning.add(scene);
   // Cleared if this scene is stopped by some other path mid-fade, so the guard can never outlive
   // its transition and wedge a reused scene instance shut.

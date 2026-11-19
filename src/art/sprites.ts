@@ -300,16 +300,16 @@ export function ensurePortraitFrame(scene: Phaser.Scene): string {
 // Clothing/identity color per bandmate (torso, accessory accents).
 export const BANDMATE_BASE: Record<BandmateId, number> = {
   mira: 0xc4704f,
-  theo: 0x3e7c7b,
+  phillip: 0x3e7c7b,
   jun: 0xd9a441,
   rowan: 0x8fb7c9,
 };
 
 const SKIN: Record<BandmateId, number> = {
-  mira: 0xead9bd, theo: 0xc48a5f, jun: 0x8a5a3c, rowan: 0xe0b48a,
+  mira: 0xead9bd, phillip: 0xc48a5f, jun: 0x8a5a3c, rowan: 0xe0b48a,
 };
 const HAIR: Record<BandmateId, number> = {
-  mira: 0x3a2418, theo: 0x6b4a2f, jun: 0x1c1c1c, rowan: 0x8a3a2a,
+  mira: 0x3a2418, phillip: 0x6b4a2f, jun: 0x1c1c1c, rowan: 0x8a3a2a,
 };
 
 const PORTRAIT_SIZE = 280;
@@ -341,7 +341,7 @@ function drawHairBack(g: Phaser.GameObjects.Graphics, id: BandmateId): void {
     g.fillEllipse(CX, CY - HEAD_R * 0.35, HEAD_R * 1.7, HEAD_R * 1.15);
     g.fillEllipse(CX - HEAD_R * 0.92, CY + HEAD_R * 0.75, HEAD_R * 0.55, HEAD_R * 1.9);
     g.fillEllipse(CX + HEAD_R * 0.92, CY + HEAD_R * 0.75, HEAD_R * 0.55, HEAD_R * 1.9);
-  } else if (id === 'theo') {
+  } else if (id === 'phillip') {
     // shaggy base — front spikes added in drawHairFront
     g.fillEllipse(CX, CY - HEAD_R * 0.5, HEAD_R * 1.75, HEAD_R * 0.95);
   } else if (id === 'jun') {
@@ -356,7 +356,7 @@ function drawHairBack(g: Phaser.GameObjects.Graphics, id: BandmateId): void {
 function drawHairFront(g: Phaser.GameObjects.Graphics, id: BandmateId): void {
   const hair = HAIR[id];
   g.fillStyle(hair, 1);
-  if (id === 'theo') {
+  if (id === 'phillip') {
     for (let i = -2; i <= 2; i++) {
       const x = CX + i * HEAD_R * 0.34;
       const jitter = (i * i) % 2 === 0 ? 6 : -4;
@@ -377,7 +377,7 @@ function drawAccessory(g: Phaser.GameObjects.Graphics, id: BandmateId): void {
     g.beginPath(); g.arc(CX, CY + HEAD_R + 4, 14, Phaser.Math.DegToRad(20), Phaser.Math.DegToRad(160)); g.strokePath();
     g.fillStyle(PALETTE.gold, 1);
     g.fillCircle(CX, CY + HEAD_R + 18, 6);
-  } else if (id === 'theo') {
+  } else if (id === 'phillip') {
     // drumstick tucked behind one ear
     g.fillStyle(0xc9a876, 1);
     g.save();

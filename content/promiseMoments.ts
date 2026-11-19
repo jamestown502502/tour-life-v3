@@ -34,10 +34,10 @@ export const PROMISE_MOMENTS: Record<string, [PromiseMoment, PromiseMoment, Prom
   promise_together: [
     {
       id: 'together_soundcheck', speaker: 'jun',
-      text: 'Theo wants to skip soundcheck and sleep. Jun is furious: "We said we would do this properly. Together."',
+      text: 'Phillip wants to skip soundcheck and sleep. Jun is furious: "We said we would do this properly. Together."',
       options: [
-        { label: 'Wake Theo. We soundcheck as four.', after: 'Theo drags himself in, grumbling, and plays better than anyone expected. Jun says nothing, which is a thank you.', stats: { harmony: 4, energy: -4 }, relationships: { jun: 4, theo: -1 }, cite: 'you woke Theo for soundcheck and the four of you did it together' },
-        { label: 'Let Theo sleep. Cover for him.', after: 'Jun soundchecks the drums with a pencil. Theo wakes up rested and never quite hears about it.', stats: { energy: 4, harmony: -3 }, relationships: { theo: 3, jun: -3 }, cite: 'you let Theo sleep through soundcheck and Jun carried it alone' },
+        { label: 'Wake Phillip. We soundcheck as four.', after: 'Phillip drags himself in, grumbling, and plays better than anyone expected. Jun says nothing, which is a thank you.', stats: { harmony: 4, energy: -4 }, relationships: { jun: 4, phillip: -1 }, cite: 'you woke Phillip for soundcheck and the four of you did it together' },
+        { label: 'Let Phillip sleep. Cover for him.', after: 'Jun soundchecks the drums with a pencil. Phillip wakes up rested and never quite hears about it.', stats: { energy: 4, harmony: -3 }, relationships: { phillip: 3, jun: -3 }, cite: 'you let Phillip sleep through soundcheck and Jun carried it alone' },
       ],
     },
     {
@@ -50,17 +50,17 @@ export const PROMISE_MOMENTS: Record<string, [PromiseMoment, PromiseMoment, Prom
     },
     {
       id: 'together_fight', speaker: 'rowan',
-      text: 'Rowan and Theo have not spoken since lunch. Rowan finds you first: "I need you to say who is right."',
+      text: 'Rowan and Phillip have not spoken since lunch. Rowan finds you first: "I need you to say who is right."',
       options: [
-        { label: 'Refuse. Sit them both down instead.', after: 'It takes an hour and most of a pizza. Nobody wins. Everybody is still in the band.', stats: { harmony: 5, energy: -3 }, relationships: { rowan: 1, theo: 1 }, cite: 'you sat Rowan and Theo down and made them talk instead of picking a side' },
-        { label: 'Back Rowan. They were right.', after: 'Rowan was right, mostly. Theo hears about it from the hallway and drums very hard that night.', stats: { harmony: -4 }, relationships: { rowan: 5, theo: -4 }, cite: 'you took Rowan\'s side against Theo, and the van was quiet for a day' },
+        { label: 'Refuse. Sit them both down instead.', after: 'It takes an hour and most of a pizza. Nobody wins. Everybody is still in the band.', stats: { harmony: 5, energy: -3 }, relationships: { rowan: 1, phillip: 1 }, cite: 'you sat Rowan and Phillip down and made them talk instead of picking a side' },
+        { label: 'Back Rowan. They were right.', after: 'Rowan was right, mostly. Phillip hears about it from the hallway and drums very hard that night.', stats: { harmony: -4 }, relationships: { rowan: 5, phillip: -4 }, cite: 'you took Rowan\'s side against Phillip, and the van was quiet for a day' },
       ],
     },
   ],
   promise_rooms: [
     {
-      id: 'rooms_tiny', speaker: 'theo',
-      text: 'The venue sold eleven tickets. Theo, flatly: "Eleven. We could cut the set short and get a real night of sleep."',
+      id: 'rooms_tiny', speaker: 'phillip',
+      text: 'The venue sold eleven tickets. Phillip, flatly: "Eleven. We could cut the set short and get a real night of sleep."',
       options: [
         { label: 'Play the full set for the eleven.', after: 'You play every song. Eleven people sing the chorus of the last one, badly, and loudly.', localLove: 4, stats: { energy: -4 }, cite: 'you played the whole set for eleven people and they sang the last chorus back' },
         { label: 'Cut it short. Save the energy.', after: 'A tidy forty minutes. The eleven clap politely. The band sleeps well.', localLove: -1, stats: { energy: 5 }, cite: 'you cut the set short for a room of eleven and slept instead' },
@@ -101,8 +101,8 @@ export const PROMISE_MOMENTS: Record<string, [PromiseMoment, PromiseMoment, Prom
       ],
     },
     {
-      id: 'new_cover', speaker: 'theo',
-      text: 'The promoter wants the cover song that always works. Theo shrugs: "Or we play the new one. Nobody knows it yet."',
+      id: 'new_cover', speaker: 'phillip',
+      text: 'The promoter wants the cover song that always works. Phillip shrugs: "Or we play the new one. Nobody knows it yet."',
       options: [
         { label: 'Play the new one.', after: 'Half the room has no idea what is happening. The other half films it.', stats: { inspiration: 6 }, localLove: -1, cite: 'you played the new song instead of the cover the promoter wanted' },
         { label: 'Play the cover. Keep the promoter happy.', after: 'The cover works, like it always does. The promoter books you again.', stats: { funds: 20, inspiration: -2 }, localLove: 2, cite: 'you played the safe cover for the promoter' },

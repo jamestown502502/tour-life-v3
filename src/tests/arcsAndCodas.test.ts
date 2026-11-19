@@ -11,7 +11,7 @@ import { PAINTED_MOODS, moodForNode, inferMood } from '../game/mood';
 
 const cities = readdirSync('content/cities').filter((f) => f.endsWith('.json'))
   .map((f) => JSON.parse(readFileSync(`content/cities/${f}`, 'utf8')));
-const BANDMATES = ['mira', 'theo', 'jun', 'rowan'] as const;
+const BANDMATES = ['mira', 'phillip', 'jun', 'rowan'] as const;
 
 describe('arc stages give the bandmates somewhere to go', () => {
   it('starts everyone at setup', () => {
@@ -76,9 +76,9 @@ describe('the ending says what happened to each of them', () => {
   });
 
   it('two different runs produce two different closing paragraphs', () => {
-    const generous = codasFor({ mira: 80, theo: 80, jun: 80, rowan: 80 }).join(' ');
-    const neglectful = codasFor({ mira: 5, theo: 5, jun: 5, rowan: 5 }).join(' ');
-    const mixed = codasFor({ mira: 80, theo: 5, jun: 40, rowan: 80 }).join(' ');
+    const generous = codasFor({ mira: 80, phillip: 80, jun: 80, rowan: 80 }).join(' ');
+    const neglectful = codasFor({ mira: 5, phillip: 5, jun: 5, rowan: 5 }).join(' ');
+    const mixed = codasFor({ mira: 80, phillip: 5, jun: 40, rowan: 80 }).join(' ');
     expect(generous).not.toEqual(neglectful);
     expect(mixed).not.toEqual(generous);
     expect(mixed).not.toEqual(neglectful);
@@ -95,7 +95,7 @@ describe('the ending says what happened to each of them', () => {
     expect(3 ** 4).toBe(81);
     const seen = new Set<string>();
     for (const a of [80, 40, 5]) for (const b of [80, 40, 5]) for (const c of [80, 40, 5]) for (const d of [80, 40, 5]) {
-      seen.add(codasFor({ mira: a, theo: b, jun: c, rowan: d }).join('|'));
+      seen.add(codasFor({ mira: a, phillip: b, jun: c, rowan: d }).join('|'));
     }
     expect(seen.size).toBe(81);
   });

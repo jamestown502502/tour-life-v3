@@ -17,6 +17,7 @@ export interface FloatingInput {
  *  destroy() early — it is idempotent. */
 export function createFloatingInput(
   scene: Phaser.Scene, gameX: number, gameY: number, widthPx: number, placeholder: string, heightUnits = 34,
+  matchCanvasText = false,
 ): FloatingInput {
   const el = document.createElement('input');
   el.placeholder = placeholder;
@@ -68,6 +69,7 @@ export function createFloatingInput(
     const covered2 = !!vv && naturalBottom > vv.offsetTop + vv.height - 8;
     if (focused && coarse && vv && covered2) {
       const hPx = 48;
+      el.style.transform = '';
       el.style.left = `${vv.offsetLeft + 16}px`;
       el.style.width = `${vv.width - 32}px`;
       el.style.height = `${hPx}px`;
@@ -85,10 +87,18 @@ export function createFloatingInput(
     // Tall enough for its own text (QA round 3 #10: on a phone the 16px floor below sat in a box
     // 34 game units = ~18 CSS px tall, so the text spilled past the border and the field looked
     // misaligned). Grown boxes stay centred on gameY.
-    const hPx = Math.max(heightUnits * scaleY, fontPx * 1.25 + 12);
+    const naturalH = heightUnits * scaleY;
+    // QA round 4 #9: on a phone the 16px floor made the seed field's text twice the size of the
+    // canvas button labels beside it, so "Paste a seed" looked oversized. With matchCanvasText the
+    // field keeps a 16px font (so iOS still does not zoom on focus) and is drawn scaled down to the
+    // size of an 18px canvas label, in a box exactly the size of the row. Never while docked.
+    const k = matchCanvasText && coarse ? Phaser.Math.Clamp((18 * scaleY) / fontPx, 0.55, 1) : 1;
+    const hPx = k < 1 ? naturalH / k : Math.max(naturalH, fontPx * 1.25 + 12);
+    el.style.transformOrigin = 'top left';
+    el.style.transform = k < 1 ? `scale(${k})` : '';
     el.style.left = `${rect.left + gameX * scaleX - wPx / 2}px`;
-    el.style.top = `${rect.top + gameY * scaleY - hPx / 2}px`;
-    el.style.width = `${wPx}px`;
+    el.style.top = `${rect.top + gameY * scaleY - (k < 1 ? naturalH : hPx) / 2}px`;
+    el.style.width = `${wPx / k}px`;
     el.style.height = `${hPx}px`;
     // Never under 16px: iOS Safari zooms the whole page into any focused input smaller than that,
     // and the zoom does not fully undo on blur — reported as the welcome screen being stuck

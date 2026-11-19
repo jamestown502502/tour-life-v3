@@ -6,7 +6,7 @@ async function newRun(page: Page): Promise<void> {
   await page.evaluate(() => {
     const S = (window as any).__state;
     S.newRun('qa-round3-seed');
-    S.data.band = { name: 'Copper Atlas', genre: 'indie_rock', whyTour: 'A label finally said yes.', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'Copper Atlas', genre: 'indie_rock', whyTour: 'A label finally said yes.', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = ['lisbon', 'tokyo', 'mexico_city', 'berlin'].map((cityId) => ({ cityId, visited: false, weather: 'clear' }));
     S.addFlag('onboard_hub_seen');
   });

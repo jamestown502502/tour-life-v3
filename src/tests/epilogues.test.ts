@@ -22,7 +22,7 @@ function sweepReachableCombos(): { endingId: string; tags: string[] }[] {
           for (const localLove of levels) {
             const state = freshRun('sweep', freshMeta(), freshAccessibility());
             state.stats = { harmony, funds, inspiration, energy: 70 };
-            state.relationships = { mira: rel, theo: rel, jun: rel, rowan: rel };
+            state.relationships = { mira: rel, phillip: rel, jun: rel, rowan: rel };
             state.localLove = { lisbon: localLove, tokyo: localLove };
             const ending = generateEnding(state);
             const k = `${ending.id}::${[...ending.tags].sort().join(',')}`;

@@ -156,7 +156,7 @@ function auditButtonFills(mdLines) {
 }
 
 // ---- AFTER: bandmate speaker/backlog text colors (src/ui/DialogueBox.ts's BANDMATE_HEX) ----
-const BANDMATE_HEX_AFTER = { mira: '#7D4028', theo: '#275452', jun: '#6B4C18', rowan: '#2E5266' };
+const BANDMATE_HEX_AFTER = { mira: '#7D4028', phillip: '#275452', jun: '#6B4C18', rowan: '#2E5266' };
 const SPEAKER_PRESET = { sizePx: 20, bold: true }; // 'speaker': 20px bold — the nameplate
 const BACKLOG_PRESET = { sizePx: 16, bold: false }; // backlog panel override: 16px, 'small' base weight 400
 

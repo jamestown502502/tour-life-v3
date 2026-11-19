@@ -37,17 +37,17 @@ export const SPOTLIGHT: Record<BandmateId, SpotlightVoice> = {
     after: 'Mira took the bridge quiet. The room leaned in to hear her.',
     echo: 'Mira is humming the {city} bridge against the window. Nobody asks her to stop.',
   },
-  theo: {
+  phillip: {
     treatment: 'drive',
     take: 'the bridge as a drum break',
     light: 0xf9a421,
     offer: [
-      'Theo spins a stick. "Bridge is mine tonight. Give me eight bars and I will wake up the back row."',
-      'Theo, tired but grinning: "I need one moment that is fun again. Let me hit the bridge hard."',
-      'Theo taps the dashboard in time. "Last time I asked for the bridge I was running on empty. Tonight I am not."',
+      'Phillip spins a stick. "Bridge is mine tonight. Give me eight bars and I will wake up the back row."',
+      'Phillip, tired but grinning: "I need one moment that is fun again. Let me hit the bridge hard."',
+      'Phillip taps the dashboard in time. "Last time I asked for the bridge I was running on empty. Tonight I am not."',
     ],
-    after: 'Theo turned the bridge into a drum break. The back row woke up.',
-    echo: 'Theo keeps drumming the {city} break on his knees until Jun throws a sock at him.',
+    after: 'Phillip turned the bridge into a drum break. The back row woke up.',
+    echo: 'Phillip keeps drumming the {city} break on his knees until Jun throws a sock at him.',
   },
   jun: {
     treatment: 'walk',

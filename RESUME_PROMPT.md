@@ -22,7 +22,7 @@ CONTEXT YOU MUST TRUST:
   would generate, the real image wins and code-drawn never runs. Missing file = code-drawn
   fallback. No engine re-architecture needed.
 - Keys: bg_title | bg_city_lisbon | bg_city_tokyo | bg_hub | portrait_<id>_<mood> for
-  bandmate ids mira/theo/jun/rowan × moods happy/worried/tense/inspired (16 total).
+  bandmate ids mira/phillip/jun/rowan × moods happy/worried/tense/inspired (16 total).
 - Tools + keys are installed and verified. Live probe this session:
   docs/asset-probes/lisbon_bg_probe.png (848x1264, soft-gouache cozy Lisbon at golden hour,
   warm amber/terracotta palette matching the game palette) — THIS is the style anchor.
@@ -62,8 +62,8 @@ STEP 3 — GENERATE THE CHARACTERS (consistency strategy — the hard part):
     generate_sprite.mjs verify <file.png> on EVERY sprite. A failed alpha is a shipped bug
     in this portfolio's history — do not skip verify.
   - Write docs/character-sheets.md first: one canonical identity block per bandmate (name,
-    role, hair, skin tone, outfit color from BANDMATE_BASE: mira terracotta, theo teal, jun
-    gold, rowan sky; signature accessory: mira pendant, theo drumstick, jun guitar pick,
+    role, hair, skin tone, outfit color from BANDMATE_BASE: mira terracotta, phillip teal, jun
+    gold, rowan sky; signature accessory: mira pendant, phillip drumstick, jun guitar pick,
     rowan bass strap). Keep these blocks verbatim across ALL generations so identity holds.
   - Per bandmate: generate ONE canonical base (neutral/happy), then derive the other 3
     moods by image-to-image with --reference <base.png> + the identity block + a mood

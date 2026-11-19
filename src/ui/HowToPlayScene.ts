@@ -16,7 +16,7 @@ interface Page { title: string; body: string; }
 const PAGES: Page[] = [
   {
     title: 'Your tour',
-    body: 'You run an indie band\'s first international tour: Mira, Theo, Jun and Rowan, four cities, one route you choose.\n\nThere is no game over. Every choice writes a different tour, and at the end it all becomes your Scrapbook.',
+    body: 'You run an indie band\'s first international tour: Mira, Phillip, Jun and Rowan, four cities, one route you choose.\n\nThere is no game over. Every choice writes a different tour, and at the end it all becomes your Scrapbook.',
   },
   {
     title: 'The road',
@@ -131,6 +131,11 @@ export class HowToPlayScene extends Phaser.Scene {
 
     for (let i = 0; i < PAGES.length; i++) {
       const dot = this.add.circle(W / 2 - (PAGES.length - 1) * 14 + i * 28, CARD_Y + CARD_H - 40, 7, PALETTE.gold, 0.3);
+      // QA round 4 #1: the dots read as page navigation and testers tapped them; nothing happened.
+      // Each dot now jumps to its page, with a finger-sized hit circle around the 7 px dot.
+      dot.setInteractive(new Phaser.Geom.Circle(7, 7, 16), Phaser.Geom.Circle.Contains);
+      if (dot.input) dot.input.cursor = 'pointer';
+      dot.on('pointerup', () => { if (!this.welcome) { this.page = i; this.renderPage(); } });
       this.dots.push(dot);
     }
 

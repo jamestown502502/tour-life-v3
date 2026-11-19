@@ -13,7 +13,7 @@ import { rapportFor } from './bandHelp';
 import { makeRng } from '../core/rng';
 
 export interface BandPerks {
-  /** Multiplier on the timing windows (Theo). */
+  /** Multiplier on the timing windows (Phillip). */
   windowScale: number;
   /** Misses that do not break the combo (Jun). */
   comboShield: number;
@@ -22,12 +22,12 @@ export interface BandPerks {
   /** Crowd added at the start, and extra crowd per perfect (Rowan). */
   crowdStart: number;
   crowdPerPerfect: number;
-  /** Who is helping, as banner lines, e.g. "Theo locks the tempo". */
+  /** Who is helping, as banner lines, e.g. "Phillip locks the tempo". */
   lines: string[];
 }
 
 export const PERK_LINES: Record<BandmateId, string> = {
-  theo: 'Theo locks the tempo: wider timing',
+  phillip: 'Phillip locks the tempo: wider timing',
   jun: 'Jun covers your slips: 3 misses keep your combo',
   mira: 'Mira carries the long notes: holds forgive early release',
   rowan: 'Rowan works the room: the crowd starts warmer',
@@ -37,7 +37,7 @@ export const PERK_LINES: Record<BandmateId, string> = {
 export function bandPerks(relationships: Partial<Record<BandmateId, number>>): BandPerks {
   const close = (id: BandmateId) => rapportFor(relationships[id]) === 'close';
   const p: BandPerks = { windowScale: 1, comboShield: 0, holdKeep: 0.85, crowdStart: 0, crowdPerPerfect: 0, lines: [] };
-  if (close('theo')) { p.windowScale = 1.15; p.lines.push(PERK_LINES.theo); }
+  if (close('phillip')) { p.windowScale = 1.15; p.lines.push(PERK_LINES.phillip); }
   if (close('jun')) { p.comboShield = 3; p.lines.push(PERK_LINES.jun); }
   if (close('mira')) { p.holdKeep = 0.7; p.lines.push(PERK_LINES.mira); }
   if (close('rowan')) { p.crowdStart = 12; p.crowdPerPerfect = 1; p.lines.push(PERK_LINES.rowan); }
@@ -141,13 +141,13 @@ export function goalReward(night: WildcardNight): { localLove: number; deltas: P
 export interface HelpRow { id: BandmateId; name: string; active: boolean; line: string }
 
 const PERK_SHORT: Record<BandmateId, string> = {
-  theo: 'wider timing on every note',
+  phillip: 'wider timing on every note',
   jun: '3 misses keep your combo',
   mira: 'long notes forgive an early release',
   rowan: 'the crowd starts warmer',
 };
-const ORDER: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
-const NAMES: Record<BandmateId, string> = { mira: 'Mira', theo: 'Theo', jun: 'Jun', rowan: 'Rowan' };
+const ORDER: BandmateId[] = ['mira', 'phillip', 'jun', 'rowan'];
+const NAMES: Record<BandmateId, string> = { mira: 'Mira', phillip: 'Phillip', jun: 'Jun', rowan: 'Rowan' };
 
 /** One row per bandmate: active help in their own words, or what growing close would unlock. */
 export function bandmateHelpRows(relationships: Partial<Record<BandmateId, number>>): HelpRow[] {

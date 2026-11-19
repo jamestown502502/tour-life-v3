@@ -209,8 +209,8 @@ const ECHOES: Record<LedgerType, { good: string[]; rough: string[]; goodFx: Stat
     goodFx: { inspiration: 2 }, roughFx: { harmony: -1 },
   },
   perdiem: {
-    good: ['Theo slept properly in {city}, and it shows. He drives the first shift without being asked.'],
-    rough: ['Theo is still tired from {city}. Nobody mentions it, which is how you know.'],
+    good: ['Phillip slept properly in {city}, and it shows. He drives the first shift without being asked.'],
+    rough: ['Phillip is still tired from {city}. Nobody mentions it, which is how you know.'],
     goodFx: { energy: 3 }, roughFx: { energy: -3 },
   },
   gearcall: {
@@ -219,8 +219,8 @@ const ECHOES: Record<LedgerType, { good: string[]; rough: string[]; goodFx: Stat
     goodFx: { inspiration: 2 }, roughFx: { harmony: -1 },
   },
   exchange: {
-    good: ['The money changed in {city} stretched further than anyone expected. Theo counts it twice.'],
-    rough: ['Theo finds the {city} exchange receipt in the glovebox and reads the fee out loud.'],
+    good: ['The money changed in {city} stretched further than anyone expected. Phillip counts it twice.'],
+    rough: ['Phillip finds the {city} exchange receipt in the glovebox and reads the fee out loud.'],
     goodFx: { funds: 2 }, roughFx: { harmony: -1 },
   },
 };

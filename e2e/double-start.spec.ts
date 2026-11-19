@@ -148,7 +148,7 @@ test.describe('A double-tap must never start a scene twice', () => {
   // could make it fail locally — a deterministic version was written, found to pass identically
   // with and without the fix, and deleted rather than left behind implying confidence it did not
   // have. CI (4 real device profiles at full speed) is where it reproduced, and reproduced hard:
-  // theo twice, jun three times, rowan four times, the repeats compounding line over line.
+  // phillip twice, jun three times, rowan four times, the repeats compounding line over line.
   //
   // The symptom itself, independent of the mechanism: whatever the player is shown during the
   // intro, no single line may be presented twice in a row. DialogueBox records every line it

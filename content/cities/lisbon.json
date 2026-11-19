@@ -55,9 +55,9 @@
       "sceneId": "lis_rel_mira"
     },
     {
-      "id": "theo_rest_day",
-      "bandmate": "theo",
-      "sceneId": "lis_rel_theo"
+      "id": "phillip_rest_day",
+      "bandmate": "phillip",
+      "sceneId": "lis_rel_phillip"
     },
     {
       "id": "jun_new_sound",
@@ -81,9 +81,9 @@
       "sceneId": "lis_rel_mira_letter"
     },
     {
-      "id": "theo_why_hes_here",
-      "bandmate": "theo",
-      "sceneId": "lis_rel_theo_why"
+      "id": "phillip_why_hes_here",
+      "bandmate": "phillip",
+      "sceneId": "lis_rel_phillip_why"
     },
     {
       "id": "jun_why_hes_here",
@@ -409,10 +409,10 @@
       "id": "lis_exchange",
       "type": "exchange",
       "title": "Changing Money",
-      "introText": "Three windows, three signs, one float. Theo hands you the envelope. \"Whatever you do, read the small print.\"",
+      "introText": "Three windows, three signs, one float. Phillip hands you the envelope. \"Whatever you do, read the small print.\"",
       "outroText": "You read the fee before the rate and come away with a fair week's money.",
       "outroTextRough": "The window with the best-looking rate quietly keeps a slice. You notice on the receipt, after.",
-      "outroTextPerfect": "You find the best window without a second thought. Theo takes the envelope back a little heavier.",
+      "outroTextPerfect": "You find the best window without a second thought. Phillip takes the envelope back a little heavier.",
       "reward": {
         "effects": {
           "harmony": 2
@@ -497,18 +497,18 @@
     {
       "id": "lis_backline",
       "type": "gearcall",
-      "hostBandmate": "theo",
+      "hostBandmate": "phillip",
       "title": "The Drum Kit",
-      "introText": "Theo stands over his cases at the airport counter. Flying his kit costs real money. The venue will rent him one. He looks at you.",
-      "outroText": "The sums come out right and Theo plays a kit he trusts. He nods at you from the riser.",
-      "outroTextRough": "Theo plays a kit that is not his and apologises to it between songs.",
-      "outroTextPerfect": "You call it before Theo finishes asking. He plays the whole tour on the right kit for the right money.",
+      "introText": "Phillip stands over his cases at the airport counter. Flying his kit costs real money. The venue will rent him one. He looks at you.",
+      "outroText": "The sums come out right and Phillip plays a kit he trusts. He nods at you from the riser.",
+      "outroTextRough": "Phillip plays a kit that is not his and apologises to it between songs.",
+      "outroTextPerfect": "You call it before Phillip finishes asking. He plays the whole tour on the right kit for the right money.",
       "reward": {
         "effects": {
           "energy": 3
         },
         "relationshipEffects": {
-          "theo": 3
+          "phillip": 3
         },
         "flags": [
           "kit_decided"
@@ -517,7 +517,7 @@
       "roughReward": {
         "effects": {},
         "relationshipEffects": {
-          "theo": 1
+          "phillip": 1
         }
       },
       "perfectReward": {
@@ -525,7 +525,7 @@
           "energy": 5
         },
         "relationshipEffects": {
-          "theo": 5
+          "phillip": 5
         },
         "flags": [
           "kit_decided"
@@ -537,29 +537,29 @@
       },
       "copy": {
         "heading": "The drum kit",
-        "setup": "Theo can fly his own kit for ${price} in excess baggage, once, or rent a house kit at ${rentPerShow} a night. {shows} left on this tour.",
+        "setup": "Phillip can fly his own kit for ${price} in excess baggage, once, or rent a house kit at ${rentPerShow} a night. {shows} left on this tour.",
         "detail": "Renting for the rest of the tour: {shows} at ${rentPerShow} = ${rentTotal}.\nFlying his own: ${price}, once.",
         "buyLabel": "Fly his kit (${price})",
         "rentLabel": "Rent a kit (${rentPerShow} a show)",
         "passLabel": "Borrow the opener's kit",
         "thing": "the kit",
-        "passLine": "Theo borrows the opener's kit."
+        "passLine": "Phillip borrows the opener's kit."
       }
     },
     {
       "id": "lis_long_haul",
       "type": "longhaul",
       "title": "The Long Haul",
-      "introText": "Three days, three towns, one van and $100 in the float. Theo hands you the route map. \"Keep us fed, keep us rested, keep us out of the red.\"",
-      "outroText": "Three towns, and the float came home fatter than it left. Theo naps the whole drive back, and has earned it.",
+      "introText": "Three days, three towns, one van and $100 in the float. Phillip hands you the route map. \"Keep us fed, keep us rested, keep us out of the red.\"",
+      "outroText": "Three towns, and the float came home fatter than it left. Phillip naps the whole drive back, and has earned it.",
       "outroTextRough": "The float made it back thin and the band made it back tired. Everybody learned where the money really goes.",
-      "outroTextPerfect": "You squeezed every dollar the road had in it. Theo writes the route in the notebook under BEST.",
+      "outroTextPerfect": "You squeezed every dollar the road had in it. Phillip writes the route in the notebook under BEST.",
       "reward": {
         "effects": {
           "harmony": 2
         },
         "relationshipEffects": {
-          "theo": 3
+          "phillip": 3
         },
         "flags": [
           "leg_in_the_black"
@@ -576,7 +576,7 @@
           "energy": 2
         },
         "relationshipEffects": {
-          "theo": 4
+          "phillip": 4
         },
         "flags": [
           "leg_in_the_black"
@@ -862,27 +862,27 @@
       "portrait": "worried",
       "text": "\"Okay,\" she says, eventually. Not fixed. Heard."
     },
-    "lis_rel_theo": {
-      "id": "lis_rel_theo",
-      "speaker": "theo",
+    "lis_rel_phillip": {
+      "id": "lis_rel_phillip",
+      "speaker": "phillip",
       "portrait": "tired",
-      "text": "\"I could sleep for a year,\" Theo says, \"and still be tired when I woke up.\" It's not the tour talking. It's the last time he felt this tired, and where that ended up.",
+      "text": "\"I could sleep for a year,\" Phillip says, \"and still be tired when I woke up.\" It's not the tour talking. It's the last time he felt this tired, and where that ended up.",
       "choices": [
         {
           "id": "rest",
           "label": "Take the afternoon off",
-          "next": "lis_rel_theo_a",
+          "next": "lis_rel_phillip_a",
           "effects": {
             "energy": 5
           },
           "relationshipEffects": {
-            "theo": 4
+            "phillip": 4
           }
         },
         {
           "id": "push",
           "label": "One more pass at the bridge, then rest",
-          "next": "lis_rel_theo_b",
+          "next": "lis_rel_phillip_b",
           "effects": {
             "inspiration": 3,
             "energy": -4
@@ -890,17 +890,17 @@
         }
       ]
     },
-    "lis_rel_theo_a": {
-      "id": "lis_rel_theo_a",
-      "speaker": "theo",
+    "lis_rel_phillip_a": {
+      "id": "lis_rel_phillip_a",
+      "speaker": "phillip",
       "portrait": "happy",
       "text": "He actually naps. You stand guard over the silence like it's precious — like the alternative is something worth guarding against."
     },
-    "lis_rel_theo_b": {
-      "id": "lis_rel_theo_b",
-      "speaker": "theo",
+    "lis_rel_phillip_b": {
+      "id": "lis_rel_phillip_b",
+      "speaker": "phillip",
       "portrait": "tense",
-      "text": "The bridge is tighter now. Theo looks a little more hollow for it — not frustrated anymore, just quiet in the specific way that isn't calm."
+      "text": "The bridge is tighter now. Phillip looks a little more hollow for it — not frustrated anymore, just quiet in the specific way that isn't calm."
     },
     "lis_rel_jun": {
       "id": "lis_rel_jun",
@@ -1157,28 +1157,28 @@
       "portrait": "tense",
       "text": "Mira mentions a letter from home, then changes the subject fast, folding it away before you can ask."
     },
-    "lis_rel_theo_why": {
-      "id": "lis_rel_theo_why",
-      "speaker": "theo",
+    "lis_rel_phillip_why": {
+      "id": "lis_rel_phillip_why",
+      "speaker": "phillip",
       "portrait": "tense",
-      "text": "\"I quit music for eight months, after the last band,\" Theo says, quiet. \"Burned all the way out. This tour is me finding out if I can do this without burning out again.\"",
-      "condition": "relationship.theo>=40",
-      "fallback": "lis_rel_theo_why_fallback",
+      "text": "\"I quit music for eight months, after the last band,\" Phillip says, quiet. \"Burned all the way out. This tour is me finding out if I can do this without burning out again.\"",
+      "condition": "relationship.phillip>=40",
+      "fallback": "lis_rel_phillip_why_fallback",
       "choices": [
         {
           "id": "how_going",
           "label": "How's it going so far, honestly?",
-          "next": "lis_rel_theo_why_a",
+          "next": "lis_rel_phillip_why_a",
           "relationshipEffects": {
-            "theo": 5
+            "phillip": 5
           }
         },
         {
           "id": "watch_for_it",
           "label": "I'll tell you if you look run down",
-          "next": "lis_rel_theo_why_b",
+          "next": "lis_rel_phillip_why_b",
           "relationshipEffects": {
-            "theo": 6
+            "phillip": 6
           },
           "effects": {
             "harmony": 1
@@ -1186,23 +1186,23 @@
         }
       ]
     },
-    "lis_rel_theo_why_a": {
-      "id": "lis_rel_theo_why_a",
-      "speaker": "theo",
+    "lis_rel_phillip_why_a": {
+      "id": "lis_rel_phillip_why_a",
+      "speaker": "phillip",
       "portrait": "happy",
       "text": "\"Better than I expected,\" he admits, surprised by his own answer. \"Ask me again down the road.\""
     },
-    "lis_rel_theo_why_b": {
-      "id": "lis_rel_theo_why_b",
-      "speaker": "theo",
+    "lis_rel_phillip_why_b": {
+      "id": "lis_rel_phillip_why_b",
+      "speaker": "phillip",
       "portrait": "inspired",
       "text": "Something in his shoulders drops. \"Nobody's offered that before,\" he says. \"Yeah. Please.\""
     },
-    "lis_rel_theo_why_fallback": {
-      "id": "lis_rel_theo_why_fallback",
-      "speaker": "theo",
+    "lis_rel_phillip_why_fallback": {
+      "id": "lis_rel_phillip_why_fallback",
+      "speaker": "phillip",
       "portrait": "tense",
-      "text": "Theo mentions the last band, briefly, then waves it off. \"Old story. Not worth telling yet.\""
+      "text": "Phillip mentions the last band, briefly, then waves it off. \"Old story. Not worth telling yet.\""
     },
     "lis_rel_jun_why": {
       "id": "lis_rel_jun_why",
@@ -1269,7 +1269,7 @@
           "next": "lis_aftershow_a",
           "relationshipEffects": {
             "mira": 2,
-            "theo": 2,
+            "phillip": 2,
             "jun": 2,
             "rowan": 2
           }
@@ -1295,7 +1295,7 @@
           "next": "lis_aftershow_a",
           "relationshipEffects": {
             "mira": 2,
-            "theo": 2,
+            "phillip": 2,
             "jun": 2,
             "rowan": 2
           }
@@ -1377,7 +1377,7 @@
     "lis_journal_fee": {
       "id": "lis_journal_fee",
       "speaker": "narrator",
-      "text": "You write: the fee is part of the rate. Theo said it like a proverb. I think it is one now.",
+      "text": "You write: the fee is part of the rate. Phillip said it like a proverb. I think it is one now.",
       "condition": "flag:read_the_fee",
       "fallback": "lis_journal"
     },
@@ -1398,7 +1398,7 @@
     "lis_aftershow_broke": {
       "id": "lis_aftershow_broke",
       "speaker": "narrator",
-      "text": "Dinner is petrol-station sandwiches in the van, split four ways. Nobody says the word broke. Theo does the sum on a napkin and folds it away.",
+      "text": "Dinner is petrol-station sandwiches in the van, split four ways. Nobody says the word broke. Phillip does the sum on a napkin and folds it away.",
       "condition": "stat.funds<=430",
       "fallback": "lis_aftershow",
       "next": "lis_aftershow"
@@ -1406,7 +1406,7 @@
     "lis_journal_kit": {
       "id": "lis_journal_kit",
       "speaker": "narrator",
-      "text": "You write: Theo did the maths on his own drums, did not like the answer, and did the sensible thing anyway. He is better with money than he lets on.",
+      "text": "You write: Phillip did the maths on his own drums, did not like the answer, and did the sensible thing anyway. He is better with money than he lets on.",
       "condition": "flag:kit_decided",
       "fallback": "lis_journal_deal"
     },

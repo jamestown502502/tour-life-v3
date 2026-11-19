@@ -32,10 +32,10 @@ async function seed(route) {
     g.scene.getScenes(true).forEach((s) => s.sys.settings.key !== 'Transition' && g.scene.stop(s.sys.settings.key));
     const S = window.__state;
     S.newRun('golden-van-2026');
-    S.data.band = { name: 'Paper Motel', genre: 'indie', whyTour: 'Nothing left to lose at home.', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'Paper Motel', genre: 'indie', whyTour: 'Nothing left to lose at home.', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = route.map((cityId) => ({ cityId, visited: false }));
     S.data.currentCityIndex = 0;
-    S.data.relationships = { mira: 60, theo: 55, jun: 50, rowan: 58 };
+    S.data.relationships = { mira: 60, phillip: 55, jun: 50, rowan: 58 };
     S.data.stats.harmony = 85;
     S.data.accessibility.autoplay = true;
     S.data.accessibility.visualAssist = false;
@@ -55,6 +55,8 @@ for (const [cityId, file] of [['tokyo', 'tokyo-show'], ['lisbon', 'lisbon-show']
     const s = window.__game.scene.getScene('Rhythm');
     return s && s.sys.isActive() && (s.songStarted || s.children.list.some((o) => o.type === 'Container' && o.depth === 300));
   }, null, { timeout: 60000 });
+  // 2026-11-19: the Tonight card itself (bandmate faces on light discs), from the Tokyo show.
+  if (cityId === 'tokyo') { await page.waitForTimeout(900); await shot('tonight-card'); }
   await page.evaluate(() => {
     const s = window.__game.scene.getScene('Rhythm');
     if (s.songStarted) return;
@@ -78,7 +80,14 @@ for (const [cityId, file] of [['tokyo', 'tokyo-show'], ['lisbon', 'lisbon-show']
 
 // the route screen, with the short tour beside Confirm
 await seed([]);
-await page.evaluate(() => { window.__state.addFlag('onboard_routeplan_seen'); window.__game.scene.start('RoutePlan'); });
+// 2026-11-19: a second tour, so the "Unlike your last tour" line (src/game/freshness.ts) shows.
+await page.evaluate(() => {
+  const S = window.__state;
+  S.data.meta.runHistory = [{ seed: 'amber-echo-101', bandName: 'Paper Motel', endingId: 'found_family', tags: [], completedAt: 1, route: ['lisbon', 'tokyo'] }];
+  S.data.meta.completedRuns = 1;
+  S.addFlag('onboard_routeplan_seen');
+  window.__game.scene.start('RoutePlan');
+});
 await page.waitForFunction(() => { const s = window.__game.scene.getScene('RoutePlan'); return s && s.sys.isActive() && s.children.list.length > 10; }, null, { timeout: 30000 });
 await page.waitForTimeout(1500);
 await shot('route');

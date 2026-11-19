@@ -13,6 +13,7 @@ import { dailySeed, generateSeed } from '../core/rng';
 import { State } from '../core/state';
 import { loadRun, loadFromSlot, saveToSlot, loadProfile, SAVE_SLOTS, type SaveSlot } from '../core/save';
 import { mergeMeta } from '../game/meta';
+import { freshSeed } from '../game/freshness';
 import type { RunState } from '../core/state';
 import { hasSeenHowToPlay } from '../core/onboarding';
 import { createFloatingInput, type FloatingInput } from './htmlOverlay';
@@ -34,6 +35,9 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     this.hydrateProfile();
+    // Fresh tours: an auto seed never repeats the last finished tour's wildcard, goal or opening
+    // city (src/game/freshness.ts). Typed seeds and Today's Tour are used exactly as given.
+    this.currentSeed = freshSeed(State.data.meta);
     // Starts on the first tap on this screen, or when the first-launch welcome card closes: that
     // tap lands on the card, not here, so the title used to stay silent until a second tap.
     let musicStarted = false;
@@ -120,7 +124,7 @@ export class TitleScene extends Phaser.Scene {
       this.requestNewRun(this.currentSeed);
     }, { fillColor: 0x3e7c7b });
     createButton(this, W / 2 + 50, btnY, 110, BTN_ROW, 'Reroll', () => {
-      this.currentSeed = generateSeed();
+      this.currentSeed = freshSeed(State.data.meta);
       seedLabel.setText(`Custom seed: ${this.currentSeed}`);
     }, { fillColor: 0xc4704f, fontSize: '16px' });
     btnY += BTN_GAP;
@@ -363,7 +367,7 @@ export class TitleScene extends Phaser.Scene {
     const rowY = 1006, rowH = 60;
     addTextScrim(this, W / 2, 960, 330, 34, 0.82);
     this.add.text(W / 2, 960, 'Have a seed? Replay it:', textStyle('small', { fontSize: '16px', color: PALETTE_HEX.cream })).setOrigin(0.5);
-    this.seedInput = createFloatingInput(this, W / 2 - 80, rowY + rowH / 2, 320, 'Paste a seed', rowH);
+    this.seedInput = createFloatingInput(this, W / 2 - 80, rowY + rowH / 2, 320, 'Paste a seed', rowH, true);
     createButton(this, W / 2 + 92, rowY, 148, rowH, 'Use seed', () => {
       const val = this.seedInput?.el.value.trim();
       if (val) {

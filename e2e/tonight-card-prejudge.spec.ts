@@ -41,7 +41,7 @@ test('a show entered late in a session starts with a whole, unjudged chart', asy
   await page.evaluate(() => {
     const S = (window as any).__state;
     S.newRun('tonight-prejudge');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'regression', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'regression', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = [{ cityId: 'lisbon', visited: false, weather: 'clear' }];
     S.data.flags = ['onboard_hub_seen', 'onboard_routeplan_seen'];
     S.data.accessibility.autoplay = true;
@@ -90,7 +90,7 @@ test('the Tonight card counts down in real time on a slow device', async ({ page
     window.requestAnimationFrame = (cb) => window.setTimeout(() => cb(performance.now()), 250);
     const S = (window as any).__state;
     S.newRun('tonight-slow');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'regression', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'regression', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = [{ cityId: 'lisbon', visited: false, weather: 'clear' }];
     (window as any).__game.scene.stop('Title');
     (window as any).__game.scene.start('Rhythm', { cityId: 'lisbon' });

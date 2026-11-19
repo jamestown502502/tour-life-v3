@@ -60,7 +60,7 @@ async function seedRun(page: import('@playwright/test').Page): Promise<void> {
     // measurement is of the gate.
     S.addFlag('onboard_routeplan_seen');
     S.addFlag('hub_onboard_seen');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = [{ cityId: 'berlin', visited: false }, { cityId: 'tokyo', visited: false }];
     S.data.currentCityIndex = 0;
   });

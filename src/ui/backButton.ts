@@ -23,7 +23,10 @@ export function autoPause(game: Phaser.Game): boolean {
   mgr.run('Settings', { returnTo: key });
   return true;
 }
-const TIMED = ['Rhythm', 'MiniGame'];
+// QA round 4 #7 (round 4 of the 2026-11-19 sheet): only a show or minigame paused on a tab switch, so the
+// story, bus and route screens came back mid-dialogue with no sign the game had stopped. Every
+// in-game screen now returns to the Paused card.
+const TIMED = PAUSABLE;
 
 export function handleBack(game: Phaser.Game): boolean {
   const mgr = game.scene;

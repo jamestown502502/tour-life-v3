@@ -218,10 +218,10 @@ export function freshRun(seed: string, meta: MetaProgress, accessibility: Access
   return {
     schemaVersion: SAVE_SCHEMA_VERSION,
     seed,
-    band: { name: '', genre: '', whyTour: '', members: ['mira', 'theo', 'jun', 'rowan'] },
+    band: { name: '', genre: '', whyTour: '', members: ['mira', 'phillip', 'jun', 'rowan'] },
     stats: { energy: 70, harmony: 60, inspiration: 60, funds: 500 },
     localLove: {},
-    relationships: { mira: 20, theo: 20, jun: 20, rowan: 20 },
+    relationships: { mira: 20, phillip: 20, jun: 20, rowan: 20 },
     flags: [],
     inventory: [],
     route: [],

@@ -24,8 +24,21 @@ export function isValidRunState(v: unknown): v is RunState {
  *  have been ADDED within v1 (dialogue autoAdvance/skipReadText) — a save written before they
  *  existed is still v1 and just lacks the keys, so missing accessibility keys are backfilled
  *  from the defaults rather than bumping the schema version for an additive change. */
+/** 2026-11-19: the drummer was renamed Theo -> Phillip (another BAIS game has a Theo). Saves and
+ *  profiles written before that still carry the old id in relationship keys, member lists and
+ *  seen-scene ids, so rewrite it on load. The player's own band name is left exactly as typed. */
+export function renameOldDrummer<T>(raw: T): T {
+  const s = JSON.stringify(raw);
+  if (!/(?<![A-Za-z])(theo|Theo)(?![A-Za-z])/.test(s)) return raw;
+  const out = JSON.parse(s.replace(/(?<![A-Za-z])theo(?![A-Za-z])/g, 'phillip').replace(/(?<![A-Za-z])Theo(?![A-Za-z])/g, 'Phillip'));
+  const bandName = (raw as any)?.band?.name;
+  if (out?.band && typeof bandName === 'string') out.band.name = bandName;
+  return out;
+}
+
 export function migrate(raw: any): RunState | null {
   if (raw.schemaVersion !== SAVE_SCHEMA_VERSION) return null; // no prior versions exist yet
+  raw = renameOldDrummer(raw);
   const defaults = freshAccessibility();
   const saved = raw.accessibility ?? {};
   raw.accessibility = { ...defaults, ...saved, volumes: { ...defaults.volumes, ...(saved.volumes ?? {}) } };
@@ -155,7 +168,7 @@ export function loadProfile(): { meta: MetaProgress | null; accessibility: Acces
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
     if (!raw) return { meta: null, accessibility: null };
-    const parsed = JSON.parse(raw);
+    const parsed = renameOldDrummer(JSON.parse(raw));
     const defaults = freshAccessibility();
     const saved = parsed?.accessibility;
     return {

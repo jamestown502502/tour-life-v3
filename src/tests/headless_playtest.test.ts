@@ -76,7 +76,7 @@ function playCity(city: CityDef, seed: string): void {
 
 function runBotPlaytest(seed: string) {
   State.data = freshRun(seed, freshMeta(), freshAccessibility());
-  State.data.band = { name: 'Bot Band', genre: 'indie_rock', whyTour: 'testing', members: ['mira', 'theo', 'jun', 'rowan'] };
+  State.data.band = { name: 'Bot Band', genre: 'indie_rock', whyTour: 'testing', members: ['mira', 'phillip', 'jun', 'rowan'] };
 
   const generated = generateRoute(makeRng(`${seed}:route`), CITIES);
   State.data.route = generated.stops;
@@ -110,7 +110,7 @@ describe('headless bot playtest (golden path)', () => {
     // A "miss everything" run should still complete — there is no fail branch in the state
     // machine at all, which is how no-fail cozy mode is guaranteed rather than merely configured.
     State.data = freshRun('miss-everything', freshMeta(), freshAccessibility());
-    State.data.band = { name: 'Bot Band', genre: 'folk', whyTour: 'testing', members: ['mira', 'theo', 'jun', 'rowan'] };
+    State.data.band = { name: 'Bot Band', genre: 'folk', whyTour: 'testing', members: ['mira', 'phillip', 'jun', 'rowan'] };
     const generated = generateRoute(makeRng('miss-everything:route'), CITIES);
     State.data.route = generated.stops;
     for (const stop of generated.stops) { stop.weather = generated.weatherByCity[stop.cityId]; State.data.localLove[stop.cityId] = 0; }

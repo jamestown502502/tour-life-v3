@@ -13,15 +13,15 @@ const P = (o: Partial<GoalProgress> = {}): GoalProgress => ({ bestStreak: 0, hol
 describe('Tonight card: every bandmate, helping or not (missing feature #2)', () => {
   it('lists all four, in band order, even when nobody is close', () => {
     const rows = bandmateHelpRows({});
-    expect(rows.map((r) => r.id)).toEqual(['mira', 'theo', 'jun', 'rowan']);
+    expect(rows.map((r) => r.id)).toEqual(['mira', 'phillip', 'jun', 'rowan']);
     expect(rows.every((r) => !r.active)).toBe(true);
     expect(rows.every((r) => r.line.startsWith('Grow close to'))).toBe(true);
   });
   it('a close bandmate shows the help they give, in the same words as the perk', () => {
-    const rows = bandmateHelpRows({ theo: 95, jun: 10 });
-    const theo = rows.find((r) => r.id === 'theo')!, jun = rows.find((r) => r.id === 'jun')!;
-    expect(theo.active).toBe(true);
-    expect(theo.line).toBe(PERK_LINES.theo);
+    const rows = bandmateHelpRows({ phillip: 95, jun: 10 });
+    const phillip = rows.find((r) => r.id === 'phillip')!, jun = rows.find((r) => r.id === 'jun')!;
+    expect(phillip.active).toBe(true);
+    expect(phillip.line).toBe(PERK_LINES.phillip);
     expect(jun.active).toBe(false);
   });
 });
@@ -84,7 +84,7 @@ describe('story spines: "Why this tour?" carries the whole tour', () => {
     run.stats.funds = 399; expect(last.check(run)).toBe(false);
     run.stats.funds = 400; expect(last.check(run)).toBe(true);
     const home = spineFor('Nothing left to lose at home.');
-    run.relationships = { mira: 60, theo: 45, jun: 40, rowan: 39 };
+    run.relationships = { mira: 60, phillip: 45, jun: 40, rowan: 39 };
     expect(home.check(run)).toBe(false);
     run.relationships.rowan = 40;
     expect(home.check(run)).toBe(true);

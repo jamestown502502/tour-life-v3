@@ -20,7 +20,7 @@ test.describe('Stuck-screen hardening (follow-up, Item B)', () => {
     await page.evaluate(() => {
       const State = (window as any).__state;
       State.newRun('double-tap-race-seed');
-      State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because', members: ['mira', 'theo', 'jun', 'rowan'] };
+      State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because', members: ['mira', 'phillip', 'jun', 'rowan'] };
       State.data.route = [{ cityId: 'berlin', visited: false, weather: 'clear' }];
       State.data.currentCityIndex = 0;
       State.data.flags = ['onboard_hub_seen', 'onboard_routeplan_seen'];
@@ -72,7 +72,7 @@ test.describe('Stuck-screen hardening (follow-up, Item B)', () => {
       await page.evaluate(() => {
         const State = (window as any).__state;
         State.newRun('resume-audit-seed');
-        State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because', members: ['mira', 'theo', 'jun', 'rowan'] };
+        State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because', members: ['mira', 'phillip', 'jun', 'rowan'] };
         State.data.route = [{ cityId: 'berlin', visited: false, weather: 'clear' }];
         State.data.currentCityIndex = 0;
         State.data.flags = ['onboard_hub_seen', 'onboard_routeplan_seen'];

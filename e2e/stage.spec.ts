@@ -14,7 +14,7 @@ async function seedShow(page: Page, cityId: string) {
     g.scene.getScenes(true).forEach((s: any) => s.sys.settings.key !== 'Transition' && g.scene.stop(s.sys.settings.key));
     const S: any = (window as any).__state;
     S.newRun('stage-e2e');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = [{ cityId: city, visited: false }, { cityId: 'lisbon', visited: false }];
     S.data.currentCityIndex = 0;
     S.data.accessibility.autoplay = true;
@@ -36,7 +36,7 @@ test('the band stands under its lanes, below the hit line, and reacts to its own
     const r: any = (window as any).__game.scene.getScene('Rhythm');
     return r.mateFaces.map((f: any) => { const b = f.getBounds(); return { name: f.name, x: Math.round(f.x), top: Math.round(b.top), bottom: Math.round(b.bottom) }; });
   });
-  expect(band.map((b: { name: string }) => b.name)).toEqual(['mate_mira', 'mate_theo', 'mate_jun', 'mate_rowan']);
+  expect(band.map((b: { name: string }) => b.name)).toEqual(['mate_mira', 'mate_phillip', 'mate_jun', 'mate_rowan']);
   for (const b of band) {
     expect(b.top, b.name).toBeGreaterThan(HIT_LINE_Y + 30);      // clear of the judging band
     expect(b.bottom, b.name).toBeLessThan(1280 - 150);           // clear of the named front row
@@ -113,7 +113,7 @@ test('a short tour books two stops of the same route and reaches the bus', async
     g.scene.getScenes(true).forEach((s: any) => s.sys.settings.key !== 'Transition' && g.scene.stop(s.sys.settings.key));
     const S: any = (window as any).__state;
     S.newRun('short-tour-e2e');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.addFlag('onboard_routeplan_seen');
   });
   await startScene(page, 'RoutePlan');

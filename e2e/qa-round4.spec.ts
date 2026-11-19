@@ -7,7 +7,7 @@ async function newRun(page: Page): Promise<void> {
   await page.evaluate(() => {
     const S = (window as any).__state;
     S.newRun('qa-round4-seed');
-    S.data.band = { name: 'Copper Atlas', genre: 'indie_rock', whyTour: 'A label finally said yes.', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'Copper Atlas', genre: 'indie_rock', whyTour: 'A label finally said yes.', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = ['lisbon', 'tokyo', 'mexico_city', 'berlin'].map((cityId) => ({ cityId, visited: false, weather: 'clear' }));
     S.addFlag('onboard_hub_seen');
   });
@@ -115,13 +115,13 @@ test.describe('in a tour', () => {
 
   test("missing features: the show opens on Tonight's goal and all four bandmates; Play starts it; the goal stays on screen", async ({ page }) => {
     test.setTimeout(60000);
-    await page.evaluate(() => { (window as any).__state.data.relationships.theo = 95; });
+    await page.evaluate(() => { (window as any).__state.data.relationships.phillip = 95; });
     await startOnly(page, 'Rhythm', { cityId: 'lisbon' });
     await page.waitForTimeout(900);
     const card = await sceneTexts(page, 'Rhythm');
     expect(card).toContain('TONIGHT IN LISBON');
     expect(card.some((t) => t.startsWith('Goal: '))).toBe(true);
-    expect(card.some((t) => t.startsWith('✓ Theo locks the tempo'))).toBe(true);
+    expect(card.some((t) => t.startsWith('✓ Phillip locks the tempo'))).toBe(true);
     for (const n of ['Mira', 'Jun', 'Rowan']) expect(card.some((t) => t.startsWith(`Grow close to ${n}`))).toBe(true);
     expect(await page.evaluate(() => (window as any).__game.scene.getScene('Rhythm').songStarted)).toBe(false);
     await clickButtonByLabel(page, 'Rhythm', 'Play');
@@ -133,12 +133,12 @@ test.describe('in a tour', () => {
 
   test('missing features: Results stamp the goal MET or NOT THIS TIME, above Continue', async ({ page }) => {
     const result = { timingScore: 812, ratio: 0.83, grade: 'good', expressionChoices: [], crowdConnection: 74, unlockedFlags: [], judgementCounts: { perfect: 40, good: 30, ok: 8, miss: 6 } };
-    await startOnly(page, 'Results', { cityId: 'lisbon', visit: 0, result, tonight: { goal: 'Hit a 25-note streak', met: true, perks: ['Theo locks the tempo: wider timing'], night: null, scouted: false, scoutImpressed: false, letter: 'A' } });
+    await startOnly(page, 'Results', { cityId: 'lisbon', visit: 0, result, tonight: { goal: 'Hit a 25-note streak', met: true, perks: ['Phillip locks the tempo: wider timing'], night: null, scouted: false, scoutImpressed: false, letter: 'A' } });
     await page.waitForTimeout(1500);
     const texts = await sceneTexts(page, 'Results');
     expect(texts).toContain('MET');
     expect(texts).toContain("TONIGHT'S GOAL");
-    expect(texts.some((t) => t.startsWith('Helping on stage: Theo'))).toBe(true);
+    expect(texts.some((t) => t.startsWith('Helping on stage: Phillip'))).toBe(true);
   });
 
   test('#3 hiding the app mid-minigame opens the pause menu, and Resume goes back to a live game', async ({ page }) => {

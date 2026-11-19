@@ -22,7 +22,7 @@ test.describe('Critical-issues follow-up: regression guards', () => {
     await page.evaluate(() => {
       const State = (window as any).__state;
       State.newRun('resume-no-repeat-seed');
-      State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because', members: ['mira', 'theo', 'jun', 'rowan'] };
+      State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because', members: ['mira', 'phillip', 'jun', 'rowan'] };
       State.data.route = [{ cityId: 'berlin', visited: false, weather: 'clear' }];
       State.data.currentCityIndex = 0;
       State.data.flags = ['onboard_hub_seen', 'onboard_routeplan_seen'];
@@ -100,7 +100,7 @@ test.describe('Critical-issues follow-up: regression guards', () => {
     await page.evaluate(() => {
       const State = (window as any).__state;
       State.newRun('no-skip-detector-seed');
-      State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because', members: ['mira', 'theo', 'jun', 'rowan'] };
+      State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because', members: ['mira', 'phillip', 'jun', 'rowan'] };
       State.data.route = [{ cityId: 'berlin', visited: false, weather: 'clear' }];
       State.data.currentCityIndex = 0;
       State.data.flags = ['onboard_hub_seen', 'onboard_routeplan_seen'];

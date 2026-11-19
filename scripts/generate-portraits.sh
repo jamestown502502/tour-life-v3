@@ -28,7 +28,7 @@ OUT="public/assets/img"
 STYLE="Soft gouache cozy storybook character portrait, head and shoulders, centered, facing the viewer. Painterly gouache texture, soft rounded shapes, no harsh black outlines, warm even lighting, muted warm palette. Isolated on a plain flat uniform vivid pure green chroma-key background (#00FF00), with no scenery, no props, no cast shadow, and no green tint on the character. No text, no border, no frame."
 
 id_mira="Mira, the band's lead singer: a young woman with light warm-toned skin, long dark brown wavy hair falling past her shoulders, wearing a terracotta-orange top, and a small round gold pendant on a thin chain."
-id_theo="Theo, the band's drummer: a young man with medium tan skin, shaggy medium-brown hair with a fringe falling over his forehead, wearing a deep teal shirt, with a wooden drumstick tucked behind one ear."
+id_phillip="Phillip, the band's drummer: a young man with medium tan skin, shaggy medium-brown hair with a fringe falling over his forehead, wearing a deep teal shirt, with a wooden drumstick tucked behind one ear."
 id_jun="Jun, the band's guitarist and producer: a young person with deep brown skin and a short cropped black undercut hairstyle, wearing a warm golden-yellow shirt, with a guitar pick hanging on a cord around their neck."
 id_rowan="Rowan, the band's bassist: a young person with light tan skin and auburn red hair worn in a single braid over one shoulder, wearing a pale sky-blue shirt, with a wide fabric bass strap across the chest."
 
@@ -66,7 +66,7 @@ gen() { # gen <id> <mood> [referenceFile]
   node scripts/fit-portrait.mjs "$file"
 }
 
-for who in mira theo jun rowan; do
+for who in mira phillip jun rowan; do
   base="$OUT/portrait_${who}_happy.png"
   gen "$who" happy                    # base: text-to-image
   for mood in worried tense inspired wistful tired; do
@@ -89,7 +89,7 @@ done
 # Look at it. It is the only check that catches this class of failure.
 SHEET="docs/portrait-contact-sheet.png"
 tmp=$(mktemp -d)
-for who in mira theo jun rowan; do
+for who in mira phillip jun rowan; do
   for m in happy worried tense inspired; do
     ffmpeg -y -v error -f lavfi -i "color=c=0xFF00FF:s=280x280:d=1" -i "$OUT/portrait_${who}_${m}.png" \
       -filter_complex "[0][1]overlay" -frames:v 1 "$tmp/h_${who}_${m}.png"
@@ -99,7 +99,7 @@ for who in mira theo jun rowan; do
     -filter_complex "[0][1][2][3]hstack=inputs=4" -frames:v 1 "$tmp/row_${who}.png"
 done
 mkdir -p docs
-ffmpeg -y -v error -i "$tmp/row_mira.png" -i "$tmp/row_theo.png" -i "$tmp/row_jun.png" -i "$tmp/row_rowan.png" \
+ffmpeg -y -v error -i "$tmp/row_mira.png" -i "$tmp/row_phillip.png" -i "$tmp/row_jun.png" -i "$tmp/row_rowan.png" \
   -filter_complex "[0][1][2][3]vstack=inputs=4" -frames:v 1 "$SHEET"
 rm -rf "$tmp"
 echo "Contact sheet written to $SHEET — OPEN IT and check for magenta showing through any character."

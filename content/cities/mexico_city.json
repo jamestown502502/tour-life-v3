@@ -55,9 +55,9 @@
       "sceneId": "mex_rel_mira"
     },
     {
-      "id": "theo_the_citys_backbeat",
-      "bandmate": "theo",
-      "sceneId": "mex_rel_theo"
+      "id": "phillip_the_citys_backbeat",
+      "bandmate": "phillip",
+      "sceneId": "mex_rel_phillip"
     },
     {
       "id": "jun_mic_everything",
@@ -76,9 +76,9 @@
       "minRelationship": 32
     },
     {
-      "id": "theo_letter_from_home",
-      "bandmate": "theo",
-      "sceneId": "mex_rel_theo_letter"
+      "id": "phillip_letter_from_home",
+      "bandmate": "phillip",
+      "sceneId": "mex_rel_phillip_letter"
     },
     {
       "id": "mira_why_shes_here",
@@ -295,10 +295,10 @@
       "id": "mex_per_diem",
       "type": "perdiem",
       "title": "Tomorrow's Per Diem",
-      "introText": "Theo lays sixty dollars on the van's dashboard. \"Food, a bed, a stop somewhere quiet. Split it however you like. Just don't spend it twice.\"",
-      "outroText": "Everyone eats, everyone sleeps horizontal, and there is something left in the envelope. Theo nods and says nothing, which is his thank you.",
-      "outroTextRough": "Somebody goes without something. Theo says it is fine. Theo says that about everything.",
-      "outroTextPerfect": "A real meal, a real bed, a stop by the water, and money back in the float. Theo looks at the envelope twice.",
+      "introText": "Phillip lays sixty dollars on the van's dashboard. \"Food, a bed, a stop somewhere quiet. Split it however you like. Just don't spend it twice.\"",
+      "outroText": "Everyone eats, everyone sleeps horizontal, and there is something left in the envelope. Phillip nods and says nothing, which is his thank you.",
+      "outroTextRough": "Somebody goes without something. Phillip says it is fine. Phillip says that about everything.",
+      "outroTextPerfect": "A real meal, a real bed, a stop by the water, and money back in the float. Phillip looks at the envelope twice.",
       "reward": {
         "effects": {
           "energy": 4,
@@ -308,7 +308,7 @@
           "per_diem_balanced"
         ],
         "relationshipEffects": {
-          "theo": 3
+          "phillip": 3
         }
       },
       "roughReward": {
@@ -316,7 +316,7 @@
           "energy": 1
         },
         "relationshipEffects": {
-          "theo": 1
+          "phillip": 1
         }
       },
       "perfectReward": {
@@ -328,10 +328,10 @@
           "per_diem_balanced"
         ],
         "relationshipEffects": {
-          "theo": 5
+          "phillip": 5
         }
       },
-      "hostBandmate": "theo",
+      "hostBandmate": "phillip",
       "ledger": {
         "budget": 60
       },
@@ -386,10 +386,10 @@
       "id": "mex_exchange",
       "type": "exchange",
       "title": "Changing Money Again",
-      "introText": "A different city, the same three signs. This time Theo just hands you the envelope and waits.",
-      "outroText": "You read the fee first. Theo takes the envelope back without counting it, which is a compliment.",
+      "introText": "A different city, the same three signs. This time Phillip just hands you the envelope and waits.",
+      "outroText": "You read the fee first. Phillip takes the envelope back without counting it, which is a compliment.",
       "outroTextRough": "The friendly rate at the friendly window keeps a friendly slice. You notice, after.",
-      "outroTextPerfect": "Best window, no hesitation. Theo says, \"You're doing all of these now.\"",
+      "outroTextPerfect": "Best window, no hesitation. Phillip says, \"You're doing all of these now.\"",
       "reward": {
         "effects": {
           "harmony": 2
@@ -663,7 +663,7 @@
     "mex_loc_taqueria_watch_after": {
       "id": "mex_loc_taqueria_watch_after",
       "speaker": "narrator",
-      "text": "You mention it to Theo, who nods slowly and says “that’s the gig” — meaning hers, meaning also yours."
+      "text": "You mention it to Phillip, who nods slowly and says “that’s the gig” — meaning hers, meaning also yours."
     },
     "mex_loc_taqueria_ask": {
       "id": "mex_loc_taqueria_ask",
@@ -1023,18 +1023,18 @@
       "portrait": "wistful",
       "text": "Her smile flickers, just slightly, before she catches it and buries it back in the noise of the street, out of long habit."
     },
-    "mex_rel_theo": {
-      "id": "mex_rel_theo",
-      "speaker": "theo",
+    "mex_rel_phillip": {
+      "id": "mex_rel_phillip",
+      "speaker": "phillip",
       "portrait": "tense",
-      "text": "\"Even the city has a backbeat here,\" Theo says, wiping sweat off his neck, \"and it never once stops long enough to actually breathe.\"",
+      "text": "\"Even the city has a backbeat here,\" Phillip says, wiping sweat off his neck, \"and it never once stops long enough to actually breathe.\"",
       "choices": [
         {
           "id": "find_shade",
           "label": "Find shade and sit with him a while",
-          "next": "mex_rel_theo_a",
+          "next": "mex_rel_phillip_a",
           "relationshipEffects": {
-            "theo": 6
+            "phillip": 6
           },
           "effects": {
             "energy": 2
@@ -1043,9 +1043,9 @@
         {
           "id": "match_it",
           "label": "Then match it. Don't fight the pace.",
-          "next": "mex_rel_theo_b",
+          "next": "mex_rel_phillip_b",
           "relationshipEffects": {
-            "theo": 3
+            "phillip": 3
           },
           "effects": {
             "inspiration": 2
@@ -1053,15 +1053,15 @@
         }
       ]
     },
-    "mex_rel_theo_a": {
-      "id": "mex_rel_theo_a",
-      "speaker": "theo",
+    "mex_rel_phillip_a": {
+      "id": "mex_rel_phillip_a",
+      "speaker": "phillip",
       "portrait": "happy",
-      "text": "The shade helps. So does not talking for a while. Theo's shoulders finally, visibly drop for the first time all week, maybe all tour."
+      "text": "The shade helps. So does not talking for a while. Phillip's shoulders finally, visibly drop for the first time all week, maybe all tour."
     },
-    "mex_rel_theo_b": {
-      "id": "mex_rel_theo_b",
-      "speaker": "theo",
+    "mex_rel_phillip_b": {
+      "id": "mex_rel_phillip_b",
+      "speaker": "phillip",
       "portrait": "inspired",
       "text": "He tries it, hesitant at first, then less so. Something in his playing loosens that hasn't loosened in weeks of tour, maybe longer than that."
     },
@@ -1182,20 +1182,20 @@
       "portrait": "inspired",
       "text": "Rowan just nods, grateful, and keeps tapping the pattern out quietly for the rest of the walk back to the bus, not needing an audience for it."
     },
-    "mex_rel_theo_letter": {
-      "id": "mex_rel_theo_letter",
-      "speaker": "theo",
+    "mex_rel_phillip_letter": {
+      "id": "mex_rel_phillip_letter",
+      "speaker": "phillip",
       "portrait": "tense",
-      "text": "A message finally loads through spotty signal. \"My sister's checking in again,\" Theo says. \"She's the one who noticed, before I did, that I wasn't okay last year.\"",
-      "condition": "relationship.theo>=40",
-      "fallback": "mex_rel_theo_letter_fallback",
+      "text": "A message finally loads through spotty signal. \"My sister's checking in again,\" Phillip says. \"She's the one who noticed, before I did, that I wasn't okay last year.\"",
+      "condition": "relationship.phillip>=40",
+      "fallback": "mex_rel_phillip_letter_fallback",
       "choices": [
         {
           "id": "tell_her_good",
           "label": "Tell her the truth — you're actually doing okay",
-          "next": "mex_rel_theo_letter_a",
+          "next": "mex_rel_phillip_letter_a",
           "relationshipEffects": {
-            "theo": 6
+            "phillip": 6
           },
           "effects": {
             "harmony": 1
@@ -1204,30 +1204,30 @@
         {
           "id": "not_yet",
           "label": "Not yet. Some things need more time to be true.",
-          "next": "mex_rel_theo_letter_b",
+          "next": "mex_rel_phillip_letter_b",
           "relationshipEffects": {
-            "theo": 3
+            "phillip": 3
           }
         }
       ]
     },
-    "mex_rel_theo_letter_a": {
-      "id": "mex_rel_theo_letter_a",
-      "speaker": "theo",
+    "mex_rel_phillip_letter_a": {
+      "id": "mex_rel_phillip_letter_a",
+      "speaker": "phillip",
       "portrait": "happy",
       "text": "He sends it before he can second-guess it. Three words back, almost instantly: \"Good. Stay there.\""
     },
-    "mex_rel_theo_letter_b": {
-      "id": "mex_rel_theo_letter_b",
-      "speaker": "theo",
+    "mex_rel_phillip_letter_b": {
+      "id": "mex_rel_phillip_letter_b",
+      "speaker": "phillip",
       "portrait": "worried",
       "text": "He types four different replies and deletes all of them. \"Later,\" he says out loud, to nobody."
     },
-    "mex_rel_theo_letter_fallback": {
-      "id": "mex_rel_theo_letter_fallback",
-      "speaker": "theo",
+    "mex_rel_phillip_letter_fallback": {
+      "id": "mex_rel_phillip_letter_fallback",
+      "speaker": "phillip",
       "portrait": "wistful",
-      "text": "Theo's phone buzzes. He glances at it, pockets it without reading further, and says nothing about it."
+      "text": "Phillip's phone buzzes. He glances at it, pockets it without reading further, and says nothing about it."
     },
     "mex_rel_mira_why": {
       "id": "mex_rel_mira_why",
@@ -1297,7 +1297,7 @@
           "next": "mex_aftershow_a",
           "relationshipEffects": {
             "mira": 2,
-            "theo": 2,
+            "phillip": 2,
             "jun": 2,
             "rowan": 2
           }
@@ -1326,7 +1326,7 @@
           "next": "mex_aftershow_a",
           "relationshipEffects": {
             "mira": 2,
-            "theo": 2,
+            "phillip": 2,
             "jun": 2,
             "rowan": 2
           }
@@ -1404,7 +1404,7 @@
     "mex_journal_perdiem": {
       "id": "mex_journal_perdiem",
       "speaker": "narrator",
-      "text": "You write: sixty dollars and Theo watching me divide it. Every dollar I put somewhere was a dollar I took from somewhere else. He knew that already. Now I do.",
+      "text": "You write: sixty dollars and Phillip watching me divide it. Every dollar I put somewhere was a dollar I took from somewhere else. He knew that already. Now I do.",
       "condition": "flag:per_diem_balanced",
       "fallback": "mex_journal_tempo"
     },

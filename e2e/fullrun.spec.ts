@@ -30,7 +30,7 @@ test('a full real playthrough of one city loop never gets stuck', async ({ page 
   await page.evaluate(() => {
     const State = (window as any).__state;
     State.newRun('fullrun-e2e-seed');
-    State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+    State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     State.data.route = [{ cityId: 'lisbon', visited: false, weather: 'clear' }];
     State.data.currentCityIndex = 0;
     State.data.flags = ['onboard_hub_seen', 'onboard_routeplan_seen'];

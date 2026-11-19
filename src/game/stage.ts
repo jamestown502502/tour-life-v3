@@ -11,7 +11,7 @@
 import type { BandmateId } from '../../content/schema';
 
 /** Who plays which lane, left to right. Four lanes, four friends. */
-export const LANE_MATES: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
+export const LANE_MATES: BandmateId[] = ['mira', 'phillip', 'jun', 'rowan'];
 
 export function laneMate(lane: number): BandmateId {
   return LANE_MATES[((lane % LANE_MATES.length) + LANE_MATES.length) % LANE_MATES.length];

@@ -30,9 +30,9 @@ export const VAN_BEATS: Record<BandmateId, { warm: string; cool: string }> = {
     warm: '"I wrote something at the last place," Mira says, not offering to play it. "It\'s not finished. I just wanted somebody to know it exists."',
     cool: 'Mira has been looking out the same window for an hour. "I\'m fine," she says, before anyone asks, which is how everyone knows to ask later.',
   },
-  theo: {
-    warm: '"I slept," Theo announces, genuinely pleased with himself. "Four hours. In a row. Consecutively." Somebody applauds. He takes the applause.',
-    cool: 'Theo counts something under his breath — beats, or hours, or money. He notices you noticing and stops. "Old habit," he says.',
+  phillip: {
+    warm: '"I slept," Phillip announces, genuinely pleased with himself. "Four hours. In a row. Consecutively." Somebody applauds. He takes the applause.',
+    cool: 'Phillip counts something under his breath — beats, or hours, or money. He notices you noticing and stops. "Old habit," he says.',
   },
   jun: {
     warm: '"Okay, so." Jun turns around in the passenger seat entirely. "What if the second song started with nothing? Just nothing, for four bars."',

@@ -16,6 +16,7 @@ import { TOUR_PROMISES } from '../../content/promises';
 import { DialogueBox } from './DialogueBox';
 import { addMenuButton } from './MenuButton';
 import { wildcardFor } from '../game/wildcard';
+import { freshnessLine } from '../game/freshness';
 
 const ONBOARD_FLAG = 'onboard_routeplan_seen';
 
@@ -89,7 +90,15 @@ export class RoutePlanScene extends Phaser.Scene {
     // into list, list into the promise block), and two 72-82% navy layers on top of each other
     // read as a stray border cutting through the text. Each block now gets one scrim whose edges
     // are computed from its own rows, with a gap before the next block starts.
-    const LIST_TOP = 192, FIRST_ROW = 214;
+    // Fresh tours (src/game/freshness.ts): after a finished tour, say what is new this time. Only
+    // drawn when there is a last tour to compare with, so a first tour's layout is unchanged.
+    const fresh = freshnessLine(State.data.seed, State.data.meta);
+    const shift = fresh ? 56 : 0;
+    if (fresh) {
+      addTextScrim(this, W / 2, 214, W - 60, 48, 0.82);
+      this.add.text(W / 2, 214, fresh, textStyle('small', { fontSize: '15px', color: PALETTE_HEX.gold, wordWrap: { width: W - 100 }, align: 'center' })).setOrigin(0.5).setName('freshnessLine');
+    }
+    const LIST_TOP = 192 + shift, FIRST_ROW = 214 + shift;
     const listBottom = FIRST_ROW + (generated.stops.length - 1) * rowH + 46;
     addTextScrim(this, W / 2, (LIST_TOP + listBottom) / 2, W - 40, listBottom - LIST_TOP, 0.82);
 

@@ -25,7 +25,7 @@ export function rapportFor(value: number | undefined): Rapport {
   return v >= CLOSE_AT ? 'close' : v >= STEADY_AT ? 'steady' : 'distant';
 }
 
-export const HOST_NAMES: Record<BandmateId, string> = { mira: 'Mira', theo: 'Theo', jun: 'Jun', rowan: 'Rowan' };
+export const HOST_NAMES: Record<BandmateId, string> = { mira: 'Mira', phillip: 'Phillip', jun: 'Jun', rowan: 'Rowan' };
 
 export const RAPPORT_LABEL: Record<Rapport, string> = {
   close: 'close: helping without being asked',

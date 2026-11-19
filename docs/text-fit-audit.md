@@ -25,7 +25,7 @@ rendering defect.
 | berlin | preshow choice | preShowChoices[book_modular].label | Book the modular rig ($60) | 600x66 @ 18px | ✅ |
 | berlin | dialogue node "ber_arrival" | choices[view].label | Watch the light hit the tower | 660x62 @ 22px | ✅ |
 | berlin | dialogue node "ber_arrival" | choices[gear].label | Get the gear off before the meter runs | 660x62 @ 22px | ✅ |
-| berlin | dialogue node "ber_arrival" | choices[theo].label | Check on Theo, who's gone unusually q... | 660x62 @ 22px | ✅ |
+| berlin | dialogue node "ber_arrival" | choices[phillip].label | Check on Phillip, who's gone unusually q... | 660x62 @ 22px | ✅ |
 | berlin | dialogue node "ber_loc_powerplant" | choices[watch].label | Watch the other band's soundcheck | 660x62 @ 22px | ✅ |
 | berlin | dialogue node "ber_loc_powerplant" | choices[help].label | Offer to help carry cases | 660x62 @ 22px | ✅ |
 | berlin | dialogue node "ber_loc_records" | choices[dig].label | Dig for something you can't identify | 660x62 @ 22px | ✅ |
@@ -40,8 +40,8 @@ rendering defect.
 | berlin | dialogue node "ber_loc_wall" | choices[read_layers].label | Try to read the layers underneath | 660x62 @ 22px | ✅ |
 | berlin | dialogue node "ber_rel_mira" | choices[reframe].label | That's exactly what makes it freedom | 660x62 @ 22px | ✅ |
 | berlin | dialogue node "ber_rel_mira" | choices[sit].label | Let her sit with the nothing a while | 660x62 @ 22px | ✅ |
-| berlin | dialogue node "ber_rel_theo" | choices[rest].label | Find him somewhere actually quiet to ... | 660x62 @ 22px | ✅ |
-| berlin | dialogue node "ber_rel_theo" | choices[match].label | Match his hours instead of fighting them | 660x62 @ 22px | ✅ |
+| berlin | dialogue node "ber_rel_phillip" | choices[rest].label | Find him somewhere actually quiet to ... | 660x62 @ 22px | ✅ |
+| berlin | dialogue node "ber_rel_phillip" | choices[match].label | Match his hours instead of fighting them | 660x62 @ 22px | ✅ |
 | berlin | dialogue node "ber_rel_jun" | choices[yes].label | Let's actually try it tonight | 660x62 @ 22px | ✅ |
 | berlin | dialogue node "ber_rel_jun" | choices[later].label | Save it — we can't risk tonight | 660x62 @ 22px | ✅ |
 | berlin | dialogue node "ber_rel_jun2" | choices[brave].label | Say yes before you can talk yourself ... | 660x62 @ 22px | ✅ |
@@ -79,8 +79,8 @@ rendering defect.
 | lisbon | dialogue node "lis_loc_market" | choices[watch].label | Just watch the crowd | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_rel_mira" | choices[reassure].label | She's wrong, and you know it | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_rel_mira" | choices[sit_with].label | Let her sit with it a moment | 660x62 @ 22px | ✅ |
-| lisbon | dialogue node "lis_rel_theo" | choices[rest].label | Take the afternoon off | 660x62 @ 22px | ✅ |
-| lisbon | dialogue node "lis_rel_theo" | choices[push].label | One more pass at the bridge, then rest | 660x62 @ 22px | ✅ |
+| lisbon | dialogue node "lis_rel_phillip" | choices[rest].label | Take the afternoon off | 660x62 @ 22px | ✅ |
+| lisbon | dialogue node "lis_rel_phillip" | choices[push].label | One more pass at the bridge, then rest | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_rel_jun" | choices[try_it].label | Try it tonight | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_rel_jun" | choices[save_it].label | Save it for the album | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_loc_docks" | choices[watch_boats].label | Watch the boats come in | 660x62 @ 22px | ✅ |
@@ -93,8 +93,8 @@ rendering defect.
 | lisbon | dialogue node "lis_rel_jun2" | choices[steal_from_it].label | Steal from it shamelessly, then. | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_rel_mira_letter" | choices[define_it].label | Maybe 'made it' just means still here | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_rel_mira_letter" | choices[dont_answer].label | Don't answer yet. Sit with the questi... | 660x62 @ 22px | ✅ |
-| lisbon | dialogue node "lis_rel_theo_why" | choices[how_going].label | How's it going so far, honestly? | 660x62 @ 22px | ✅ |
-| lisbon | dialogue node "lis_rel_theo_why" | choices[watch_for_it].label | I'll watch for it, if you want me to | 660x62 @ 22px | ✅ |
+| lisbon | dialogue node "lis_rel_phillip_why" | choices[how_going].label | How's it going so far, honestly? | 660x62 @ 22px | ✅ |
+| lisbon | dialogue node "lis_rel_phillip_why" | choices[watch_for_it].label | I'll watch for it, if you want me to | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_rel_jun_why" | choices[worth_it].label | Was it worth it, though — really? | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_rel_jun_why" | choices[no_regrets].label | You clearly don't regret it. That's t... | 660x62 @ 22px | ✅ |
 | lisbon | dialogue node "lis_aftershow" | choices[celebrate].label | Celebrate with the crowd | 660x62 @ 22px | ✅ |
@@ -145,16 +145,16 @@ rendering defect.
 | mexico_city | dialogue node "mex_loc_mural" | choices[hold_ladder].label | Steady the ladder for her | 660x62 @ 22px | ✅ |
 | mexico_city | dialogue node "mex_rel_mira" | choices[lean_into_it].label | Then let's stay unknown a little longer | 660x62 @ 22px | ✅ |
 | mexico_city | dialogue node "mex_rel_mira" | choices[they_will].label | They'll know soon. Enjoy it while it ... | 660x62 @ 22px | ✅ |
-| mexico_city | dialogue node "mex_rel_theo" | choices[find_shade].label | Find shade and sit with him a while | 660x62 @ 22px | ✅ |
-| mexico_city | dialogue node "mex_rel_theo" | choices[match_it].label | Then match it. Don't fight the pace. | 660x62 @ 22px | ✅ |
+| mexico_city | dialogue node "mex_rel_phillip" | choices[find_shade].label | Find shade and sit with him a while | 660x62 @ 22px | ✅ |
+| mexico_city | dialogue node "mex_rel_phillip" | choices[match_it].label | Then match it. Don't fight the pace. | 660x62 @ 22px | ✅ |
 | mexico_city | dialogue node "mex_rel_jun" | choices[help_record].label | Help them chase every sound on the block | 660x62 @ 22px | ✅ |
 | mexico_city | dialogue node "mex_rel_jun" | choices[pick_one].label | Pick one sound and commit to it | 660x62 @ 22px | ✅ |
 | mexico_city | dialogue node "mex_rel_rowan" | choices[go_for_it].label | Then go. This is your moment. | 660x62 @ 22px | ✅ |
 | mexico_city | dialogue node "mex_rel_rowan" | choices[nervous_together].label | Be nervous about it together first | 660x62 @ 22px | ✅ |
 | mexico_city | dialogue node "mex_rel_rowan2" | choices[ask_to_see].label | Ask them to show you the pattern | 660x62 @ 22px | ✅ |
 | mexico_city | dialogue node "mex_rel_rowan2" | choices[let_it_be].label | Let them have this one, unshared | 660x62 @ 22px | ✅ |
-| mexico_city | dialogue node "mex_rel_theo_letter" | choices[tell_her_good].label | Tell her the truth — you're actually ... | 660x62 @ 22px | ✅ |
-| mexico_city | dialogue node "mex_rel_theo_letter" | choices[not_yet].label | Not yet. Some things need more time t... | 660x62 @ 22px | ✅ |
+| mexico_city | dialogue node "mex_rel_phillip_letter" | choices[tell_her_good].label | Tell her the truth — you're actually ... | 660x62 @ 22px | ✅ |
+| mexico_city | dialogue node "mex_rel_phillip_letter" | choices[not_yet].label | Not yet. Some things need more time t... | 660x62 @ 22px | ✅ |
 | mexico_city | dialogue node "mex_rel_mira_why" | choices[he_was_wrong].label | He was wrong. You carry every room. | 660x62 @ 22px | ✅ |
 | mexico_city | dialogue node "mex_rel_mira_why" | choices[let_it_go].label | Maybe it's time to let his voice go | 660x62 @ 22px | ✅ |
 | mexico_city | dialogue node "mex_aftershow" | choices[join_street].label | Follow the rhythm out into the street | 660x62 @ 22px | ✅ |
@@ -192,8 +192,8 @@ rendering defect.
 | tokyo | dialogue node "tok_rel_mira" | choices[shrug].label | Maybe stop counting the cracks | 660x62 @ 22px | ✅ |
 | tokyo | dialogue node "tok_rel_jun" | choices[splurge].label | Buy it. Figure out the budget later | 660x62 @ 22px | ✅ |
 | tokyo | dialogue node "tok_rel_jun" | choices[pass].label | Not this tour | 660x62 @ 22px | ✅ |
-| tokyo | dialogue node "tok_rel_theo" | choices[join_stairwell].label | Find a stairwell of my own, sit with you | 660x62 @ 22px | ✅ |
-| tokyo | dialogue node "tok_rel_theo" | choices[cut_something].label | We're cutting something from the set ... | 660x62 @ 22px | ✅ |
+| tokyo | dialogue node "tok_rel_phillip" | choices[join_stairwell].label | Find a stairwell of my own, sit with you | 660x62 @ 22px | ✅ |
+| tokyo | dialogue node "tok_rel_phillip" | choices[cut_something].label | We're cutting something from the set ... | 660x62 @ 22px | ✅ |
 | tokyo | dialogue node "tok_rel_mira2" | choices[give_less].label | Then give them less. They'll still sh... | 660x62 @ 22px | ✅ |
 | tokyo | dialogue node "tok_rel_mira2" | choices[one_more].label | One more push. I'll help you find it. | 660x62 @ 22px | ✅ |
 | tokyo | dialogue node "tok_rel_jun_letter" | choices[youre_not_stuck].label | You're not stuck. That's the whole po... | 660x62 @ 22px | ✅ |

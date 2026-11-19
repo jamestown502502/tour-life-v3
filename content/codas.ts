@@ -1,7 +1,7 @@
 // What happened to each of them.
 //
 // The epilogue said what became of the BAND — the offers, the record, the quiet afterwards — and
-// never once said what became of Mira, Theo, Jun or Rowan. Every one of them is introduced with a
+// never once said what became of Mira, Phillip, Jun or Rowan. Every one of them is introduced with a
 // stated want ("wants recognition", "wants rest", "wants sonic experimentation", "wants to be
 // seen"), the whole run tracks a standing with each, and then the ending resolved none of it. Four
 // people you spent a tour managing walked off the last page unaccounted for.
@@ -34,13 +34,13 @@ export const BANDMATE_CODAS: Record<BandmateId, Coda> = {
     denied:
       'Mira does not bring up recognition again, which is its own kind of answer. She writes anyway, most nights, and does not play any of it to anyone for a long while. The wanting has not gone; it has just gone quiet.',
   },
-  theo: {
+  phillip: {
     fulfilled:
-      'Theo sleeps. Properly, for weeks, in an actual bed, and comes back to the kit in his own time rather than a promoter’s. His hands are steady when he does. Nobody had to talk him into stopping, which is the part that matters.',
+      'Phillip sleeps. Properly, for weeks, in an actual bed, and comes back to the kit in his own time rather than a promoter’s. His hands are steady when he does. Nobody had to talk him into stopping, which is the part that matters.',
     unresolved:
-      'Theo rests some and worries the rest. He is fine, he says, and mostly is. The shaking turns up sometimes before a show and less often after. He has started saying so out loud, which he never did before this tour.',
+      'Phillip rests some and worries the rest. He is fine, he says, and mostly is. The shaking turns up sometimes before a show and less often after. He has started saying so out loud, which he never did before this tour.',
     denied:
-      'Theo does not get his rest. He goes straight into someone else’s sessions because the money is there and the band is not saying no for him. He is good at it. He is also very tired, and getting better at hiding that.',
+      'Phillip does not get his rest. He goes straight into someone else’s sessions because the money is there and the band is not saying no for him. He is good at it. He is also very tired, and getting better at hiding that.',
   },
   jun: {
     fulfilled:
@@ -74,6 +74,6 @@ export function codaVariantFor(standing: number): keyof Coda {
 /** The four personal codas for a finished run, in a stable order so the paragraph reads the same
  *  way every time rather than shuffling. */
 export function codasFor(relationships: Record<string, number>): string[] {
-  const order: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
+  const order: BandmateId[] = ['mira', 'phillip', 'jun', 'rowan'];
   return order.map((id) => BANDMATE_CODAS[id][codaVariantFor(relationships[id] ?? 0)]);
 }

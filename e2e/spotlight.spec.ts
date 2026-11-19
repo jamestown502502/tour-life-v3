@@ -15,10 +15,10 @@ async function seedBerlin(page: Page) {
     g.scene.getScenes(true).forEach((s: any) => s.sys.settings.key !== 'Transition' && g.scene.stop(s.sys.settings.key));
     const S: any = (window as any).__state;
     S.newRun('spotlight-e2e');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = [{ cityId: 'berlin', visited: false }, { cityId: 'tokyo', visited: false }];
     S.data.currentCityIndex = 0;
-    S.data.relationships = { mira: 70, theo: 40, jun: 40, rowan: 40 };
+    S.data.relationships = { mira: 70, phillip: 40, jun: 40, rowan: 40 };
     S.data.accessibility.autoplay = true;
   });
   await startScene(page, 'City', { cityId: 'berlin', phase: 'preshow-choices' });

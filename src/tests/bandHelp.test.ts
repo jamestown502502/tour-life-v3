@@ -49,17 +49,17 @@ describe('hints tell the truth', () => {
     expect(hi).toBeGreaterThanOrEqual(best);
   });
 
-  it('Theo\'s per diem suggestion really rates perfect, and fits the budget', () => {
+  it('Phillip\'s per diem suggestion really rates perfect, and fits the budget', () => {
     for (const budget of [60, 80]) {
       const s = suggestPerDiem(budget)!;
       expect(resolvePerDiem({ budget }, s).tier).toBe('perfect');
       expect(s.food + s.lodging + s.rest).toBeLessThanOrEqual(budget);
-      expect(perDiemHint('theo', budget, ['Food', 'A bed', 'Rest stop'])).toContain(`$${s.food} food`);
+      expect(perDiemHint('phillip', budget, ['Food', 'A bed', 'Rest stop'])).toContain(`$${s.food} food`);
     }
   });
 
   it('the gear break-even is the real one', () => {
-    expect(gearHint('theo', 180, 55, 3)).toContain('after 4 shows');
+    expect(gearHint('phillip', 180, 55, 3)).toContain('after 4 shows');
     expect(gearHint('jun', 240, 45, 1)).toContain('There is 1 left');
   });
 

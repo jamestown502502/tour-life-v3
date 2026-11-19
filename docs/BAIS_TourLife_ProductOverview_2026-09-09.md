@@ -97,7 +97,7 @@ A full run takes roughly **30 minutes**.
 
 ### The band
 
-Four bandmates — **Mira** (vocals, wants recognition), **Theo** (drums, wants rest), **Jun**
+Four bandmates — **Mira** (vocals, wants recognition), **Phillip** (drums, wants rest), **Jun**
 (guitar and production, wants sonic experimentation), and **Rowan** (bass, wants to be seen). Each
 has a standing that moves with your choices, and later scenes unlock as you get closer to them.
 

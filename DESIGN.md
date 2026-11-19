@@ -99,7 +99,7 @@ From the research: *pure procedural generation does NOT increase replayability* 
 1. **Seeded RNG** — one seed per run drives: route availability, weather/mood modifiers, promoter requests, scene-pool draws, merch trends, recurring fan, mid-tour complication. Deterministic per seed → shareable runs.
 2. **Route choice** — 12–16 city pool, player picks 6–8; each city has an emotional tone, local collaborator NPC, unique musical motif, and a story gate based on band state.
 3. **Scene pools** — each city has 2 "always" scenes (arrival, pre-show) + 2–3 relationship/free-time scenes of which 1–2 appear, gated on flags.
-4. **Bandmate arcs** — 4 members, each with multiple resolutions that aren't just "max affection" (per v2 matrix: Mira, Theo, Jun, Rowan).
+4. **Bandmate arcs** — 4 members, each with multiple resolutions that aren't just "max affection" (per v2 matrix: Mira, Phillip, Jun, Rowan).
 5. **Song arrangement mutations** — story flags swap chart layers, tempo, note density.
 6. **Ending generator** — 6+ outcomes from tracked variables (harmony, funds, local love, creative risk, rest vs burnout, route, key choices, performance style).
 7. **Meta-progression** — completed tours unlock new band histories, genres, décor, memory cards, personal goals. No player is ever weakened on a fresh run.
@@ -204,7 +204,7 @@ Research: cozy games are on an "unstoppable rise" (Guardian, 2025); TikTok cozy-
 - Mobile-first cozy backstage life-sim fantasy ("a playable tour diary")
 - Dual loop: narrative visual-novel + expressive rhythm performance
 - 5 soft resources (Energy/Harmony/Inspiration/Funds/Local Love)
-- Band relationship matrix with multi-resolution arcs (Mira/Theo/Jun/Rowan)
+- Band relationship matrix with multi-resolution arcs (Mira/Phillip/Jun/Rowan)
 - 12–16 city pool (Tokyo/Lisbon/Mexico City/Berlin/Reykjavík/São Paulo/Melbourne + more), each with tone, collaborator NPC, musical motif, story gate
 - No harsh fail states; accessibility from first build
 - Single-player, saveable, content-driven; no multiplayer/licensed music in v1
@@ -380,7 +380,7 @@ type RunState = {
 | Groundedness (slow, background) | Calls home, quiet rituals, healthy relationships | Vulnerability to vice scenes + epilogue detachment — see Part 3 §20.1 |
 
 **15.4.3 Relationship matrix**
-- Four bandmates: **Mira** (vocals — wants recognition, fears commercial), **Theo** (drums — burned out), **Jun** (guitar/producer — wants sonic experimentation), **Rowan** (bass — feels unseen, practical).
+- Four bandmates: **Mira** (vocals — wants recognition, fears commercial), **Phillip** (drums — burned out), **Jun** (guitar/producer — wants sonic experimentation), **Rowan** (bass — feels unseen, practical).
 - Affinity −50..100; dialogue choices shift trust, who joins side quests, which song versions open, which travel-day conversations occur, and which ending montage plays.
 - Each arc resolves several ways; "max affection" is explicitly not the only good result.
 
@@ -474,7 +474,7 @@ Travel days between cities are **Dead Time** beats (Part 3 §21) — muted, slow
   "cues": [ { "t": 12.0, "type": "invite_crowd" } ] }
 ```
 
-**Arrangement mutation examples (flags → chart changes):** explored night market → hand-drum layer on chorus; supported Theo → looser windows on his solo; acoustic venue → fewer/slower notes + call-and-response; Ines collab → distinct instrumental break + new score category; skipped rest for promo → higher note density + fatigue animation.
+**Arrangement mutation examples (flags → chart changes):** explored night market → hand-drum layer on chorus; supported Phillip → looser windows on his solo; acoustic venue → fewer/slower notes + call-and-response; Ines collab → distinct instrumental break + new score category; skipped rest for promo → higher note density + fatigue animation.
 
 ### 15.7 Accessibility (all four Melatonin options + cozy defaults)
 
@@ -688,7 +688,7 @@ Each reality from the directive becomes a concrete mechanic:
 | **Tour bubble & promiscuity** — detached moral compass | **Ethics/loyalty beats** — the tour-bubble "detached moral compass." Moments where the player chooses kind / complicit / exploitative, including the taboo power dynamic with an intoxicated or vulnerable fan. No lecture — the story simply remembers, and relationships + endings respond. |
 | **Parasitic enablers** — sycophants, dealers, hangers-on | **Backstage NPCs** — hangers-on, dealers, sycophants (the AI-fill NPC pattern for minor ones). A **Backstage Trust** read on every backstage: who actually looks out for the band vs. who feeds the party. |
 | **Post-tour crash** — the silence after the screams | **The Return Home epilogue** (§20.5) — the ending generator's new second act: six months later, each bandmate's landing is computed from the whole run. |
-| **Physical destruction** — tinnitus, cords, spine | **Body wear flags** per bandmate — acquired, shown subtly in portraits, and they *surface*: vocal strain narrows Mira's chart windows; tinnitus drifts Theo's quiet conversations. Gentle, honest, never punishing. |
+| **Physical destruction** — tinnitus, cords, spine | **Body wear flags** per bandmate — acquired, shown subtly in portraits, and they *surface*: vocal strain narrows Mira's chart windows; tinnitus drifts Phillip's quiet conversations. Gentle, honest, never punishing. |
 | **The industry romanticizes the grind** | The game's stance — the cozy aesthetic is the romance; the reality layer is the quiet truth; the epilogue is where the two meet. |
 
 ---
@@ -735,7 +735,7 @@ This is what makes the reality layer *meaningful*: the tour's true ending is not
 Eight authored scenes (across both cities + bus, each with word budgets; gated on flags/stats; each writes different flags → different charts, dialogues, endings):
 
 1. **The call home** — Groundedness beat, warm tones; unlocks the phone in the hub.
-2. **3 AM bus conversation** — Theo's burnout beat; trench bond or enabling.
+2. **3 AM bus conversation** — Phillip's burnout beat; trench bond or enabling.
 3. **The green room** — backstage NPC + enabler; a Backstage Trust decision (Raw: the explicit deal).
 4. **The post-show dip** — Rush crash; the temptation scene spawn point.
 5. **The van argument** — Harmony + trauma-bond; who says what matters.

@@ -95,7 +95,7 @@ describe('tour promises', () => {
     State.addFlag('promise_together');
     // Starting values (relationships 20, harmony 60) should NOT clear the bar on their own.
     expect(keptPromise(State.data)!.kept).toBe(false);
-    for (const id of ['mira', 'theo', 'jun', 'rowan'] as const) State.data.relationships[id] = 60;
+    for (const id of ['mira', 'phillip', 'jun', 'rowan'] as const) State.data.relationships[id] = 60;
     State.data.stats.harmony = 70;
     expect(keptPromise(State.data)!.kept).toBe(true);
   });
@@ -120,7 +120,7 @@ describe('tour promises', () => {
 describe('van beats', () => {
   it('has an opener and both a warm and a cool beat for every bandmate', () => {
     expect(VAN_OPENERS.length).toBeGreaterThanOrEqual(3);
-    for (const id of ['mira', 'theo', 'jun', 'rowan'] as const) {
+    for (const id of ['mira', 'phillip', 'jun', 'rowan'] as const) {
       expect(VAN_BEATS[id], `${id} missing`).toBeDefined();
       expect(VAN_BEATS[id].warm.length).toBeGreaterThan(20);
       expect(VAN_BEATS[id].cool.length).toBeGreaterThan(20);

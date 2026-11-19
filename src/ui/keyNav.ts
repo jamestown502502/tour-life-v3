@@ -71,6 +71,9 @@ export function startKeyNav(game: Phaser.Game): void {
   const keys = new KeyQueue();
   const isMirror = (e: KeyboardEvent) => {
     const el = e.target as HTMLElement | null;
+    // Typing in a text field (band name, seed) belongs to the field. Backspace is one of the Back
+    // keys, so deleting a letter of the band name used to leave setup for the title (QA round 4 #2).
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return true;
     return !!(el && el.tagName === 'BUTTON' && el.closest?.('#a11y-buttons') && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Tab'));
   };
   keys.attach(window, isMirror);
