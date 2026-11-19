@@ -90,6 +90,9 @@ test.describe('Settings is reachable from every resumable screen and Back return
     await waitForActiveScene(page, 'Title');
     await pressContinue(page);
     expect(await waitForActiveScene(page, 'Hub')).toContain('Hub');
+    // An active scene is not yet a drawn one: on a slow runner the tap below landed before the bus's
+    // buttons took input (master gate, 2026-11-19). Same wait as the City test below.
+    await waitFrames(page);
 
     // HubScene.ts: Settings button at (W/2-220, 1140, 200, 66) — center (240, 1173); Home sits to its right.
     await canvasClick(page, 240, 1173);
