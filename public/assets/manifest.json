@@ -340,27 +340,27 @@
     "file": "img/portrait_rowan_worried.png"
   },
   {
-    "key": "portrait_theo_happy",
-    "file": "img/portrait_theo_happy.png"
+    "key": "portrait_phillip_happy",
+    "file": "img/portrait_phillip_happy.png"
   },
   {
-    "key": "portrait_theo_inspired",
-    "file": "img/portrait_theo_inspired.png"
+    "key": "portrait_phillip_inspired",
+    "file": "img/portrait_phillip_inspired.png"
   },
   {
-    "key": "portrait_theo_tense",
-    "file": "img/portrait_theo_tense.png"
+    "key": "portrait_phillip_tense",
+    "file": "img/portrait_phillip_tense.png"
   },
   {
-    "key": "portrait_theo_tired",
-    "file": "img/portrait_theo_tired.png"
+    "key": "portrait_phillip_tired",
+    "file": "img/portrait_phillip_tired.png"
   },
   {
-    "key": "portrait_theo_wistful",
-    "file": "img/portrait_theo_wistful.png"
+    "key": "portrait_phillip_wistful",
+    "file": "img/portrait_phillip_wistful.png"
   },
   {
-    "key": "portrait_theo_worried",
-    "file": "img/portrait_theo_worried.png"
+    "key": "portrait_phillip_worried",
+    "file": "img/portrait_phillip_worried.png"
   }
 ]

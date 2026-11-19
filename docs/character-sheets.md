@@ -60,9 +60,9 @@ character. No text, no border, no frame.
 - Signature accessory: **gold pendant necklace**
 - Wants recognition, fears selling out.
 
-## Theo — drums
+## Phillip — drums
 
-> Theo, the band's drummer: a young man with medium tan skin, shaggy medium-brown hair with a
+> Phillip, the band's drummer: a young man with medium tan skin, shaggy medium-brown hair with a
 > fringe falling over his forehead, wearing a deep teal shirt, with a wooden drumstick tucked
 > behind one ear.
 

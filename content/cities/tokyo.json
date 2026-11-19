@@ -65,9 +65,9 @@
       "sceneId": "tok_rel_jun"
     },
     {
-      "id": "theo_the_only_quiet_room",
-      "bandmate": "theo",
-      "sceneId": "tok_rel_theo"
+      "id": "phillip_the_only_quiet_room",
+      "bandmate": "phillip",
+      "sceneId": "tok_rel_phillip"
     },
     {
       "id": "mira_running_on_empty",
@@ -189,7 +189,7 @@
       "type": "drag",
       "title": "Pack the Van",
       "introText": "Load-out's fast here — everything back in the van before the next act's gear shows up.",
-      "outroText": "Everything's stowed with room to spare. Theo actually looks relaxed.",
+      "outroText": "Everything's stowed with room to spare. Phillip actually looks relaxed.",
       "outroTextRough": "Half-packed and out of time — you finish the rest on the sidewalk, laughing about it.",
       "reward": {
         "effects": {
@@ -218,7 +218,7 @@
         "Suitcase",
         "Merch box"
       ],
-      "outroTextPerfect": "Everything in, nothing rattling, door shut on the first try. Theo actually sits down."
+      "outroTextPerfect": "Everything in, nothing rattling, door shut on the first try. Phillip actually sits down."
     },
     {
       "id": "tok_soundcheck",
@@ -306,10 +306,10 @@
       "id": "tok_count_in",
       "type": "meter",
       "title": "The Count-In",
-      "introText": "Theo taps the sticks together in the green room. \"Tell me what I'm counting. Not the number. The feel.\"",
-      "outroText": "You feel where the heavy beat lands more often than not. Theo grins. \"You'd make a drummer. Don't.\"",
-      "outroTextRough": "You catch the four and lose the six. Theo counts it again, slower, until the lilt shows itself.",
-      "outroTextPerfect": "Every count, first time. Theo puts the sticks down. \"Right. You're calling the tempos tonight.\"",
+      "introText": "Phillip taps the sticks together in the green room. \"Tell me what I'm counting. Not the number. The feel.\"",
+      "outroText": "You feel where the heavy beat lands more often than not. Phillip grins. \"You'd make a drummer. Don't.\"",
+      "outroTextRough": "You catch the four and lose the six. Phillip counts it again, slower, until the lilt shows itself.",
+      "outroTextPerfect": "Every count, first time. Phillip puts the sticks down. \"Right. You're calling the tempos tonight.\"",
       "reward": {
         "effects": {
           "harmony": 3
@@ -318,7 +318,7 @@
           "counted_in"
         ],
         "relationshipEffects": {
-          "theo": 3
+          "phillip": 3
         }
       },
       "roughReward": {
@@ -326,7 +326,7 @@
           "harmony": 1
         },
         "relationshipEffects": {
-          "theo": 1
+          "phillip": 1
         }
       },
       "perfectReward": {
@@ -337,10 +337,10 @@
           "counted_in"
         ],
         "relationshipEffects": {
-          "theo": 5
+          "phillip": 5
         }
       },
-      "hostBandmate": "theo",
+      "hostBandmate": "phillip",
       "theoryRounds": 3
     },
     {
@@ -560,7 +560,7 @@
     "tok_loc_arcade_win_after": {
       "id": "tok_loc_arcade_win_after",
       "speaker": "narrator",
-      "text": "Theo asks what you learned. You say “timing.” He waits for more. There isn't more, and somehow that's the useful part."
+      "text": "Phillip asks what you learned. You say “timing.” He waits for more. There isn't more, and somehow that's the useful part."
     },
     "tok_loc_arcade_watch": {
       "id": "tok_loc_arcade_watch",
@@ -674,7 +674,7 @@
           "next": "tok_loc_karaoke_sing",
           "relationshipEffects": {
             "mira": 3,
-            "theo": 3,
+            "phillip": 3,
             "jun": 3,
             "rowan": 3
           }
@@ -745,7 +745,7 @@
     "tok_loc_taiko_try_after": {
       "id": "tok_loc_taiko_try_after",
       "speaker": "narrator",
-      "text": "Theo reads your score on the walk out and stops halfway through. Some numbers are better left unread."
+      "text": "Phillip reads your score on the walk out and stops halfway through. Some numbers are better left unread."
     },
     "tok_loc_taiko_watch": {
       "id": "tok_loc_taiko_watch",
@@ -919,26 +919,26 @@
       "portrait": "inspired",
       "text": "Jun writes the model number down anyway. For later."
     },
-    "tok_rel_theo": {
-      "id": "tok_rel_theo",
-      "speaker": "theo",
+    "tok_rel_phillip": {
+      "id": "tok_rel_phillip",
+      "speaker": "phillip",
       "portrait": "tense",
-      "text": "\"I found one quiet room in this whole city,\" Theo says. \"It was the stairwell. I sat in the stairwell for an hour.\"",
+      "text": "\"I found one quiet room in this whole city,\" Phillip says. \"It was the stairwell. I sat in the stairwell for an hour.\"",
       "choices": [
         {
           "id": "join_stairwell",
           "label": "Find a stairwell of my own, sit with you",
-          "next": "tok_rel_theo_a",
+          "next": "tok_rel_phillip_a",
           "relationshipEffects": {
-            "theo": 6
+            "phillip": 6
           }
         },
         {
           "id": "cut_something",
           "label": "We're cutting something from the set tonight. Your call.",
-          "next": "tok_rel_theo_b",
+          "next": "tok_rel_phillip_b",
           "relationshipEffects": {
-            "theo": 4
+            "phillip": 4
           },
           "effects": {
             "harmony": 1
@@ -946,17 +946,17 @@
         }
       ]
     },
-    "tok_rel_theo_a": {
-      "id": "tok_rel_theo_a",
-      "speaker": "theo",
+    "tok_rel_phillip_a": {
+      "id": "tok_rel_phillip_a",
+      "speaker": "phillip",
       "portrait": "happy",
       "text": "Neither of you says much. The stairwell holds long enough."
     },
-    "tok_rel_theo_b": {
-      "id": "tok_rel_theo_b",
-      "speaker": "theo",
+    "tok_rel_phillip_b": {
+      "id": "tok_rel_phillip_b",
+      "speaker": "phillip",
       "portrait": "inspired",
-      "text": "Theo picks the bridge nobody would miss. First real decision he's made all week."
+      "text": "Phillip picks the bridge nobody would miss. First real decision he's made all week."
     },
     "tok_rel_mira2": {
       "id": "tok_rel_mira2",
@@ -1253,7 +1253,7 @@
     "tok_journal_count": {
       "id": "tok_journal_count",
       "speaker": "narrator",
-      "text": "You write: Theo counted and I felt it before I could name it. Three, four, six. There is a whole map in there I never knew I was walking on.",
+      "text": "You write: Phillip counted and I felt it before I could name it. Three, four, six. There is a whole map in there I never knew I was walking on.",
       "condition": "flag:counted_in",
       "fallback": "tok_journal"
     },

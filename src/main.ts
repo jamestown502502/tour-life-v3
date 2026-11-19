@@ -1,3 +1,4 @@
+import { goTo } from './ui/transition';
 import Phaser from 'phaser';
 import { startA11yButtons } from './ui/a11yButtons';
 import { startKeyNav } from './ui/keyNav';
@@ -98,6 +99,13 @@ async function boot(): Promise<void> {
   // Turned sideways: the rotate prompt covers the game (index.html), so a running show pauses too.
   const sideways = window.matchMedia(ROTATE_QUERY);
   sideways.addEventListener?.('change', () => { if (sideways.matches) autoPause(game); });
+  // QA round 4 #8: on Android, turning landscape -> portrait fires resize while the browser still
+  // reports the old, short viewport, and FIT then kept the small landscape-sized canvas. Measure
+  // again once the rotation has settled.
+  const refit = (): void => { for (const ms of [120, 400, 900]) window.setTimeout(() => game.scale.refresh(), ms); };
+  window.addEventListener('orientationchange', refit);
+  screen.orientation?.addEventListener?.('change', refit);
+  sideways.addEventListener?.('change', refit);
   window.addEventListener('pagehide', () => audio.setBackgrounded(true));
   window.addEventListener('pageshow', () => audio.setBackgrounded(document.hidden));
   // Audio may only start inside a gesture, and iOS only counts these (not touchstart/pointerdown,
@@ -127,7 +135,7 @@ async function boot(): Promise<void> {
     (window as any).__game = game; (window as any).__audio = audio; (window as any).__state = State;
     // Modules the e2e specs call directly. They used to import('/src/...'), which only exists on a
     // dev server; the e2e suite now runs on a real build (2026-10-08).
-    (window as any).__test = { saveRun, loadRun, resumeTarget, CITIES };
+    (window as any).__test = { saveRun, loadRun, resumeTarget, CITIES, goTo };
   }
 }
 

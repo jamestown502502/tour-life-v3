@@ -88,7 +88,7 @@ describe('no answer closes off an ending', () => {
         for (const harmony of levels) for (const inspiration of levels) for (const rel of levels) for (const love of [0, 10, 20, 25, 50, 100]) for (const funds of [0, 300, 900, 2000]) {
           const s = freshRun('pm-sweep', freshMeta(), freshAccessibility());
           s.stats = { harmony, inspiration, funds, energy: 60 };
-          s.relationships = { mira: rel, theo: rel, jun: rel, rowan: rel };
+          s.relationships = { mira: rel, phillip: rel, jun: rel, rowan: rel };
           s.localLove = { lisbon: love, tokyo: love };
           PROMISE_MOMENTS[p.flag].forEach((m, i) => {
             const o = m.options[(pattern >> i) & 1];

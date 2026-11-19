@@ -58,7 +58,7 @@ async function finishedRunAtHub(page: Page, seed: string, flags: string[], relat
     g.scene.getScenes(true).forEach((s: any) => s.sys.settings.key !== 'Transition' && g.scene.stop(s.sys.settings.key));
     const S: any = (window as any).__state;
     S.newRun(seed);
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = [{ cityId: 'lisbon', visited: true }, { cityId: 'berlin', visited: true }];
     S.data.currentCityIndex = 2;
     S.data.flags = flags;
@@ -80,7 +80,7 @@ test.describe('tour chapters', () => {
       g.scene.stop('Title');
       const S: any = (window as any).__state;
       S.newRun('intro-e2e');
-      S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+      S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     });
     await startScene(page, 'Opening');
     await waitForActiveScene(page, 'Opening', 15000);
@@ -100,7 +100,7 @@ test.describe('tour chapters', () => {
     await waitForActiveScene(page, 'Title', 20000);
 
     // ---- Tour 1: the split sheet was skipped, so the liner notes have to settle it.
-    await finishedRunAtHub(page, 'chapter-one-e2e', ['split_skipped', 'shotgun_theo'], { mira: 60, theo: 20, jun: 40, rowan: 40 });
+    await finishedRunAtHub(page, 'chapter-one-e2e', ['split_skipped', 'shotgun_phillip'], { mira: 60, phillip: 20, jun: 40, rowan: 40 });
     await page.evaluate(() => { (window as any).__state.data.accessibility.reducedMotion = true; });
     await page.evaluate(() => (window as any).__game.scene.getScene('Hub').wrapTour());
     await waitForActiveScene(page, 'Chapter', 20000);
@@ -140,7 +140,7 @@ test.describe('tour chapters', () => {
       Object.assign(S.data.meta, {
         completedRuns: 1, chaptersSeen: [1],
         runHistory: [{ seed: 'chapter-one-e2e', bandName: 'The Testbeds', endingId: 'live_album', tags: [], completedAt: 1, route: ['lisbon', 'tokyo'] }],
-        tourOne: { split: 'writers', license: 'never', tiers: { mira: 'denied', theo: 'fulfilled', jun: 'unresolved', rowan: 'unresolved' }, endingId: 'live_album' },
+        tourOne: { split: 'writers', license: 'never', tiers: { mira: 'denied', phillip: 'fulfilled', jun: 'unresolved', rowan: 'unresolved' }, endingId: 'live_album' },
       });
     });
 
@@ -150,7 +150,7 @@ test.describe('tour chapters', () => {
       g.scene.stop('Title');
       const S: any = (window as any).__state;
       S.newRun('chapter-two-intro-e2e');
-      S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+      S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     });
     await startScene(page, 'Opening');
     await waitForActiveScene(page, 'Opening', 15000);
@@ -159,7 +159,7 @@ test.describe('tour chapters', () => {
     expect(intro2.some((l) => /Same page as last tour/.test(l))).toBe(true);
 
     // ---- Tour 2 finished: the direct-to-fan night, the envelope, both tours looked back on.
-    await finishedRunAtHub(page, 'chapter-two-e2e', ['split_equal', 'shotgun_jun'], { mira: 70, theo: 10, jun: 40, rowan: 80 });
+    await finishedRunAtHub(page, 'chapter-two-e2e', ['split_equal', 'shotgun_jun'], { mira: 70, phillip: 10, jun: 40, rowan: 80 });
     await page.evaluate(() => (window as any).__game.scene.getScene('Hub').wrapTour());
     await waitForActiveScene(page, 'Chapter', 20000);
     const two = await walkAnswering(page, 'Chapter', ["$12", 'Hand it back']);

@@ -6,9 +6,9 @@ async function newRun(page: Page, rel = 20): Promise<void> {
   await page.evaluate((rel) => {
     const S = (window as any).__state;
     S.newRun('depth-seed');
-    S.data.band = { name: 'Copper Atlas', genre: 'indie_rock', whyTour: 'A label finally said yes.', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'Copper Atlas', genre: 'indie_rock', whyTour: 'A label finally said yes.', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = ['lisbon', 'tokyo', 'mexico_city', 'berlin'].map((cityId) => ({ cityId, visited: false, weather: 'clear' }));
-    S.data.relationships = { mira: rel, theo: rel, jun: rel, rowan: rel };
+    S.data.relationships = { mira: rel, phillip: rel, jun: rel, rowan: rel };
     S.addFlag('onboard_hub_seen');
   }, rel);
 }
@@ -78,7 +78,7 @@ test.describe('after onboarding', () => {
       return out.join('\n');
     });
     expect(banner).toMatch(/Goal: /);
-    expect(banner).toMatch(/Theo locks the tempo/);
+    expect(banner).toMatch(/Phillip locks the tempo/);
     await shot(page, 'show-banner');
     await page.evaluate(() => (window as any).__game.scene.getScene('Rhythm').finish());
     await waitForActiveScene(page, 'Results', 15000);

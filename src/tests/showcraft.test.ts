@@ -7,12 +7,12 @@ import { freshRun, freshMeta, freshAccessibility } from '../core/state';
 
 describe('band perks: closeness changes how the show plays', () => {
   it('nobody close: no perks', () => {
-    const p = bandPerks({ mira: 20, theo: 20, jun: 20, rowan: 20 });
+    const p = bandPerks({ mira: 20, phillip: 20, jun: 20, rowan: 20 });
     expect(p.lines).toEqual([]);
     expect(p.windowScale).toBe(1);
   });
   it('each close bandmate brings one rule', () => {
-    const p = bandPerks({ mira: 40, theo: 40, jun: 40, rowan: 40 });
+    const p = bandPerks({ mira: 40, phillip: 40, jun: 40, rowan: 40 });
     expect(p.windowScale).toBeGreaterThan(1);
     expect(p.comboShield).toBe(3);
     expect(p.holdKeep).toBeLessThan(0.85);
@@ -93,7 +93,7 @@ describe('endings you can trace', () => {
   it('names the numbers behind the ending and the one that came closest', () => {
     const s = freshRun('why-seed', freshMeta(), freshAccessibility());
     s.stats = { energy: 60, harmony: 85, inspiration: 50, funds: 300 };
-    s.relationships = { mira: 70, theo: 65, jun: 60, rowan: 60 };
+    s.relationships = { mira: 70, phillip: 65, jun: 60, rowan: 60 };
     s.localLove = { lisbon: 30, tokyo: 20 };
     const e = explainEnding(s);
     expect(e.label).toBe(generateEnding(s).label);

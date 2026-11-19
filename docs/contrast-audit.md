@@ -167,7 +167,7 @@ each character's color identity while clearing 4.5:1 (so one set covers both con
 | Bandmate | Color | Ratio on sand | Speaker (3:1) | Backlog (4.5:1) |
 |---|---|---|---|---|
 | mira | #7D4028 | 5.55:1 | ✅ | ✅ |
-| theo | #275452 | 5.91:1 | ✅ | ✅ |
+| phillip | #275452 | 5.91:1 | ✅ | ✅ |
 | jun | #6B4C18 | 5.48:1 | ✅ | ✅ |
 | rowan | #2E5266 | 5.82:1 | ✅ | ✅ |
 

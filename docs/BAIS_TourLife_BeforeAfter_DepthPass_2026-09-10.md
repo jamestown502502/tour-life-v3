@@ -9,7 +9,7 @@ Date: 2026-09-10 · Live: https://tour-life-v3.vercel.app
 
 ### The mechanical reason they felt dry
 
-Each bandmate is introduced with a stated want — Mira wants recognition, Theo wants rest, Jun wants
+Each bandmate is introduced with a stated want — Mira wants recognition, Phillip wants rest, Jun wants
 sonic experimentation, Rowan wants to be seen. The run tracks a standing with each. And then:
 
 - Relationship scenes were gated **only** on that standing number
@@ -30,7 +30,7 @@ individual scene is, the shape was vignettes.
 | **Strain** | The tour presses on it — this is where it costs something | After one scene with them |
 | **Resolution** | The want is answered, one way or the other | Two-plus scenes **and** past the route midpoint |
 
-Resolution requires **both** conditions, not either. Spend every scene on Theo and you still do not
+Resolution requires **both** conditions, not either. Spend every scene on Phillip and you still do not
 get his payoff in the first city. Ignore Jun entirely and the finale does not hand you one for free.
 
 **Derived, not stored.** The stage is a function of what the run has actually done — scenes had with
@@ -48,7 +48,7 @@ happens is a resolution arriving before its setup.
 Each is a two-node chain that **branches on standing**, using the same condition/fallback machinery
 the journals already use — so the same beat lands warm or cool depending on how the tour went.
 
-> **Theo (Berlin):** *"I worked out what I actually want. It is not a bigger room. It is one night
+> **Phillip (Berlin):** *"I worked out what I actually want. It is not a bigger room. It is one night
 > where nobody needs anything from me."*
 > — warm: *"You already gave me a couple of those. You probably did not notice. I did."*
 > — cool: *"Anyway,"* he says, and picks the sticks back up before anyone has to answer.

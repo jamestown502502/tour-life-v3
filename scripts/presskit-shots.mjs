@@ -32,10 +32,10 @@ async function seed(route) {
     g.scene.getScenes(true).forEach((s) => s.sys.settings.key !== 'Transition' && g.scene.stop(s.sys.settings.key));
     const S = window.__state;
     S.newRun('golden-van-2026');
-    S.data.band = { name: 'Paper Motel', genre: 'indie', whyTour: 'Nothing left to lose at home.', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'Paper Motel', genre: 'indie', whyTour: 'Nothing left to lose at home.', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = route.map((cityId) => ({ cityId, visited: false }));
     S.data.currentCityIndex = 0;
-    S.data.relationships = { mira: 60, theo: 55, jun: 50, rowan: 58 };
+    S.data.relationships = { mira: 60, phillip: 55, jun: 50, rowan: 58 };
     S.data.stats.harmony = 85;
     S.data.accessibility.autoplay = true;
     S.data.accessibility.visualAssist = false;

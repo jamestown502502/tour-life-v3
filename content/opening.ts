@@ -19,11 +19,11 @@ export const OPENING_GRAPH: SceneGraph = {
     speaker: 'mira',
     portrait: 'inspired',
     text: "Every setlist we've ever fought about, we fought about for a reason. I don't need this to blow up. I just want people to actually hear it.",
-    next: 'theo',
+    next: 'phillip',
   },
-  theo: {
-    id: 'theo',
-    speaker: 'theo',
+  phillip: {
+    id: 'phillip',
+    speaker: 'phillip',
     portrait: 'worried',
     text: "I said yes before I let myself think about it too hard. If my hands start shaking again like last time, somebody tell me to sit down.",
     next: 'jun',

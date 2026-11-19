@@ -19,7 +19,9 @@ let lastSig = '';
 /** Called by createButton for every enabled button. The entry leaves when the button is destroyed. */
 export function registerA11yButton(container: Phaser.GameObjects.Container, label: string, press: () => void): void {
   const clean = label.replace(/^←\s*/, '').replace(/\s+/g, ' ').trim();
-  const name = clean === '⚙' ? 'Settings' : clean === '?' ? 'Help' : clean === '≡' ? 'Dialogue history' : clean;
+  // QA round 4 #3: the gear is the game menu (pause, settings, quit), so it says so, and it is the
+  // first stop on Tab in its scene, ahead of the dialogue-history "≡" that sits above it.
+  const name = clean === '⚙' ? 'Game menu' : clean === '?' ? 'Help' : clean === '≡' ? 'Dialogue history' : clean;
   if (!name) return;
   const e: Entry = { container, label: name, press };
   entries.add(e);
@@ -58,7 +60,8 @@ function liveEntries(game: Phaser.Game): Entry[] {
     out.push({ e, order: order.get(c.scene) ?? 0, x: b.x, y: b.y });
   }
   // Reading order: the scene on top first, then top to bottom, left to right.
-  out.sort((a, b) => b.order - a.order || Math.round(a.y / 8) - Math.round(b.y / 8) || a.x - b.x);
+  const menuFirst = (o: { e: Entry }) => (o.e.label === 'Game menu' ? 0 : 1);
+  out.sort((a, b) => b.order - a.order || menuFirst(a) - menuFirst(b) || Math.round(a.y / 8) - Math.round(b.y / 8) || a.x - b.x);
   return out.map((o) => o.e);
 }
 

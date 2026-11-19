@@ -12,7 +12,7 @@ async function seedReturnToTokyo(page: import('@playwright/test').Page, show: st
   await page.evaluate(({ show, minigameGood }) => {
     const S: any = (window as any).__state;
     S.newRun('return-leg-e2e');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = [
       { cityId: 'tokyo', visited: true },
       { cityId: 'tokyo', visited: false, revisit: true },

@@ -7,7 +7,7 @@ import { CITIES } from '../game/content';
 import type { BandmateId, MiniGameDef } from '../../content/schema';
 
 const ALL: MiniGameDef[] = CITIES.flatMap((c) => c.minigames ?? []);
-const HOSTS: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
+const HOSTS: BandmateId[] = ['mira', 'phillip', 'jun', 'rowan'];
 
 describe('soundcheck is gain staging', () => {
   it('left of the window is too quiet, inside is the sweet spot, past it clips', () => {
@@ -92,7 +92,7 @@ describe('hosts react in their own voice and remember', () => {
       { host: 'mira', title: 'A', tier: 2 }, { host: 'rowan', title: 'B', tier: 1 }, { host: 'mira', title: 'C', tier: 3 },
     ];
     expect(priorHosted(list, 'mira')?.title).toBe('C');
-    expect(priorHosted(list, 'theo')).toBeUndefined();
+    expect(priorHosted(list, 'phillip')).toBeUndefined();
     expect(priorHosted(undefined, 'jun')).toBeUndefined();
   });
 });

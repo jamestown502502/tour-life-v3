@@ -211,10 +211,10 @@ export function buildSeedState(progress: { screen: string; cityId?: string; node
   return {
     schemaVersion: 1,
     seed: 'e2e-seed',
-    band: { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] },
+    band: { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] },
     stats: { energy: 70, harmony: 60, inspiration: 60, funds: 500 },
     localLove: {},
-    relationships: { mira: 20, theo: 20, jun: 20, rowan: 20 },
+    relationships: { mira: 20, phillip: 20, jun: 20, rowan: 20 },
     // onboard_hub_seen/onboard_routeplan_seen (State.data.flags, run-scoped) gate a one-time
     // intro DialogueBox in HubScene/RoutePlanScene — without these, a seeded save landing on
     // either scene shows that intro instead of the real screen, and every coordinate this suite

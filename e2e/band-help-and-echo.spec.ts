@@ -7,10 +7,10 @@ async function seedRun(page: Page, rel: number, ledger: unknown[] = []) {
   await page.evaluate(({ rel, ledger }) => {
     const S: any = (window as any).__state;
     S.newRun('band-help-e2e');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = [{ cityId: 'lisbon', visited: true }, { cityId: 'tokyo', visited: false }];
     S.data.currentCityIndex = 1;
-    S.data.relationships = { mira: rel, theo: rel, jun: rel, rowan: rel };
+    S.data.relationships = { mira: rel, phillip: rel, jun: rel, rowan: rel };
     S.data.ledger = ledger;
   }, { rel, ledger });
 }

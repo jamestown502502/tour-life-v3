@@ -219,7 +219,7 @@ Title ──(New Run)──► BandCreator ──► RoutePlan ──► Hub ⇄
   Tour Gallery (meta-progression history), How to Play.
 - **BandCreator** — name the band, pick a genre (4 base + any meta-unlocked extras), pick a
   "why this tour" beat (4 options, flavor + nothing mechanical), see the 4 fixed bandmates
-  (Mira/Theo/Jun/Rowan — their identities are NOT player-chosen, only the band's framing is).
+  (Mira/Phillip/Jun/Rowan — their identities are NOT player-chosen, only the band's framing is).
 - **RoutePlan** — `generateRoute()` seed-picks from the city pool (currently all 4, since the
   pool is ≤6 — see §6) in a shuffled order, one weather variant per city from that city's
   `weather` array, and one mid-tour complication from a pool of 6 (now mechanically real — §3.3).
@@ -456,9 +456,9 @@ this was closed in this pass; see §9 bug entries and §8 for what's still not f
 
 | City | Words | Locations | Relationship-pool entries | preShowChoices | Minigame | Song |
 |---|---|---|---|---|---|---|
-| Lisbon | ~843 | 6 | 8 (all 4 bandmates + 2nd Jun arc + Mira letter+why, Theo why+letter, Jun why — full backstory pair for Mira/Theo) | 3 | Soundcheck (timing, painted) | `sailor_lullaby` |
+| Lisbon | ~843 | 6 | 8 (all 4 bandmates + 2nd Jun arc + Mira letter+why, Phillip why+letter, Jun why — full backstory pair for Mira/Phillip) | 3 | Soundcheck (timing, painted) | `sailor_lullaby` |
 | Tokyo | ~828 | 6 | 8 (all 4 bandmates + 2nd Mira arc + Jun letter, Rowan why+letter — full backstory pair for Rowan) | 3 | Pack the Van (drag, painted) | `neon_rain` |
-| Mexico City | ~1,460 | 6 | 7 (all 4 bandmates + 2nd Rowan arc + Theo/Mira backstory) | 3 | Interview (choice, painted) | `callejon_groove` |
+| Mexico City | ~1,460 | 6 | 7 (all 4 bandmates + 2nd Rowan arc + Phillip/Mira backstory) | 3 | Interview (choice, painted) | `callejon_groove` |
 | Berlin | ~1,147 | 6 | 7 (all 4 bandmates + 2nd Jun/Mira/Rowan arcs) | 3 | — | `kreuzberg_static` |
 | **Total** | **~4,278** | **24** | **30** | **12** | **3** | **4** |
 
@@ -909,7 +909,7 @@ painted backdrops through this exact seam, exactly as predicted here.
 
 ### 14.4 Workstream D — city #4: Berlin (partially done — scoped down, see below)
 
-Full city at the Mexico City template: 5 locations, 5 relationship-pool entries (mira/theo/jun
+Full city at the Mexico City template: 5 locations, 5 relationship-pool entries (mira/phillip/jun
 ×2/rowan), 3 preShowChoices with a storyGate-gated duet (`relationship.jun>=35`, unlocking the
 `modular_trade` arrangement — matching Lisbon's harmony-gated / Tokyo's relationship-gated
 pattern), collaborator NPC Lene (modular synth artist), `midnight_indigo` tint (previously
@@ -990,7 +990,7 @@ now reused for gated story content instead of just gated mechanics).
   response nodes): Lisbon's tile painter's workshop, Tokyo's vending-machine alley, Mexico City's
   mid-mural courtyard.
 - **Bandmate backstory beats**, 6 of the ideal 8 (`RESUME_PROMPT_BEST_IN_CLASS.md`'s "2 short
-  gated scenes per bandmate — letter from home / why they're here") — Mira and Theo each got
+  gated scenes per bandmate — letter from home / why they're here") — Mira and Phillip each got
   their full pair, Jun and Rowan one each; Jun-why and Rowan-letter are the 2 still open. Gated on
   `relationship.<id>>=40` using the node-level `condition`/`fallback` pattern, **not** the
   `RelationshipScenePoolEntry.condition` field in `content/schema.ts` — that field exists but
@@ -1465,7 +1465,7 @@ bandmates — were rewritten with a specific psychological framework as literary
 named in the actual game text, which stays in its established terse voice): Rowan/Tokyo
 (attachment theory, caregiving system, interdependence), the Lisbon miradouro (schema
 accommodation, self-transcendence, broaden-and-build), Jun/Berlin (reward prediction error,
-behavioral activation, savoring), Theo/Lisbon (threat appraisal, defensive cascade, fear
+behavioral activation, savoring), Phillip/Lisbon (threat appraisal, defensive cascade, fear
 conditioning), Mira/Lisbon (self-conscious emotion, social-rank, self-discrepancy), and a **new**
 conditional branch on Lisbon's journal entry (attachment reactivation, meaning reconstruction,
 continuing bonds) gated on a new flag `BandCreatorScene.ts` now sets when the player picks the
@@ -1625,7 +1625,7 @@ themed edge (exactly one scene start), and checks reduced motion skips the layer
 ### 18.3 The Van Ledger (`src/game/ledger.ts`, pure; UI in MiniGameScene)
 Five financial-literacy minigames, each hosted by a bandmate: `split` (Rowan: guarantee vs door,
 with the break-even turnout on screen), `pricing` (Mira: merch table, demand curve, margin),
-`perdiem` (Theo: food/bed/rest with a live forecast), `gearcall` (Jun: buy vs rent over shows
+`perdiem` (Phillip: food/bed/rest with a live forecast), `gearcall` (Jun: buy vs rent over shows
 left), `exchange` (three windows; the fee is part of the rate). All three-tier no-fail; funds
 deltas are scaled to a tenth of the dollars shown. Outcomes are recorded to `State.data.ledger`
 (additive) and shown on the Hub as a ledger card. `src/tests/ledger.test.ts` covers every rule.
@@ -1819,7 +1819,7 @@ Tester report: 11 rows (`Tour Life - Issue Report Round 3.xlsx`). Before/after:
 
 Before/after: `C:\Users\Jbthi\Claude Cowork\BAIS_Critique_Depth_Pass_BeforeAfter_2026-10-07.md`.
 
-- **`src/game/showcraft.ts`** (tested in `src/tests/showcraft.test.ts`): `bandPerks` (close Theo wider
+- **`src/game/showcraft.ts`** (tested in `src/tests/showcraft.test.ts`): `bandPerks` (close Phillip wider
   windows, Jun combo shield 3, Mira holds kept at 70%, Rowan crowd start), `showGoalFor`/`goalMet`,
   `chartPatternFor`/`remapLane` (lane re-fingering per run+visit), `wildcardNight`/`goalReward`.
   RhythmScene uses them (`windows()`, banner, live GOAL stamp, `progress`), passes `tonight` to Results.
@@ -1847,7 +1847,7 @@ Before/after: `C:\Users\Jbthi\Claude Cowork\BAIS_QA_Round4_BeforeAfter_2026-10-1
   `RhythmScene.showTonightCard` opens every show: goal, its reward (`goalRewardLine`), the wildcard
   line, and all four bandmates (`bandmateHelpRows`: active help, or "Grow close to X: <perk>"). Play
   starts it; it also starts itself after `TONIGHT_CARD_MS` (9 s). A goal chip (`createGoalChip`,
-  `goalProgressText`, `goalLost`) stays on screen for the song; Theo/Mira perks call out the moment
+  `goalProgressText`, `goalLost`) stays on screen for the song; Phillip/Mira perks call out the moment
   they save a note (`perkCallout`); Results stamp MET / NOT THIS TIME in a panel above Continue
   (Continue moved to y 1060).
 - **#1 Continue:** the Title slot always holds a Continue (a grey "Continue (no tour yet)" explains
@@ -1925,7 +1925,7 @@ Spec: `Claude Cowork/BAIS_PublisherPolish_Spec_2026-10-12.md` (owner-approved; t
 
 All writing lives in `content/chapters.ts`; `src/ui/ChapterScene.ts` walks it. Learning thread: the song and its recording are two copyrights, paid through different routes (U.S. digital-radio split 50/45/5, 17 U.S.C. 114(g)). Organisations stay generic in play.
 
-- **Intro** (`OpeningScene`): opens on a flash-forward (first tour) or "Last tour ended as a ..." (later tours). After the four faces, Theo's **split sheet** (equal / writers / skipped, flags `split_*`, a lesson line after) and the **shotgun** pick (flags `shotgun_<id>`, +3 with that bandmate). "Skip intro" skips lines, never these two. The first drive (`VanScene` stop 0) opens with the shotgun line, and on Tour 2 with the label's envelope.
+- **Intro** (`OpeningScene`): opens on a flash-forward (first tour) or "Last tour ended as a ..." (later tours). After the four faces, Phillip's **split sheet** (equal / writers / skipped, flags `split_*`, a lesson line after) and the **shotgun** pick (flags `shotgun_<id>`, +3 with that bandmate). "Skip intro" skips lines, never these two. The first drive (`VanScene` stop 0) opens with the shotgun line, and on Tour 2 with the label's envelope.
 - **End of Tour 1, "The Credits Roll"** (first finished tour): liner notes pay off the split sheet (a skipped sheet is settled here), Rowan finds the band named as featured artist on the royalty statement, the 50/45/5 rule, Inês paid from the session fund on Lisbon routes, Mira's ad (license fits / yes / never), and the label envelope. `meta.tourOne` snapshots split, license, each bandmate's coda tier and the ending.
 - **End of Tour 2, "Own the Room"** (second finished tour): the direct-to-fan night ($7/$12/$20, buyers from average local love, fees about a fifth, the working shown; $12 always nets most), the envelope (sign / five-year license / stay independent, `meta.dealChoice`), and a two-tour coda per bandmate keyed to whether their want rose, fell or held across both tours (Jun always finishes the album). The Scrapbook gains a **Two Tours** page (`twoToursSummary`). Chapter choices carry no stat effects: the ending is already decided.
 - `HubScene.wrapTour` routes to `Chapter` when one is owed (`pendingChapter`); progress stays `scrapbook`, and the Scrapbook sends an unplayed chapter back to `Chapter`, so a reload mid-chapter replays it. `RunHistoryEntry.route` added for the Two Tours page.

@@ -13,7 +13,7 @@ import type { RunState, SpotlightRecord } from '../core/state';
 
 export type { SpotlightRecord };
 
-const MATES: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
+const MATES: BandmateId[] = ['mira', 'phillip', 'jun', 'rowan'];
 
 /** Who offers tonight: the bandmate of the last relationship scene played in this city, or, if
  *  none played, whoever is closest to you (ties broken by the run's seed, so a replay matches). */
@@ -64,7 +64,7 @@ export function pendingEcho(state: Pick<RunState, 'spotlights'>, currentCityId: 
   return (state.spotlights ?? []).find((s) => s.accepted && !s.echoed && s.cityId !== currentCityId);
 }
 
-export const BANDMATE_NAME: Record<BandmateId, string> = { mira: 'Mira', theo: 'Theo', jun: 'Jun', rowan: 'Rowan' };
+export const BANDMATE_NAME: Record<BandmateId, string> = { mira: 'Mira', phillip: 'Phillip', jun: 'Jun', rowan: 'Rowan' };
 
 /** The Results line for tonight's bridge, or null when nobody was offered it. */
 export function spotlightAfterLine(state: Pick<RunState, 'spotlights'>, cityId: string, visit: number): string | null {

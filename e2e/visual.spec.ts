@@ -55,7 +55,7 @@ test('twelve screens match their approved baselines', async ({ page }) => {
   await page.evaluate(() => {
     const S: any = (window as any).__state;
     S.newRun('visual-baseline');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = [{ cityId: 'berlin', visited: false }, { cityId: 'tokyo', visited: false }];
     S.data.currentCityIndex = 0;
   });

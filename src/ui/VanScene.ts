@@ -29,7 +29,7 @@ import { recallCandidates, recallFlag, pinnedLesson, type RecallQuestion } from 
 import { SHOTGUN_LINES, shotgunFromFlags } from '../../content/chapters';
 import type { BandmateId, DialogueChoice } from '../../content/schema';
 
-const BANDMATES: BandmateId[] = ['mira', 'theo', 'jun', 'rowan'];
+const BANDMATES: BandmateId[] = ['mira', 'phillip', 'jun', 'rowan'];
 
 export class VanScene extends Phaser.Scene {
   constructor() { super('Van'); }

@@ -145,10 +145,10 @@ const REACTION: Record<BandmateId, Record<Tier, { close: string; other: string }
     2: { close: 'Mira bumps your shoulder. "Good. Not perfect. Good is what we sing on."', other: 'Mira nods once. "That works."' },
     1: { close: 'Mira laughs it off. "We have both had worse nights. Tonight is not decided yet."', other: 'Mira looks away. "Fine. Let us just get through it."' },
   },
-  theo: {
-    3: { close: 'Theo leans back. "Nothing for me to fix. Do you know how rare that is? I could nap."', other: 'Theo blinks. "Huh. Clean." From Theo, that is a speech.' },
-    2: { close: 'Theo taps the sticks together. "Solid. Solid is the whole job."', other: 'Theo shrugs. "That will hold."' },
-    1: { close: 'Theo rubs tired eyes. "Rough. We sleep, we try again. That is the tour."', other: 'Theo says nothing and starts counting the next thing.' },
+  phillip: {
+    3: { close: 'Phillip leans back. "Nothing for me to fix. Do you know how rare that is? I could nap."', other: 'Phillip blinks. "Huh. Clean." From Phillip, that is a speech.' },
+    2: { close: 'Phillip taps the sticks together. "Solid. Solid is the whole job."', other: 'Phillip shrugs. "That will hold."' },
+    1: { close: 'Phillip rubs tired eyes. "Rough. We sleep, we try again. That is the tour."', other: 'Phillip says nothing and starts counting the next thing.' },
   },
   jun: {
     3: { close: 'Jun pulls one headphone off. "That was the version I hear in my head. Thank you."', other: 'Jun writes something in the margin of the chart. It looks like a star.' },
@@ -170,11 +170,11 @@ const CALLBACK: Record<BandmateId, { gg: string; rg: string; gr: string; rr: str
     gr: '"You were sharper at {prior}," Mira says, not unkindly.',
     rr: '"{prior}, and now this," Mira sighs. "We will laugh about it in a year."',
   },
-  theo: {
-    gg: '"Two for two, after {prior}," Theo says. "Keep this up and I might actually rest."',
-    rg: '"Way better than {prior}," Theo says. "See? Sleep helps."',
-    gr: '"You had {prior} down cold," Theo says. "Off night. It happens."',
-    rr: '"{prior}, now this," Theo says. "We are both tired. That is all it is."',
+  phillip: {
+    gg: '"Two for two, after {prior}," Phillip says. "Keep this up and I might actually rest."',
+    rg: '"Way better than {prior}," Phillip says. "See? Sleep helps."',
+    gr: '"You had {prior} down cold," Phillip says. "Off night. It happens."',
+    rr: '"{prior}, now this," Phillip says. "We are both tired. That is all it is."',
   },
   jun: {
     gg: 'Jun ticks a second box on the chart: {prior}, and now this.',
@@ -216,7 +216,7 @@ export function priorHosted(list: readonly HostedGame[] | undefined, host: Bandm
 export interface RecallQuestion { type: MiniGameType; asker: BandmateId; q: string; options: [string, string, string]; why: string }
 
 export const RECALL: readonly RecallQuestion[] = [
-  { type: 'timing', asker: 'theo', q: 'Quiz from soundcheck. The needle went past the gold. What did that do to the sound?', options: ['It clipped and distorted', 'It got quieter', 'Nothing, it was just loud'], why: GAIN_FEEDBACK.clip },
+  { type: 'timing', asker: 'phillip', q: 'Quiz from soundcheck. The needle went past the gold. What did that do to the sound?', options: ['It clipped and distorted', 'It got quieter', 'Nothing, it was just loud'], why: GAIN_FEEDBACK.clip },
   { type: 'drag', asker: 'rowan', q: 'Load-in quiz. Where do the amps ride in the van?', options: ['On the floor, in first', 'On top, easy to grab', 'Wherever there is room'], why: CRAFT_LESSON.drag! },
   { type: 'choice', asker: 'mira', q: 'Interview quiz. What makes an answer stick with a listener?', options: ['A specific story', 'A careful general answer', 'Keeping it vague'], why: CRAFT_LESSON.choice! },
   { type: 'pressure', asker: 'mira', q: 'Live radio quiz. The host asks something hard. Best move?', options: ['A short, concrete answer', 'A long pause to think', 'A long, careful answer'], why: CRAFT_LESSON.pressure! },
@@ -226,15 +226,15 @@ export const RECALL: readonly RecallQuestion[] = [
   { type: 'chordquality', asker: 'jun', q: 'Chord quiz. Which kind of chord sounds sad?', options: ['Minor', 'Major', 'Major seventh'], why: 'Minor chords carry the minor third; major chords sound bright.' },
   { type: 'clave', asker: 'rowan', q: 'Clave quiz. How does the 3-2 son clave start?', options: ['Three strokes, then two', 'Two strokes, then three', 'Four even strokes'], why: 'Count the clave as three strokes, then two, and lock to it: in son, every other part lines up against that pattern.' },
   { type: 'transpose', asker: 'mira', q: 'Transpose quiz. Move a C chord up a whole step. What is it now?', options: ['D', 'C sharp', 'E'], why: 'A whole step is two half steps, two frets: C to D, same shape.' },
-  { type: 'meter', asker: 'theo', q: 'Count-in quiz. ONE two three, ONE two three. What time signature?', options: ['3/4', '4/4', '6/8'], why: 'Three beats, the heavy one first: a waltz, a lullaby, 3/4.' },
-  { type: 'tempo', asker: 'theo', q: 'Tempo quiz. You keep landing ahead of the click. Rushing or dragging?', options: ['Rushing', 'Dragging', 'Neither'], why: 'Ahead of the beat is rushing. Relax the shoulders and listen for the heavy beat.' },
+  { type: 'meter', asker: 'phillip', q: 'Count-in quiz. ONE two three, ONE two three. What time signature?', options: ['3/4', '4/4', '6/8'], why: 'Three beats, the heavy one first: a waltz, a lullaby, 3/4.' },
+  { type: 'tempo', asker: 'phillip', q: 'Tempo quiz. You keep landing ahead of the click. Rushing or dragging?', options: ['Rushing', 'Dragging', 'Neither'], why: 'Ahead of the beat is rushing. Relax the shoulders and listen for the heavy beat.' },
   { type: 'split', asker: 'rowan', q: 'Door deal quiz. When does a share of the door beat the guarantee?', options: ['When turnout clears break-even', 'Always, it is a percentage', 'Never'], why: 'Below the break-even turnout the guarantee pays more; above it, the door does.' },
   { type: 'pricing', asker: 'mira', q: 'Merch quiz. What is margin?', options: ['Price minus cost, per sale', 'The price on the tag', 'The shirts left over'], why: 'Margin is what each sale keeps after its cost. Times how many sell, that is profit.' },
-  { type: 'perdiem', asker: 'theo', q: 'Per diem quiz. Spend nothing on a bed and you save money. What does it cost you?', options: ['The band mood tomorrow', 'Nothing at all', 'Only time'], why: 'A real bed feeds harmony: nobody fights after sleeping flat. Saving on it is spending tomorrow.' },
+  { type: 'perdiem', asker: 'phillip', q: 'Per diem quiz. Spend nothing on a bed and you save money. What does it cost you?', options: ['The band mood tomorrow', 'Nothing at all', 'Only time'], why: 'A real bed feeds harmony: nobody fights after sleeping flat. Saving on it is spending tomorrow.' },
   { type: 'gearcall', asker: 'jun', q: 'Gear quiz. Rent at $45 a show or buy at $240. When does buying win?', options: ['From the sixth show', 'From the second show', 'Never'], why: '$240 / $45 is 5.3 shows, so renting costs more from the sixth show on.' },
   { type: 'setlist', asker: 'jun', q: 'Set quiz. Which key flows straight out of a song in C?', options: ['G, its neighbor on the circle', 'F sharp, across the circle', 'Any key at all'], why: 'C sits between F and G on the circle of fifths. Neighbors share most of their notes, so the change sounds smooth.' },
-  { type: 'longhaul', asker: 'theo', q: 'Road quiz. A great week ahead, but $20 in the float and $60 of fuel to the next show. What now?', options: ['Take the nearer show', 'Drive anyway, it pays later', 'Book the motel first'], why: 'Cash flow is not profit. Costs come due before the show pays, so tonight has to be affordable tonight.' },
-  { type: 'exchange', asker: 'theo', q: 'Exchange quiz. How do you compare money windows?', options: ['What you keep after the fee', 'The biggest rate', 'The shortest line'], why: 'The fee is part of the rate. Compare what you actually receive.' },
+  { type: 'longhaul', asker: 'phillip', q: 'Road quiz. A great week ahead, but $20 in the float and $60 of fuel to the next show. What now?', options: ['Take the nearer show', 'Drive anyway, it pays later', 'Book the motel first'], why: 'Cash flow is not profit. Costs come due before the show pays, so tonight has to be affordable tonight.' },
+  { type: 'exchange', asker: 'phillip', q: 'Exchange quiz. How do you compare money windows?', options: ['What you keep after the fee', 'The biggest rate', 'The shortest line'], why: 'The fee is part of the rate. Compare what you actually receive.' },
 ];
 
 export function recallFlag(type: MiniGameType): string {

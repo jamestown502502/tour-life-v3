@@ -13,7 +13,7 @@ async function seedRun(page: Page, cityId: string): Promise<void> {
   await page.evaluate((cityId) => {
     const State = (window as any).__state;
     State.newRun(`textfit-sweep-${cityId}`);
-    State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'x', members: ['mira', 'theo', 'jun', 'rowan'] };
+    State.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'x', members: ['mira', 'phillip', 'jun', 'rowan'] };
     State.data.route = [{ cityId, visited: false, weather: 'clear' }];
     State.data.currentCityIndex = 0;
     State.data.flags = ['onboard_hub_seen', 'onboard_routeplan_seen'];

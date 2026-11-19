@@ -86,7 +86,7 @@ export class ScrapbookScene extends Phaser.Scene {
     const souvenirText = this.add.text(W / 2, setlistText.y + setlistText.height + 14, `Souvenirs: ${souvenirs}`,
       textStyle('dialogue', { fontSize: '14px', shadow: undefined, wordWrap: { width: W - 180 }, align: 'center' })).setOrigin(0.5, 0);
 
-    const rel = Object.entries(State.data.relationships).map(([id, v]) => `${id} ${Math.round(v)}`).join('  ');
+    const rel = Object.entries(State.data.relationships).map(([id, v]) => `${id[0].toUpperCase()}${id.slice(1)} ${Math.round(v)}`).join('  ');
     const relText = this.add.text(W / 2, Math.min(560, souvenirText.y + souvenirText.height + 16), `Where the band landed: ${rel}`,
       textStyle('dialogue', { fontSize: '14px', shadow: undefined, wordWrap: { width: W - 180 }, align: 'center' })).setOrigin(0.5, 0);
     // The run's wildcard and whether the tour goal was met (src/game/wildcard.ts).
@@ -116,6 +116,12 @@ export class ScrapbookScene extends Phaser.Scene {
       State.data.progress = { screen: 'title' };
       goTo(this, 'Title');
     }, { fillColor: 0x3e7c7b });
+    // QA round 4 #6: the only way out was "Start a new tour", which reads as starting over. Home
+    // goes back to the title and keeps this tour, so Continue returns here.
+    createButton(this, 40, 24, 130, 52, 'Home', () => {
+      saveRun(State.data);
+      goTo(this, 'Title');
+    }, { fillColor: 0x8a6fa3, fontSize: '18px' }).setName('scrapbookHome');
   }
 
   /** A panel over the scrapbook: title, body, Close. Shared by the story and the lessons. */

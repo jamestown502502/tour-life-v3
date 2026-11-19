@@ -51,3 +51,21 @@ describe('save migration/validation (Workstream 2: a structurally-invalid save m
     expect(isValidRunState('not an object')).toBe(false);
   });
 });
+
+describe('drummer rename (2026-11-19): saves written when the drummer was called Theo still resume as Phillip', () => {
+  it('rewrites the old id in members, relationships and seen scenes, but never the typed band name', () => {
+    const run = freshRun('seed-rename', freshMeta(), freshAccessibility()) as any;
+    run.band.name = 'Theo and the Night Bus';
+    run.band.members = ['mira', 'theo', 'jun', 'rowan'];
+    run.relationships = { mira: 20, theo: 33, jun: 20, rowan: 20 };
+    run.meta.seenSceneIds = ['theo_rest_day', 'mira_intro'];
+    const migrated = migrate(JSON.parse(JSON.stringify(run)))!;
+    expect(isValidRunState(migrated)).toBe(true);
+    expect(migrated.band.members).toEqual(['mira', 'phillip', 'jun', 'rowan']);
+    expect((migrated.relationships as any).phillip).toBe(33);
+    expect((migrated.relationships as any).theo).toBeUndefined();
+    expect((migrated.meta as any).seenSceneIds).toEqual(['phillip_rest_day', 'mira_intro']);
+    expect(migrated.band.name).toBe('Theo and the Night Bus');
+    expect(JSON.stringify(migrated)).not.toMatch(/"theory/);
+  });
+});

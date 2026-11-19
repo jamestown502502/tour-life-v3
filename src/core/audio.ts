@@ -495,7 +495,7 @@ class AudioSystem {
    *  (docs/publisher-upgrade/ASSET_PROVENANCE.md). Vertical layering: the track keeps playing and
    *  layers come and go over it, so the chart's timing is untouched.
    *    intimate (Mira) - the band drops back (low-pass + duck) under a soft vocal-like pad
-   *    drive (Theo)    - a kick on every beat and a snare on two and four
+   *    drive (Phillip)    - a kick on every beat and a snare on two and four
    *    walk (Jun)      - a walking bass line through each chord
    *    shimmer (Rowan) - a bright arpeggio two octaves up */
   spotlight(kind: 'intimate' | 'drive' | 'walk' | 'shimmer', startAt: number, endAt: number, chords: number[][], bpm: number): void {

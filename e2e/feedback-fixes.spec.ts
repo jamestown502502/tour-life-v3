@@ -17,7 +17,7 @@ async function toTitle(page: Page) {
     g.scene.getScenes(true).forEach((s: any) => s.sys.settings.key !== 'Transition' && g.scene.stop(s.sys.settings.key));
     const S: any = (window as any).__state;
     S.newRun('feedback-fixes');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'feedback', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'feedback', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = [{ cityId: 'lisbon', visited: false }, { cityId: 'berlin', visited: false }];
   });
 }

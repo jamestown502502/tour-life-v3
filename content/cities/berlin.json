@@ -55,9 +55,9 @@
       "sceneId": "ber_rel_mira"
     },
     {
-      "id": "theo_the_city_that_never_sleeps",
-      "bandmate": "theo",
-      "sceneId": "ber_rel_theo"
+      "id": "phillip_the_city_that_never_sleeps",
+      "bandmate": "phillip",
+      "sceneId": "ber_rel_phillip"
     },
     {
       "id": "jun_break_it_on_purpose",
@@ -88,9 +88,9 @@
       "minRelationship": 32
     },
     {
-      "id": "ber_arc_theo_arc",
-      "bandmate": "theo",
-      "sceneId": "ber_arc_theo",
+      "id": "ber_arc_phillip_arc",
+      "bandmate": "phillip",
+      "sceneId": "ber_arc_phillip",
       "arcStage": 2
     }
   ],
@@ -353,18 +353,18 @@
     {
       "id": "ber_night_budget",
       "type": "perdiem",
-      "hostBandmate": "theo",
+      "hostBandmate": "phillip",
       "title": "The Late-Night Budget",
-      "introText": "Berlin shows start at midnight and end at breakfast. Theo counts out the per diem on the merch table. \"Food, a couch that is not the van, and sleep. Pick.\"",
+      "introText": "Berlin shows start at midnight and end at breakfast. Phillip counts out the per diem on the merch table. \"Food, a couch that is not the van, and sleep. Pick.\"",
       "outroText": "Everyone eats, everyone sleeps somewhere soft, and there is money left over.",
-      "outroTextRough": "Someone goes without something. Theo says it is fine. It is not quite fine.",
-      "outroTextPerfect": "Food, a couch, a lie-in, and change in the envelope. Theo checks it twice.",
+      "outroTextRough": "Someone goes without something. Phillip says it is fine. It is not quite fine.",
+      "outroTextPerfect": "Food, a couch, a lie-in, and change in the envelope. Phillip checks it twice.",
       "reward": {
         "effects": {
           "energy": 3
         },
         "relationshipEffects": {
-          "theo": 3
+          "phillip": 3
         },
         "flags": [
           "berlin_night_budgeted"
@@ -373,7 +373,7 @@
       "roughReward": {
         "effects": {},
         "relationshipEffects": {
-          "theo": 1
+          "phillip": 1
         }
       },
       "perfectReward": {
@@ -381,7 +381,7 @@
           "energy": 5
         },
         "relationshipEffects": {
-          "theo": 5
+          "phillip": 5
         },
         "flags": [
           "berlin_night_budgeted"
@@ -392,7 +392,7 @@
       },
       "copy": {
         "heading": "The late-night budget",
-        "setup": "${budget} to get four people through a night that starts at midnight. Theo wants food and a couch that is not the van.",
+        "setup": "${budget} to get four people through a night that starts at midnight. Phillip wants food and a couch that is not the van.",
         "labels": [
           "Food",
           "A couch",
@@ -466,11 +466,11 @@
           }
         },
         {
-          "id": "theo",
-          "label": "Check on Theo, who's gone unusually quiet",
-          "next": "ber_arrival_theo",
+          "id": "phillip",
+          "label": "Check on Phillip, who's gone unusually quiet",
+          "next": "ber_arrival_phillip",
           "relationshipEffects": {
-            "theo": 3
+            "phillip": 3
           }
         }
       ]
@@ -485,11 +485,11 @@
       "speaker": "narrator",
       "text": "The parking attendant doesn't even glance up from his phone. Everyone in this city, it seems, has somewhere else they'd rather be right now."
     },
-    "ber_arrival_theo": {
-      "id": "ber_arrival_theo",
-      "speaker": "theo",
+    "ber_arrival_phillip": {
+      "id": "ber_arrival_phillip",
+      "speaker": "phillip",
       "portrait": "tired",
-      "text": "\"This city doesn't sleep, and apparently neither will I,\" Theo says, staring up at the tower like it personally owes him an explanation."
+      "text": "\"This city doesn't sleep, and apparently neither will I,\" Phillip says, staring up at the tower like it personally owes him an explanation."
     },
     "ber_loc_powerplant": {
       "id": "ber_loc_powerplant",
@@ -632,7 +632,7 @@
     "ber_loc_courtyard_quiet_after": {
       "id": "ber_loc_courtyard_quiet_after",
       "speaker": "narrator",
-      "text": "Theo falls asleep sitting upright. Nobody wakes him. The chair holds. The evening holds."
+      "text": "Phillip falls asleep sitting upright. Nobody wakes him. The chair holds. The evening holds."
     },
     "ber_loc_tower": {
       "id": "ber_loc_tower",
@@ -811,27 +811,27 @@
       "portrait": "tense",
       "text": "\"Okay,\" she says eventually, to the tower, not really to you at all."
     },
-    "ber_rel_theo": {
-      "id": "ber_rel_theo",
-      "speaker": "theo",
+    "ber_rel_phillip": {
+      "id": "ber_rel_phillip",
+      "speaker": "phillip",
       "portrait": "tired",
-      "text": "\"I haven't slept right since Lisbon,\" Theo admits. \"This whole city runs on no sleep at all. I genuinely don't know if that helps me or ruins me.\"",
+      "text": "\"I haven't slept right since Lisbon,\" Phillip admits. \"This whole city runs on no sleep at all. I genuinely don't know if that helps me or ruins me.\"",
       "choices": [
         {
           "id": "rest",
           "label": "Find him somewhere actually quiet to crash",
-          "next": "ber_rel_theo_a",
+          "next": "ber_rel_phillip_a",
           "effects": {
             "energy": 5
           },
           "relationshipEffects": {
-            "theo": 4
+            "phillip": 4
           }
         },
         {
           "id": "match",
           "label": "Match his hours instead of fighting them",
-          "next": "ber_rel_theo_b",
+          "next": "ber_rel_phillip_b",
           "effects": {
             "inspiration": 3,
             "energy": -3
@@ -839,15 +839,15 @@
         }
       ]
     },
-    "ber_rel_theo_a": {
-      "id": "ber_rel_theo_a",
-      "speaker": "theo",
+    "ber_rel_phillip_a": {
+      "id": "ber_rel_phillip_a",
+      "speaker": "phillip",
       "portrait": "happy",
       "text": "He's asleep within nine minutes flat. You count, somehow, though you couldn't say exactly why that matters to you."
     },
-    "ber_rel_theo_b": {
-      "id": "ber_rel_theo_b",
-      "speaker": "theo",
+    "ber_rel_phillip_b": {
+      "id": "ber_rel_phillip_b",
+      "speaker": "phillip",
       "portrait": "inspired",
       "text": "By dawn you've written half a new song together and completely forgotten what day of the week it even is."
     },
@@ -1064,7 +1064,7 @@
           "next": "ber_aftershow_a",
           "relationshipEffects": {
             "mira": 2,
-            "theo": 2,
+            "phillip": 2,
             "jun": 2,
             "rowan": 2
           },
@@ -1093,7 +1093,7 @@
           "next": "ber_aftershow_a",
           "relationshipEffects": {
             "mira": 2,
-            "theo": 2,
+            "phillip": 2,
             "jun": 2,
             "rowan": 2
           },
@@ -1140,26 +1140,26 @@
       "condition": "flag:modular_locked_in",
       "fallback": "ber_journal_generic"
     },
-    "ber_arc_theo": {
-      "speaker": "theo",
+    "ber_arc_phillip": {
+      "speaker": "phillip",
       "portrait": "tired",
-      "text": "\"I worked out what I actually want,\" Theo says, over the noise. \"It is not a bigger room. It is one night where nobody needs anything from me.\"",
-      "next": "ber_arc_theo_b",
-      "id": "ber_arc_theo"
+      "text": "\"I worked out what I actually want,\" Phillip says, over the noise. \"It is not a bigger room. It is one night where nobody needs anything from me.\"",
+      "next": "ber_arc_phillip_b",
+      "id": "ber_arc_phillip"
     },
-    "ber_arc_theo_b": {
-      "speaker": "theo",
+    "ber_arc_phillip_b": {
+      "speaker": "phillip",
       "portrait": "happy",
       "text": "\"You already gave me a couple of those,\" he says. \"You probably did not notice. I did.\"",
-      "condition": "relationship.theo>=45",
-      "fallback": "ber_arc_theo_b_cool",
-      "id": "ber_arc_theo_b"
+      "condition": "relationship.phillip>=45",
+      "fallback": "ber_arc_phillip_b_cool",
+      "id": "ber_arc_phillip_b"
     },
-    "ber_arc_theo_b_cool": {
-      "speaker": "theo",
+    "ber_arc_phillip_b_cool": {
+      "speaker": "phillip",
       "portrait": "wistful",
       "text": "\"Anyway,\" he says, and picks the sticks back up before anyone has to answer. \"Not tonight. Obviously not tonight.\"",
-      "id": "ber_arc_theo_b_cool"
+      "id": "ber_arc_phillip_b_cool"
     },
     "ber_journal_transpose": {
       "id": "ber_journal_transpose",
@@ -1186,7 +1186,7 @@
     "ber_journal_budget": {
       "id": "ber_journal_budget",
       "speaker": "narrator",
-      "text": "You write: Theo budgeted a Berlin night like it was a tour. We ate, we slept, and there was money left. I did not think that was possible here.",
+      "text": "You write: Phillip budgeted a Berlin night like it was a tour. We ate, we slept, and there was money left. I did not think that was possible here.",
       "condition": "flag:berlin_night_budgeted",
       "fallback": "ber_journal_synth"
     },

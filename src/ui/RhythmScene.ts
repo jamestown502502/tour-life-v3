@@ -212,7 +212,7 @@ export class RhythmScene extends Phaser.Scene {
     this.progress = { bestStreak: 0, holdsDropped: 0, cuesTaken: 0, cuesTotal: 0, misses: 0, crowdPeak: 0, holdsTotal: 0 };
   }
 
-  /** Tonight's timing windows: the player's mode and wiggle room, widened if Theo is close. */
+  /** Tonight's timing windows: the player's mode and wiggle room, widened if Phillip is close. */
   private windows() {
     const w = effectiveWindows(this.currentRhythmMode(), State.data.accessibility.wiggleRoom);
     const k = this.perks?.windowScale ?? 1;
@@ -792,8 +792,8 @@ export class RhythmScene extends Phaser.Scene {
     }
     if (!best) { this.pressLane(lane); return; }
     const delta = now - this.hitMsFor(best.note.t);
-    // Theo close: this note only counts because his tempo widened the window. Say so, now and then.
-    if ((this.perks?.windowScale ?? 1) > 1 && Math.abs(delta) > windows.ok / this.perks.windowScale) this.perkCallout('theo', lane, 'Theo keeps you on time');
+    // Phillip close: this note only counts because his tempo widened the window. Say so, now and then.
+    if ((this.perks?.windowScale ?? 1) > 1 && Math.abs(delta) > windows.ok / this.perks.windowScale) this.perkCallout('phillip', lane, 'Phillip keeps you on time');
     if (best.note.type === 'hold') this.beginHold(best, delta, now);
     else this.judgeNote(best, delta);
   }
@@ -1100,8 +1100,14 @@ export class RhythmScene extends Phaser.Scene {
     c.add(this.add.text(W / 2, y, 'ON STAGE WITH YOU', textStyle('small', { fontSize: '16px', fontStyle: '700', color: PALETTE_HEX.gold })).setOrigin(0.5, 0));
     y += 40;
     for (const r of rows) {
-      const portrait = this.add.image(110, y + 38, ensurePortrait(this, r.id, 'happy')).setScale(0.26).setAlpha(r.active ? 1 : 0.5);
-      if (!r.active) portrait.setTint(0x9a9a9a);
+      // QA round 4 #10: the faces sat straight on the navy card, half transparent and greyed when
+      // not helping, and on an iPhone they all but vanished. Each face now sits on a light disc with
+      // a ring (gold when that bandmate helps tonight), at full strength either way; the text says
+      // who helps.
+      const disc = this.add.circle(110, y + 38, 40, PALETTE.cream, 1).setStrokeStyle(4, r.active ? PALETTE.gold : 0x8fb7c9, 1);
+      const portrait = this.add.image(110, y + 38, ensurePortrait(this, r.id, 'happy'));
+      portrait.setScale(Math.min(76 / portrait.width, 76 / portrait.height));
+      c.add(disc);
       const line = this.add.text(170, y + 38, `${r.active ? '✓ ' : ''}${r.line}`, textStyle('body', {
         fontSize: '19px', color: r.active ? PALETTE_HEX.gold : PALETTE_HEX.cream, wordWrap: { width: W - 260 },
       })).setOrigin(0, 0.5).setAlpha(r.active ? 1 : 0.85);

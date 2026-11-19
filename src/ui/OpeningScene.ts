@@ -65,7 +65,7 @@ export class OpeningScene extends Phaser.Scene {
     });
   }
 
-  /** The intro's two choices: Theo's split sheet (paid off at the end of the first tour) and who
+  /** The intro's two choices: Phillip's split sheet (paid off at the end of the first tour) and who
    *  rides shotgun (the first drive opens with them). Skip intro skips the lines, never these.
    *  Each is applied and saved once, so a resumed intro never asks twice. */
   private finish(): void {

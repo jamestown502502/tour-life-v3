@@ -36,7 +36,7 @@ async function seedRun(page: import('@playwright/test').Page): Promise<void> {
   await page.evaluate(() => {
     const S: any = (window as any).__state;
     S.newRun('barren-check');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = [{ cityId: 'berlin', visited: false }, { cityId: 'tokyo', visited: false }];
     S.data.currentCityIndex = 0;
   });

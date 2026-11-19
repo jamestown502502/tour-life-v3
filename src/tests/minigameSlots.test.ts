@@ -93,7 +93,7 @@ describe('bandmate-hosted content', () => {
   it('every city hosts one game per bandmate', () => {
     for (const c of POOL) {
       const hosts = (c.minigames ?? []).filter((m) => m.hostBandmate).map((m) => m.hostBandmate).sort();
-      expect(hosts, c.id).toEqual(['jun', 'mira', 'rowan', 'theo']);
+      expect(hosts, c.id).toEqual(['jun', 'mira', 'phillip', 'rowan']);
     }
   });
 

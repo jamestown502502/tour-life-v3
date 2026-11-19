@@ -53,28 +53,28 @@ export function openingHook(meta: MetaProgress): string {
   return 'Four weeks from now: the last show of the tour. A full room, the lights already warm, somebody counting in.\n\nBut first, the night before.';
 }
 
-/** Theo's split sheet: the first choice of every tour, and the first lesson. */
+/** Phillip's split sheet: the first choice of every tour, and the first lesson. */
 export function splitSheetNode(returning: boolean): DialogueNode {
   return {
     id: 'opening_split',
-    speaker: 'theo',
+    speaker: 'phillip',
     portrait: 'worried',
     text: returning
       ? "Same page as last tour, new songs. Who wrote what this time? I'm not starting a tour on 'we'll sort it out later'."
       : "Before we drive anywhere: who wrote what? My last band split everything 'fair' and nobody wrote down what fair meant. One page. Then we go.",
     choices: [
-      { id: 'split_equal', label: 'Four ways, equal. We wrote it in one room.', next: '', flags: ['split_equal'], relationshipEffects: { theo: 3, rowan: 2 } },
+      { id: 'split_equal', label: 'Four ways, equal. We wrote it in one room.', next: '', flags: ['split_equal'], relationshipEffects: { phillip: 3, rowan: 2 } },
       { id: 'split_writers', label: 'Mira and Jun wrote it. Write that down.', next: '', flags: ['split_writers'], relationshipEffects: { mira: 3, jun: 2, rowan: -2 } },
-      { id: 'split_skipped', label: "We're friends. Let's just go.", next: '', flags: ['split_skipped'], relationshipEffects: { theo: -3 } },
+      { id: 'split_skipped', label: "We're friends. Let's just go.", next: '', flags: ['split_skipped'], relationshipEffects: { phillip: -3 } },
     ],
   };
 }
 
 /** What the page means, said once the choice is made. Keyed by the flag the choice sets. */
 export const SPLIT_AFTER: Record<string, string> = {
-  split_equal: 'Theo signs first. A song and its recording are two different things, and the page says who owns a share of each. Friendships last longer with paper.',
+  split_equal: 'Phillip signs first. A song and its recording are two different things, and the page says who owns a share of each. Friendships last longer with paper.',
   split_writers: 'Mira and Jun sign; Rowan reads it twice. Writers own the song. Who played on the recording is a separate question, and the page can say that too.',
-  split_skipped: 'Theo folds the blank page into the glovebox anyway. Nothing is broken yet. It just is not written down.',
+  split_skipped: 'Phillip folds the blank page into the glovebox anyway. Nothing is broken yet. It just is not written down.',
 };
 
 export function shotgunNode(): DialogueNode {
@@ -91,7 +91,7 @@ export function shotgunNode(): DialogueNode {
 /** Said on the first drive, for whoever got the seat. */
 export const SHOTGUN_LINES: Record<BandmateId, string> = {
   mira: 'Mira rides shotgun with the setlist on her knee, crossing things out in pen.',
-  theo: 'Theo rides shotgun and is asleep before the first toll booth. Nobody wakes him.',
+  phillip: 'Phillip rides shotgun and is asleep before the first toll booth. Nobody wakes him.',
   jun: 'Jun rides shotgun and plays everyone a field recording of the van engine. They are very proud of it.',
   rowan: 'Rowan rides shotgun and picks the music. For once, everybody hears the bass.',
 };
@@ -111,7 +111,7 @@ export function shotgunFromFlags(flags: string[]): BandmateId | null {
 
 /** Settling the split, when the night before skipped it. */
 export const SETTLE_AFTER: Record<string, string> = {
-  settle_equal: 'It takes an hour instead of ninety seconds, and Theo is right about why. Written down late still beats never written down.',
+  settle_equal: 'It takes an hour instead of ninety seconds, and Phillip is right about why. Written down late still beats never written down.',
   settle_writers: 'Rowan goes quiet, then nods. Writing a song and playing on its recording are different credits, and both of them are real.',
 };
 
@@ -131,12 +131,12 @@ export function chapterOneBeats(run: RunState): DialogueNode[] {
     { id: 'c1_open', speaker: 'narrator', text: 'The live record from this tour is going out. Before it does, somebody has to write the liner notes: who wrote it, who played it, who gets credited.' },
   ];
   if (split === 'equal') {
-    beats.push({ id: 'c1_split', speaker: 'theo', portrait: 'happy', text: 'Easy. Four names, four equal shares, signed the night before we left. Took us ninety seconds.' });
+    beats.push({ id: 'c1_split', speaker: 'phillip', portrait: 'happy', text: 'Easy. Four names, four equal shares, signed the night before we left. Took us ninety seconds.' });
   } else if (split === 'writers') {
-    beats.push({ id: 'c1_split', speaker: 'theo', portrait: 'happy', text: 'Writers: Mira and Jun, signed the night before we left. Players: all four of us. Two lists, both true.' });
+    beats.push({ id: 'c1_split', speaker: 'phillip', portrait: 'happy', text: 'Writers: Mira and Jun, signed the night before we left. Players: all four of us. Two lists, both true.' });
   } else {
     beats.push({
-      id: 'c1_settle', speaker: 'theo', portrait: 'tense',
+      id: 'c1_settle', speaker: 'phillip', portrait: 'tense',
       text: 'So. Nobody wrote anything down, and now the liner notes need names.',
       choices: [
         { id: 'settle_equal', label: 'Four equal shares. Write it now.', next: '' },
@@ -225,7 +225,7 @@ export const TWO_TOUR_CODAS: Record<BandmateId, Record<Trajectory, string>> = {
     heldHigh: 'Two tours, and both times they heard me. I stopped checking whether anyone was listening. That was the real prize.',
     heldLow: 'Two tours, same quiet. But I wrote every night of both of them. Somebody will find that notebook. Maybe me.',
   },
-  theo: {
+  phillip: {
     rose: 'The first tour wrecked me. This one I slept, I said no twice, and my hands were steady every night. Every night.',
     fell: 'I was fine last tour. This one I pushed too hard. I am telling you now, before the shaking starts telling you for me.',
     heldHigh: 'Two tours, rested. I did not know that was allowed in this job. Turns out you just write it into the plan.',
@@ -264,7 +264,7 @@ export function chapterTwoBeats(run: RunState, meta: MetaProgress): DialogueNode
       choices: SALE_PRICES.map((p): DialogueChoice => ({ id: `sale_${p}`, label: p === 7 ? '$7: an easy yes' : p === 12 ? "$12: what it's worth" : '$20: for the real fans', next: '' })),
     },
     { id: 'c2_mira_page', speaker: 'mira', portrait: 'tense', text: 'Page four of the envelope: they fund the record, and they own the recordings. Forever. That is the line I circled.' },
-    { id: 'c2_theo_page', speaker: 'theo', portrait: 'worried', text: 'Page two: an advance. Money now, paid back out of our share later. I circled it twice.' },
+    { id: 'c2_phillip_page', speaker: 'phillip', portrait: 'worried', text: 'Page two: an advance. Money now, paid back out of our share later. I circled it twice.' },
     {
       id: 'c2_deal', speaker: 'narrator', text: 'What does the band do with the envelope?',
       choices: [

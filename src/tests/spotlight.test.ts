@@ -9,14 +9,14 @@ import { isValidRunState } from '../core/save';
 import { State } from '../core/state';
 import type { SpotlightRecord } from '../core/state';
 
-const rel = (mira: number, theo: number, jun: number, rowan: number) => ({ mira, theo, jun, rowan });
+const rel = (mira: number, phillip: number, jun: number, rowan: number) => ({ mira, phillip, jun, rowan });
 
 describe('who offers the bridge', () => {
   it('is the bandmate of the last relationship scene in this city', () => {
     expect(proposerFor({ seed: 's', relationships: rel(90, 0, 0, 0) }, 'tokyo', 'jun')).toBe('jun');
   });
   it('otherwise the closest bandmate, the same on every replay of a seed', () => {
-    expect(proposerFor({ seed: 's', relationships: rel(10, 80, 20, 30) }, 'tokyo', undefined)).toBe('theo');
+    expect(proposerFor({ seed: 's', relationships: rel(10, 80, 20, 30) }, 'tokyo', undefined)).toBe('phillip');
     const tie = { seed: 'tie-seed', relationships: rel(50, 50, 50, 50) };
     const first = proposerFor(tie, 'lisbon', undefined);
     for (let i = 0; i < 5; i++) expect(proposerFor(tie, 'lisbon', undefined)).toBe(first);
@@ -63,7 +63,7 @@ describe('tonight\'s plan', () => {
     State.newRun('spotlight-invariance');
     for (const song of SONGS) {
       const before = pickArrangement(song, State.data.flags);
-      State.data.spotlights = [{ cityId: 'tokyo', visit: 0, mate: 'theo', accepted: true }];
+      State.data.spotlights = [{ cityId: 'tokyo', visit: 0, mate: 'phillip', accepted: true }];
       expect(pickArrangement(song, State.data.flags)).toBe(before);
       State.data.spotlights = [];
     }

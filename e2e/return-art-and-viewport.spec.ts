@@ -27,7 +27,7 @@ async function seedCity(page: Page, cityId: string, returning: boolean) {
   await page.evaluate(({ cityId, returning }) => {
     const S: any = (window as any).__state;
     S.newRun('return-art-e2e');
-    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+    S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
     S.data.route = returning ? [{ cityId, visited: true }, { cityId, visited: false, revisit: true }] : [{ cityId, visited: false }];
     S.data.currentCityIndex = returning ? 1 : 0;
     S.data.cityMemories = returning ? [{ cityId, show: 'solid', love: 6, firstShowRecorded: true }] : [];
@@ -102,7 +102,7 @@ test.describe('van paintings', () => {
         const S: any = (window as any).__state;
         if (leg === 0) {
           S.newRun('van-art-e2e');
-          S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'theo', 'jun', 'rowan'] };
+          S.data.band = { name: 'The Testbeds', genre: 'indie', whyTour: 'because CI said so', members: ['mira', 'phillip', 'jun', 'rowan'] };
         }
         S.data.currentCityIndex = leg;
         const g: any = (window as any).__game;

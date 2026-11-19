@@ -58,7 +58,7 @@ const tmp = file.replace(/\.png$/, '.fit.png');
 // Despill: clamp green to at most the larger of red/blue. Keying against a pure-green screen
 // leaves a green rim on soft painted edges (clearly visible on hair and shoulders), and this is
 // the standard cheap fix. Safe for this cast — nothing they wear is actually green; the closest
-// is Theo's teal, where green already sits within a hair's breadth of blue, so it's untouched.
+// is Phillip's teal, where green already sits within a hair's breadth of blue, so it's untouched.
 const despill = "geq=r='r(X,Y)':g='min(g(X,Y),max(r(X,Y),b(X,Y)))':b='b(X,Y)':a='alpha(X,Y)'";
 
 const r = spawnSync('ffmpeg', ['-y', '-v', 'error', '-i', file, '-vf',

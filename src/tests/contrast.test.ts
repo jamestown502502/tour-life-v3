@@ -60,7 +60,7 @@ describe('contrast audit regressions (Workstream 1, see scripts/contrast-audit.m
   it('DialogueBox\'s bandmate text colors pass on the sand dialogue/backlog panel at both the speaker-name (3:1) and backlog (4.5:1) thresholds', () => {
     // Literal copy of src/ui/DialogueBox.ts's BANDMATE_HEX — see that file's own comment for why
     // these replaced the raw accent colors (gold 1.57:1, sky 1.50:1, terracotta 2.53:1 on sand).
-    const BANDMATE_HEX = { mira: '#7D4028', theo: '#275452', jun: '#6B4C18', rowan: '#2E5266' };
+    const BANDMATE_HEX = { mira: '#7D4028', phillip: '#275452', jun: '#6B4C18', rowan: '#2E5266' };
     const sandL = relLuminanceNum(PALETTE.sand);
     for (const [name, hex] of Object.entries(BANDMATE_HEX)) {
       const ratio = contrastRatio(relLuminanceHex(hex), sandL);

@@ -14,7 +14,7 @@ import { State } from '../core/state';
 describe('the band on stage', () => {
   it('four lanes, four different friends', () => {
     expect(new Set([0, 1, 2, 3].map(laneMate)).size).toBe(4);
-    expect(LANE_MATES).toEqual(['mira', 'theo', 'jun', 'rowan']);
+    expect(LANE_MATES).toEqual(['mira', 'phillip', 'jun', 'rowan']);
     expect(laneMate(4)).toBe('mira');
   });
   it('every face the stage asks for is a painted one', () => {
